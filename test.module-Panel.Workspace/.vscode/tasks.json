@@ -104,7 +104,7 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TSCONFIG": "tsconfig.dist.json",
+          "TSCONFIG": "dist.tsconfig.json",
           "DEST_DIR": "~out"
         }
       },

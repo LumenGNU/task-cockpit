@@ -10,7 +10,7 @@
 		"rootDir": "~stripped",
 		"strict": true,
 		"removeComments": false,
-		"resolveJsonModule": true,
+		"resolveJsonModule": true
 	},
     "include": [
         "~stripped/**/*.ts"
