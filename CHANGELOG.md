@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0] - 2025-06-20
+
+### Changes
+
+- Help page now opens documentation matching the installed extension version
+- `excludeWorkspaceTasks` setting is deprecated and will be removed in a future version
+
 ## [1.0.0] - 2025-02-23
 
 ### Initial public release

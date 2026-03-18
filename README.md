@@ -224,6 +224,8 @@ Folders are matched by their display name — if a folder has a custom `name` in
 
 #### `excludeWorkspaceTasks`
 
+(*Deprecated and will be removed in a future version*)
+
 Hide tasks defined at the workspace level. (Has no effect in single-folder workspaces)
 
 

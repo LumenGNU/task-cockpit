@@ -394,10 +394,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 
         vscode.commands.registerCommand('task-cockpit.open-help-page', function () {
+            const version = vscode.extensions.getExtension('papio-dev.task-cockpit')?.packageJSON.version || 'main';
             vscode.commands.executeCommand('vscode.open', vscode.Uri.from({
                 scheme: 'https',
                 authority: 'github.com',
-                path: '/papio-dev/task-cockpit/tree/main',
+                path: `/papio-dev/task-cockpit/tree/v${version}`,
                 query: 'tab=readme-ov-file',
                 fragment: 'configuration'
             }));

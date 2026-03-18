@@ -309,6 +309,7 @@
             "order": 10
           },
           "taskCockpit.filtering.excludeWorkspaceTasks": {
+            "deprecationMessage": "Will be removed",
             "type": "boolean",
             "scope": "window",
             "default": false,
