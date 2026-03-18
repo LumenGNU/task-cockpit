@@ -6,7 +6,7 @@ set -eu
 
 [[ -n "${TSCONFIG:-}" ]] || { echo "[ERROR] Environment variable TSCONFIG not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
 echo -e "\e[1m[LINT] Typescript type chek (\"./${TSCONFIG}\") ...\e[0m\n"
 

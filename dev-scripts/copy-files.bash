@@ -12,7 +12,7 @@ shopt -s nullglob
 [[ -n "${DEST_DIR:-}" ]] || { echo "[ERROR] Environment variable DEST_DIR not set or empty" ; exit 1 ; }
 [[ -n "${INCLUDES:-}" ]] || { echo "[ERROR] Environment variable INCLUDES not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
 echo -e "\e[1m[COPY] From \"${SOURCE_DIR}/\" to \"${DEST_DIR}/\"\e[0m"
 

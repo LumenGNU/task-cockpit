@@ -6,7 +6,7 @@ set -eu
 
 [[ -n "${FILE_TO_CHECK:-}" ]] || { echo "[ERROR] Environment variable FILE_TO_CHECK not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
 echo -e "\e[1m[LINT] Scan \"./${FILE_TO_CHECK}\" for hidden Unicode ...\e[0m\n"
 

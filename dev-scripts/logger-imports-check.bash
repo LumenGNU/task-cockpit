@@ -2,7 +2,7 @@
 
 set -eu
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
 echo -e "\e[1m[START] Checking Logger import paths ...\e[0m\n"
 

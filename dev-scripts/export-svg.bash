@@ -10,7 +10,7 @@ set -eu
 [[ -n "${TARGET_DIR:-}" ]] || { echo "[ERROR] Environment variable TARGET_DIR not set or empty" ; exit 1 ; }
 [[ -n "${TARGET_TYPE:-}" ]] || { echo "[ERROR] Environment variable TARGET_TYPE not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
 echo -e "\e[1m[SVG] Export \"${SRC_SVG}\" ...\e[0m\n"
 

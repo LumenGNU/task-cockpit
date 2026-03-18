@@ -2,11 +2,12 @@
 
 set -eu
 
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+
 # TARGET — директория, или файл для проверки
 
 [[ -n "${TARGET:-}" ]] || { echo "[ERROR] Environment variable TARGET not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
 
 if [[ -d "${TARGET}" ]]; then
     entity="directory"

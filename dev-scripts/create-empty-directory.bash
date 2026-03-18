@@ -2,6 +2,8 @@
 
 set -eu
 
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+
 # DEST_DIR — целевая директория для create
 
 [[ -n "${DEST_DIR:-}" ]] || { echo "[ERROR] Environment variable DEST_DIR not set or empty" ; exit 1 ; }

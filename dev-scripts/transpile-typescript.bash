@@ -2,13 +2,14 @@
 
 set -eu
 
+trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+
 # TSCONFIG
 # DEST_DIR
 
 [[ -n "${TSCONFIG:-}" ]] || { echo "[ERROR] Environment variable TSCONFIG not set or empty" ; exit 1 ; }
 [[ -n "${DEST_DIR:-}" ]] || { echo "[ERROR] Environment variable DEST_DIR not set or empty" ; exit 1 ; }
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" ; exit 1' TERM INT
 
 echo -e "\e[1m[DEV] Building (${TSCONFIG}) ...\e[0m\n"
 
