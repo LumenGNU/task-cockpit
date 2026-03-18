@@ -120,7 +120,7 @@
         "id": "json"
       },
       "type": "shell",
-      "command": "dev-scripts/generate-launch.bash",
+      "command": "echo @TODO; exit 1; #dev-scripts/generate-launch.bash",
       "presentation": {
         "panel": "shared",
         "clear": false,
