@@ -40,6 +40,9 @@
         "js/ts.workspaceSymbols.scope": "currentProject",
         "js/ts.implementationsCodeLens.enabled": true,
         "js/ts.referencesCodeLens.enabled": true,
+        "taskCockpit.filtering.excludeFolders": [
+            "Task Cockpit (Workspace)"
+        ],
     },
 
 

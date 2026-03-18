@@ -316,10 +316,11 @@
             "uniqueItems": true,
             "scope": "window",
             "default": [],
-            "markdownDescription": "Excludes specified workspace folders from the task explorer. Matches the folder's display name. Example: `[\"tests\", \"docs\"]`.  \n*Has no effect in single-folder workspaces*.",
+            "markdownDescription": "Excludes specified workspace folders from the task explorer. Matches the display name as shown by VS Code, not the directory name. Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`).  \n*Has no effect in single-folder workspaces*.",
             "order": 10
           },
           "taskCockpit.filtering.excludeWorkspaceTasks": {
+            "markdownDeprecationMessage": "Deprecated. Use `#taskCockpit.filtering.excludeFolders#` instead.",
             "type": "boolean",
             "scope": "window",
             "default": false,
@@ -363,6 +364,7 @@
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.39.1",
+    "mocha": "^11.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3"
   },

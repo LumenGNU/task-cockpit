@@ -5,8 +5,10 @@
     { "name": "Shared", "path": "shared" }
   ],
   "settings": {
-    "taskCockpit.filtering.excludeWorkspaceTasks": false,
-    "taskCockpit.display.tintLabel": false
+    "taskCockpit.display.tintLabel": false,
+    "taskCockpit.filtering.excludeFolders": [
+      "_Multiroot-HappyPath (Workspace)"
+    ]
   },
   "tasks": {
     "version": "2.0.0",
