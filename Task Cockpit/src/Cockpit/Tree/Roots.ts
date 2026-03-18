@@ -4,12 +4,12 @@
 import type * as TC from '../../types';
 import Builder from './Builder';
 import Splitter from './Splitter';
+import helpers from '../../helpers';
 
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
-import helpers from '../../helpers';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 

@@ -40,6 +40,6 @@ if [[ -n "${EXCLUDES:-}" ]]; then
     done
 fi
 
-rsync -am "${exclude_args[@]}" "${include_args[@]}" --exclude='*' "${SOURCE_DIR}/" "${DEST_DIR}/" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Copying failed\e[0m\n' ; exit $rc ;}
+rsync -amL "${exclude_args[@]}" "${include_args[@]}" --exclude='*' "${SOURCE_DIR}/" "${DEST_DIR}/" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Copying failed\e[0m\n' ; exit $rc ;}
 
 echo -e '\n\e[32;1m[DONE] Copying complete\e[0m\n'

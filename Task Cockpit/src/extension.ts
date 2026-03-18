@@ -4,12 +4,12 @@ import DecorationProviders from './DecorationProviders';
 import Runtime from './Runtime';
 import TasksFile from './TasksFile';
 import Workspace from './Workspace';
+import helpers from './helpers';
 
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from './Logger';
-import helpers from './helpers';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
@@ -162,7 +162,9 @@ export async function activate(context: vscode.ExtensionContext) {
                 // #endregion DEBUG
             }
 
+            // #region DEBUG
             log(LogLevel.Debug, 'Command finished', commandId);
+            // #endregion DEBUG
         }),
 
 
@@ -208,7 +210,9 @@ export async function activate(context: vscode.ExtensionContext) {
                 // await vscode.window.showErrorMessage(`Task executed failed "${helpers.printTaskId(helpers.resolveId(task))}": ${error instanceof Error ? error.message : JSON.stringify(error)}`);
             }
 
+            // #region DEBUG
             log(LogLevel.Debug, 'Command finished', commandId);
+            // #endregion DEBUG
 
         }),
 
@@ -240,7 +244,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
             runtime.abortAll(taskId);
 
+            // #region DEBUG
             log(LogLevel.Debug, 'Command finished', commandId);
+            // #endregion DEBUG
         }),
 
 
