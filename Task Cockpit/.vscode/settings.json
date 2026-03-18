@@ -17,10 +17,6 @@
 	"[javascript]": {
 		"editor.colorDecorators": false
 	},
-	"cSpell.words": [
-		"бейджи",
-		"vsc"
-	],
 	"taskCockpit.display.segmentSeparator": "|",
 	"files.trimTrailingWhitespace": true,
 	"files.autoSave": "afterDelay",
@@ -41,4 +37,11 @@
 	"taskExplorer.groupSeparator": "|",
 	"taskExplorer.groupMaxLevel": 5,
 	"taskCockpit.display.defaultIconName": "target",
+	"files.associations": {
+		"CHANGELOG.md": "plaintext"
+	},
+	"codeium.enableCodeLens": "hide_x",
+	"cSpell.words": [
+		"снапшоте"
+	]
 }

@@ -181,7 +181,65 @@
       "problemMatcher": []
     },
     {
-      "label": "Code Quality/Validation|Lint|ESLint|Check Current File Only",
+      "label": "Code Quality/Validation|CI|Check Module Headers",
+      "detail": "Check module headers",
+      "icon": {
+        "id": "tag"
+      },
+      "type": "shell",
+      "command": "dev-scripts/check-module-headers.bash",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "shared",
+        "group": "CI",
+        "clear": false,
+        "focus": true,
+        "echo": false,
+        "showReuseMessage": true,
+        "reveal": "silent",
+        "revealProblems": "onProblem"
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "check-module-headers",
+        "severity": "error",
+        "pattern": {
+          "regexp": "^\\s*FAIL\\s+(.+?):(\\d+)\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "message": 3
+        }
+      }
+    },
+    {
+      "label": "Code Quality/Validation|CI|Check Module Headers|Clear Diagnostics",
+      "icon": {
+        "id": "clear-all"
+      },
+      "type": "shell",
+      "command": "true",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "check-module-headers",
+        "pattern": {
+          "regexp": ""
+        }
+      },
+      "presentation": {
+        "panel": "new",
+        "close": true,
+        "clear": false,
+        "echo": false,
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Code Quality/Validation|ESLint|Check Current File Only",
       "detail": "Run ESLint on current file",
       "icon": {
         "id": "file-code"
@@ -210,7 +268,7 @@
       ]
     },
     {
-      "label": "Code Quality/Validation|Lint|ESLint|Check Entire Project",
+      "label": "Code Quality/Validation|ESLint|Check Entire Project",
       "detail": "Run ESLint on all source files",
       "icon": {
         "id": "checklist"
@@ -239,7 +297,7 @@
       ]
     },
     {
-      "label": "Code Quality/Validation|Lint|ESLint|Clear ESLint Diagnostics",
+      "label": "Code Quality/Validation|ESLint|Clear ESLint Diagnostics",
       "detail": "Clear ESLint diagnostics",
       "icon": {
         "id": "clear-all"
@@ -253,60 +311,6 @@
         "$eslint-compact",
         "$eslint-stylish"
       ],
-      "presentation": {
-        "panel": "new",
-        "close": true,
-        "clear": false,
-        "echo": false,
-        "showReuseMessage": false
-      }
-    },
-    {
-      "label": "Code Quality/Validation|Lint|require('...Logger')|Logger imports check",
-      "detail": "Validate `require('...Logger')` paths in .ts files",
-      "icon": {
-        "id": "symbol-reference"
-      },
-      "type": "shell",
-      "command": "dev-scripts/logger-imports-check.bash",
-      "presentation": {
-        "panel": "shared",
-        "group": "Linters",
-        "clear": true,
-        "echo": false,
-        "focus": true,
-        "showReuseMessage": false,
-        "reveal": "silent",
-        "revealProblems": "onProblem"
-      },
-      "problemMatcher": {
-        "owner": "logger-imports",
-        "severity": "error",
-        "pattern": {
-          "regexp": "^BROKEN\\s+(.+?):(\\d+)\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "message": 3
-        }
-      }
-    },
-    {
-      "label": "Code Quality/Validation|Lint|require('...Logger')|Clear diagnostics",
-      "detail": "Clear Logger import diagnostics",
-      "icon": {
-        "id": "clear-all"
-      },
-      "type": "shell",
-      "command": "true",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": {
-        "owner": "logger-imports",
-        "pattern": {
-          "regexp": ""
-        }
-      },
       "presentation": {
         "panel": "new",
         "close": true,
@@ -479,15 +483,6 @@
       }
     },
     {
-      "label": "Tests|Run All Tests [WIP]",
-      "detail": "Execute complete test suite",
-      "icon": {
-        "id": "beaker"
-      },
-      "type": "shell",
-      "command": "echo 'TODO' && false"
-    },
-    {
       "label": "Pack|Pack pre-release VSIX",
       "detail": "Create pre-release VSIX package in `./~vsix`",
       "icon": {
@@ -584,7 +579,7 @@
     },
     {
       "label": "Pack|Pack pre-release VSIX|Copy additional files",
-      "detail": "Copy package-lock.json, README, LICENSE, etc.",
+      "detail": "Copy package-lock.json, LICENSE, etc.",
       "icon": {
         "id": "copy"
       },
@@ -821,7 +816,7 @@
         "id": "activate-breakpoints"
       },
       "type": "shell",
-      "command": "dev-scripts/filter-region-debug.bash",
+      "command": "dev-scripts/strip-debug-blocks.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
@@ -839,7 +834,7 @@
       },
       "problemMatcher": [
         {
-          "owner": "filter-region-debug.bash",
+          "owner": "strip-debug-blocks.bash",
           "fileLocation": "relative",
           "pattern": [
             {
@@ -977,7 +972,7 @@
     },
     {
       "label": "Pack|Pack release VSIX|Copy additional files",
-      "detail": "Copy package-lock.json, README, LICENSE, etc.",
+      "detail": "Copy package-lock.json, LICENSE, etc.",
       "icon": {
         "id": "copy"
       },

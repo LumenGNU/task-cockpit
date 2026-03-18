@@ -140,6 +140,26 @@
       "preLaunchTask": "${defaultBuildTask}"
     },
     {
+      "name": "Run Extension (Multiroot-Dependencies)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/test-fixtures/Multiroot-Dependencies/Multiroot-Dependencies.code-workspace",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--profile=Clean",
+        "--locale=en"
+      ],
+      "cwd": "${workspaceFolder}/test-fixtures/Multiroot-Dependencies",
+      "outFiles": [
+        "${workspaceFolder}/~out/**/*.js"
+      ],
+      "env": {
+        "USER_TASK_DEBUG": "true",
+        "USER_TASK_CONSOLE_LOG": "true"
+      },
+      "preLaunchTask": "${defaultBuildTask}"
+    },
+    {
       "name": "Run Extension (Multiroot-HappyPath)",
       "type": "extensionHost",
       "request": "launch",
@@ -210,6 +230,26 @@
         "--locale=en"
       ],
       "cwd": "${workspaceFolder}/test-fixtures/SingleFolder",
+      "outFiles": [
+        "${workspaceFolder}/~out/**/*.js"
+      ],
+      "env": {
+        "USER_TASK_DEBUG": "true",
+        "USER_TASK_CONSOLE_LOG": "true"
+      },
+      "preLaunchTask": "${defaultBuildTask}"
+    },
+    {
+      "name": "Run Extension (SingleFolder-DepGraph-Resolution)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/test-fixtures/SingleFolder-DepGraph-Resolution",
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--profile=Clean",
+        "--locale=en"
+      ],
+      "cwd": "${workspaceFolder}/test-fixtures/SingleFolder-DepGraph-Resolution",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
