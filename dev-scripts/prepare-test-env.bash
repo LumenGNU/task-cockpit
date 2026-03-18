@@ -64,6 +64,11 @@ if [ ! -f "$LIST_FILE" ]; then
     exit 0
 fi
 
+
+# -----------------
+
+
+
 while IFS= read -r entry || [ -n "$entry" ]; do
     [ -z "$entry" ] && continue
 
@@ -109,6 +114,45 @@ while IFS= read -r entry || [ -n "$entry" ]; do
     echo -e "  \e[32mOK\e[0m       ${link_path}  →  ${link_target}"
 
 done < "$LIST_FILE"
+
+
+# ------------ update .git/info/exclude
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null || true)"
+
+if [ -n "$GIT_DIR" ]; then
+    EXCLUDE_FILE="$GIT_DIR/info/exclude"
+
+    generated=()
+    # путь относительно корня репозитория
+    REPO_PREFIX="$(git rev-parse --show-prefix)"
+
+
+    if [ -f "$LIST_FILE" ]; then
+        while IFS= read -r line || [ -n "$line" ]; do
+            [ -z "$line" ] && continue
+            generated+=("${REPO_PREFIX}src/$line")
+        done < "$LIST_FILE"
+    fi
+
+    existing=()
+    if [ -f "$EXCLUDE_FILE" ]; then
+        while IFS= read -r line || [ -n "$line" ]; do
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            [[ "$line" == "${REPO_PREFIX}src/"* ]] && continue
+            existing+=("$line")
+        done < "$EXCLUDE_FILE"
+    fi
+
+    {
+        echo "# managed by prepare-test-env.bash"
+        printf '%s\n' "${existing[@]}" "${generated[@]}" | sort -u
+    } > "$EXCLUDE_FILE"
+
+    echo -e "  \e[32mOK\e[0m       ${EXCLUDE_FILE}  (updated)"
+fi
+
+# ----------------------
+
 
 echo -e "\n\e[1m[DONE] Completed\e[0m\n"
 
