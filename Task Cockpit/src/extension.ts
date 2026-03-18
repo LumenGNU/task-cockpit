@@ -321,17 +321,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
         vscode.commands.registerCommand('task-cockpit.open-help-page', function () {
-            const version = vscode.extensions.getExtension('papio-dev.task-cockpit')?.packageJSON.version || 'main';
+            const version = vscode.extensions.getExtension('papio-dev.task-cockpit')?.packageJSON.version;
             vscode.commands.executeCommand('vscode.open', vscode.Uri.from({
                 scheme: 'https',
                 authority: 'github.com',
-                path: `/papio-dev/task-cockpit/tree/v${version}`,
+                path: `/papio-dev/task-cockpit/tree/${version ? `v${version}` : 'main'}`,
                 query: 'tab=readme-ov-file',
                 fragment: 'configuration'
             }));
         }),
 
+
     );
+
 
 
     // бейджи и декораторы
