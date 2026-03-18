@@ -85,7 +85,7 @@
             "command": "node",
             "args": [
                 "-e",
-                "'console.log(`Instance started`); setTimeout(() => console.log(`Done`), 15000)'"
+                "'console.log(`Instance started`); setTimeout(() => console.log(`Done`), 5000)'"
             ],
             "presentation": {
                 "panel": "dedicated"
@@ -260,7 +260,7 @@
             "label": "Test: Shell Python",
             "detail": "Custom shell=python3 — visual state should update normally. NOTE: use 'python' on Windows",
             "type": "shell",
-            "command": "import time; print('Python shell'); time.sleep(2); print('Done')",
+            "command": "import time; print(`Python shell`); time.sleep(2); print(`Done`)",
             "options": {
                 "shell": {
                     "executable": "python3",

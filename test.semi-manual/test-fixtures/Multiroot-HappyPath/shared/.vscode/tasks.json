@@ -3,11 +3,9 @@
   "tasks": [
     {
       "label": "Build",
-      // "hide": true,
       "detail": "$(tools) Build shared modules\nTypes and utilities",
       "icon": {
-        "id": "tools",
-        "color": "terminal.ansiGreen"
+        "id": "tools"
       },
       "dependsOn": [
         "Build:Types",
@@ -50,7 +48,6 @@
       "icon": {
         "id": "beaker"
       },
-      "hide": true,
       "command": "node",
       "args": [
         "-e",
