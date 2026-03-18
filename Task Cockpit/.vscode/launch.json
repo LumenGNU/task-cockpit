@@ -24,12 +24,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/DecorationsTest/DecorationsTest.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/DecorationsTest/DecorationsTest.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/DecorationsTest",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/DecorationsTest",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -44,12 +44,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/DepensResolveProblem/DepensResolveProblem.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/DepensResolveProblem/DepensResolveProblem.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/DepensResolveProblem",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/DepensResolveProblem",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -64,12 +64,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/DifferentsConfigs/DifferentsConfigs.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/DifferentsConfigs/DifferentsConfigs.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/DifferentsConfigs",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/DifferentsConfigs",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -84,12 +84,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/DuplicateLabelsProblem",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/DuplicateLabelsProblem",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/DuplicateLabelsProblem",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/DuplicateLabelsProblem",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -104,12 +104,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/Empty/Empty.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/Empty/Empty.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/Empty",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/Empty",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -124,12 +124,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/MassiveParallelDeps",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/MassiveParallelDeps",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/MassiveParallelDeps",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/MassiveParallelDeps",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -144,12 +144,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/Multiroot-Dependencies/Multiroot-Dependencies.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/Multiroot-Dependencies/Multiroot-Dependencies.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/Multiroot-Dependencies",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/Multiroot-Dependencies",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -164,12 +164,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/Multiroot-HappyPath",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/Multiroot-HappyPath",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -184,12 +184,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/OnlyProblems",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/OnlyProblems",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/OnlyProblems",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/OnlyProblems",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -204,12 +204,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/OrderingTest",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/OrderingTest",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/OrderingTest",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/OrderingTest",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -224,12 +224,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/SingleFolder",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/SingleFolder",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/SingleFolder",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/SingleFolder",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -244,12 +244,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/SingleFolder-DepGraph-Resolution",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/SingleFolder-DepGraph-Resolution",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/SingleFolder-DepGraph-Resolution",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/SingleFolder-DepGraph-Resolution",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
@@ -264,12 +264,12 @@
       "type": "extensionHost",
       "request": "launch",
       "args": [
-        "${workspaceFolder}/test-fixtures/Void",
+        "${workspaceFolder}/../test.semi-manual/test-fixtures/Void",
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--profile=Clean",
         "--locale=en"
       ],
-      "cwd": "${workspaceFolder}/test-fixtures/Void",
+      "cwd": "${workspaceFolder}/../test.semi-manual/test-fixtures/Void",
       "outFiles": [
         "${workspaceFolder}/~out/**/*.js"
       ],
