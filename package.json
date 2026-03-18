@@ -47,7 +47,13 @@
         "command": "task-cockpit.DEBUG",
         "category": "Task Cockpit",
         "title": "--DEBUG--",
-        "icon": "$(error)"
+        "icon": "$(debugs)"
+      },
+      {
+        "command": "task-cockpit.DEBUG.print-node",
+        "category": "Task Cockpit",
+        "title": "--DEBUG-- print-node",
+        "icon": "$(debugs)"
       },
       {
         "command": "task-cockpit.view.refresh",
@@ -186,6 +192,11 @@
       ],
       "view/item/context": [
         {
+          "command": "task-cockpit.DEBUG.print-node",
+          "when": "view == task-cockpit-view",
+          "group": "z99_debug"
+        },
+        {
           "command": "_task-cockpit.task.execute",
           "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && !(viewItem =~ /:running|:empty|:broken/)",
           "group": "inline"
@@ -309,7 +320,6 @@
             "order": 10
           },
           "taskCockpit.filtering.excludeWorkspaceTasks": {
-            "deprecationMessage": "Will be removed",
             "type": "boolean",
             "scope": "window",
             "default": false,
