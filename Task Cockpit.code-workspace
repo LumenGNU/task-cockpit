@@ -1,0 +1,23 @@
+{
+    "folders": [
+        {
+            "path": "Task Cockpit"
+        },
+        {
+            "path": "test.semi-manual"
+        },
+        {
+            "path": "test.module-Panel.Workspace"
+        },
+        {
+            "path": "test.module-Panel.Runtime"
+        },
+    ],
+    "settings": {
+        "taskCockpit.display.segmentSeparator": "|",
+        "taskCockpit.validation.dependencies": true,
+        "codeium.enableCodeLens": false
+    },
+
+
+}
