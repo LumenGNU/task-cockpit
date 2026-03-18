@@ -1,0 +1,210 @@
+/** @file Cockpit/index.ts */
+/** @module Cockpit */
+
+import * as vscode from 'vscode';
+import helpers from '../helpers';
+import MainDataProvider from './MainDataProvider';
+import Tree from './Tree';
+import type * as TC from '../types';
+
+import Runtime from '../Runtime';
+import Workspace from '../Workspace';
+
+
+// #region DEBUG
+import { LogLevel } from 'vscode';
+import Logger from '../Logger';
+const { log, assert } = Logger.get(module.filename);
+// #endregion DEBUG
+
+
+class Cockpit implements vscode.Disposable {
+
+
+    private readonly mainDataProvider: MainDataProvider;
+    private readonly mainTreeView: vscode.TreeView<Tree.Node.NodeType>;
+
+
+    private readonly disposable: vscode.Disposable;
+
+
+    private constructor(
+        private readonly runtime: Runtime,
+        private readonly workspace: Workspace,
+        private sproutResult: Readonly<Tree.SproutResult>,
+        dirty: boolean
+    ) {
+
+        this.mainDataProvider = new MainDataProvider({
+            getTask_cb: (taskId) => this.workspace.getTask(taskId),
+            getRuntime_cb: (taskId) => this.runtime.state(taskId),
+            getNodeConfig_cb: (file) => this.workspace.getResourceSettings().get(file)!.nodeConfig,
+            getWorkspaceDetail_cb: () => this.sproutResult.workspaceDetail,
+            getScopedDetail_cb: (file) => this.sproutResult.detailsByFile.get(file)!,
+        });
+
+        const listeners = vscode.Disposable.from(
+            runtime.onDidChange((taskId: TC.TaskID) => {
+                this.mainDataProvider.refreshRunnableNode(taskId);
+            }),
+
+            workspace.onDidChange(() => {
+                this.rebuild();
+            }),
+        );
+
+        this.mainTreeView = vscode.window.createTreeView('task-cockpit-view', {
+            treeDataProvider: this.mainDataProvider,
+            canSelectMany: false
+        });
+
+        this.mainTreeView.title = ''; // 'title Task Cockpit';
+
+        if (!dirty) {
+            this.rebuildProviders();
+        }
+
+        this.disposable = vscode.Disposable.from(
+            listeners,
+            this.mainTreeView,
+            this.mainDataProvider,
+        );
+
+    }
+
+
+    public dispose() {
+
+        this.disposable.dispose();
+        this.sproutResult = undefined as never;
+
+        // #region DEBUG
+        log(LogLevel.Debug, 'Disposed', 'dispose');
+        // #endregion DEBUG
+    }
+
+
+    static async create(runtime: Runtime, workspace: Workspace): Promise<Cockpit> {
+
+        let dirty = false;
+        const listener = workspace.onDidChange(() => { dirty = true; });
+
+        await workspace.reScan();
+
+        listener.dispose();
+
+        const cockpit = new Cockpit(
+            runtime,
+            workspace,
+            Tree.sproutRoots(
+                workspace.getScopes(),
+                workspace.getTasks(),
+                workspace.getResourceSettings(),
+                workspace.getWindowSettings()
+            ),
+            dirty
+        );
+
+        if (dirty) {
+            await cockpit.rebuild();
+        }
+
+        return cockpit;
+    }
+
+
+    // #region DEBUG
+    public getTreeItem(node: Tree.Node.NodeType) {
+        return this.mainDataProvider.getTreeItem(node);
+    }
+    // #endregion DEBUG
+
+
+    public resolveTaskId(node?: Tree.Node.NodeType): TC.TaskID | undefined {
+
+        if (!node) {
+
+            // #region DEBUG
+            log(LogLevel.Debug, 'No node provided', 'resolveTaskId');
+            // #endregion DEBUG
+
+            return undefined;
+        }
+
+        if (!Tree.Node.isRunnable(node)) {
+
+            // #region DEBUG
+            log(LogLevel.Debug, 'Node is not runnable', 'resolveTaskId');
+            // #endregion DEBUG
+
+            return undefined;
+        }
+
+        // #region DEBUG
+        log(LogLevel.Debug, `Resolved task ID: ${helpers.printTaskId(node.id)}`, 'resolveTaskId');
+        // #endregion DEBUG
+
+
+        return node.id;
+
+    }
+
+
+    public resolveTaskFile(node?: Tree.Node.NodeType): TC.File | undefined {
+
+        if (!node) {
+            return undefined;
+        }
+        return Tree.Node.resolveScope(node);
+    }
+
+
+    public async rebuild() {
+
+        // #region DEBUG
+        log(LogLevel.Debug, 'Rebuild started ...', 'rebuild');
+        // #endregion DEBUG
+
+        try {
+            await this.workspace.reScan();
+
+            this.sproutResult = Tree.sproutRoots(
+                this.workspace.getScopes(),
+                this.workspace.getTasks(),
+                this.workspace.getResourceSettings(),
+                this.workspace.getWindowSettings()
+            );
+
+            this.rebuildProviders();
+        }
+        // #region DEBUG
+        catch (error) {
+            if (!(error instanceof vscode.CancellationError)) {
+                log(LogLevel.Error, `Internal error: Failed to re-scan workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+                vscode.window.showErrorMessage(`Internal error: Failed to re-scan workspace: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+            }
+            log(LogLevel.Debug, 'Cancelled', 'rebuild');
+        }
+        // #endregion DEBUG
+        finally { }
+    }
+
+
+    public printNodePath(node: Tree.Node.NodeType) {
+        if (Tree.Node.isRunnable(node)) {
+            return Tree.Node.parseNodePath(node).segments.join(' • ');
+        }
+    }
+
+
+    private rebuildProviders() {
+        this.mainDataProvider.rebuild(this.sproutResult.roots);
+    }
+}
+
+
+namespace Cockpit {
+    export type Node = Tree.Node.NodeType;
+}
+
+export default Cockpit;
