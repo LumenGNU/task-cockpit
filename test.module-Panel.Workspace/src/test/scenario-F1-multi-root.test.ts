@@ -8,6 +8,13 @@ import type TC from '../types';
 
 suite('@module MainPanel.Workspace', () => {
 
+    const folderNames = ['folder-a', 'folder-b', 'folder-c'] as const;
+    const fixturesDir = vscode.Uri.joinPath(vscode.workspace.workspaceFile!, '../../test-fixtures');
+    const folders = folderNames.map(name => ({
+        name,
+        uri: vscode.Uri.joinPath(fixturesDir, name)
+    }));
+
     suiteSetup(async () => {
 
         assert.ok(
@@ -26,17 +33,14 @@ suite('@module MainPanel.Workspace', () => {
             'Expected workspaceFolders'
         );
 
+
+        for (const folder of folders) {
+            await vscode.workspace.fs.stat(folder.uri);
+        }
+
         await tHelpers.suiteSetup_clearFixture();
 
     });
-
-    const folderNames = ['folder-a', 'folder-b', 'folder-c'] as const;
-    const fixturesDir = vscode.Uri.joinPath(vscode.workspace.workspaceFile!, '../../test-fixtures');
-    const folders = folderNames.map(name => ({
-        name,
-        uri: vscode.Uri.joinPath(fixturesDir, name)
-    }));
-
 
     // Целостность scopes при мутациях workspace:
     // clear → restore → reorder → rename

@@ -30,7 +30,7 @@ export async function suiteSetup_clearFixture(): Promise<void> {
 }
 
 
-export async function suiteSetup_setupFixture(folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri }>): Promise<void> {
+export async function suiteSetup_setupFixture(folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri; }>): Promise<void> {
 
     if (vscode.workspace.workspaceFile === undefined) {
         throw new Error('In no multi-root workspace');
@@ -59,8 +59,10 @@ function _replacer(this: any, key: string, value: any) {
     return value;
 }
 
+
+
 /** Добавляет папки в workspace. (folder-a, folder-b, folder-c)*/
-function _setupFixture(folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri }>): Promise<void> {
+function _setupFixture(folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri; }>): Promise<void> {
 
     return new Promise<void>((resolve, reject) => {
 
@@ -336,7 +338,7 @@ function _awaitWsChange(ws: Workspace, ms: number = 2500): Promise<void> {
 
 /** Выполняет мутацию фикстуры и ждёт {@linkcode Workspace.onDidChange}.
  * Паттерн: подписка → мутация → ожидание. */
-export async function mutateFixtureAndAwaitChange(ws: Workspace, folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri }>): Promise<void> {
+export async function mutateFixtureAndAwaitChange(ws: Workspace, folders: ReadonlyArray<{ readonly name: string, readonly uri: vscode.Uri; }>): Promise<void> {
 
     if (vscode.workspace.workspaceFile === undefined) {
         return Promise.reject(new Error('In no multi-root workspace'));
