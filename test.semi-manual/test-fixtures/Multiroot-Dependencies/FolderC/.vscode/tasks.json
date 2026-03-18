@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Dep/Gamma Build",
+            "detail": "Simple build task in FolderC",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "problemMatcher": []
+        },
+
+        // ── Cross-folder chain endpoint ──
+
+        {
+            "label": "Dep/Gamma Chain End",
+            "detail": "Leaf of FolderA → FolderB → FolderC chain",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "problemMatcher": []
+        },
+
+        // ── Cross-folder circular ──
+
+        {
+            "label": "Dep/Gamma Circular",
+            "detail": "Closes the cycle: A → B → C → A",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Test/Cross-Folder Circular"],
+            "problemMatcher": []
+        },
+
+        // ── Fan-in from all folders ──
+
+        {
+            "label": "Test/Cross-Folder Fan-In",
+            "detail": "Depends on tasks from all three folders",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": [
+                "Dep/Alpha Build",
+                "Dep/Beta Build",
+                "Dep/Gamma Build"
+            ],
+            "problemMatcher": []
+        },
+
+        // ── Transitive cross-folder failure ──
+
+        {
+            "label": "Test/Cross-Folder Transitive Failure",
+            "detail": "FolderC → Beta:FailureChain → Beta:FailingBuild — failure propagates 2 levels",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Dep/Beta Failure Chain"],
+            "problemMatcher": []
+        },
+
+        // ── Isolated task ──
+
+        {
+            "label": "Test/Isolated Task",
+            "detail": "Completely standalone — no incoming or outgoing dependency edges",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "problemMatcher": []
+        }
+    ]
+}

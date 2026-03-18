@@ -1,0 +1,88 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Dep/Beta Build",
+            "detail": "Simple build task in FolderB",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Dep/Beta Slow Build",
+            "detail": "Slow build — tests cross-folder waiting",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 2000)'"],
+            "problemMatcher": []
+        },
+        {
+            "label": "Dep/Beta Failing Build",
+            "detail": "Always fails — tests cross-folder failure propagation",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'process.exit(1)'"],
+            "problemMatcher": []
+        },
+
+        // ── Cross-folder chain mid-point ──
+
+        {
+            "label": "Dep/Beta Chain Mid",
+            "detail": "Middle of FolderA → FolderB → FolderC chain",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Dep/Gamma Chain End"],
+            "problemMatcher": []
+        },
+
+        // ── Cross-folder circular ──
+
+        {
+            "label": "Dep/Beta Circular",
+            "detail": "Part of cross-folder cycle: A → B → C → A",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Dep/Gamma Circular"],
+            "problemMatcher": []
+        },
+
+        // ── Ambiguous label duplicate ──
+
+        {
+            "label": "Shared Label: Ambiguous",
+            "detail": "Same label as in FolderA — ambiguity test",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "problemMatcher": []
+        },
+
+        // ── Failure chain ──
+
+        {
+            "label": "Dep/Beta Failure Chain",
+            "detail": "Depends on failing build — propagates failure cross-folder",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Dep/Beta Failing Build"],
+            "problemMatcher": []
+        },
+
+        // ── Reverse cross-folder (Beta → Alpha, NOT circular) ──
+
+        {
+            "label": "Test/Cross-Folder Reverse",
+            "detail": "Beta references Alpha — valid cross-folder, NOT circular",
+            "type": "shell",
+            "command": "node",
+            "args": ["-e", "'setTimeout(() => process.exit(0), 300)'"],
+            "dependsOn": ["Dep/Alpha Build"],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+  "folders": [
+    { "name": "Frontend", "path": "frontend" },
+    { "name": "Backend", "path": "backend" },
+    { "name": "Shared", "path": "shared" }
+  ],
+  "settings": {
+    "taskCockpit.filtering.excludeWorkspaceTasks": false,
+    "taskCockpit.display.tintLabel": false,
+    "taskCockpit.display.defaultIconName": "target",
+    "taskCockpit.display.segmentSeparator": ":",
+    "taskCockpit.filtering.showHidden": false
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "a",
+        "type": "shell",
+        "command": "true"
+      },
+      {
+        "label": "b",
+        "type": "shell",
+        "command": "true"
+      },
+      {
+        "label": "c",
+        "type": "shell",
+        "command": "true"
+      }
+    ]
+  }
+
+}

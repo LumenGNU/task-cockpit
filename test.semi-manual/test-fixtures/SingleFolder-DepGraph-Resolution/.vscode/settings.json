@@ -1,0 +1,4 @@
+{
+    "taskCockpit.validation.dependencies": true,
+    "taskCockpit.display.segmentSeparator": "/"
+}
