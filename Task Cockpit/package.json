@@ -81,35 +81,35 @@
         "category": "Task Cockpit",
         "title": "Run Task",
         "icon": "$(play)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && !(viewItem =~ /:running|:empty|:broken/)"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:running|:empty|:broken/)"
       },
       {
         "command": "task-cockpit.task.execute",
         "category": "Task Cockpit",
         "title": "Start New Instance",
         "icon": "$(play)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && !(viewItem =~ /:empty|:broken/)"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:empty|:broken/)"
       },
       {
         "command": "task-cockpit.task.abort-all",
         "category": "Task Cockpit",
         "title": "Abort All Running Instances",
         "icon": "$(stop)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && viewItem =~ /:running/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && viewItem =~ /:running/"
       },
       {
         "command": "task-cockpit.tasks-file.open-task",
         "category": "Task Cockpit",
         "title": "Edit Task",
         "icon": "$(edit)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/"
       },
       {
         "command": "task-cockpit.task.show-terminal",
         "category": "Task Cockpit",
         "title": "Show Task Terminal",
         "icon": "$(terminal)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && viewItem =~ /:terminals/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && viewItem =~ /:terminals/"
       },
       {
         "command": "task-cockpit.open-help-page",
@@ -199,27 +199,27 @@
         },
         {
           "command": "_task-cockpit.task.execute",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/ && !(viewItem =~ /:running|:empty|:broken/)",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:running|:empty|:broken/)",
           "group": "inline"
         },
         {
           "command": "task-cockpit.tasks-file.open-task",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
           "group": "z4_edit"
         },
         {
           "command": "task-cockpit.task.execute",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
           "group": "z3_execute@1"
         },
         {
           "command": "task-cockpit.task.abort-all",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
           "group": "z3_execute@2"
         },
         {
           "command": "task-cockpit.task.show-terminal",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit::Task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
           "group": "z5_terminals@1"
         },
         {
@@ -317,7 +317,7 @@
             "uniqueItems": true,
             "scope": "window",
             "default": [],
-            "markdownDescription": "Excludes specified workspace folders from the task explorer. Matches the display name as shown by VS Code, not the directory name. Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`).  \n*Has no effect in single-folder workspaces*.",
+            "markdownDescription": "Excludes specified workspace folders from the task explorer. Matches the display name as shown by VS Code, not the directory name. Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`).",
             "order": 10
           },
           "taskCockpit.filtering.excludeWorkspaceTasks": {

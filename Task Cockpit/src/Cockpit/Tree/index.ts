@@ -10,7 +10,7 @@ import Roots from './Roots';
 namespace Tree {
 
     export type RootNode = Roots.RootNode;
-    export type SproutResult = Roots.SproutResult;
+    // export type SproutResult = Roots.SproutResult;
 
 
     /** Пространство типов для узлов дерева задач.
@@ -45,25 +45,25 @@ namespace Tree {
         export type Segment = Builder.InternodeNode<TC.TaskDefinition, TC.File>;
 
 
-        /** Визуальный маркер. Нефункциональный узел для отображения состояний. */
-        export interface Marker extends Roots.MarkerNode { }
+        // /** Визуальный маркер. Нефункциональный узел для отображения состояний. */
+        // export interface Marker extends Roots.MarkerNode { }
 
         /** Объединённый тип всех возможных узлов дерева. */
         export type NodeType =
             | WorkspaceRoot
             | FolderRoot
             | Segment
-            | Runnable
-            | Marker;
+            | Runnable;
+        // | Marker;
 
     }
 }
 
 
-/** Type guard: узел является визуальным маркером. */
-function isMarker(node: Tree.Node.NodeType): node is Tree.Node.Marker {
-    return 'markerType' in node;
-}
+// /** Type guard: узел является визуальным маркером. */
+// function isMarker(node: Tree.Node.NodeType): node is Tree.Node.Marker {
+//     return 'markerType' in node;
+// }
 
 
 /** Проверяет, содержит ли TaskNode дочерние узлы (является группой). */
@@ -81,10 +81,7 @@ function isRunnable(node: Tree.Node.NodeType): node is Tree.Node.Runnable {
 
 /** Type guard: узел является корневым (workspace или folder root). */
 function isRoot(node: Tree.Node.NodeType): node is Tree.Node.WorkspaceRoot | Tree.Node.FolderRoot {
-    if ('tasksFile' in node) {
-        return !isMarker(node);
-    }
-    return false;
+    return 'kind' in node;
 }
 
 
@@ -125,13 +122,13 @@ function resolveScope(node: Tree.Node.NodeType): TC.File {
     if ('nodePath' in node) {
         return parseNodePath(node).taskFile;
     }
-    if ('kind' in node) {
-        const aaa = node.children.at(0)!;
-        if ('nodePath' in aaa) {
-            return parseNodePath(aaa).taskFile;
-        }
-        return aaa.tasksFile;
-    }
+    // if ('kind' in node) {
+    //     const aaa = node.children.at(0)!;
+    //     if ('nodePath' in aaa) {
+    //         return parseNodePath(aaa).taskFile;
+    //     }
+    //     return aaa.tasksFile;
+    // }
     return node.tasksFile;
 }
 
@@ -147,7 +144,7 @@ const Tree = {
         isBranch,
         isConfigurable,
         isFolderRootNode,
-        isMarker,
+        // isMarker,
         isRoot,
         isRunnable,
         isWorkspaceRootNode,

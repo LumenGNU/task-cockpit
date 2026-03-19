@@ -79,7 +79,7 @@ async function fetch(
     // #endregion DEBUG
 
     const tasksByFile: TC.TasksByFile = new Map();
-    const rejectReport: TC.RejectReport = new Map();
+    // const rejectReport: TC.RejectReport = new Map();
 
     // Перебираем в порядке "из файла"
     for (const [file, definitions] of definitionsByFile) {
@@ -96,7 +96,8 @@ async function fetch(
                 scopedTasks.set(name, vTask);
             }
             else {
-                rejectReport.set(file, (rejectReport.get(file) ?? 0) + 1);
+                // rejectReport.set(file, (rejectReport.get(file) ?? 0) + 1);
+                definition.rejectFlag = true;
                 // #region DEBUG
                 log(LogLevel.Warning, `No vscode.Task for definition — VS Code rejected or not yet loaded. Name: ${name}; File: ${file}.`);
                 // #endregion DEBUG
@@ -106,7 +107,11 @@ async function fetch(
         tasksByFile.set(file, scopedTasks);
     }
 
-    return { tasksByFile, rejectReport, definitionsByFile };
+    return {
+        tasksByFile,
+        // rejectReport,
+        definitionsByFile
+    };
 }
 
 
@@ -118,11 +123,13 @@ interface Raw {
     label?: string;
     hide?: boolean;
     icon?: TC.IconDefinition;
+    group?: string | { kind: string; isDefault?: boolean; };
+    isBackground?: boolean;
 }
 
 
 /** Кортеж из источника задач и карты определений. */
-type Definitions = readonly [TC.File, Map<TC.Name, Readonly<TC.TaskDefinition>>];
+type Definitions = readonly [TC.File, Map<TC.Name, TC.TaskDefinition>];
 
 
 /** Загрузка определений задач напрямую из файла задач.
@@ -236,16 +243,27 @@ function remapRaw(file: TC.File, rawArr: Raw[]): Definitions {
                 map.set(raw.label, {
                     id: helpers.buildId(file, raw.label),
                     hide: raw.hide,
+                    isBackground: raw.isBackground,
                     icon: {
                         id: raw.icon?.id,
                         color: raw.icon?.color
-                    }
+                    },
+                    group: typeof raw.group === 'string'
+                        ? { kind: capitalizeKind(raw.group), isDefault: false }
+                        : raw.group?.kind
+                            ? { kind: capitalizeKind(raw.group.kind), isDefault: raw.group.isDefault ?? false }
+                            : undefined
                 });
             }
         }
     }
 
     return [file, map];
+}
+
+
+function capitalizeKind(kind: string) {
+    return kind.charAt(0).toUpperCase() + kind.slice(1);
 }
 
 

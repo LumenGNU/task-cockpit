@@ -7,7 +7,7 @@ import type * as TC from '../types';
 import helpers from '../helpers';
 import Tree from './Tree';
 import Renderer from './Renderers';
-import Resolver from './Resolvers';
+// import Resolver from './Resolvers';
 
 
 // #region DEBUG
@@ -27,39 +27,36 @@ const { assert, log } = Logger.get(module.filename);
  * - `runnablesMap` — карта `TaskID → Runnable`, перестраивается при каждом
  *   новом обходе дерева (сейчас просто - при каждом обходе) и используется для
  *   точечного обновления узлов через {@linkcode refreshRunnableNode}. */
-export default class MainDataProvider implements vscode.TreeDataProvider<Tree.Node.NodeType>, vscode.Disposable {
+export default class MainDataProvider implements vscode.TreeDataProvider<Readonly<Tree.Node.NodeType>>, vscode.Disposable {
 
 
-    private onDidChangeEmitter: vscode.EventEmitter<Tree.Node.NodeType | undefined | void> =
-        new vscode.EventEmitter<Tree.Node.NodeType | undefined | void>();
+    private onDidChangeEmitter: vscode.EventEmitter<Readonly<Tree.Node.NodeType> | undefined | void> =
+        new vscode.EventEmitter<Readonly<Tree.Node.NodeType> | undefined | void>();
 
 
-    public readonly onDidChangeTreeData: vscode.Event<Tree.Node.NodeType | undefined | void> = this.onDidChangeEmitter.event;
+    public readonly onDidChangeTreeData: vscode.Event<Readonly<Tree.Node.NodeType> | undefined | void> = this.onDidChangeEmitter.event;
 
 
     /** Корневые узлы дерева. */
     private roots?: Array<Tree.RootNode>;
+
+    // private WorkspaceDetail?: TC.WorkspaceDetail;
 
 
     /** Карта TaskID → Runnable.
      *
      * Заполняется в {@linkcode getTreeItem} по мере обхода дерева.
      * Сбрасывается и пересоздаётся при каждом вызове `getChildren(undefined)`. */
-    private runnablesMap: Map<Readonly<TC.TaskID>, Tree.Node.Runnable> | undefined;
+    private runnablesMap: Map<Readonly<TC.TaskID>, Readonly<Tree.Node.Runnable>> | undefined;
 
 
     /** @param deps Зависимости, предоставляемые владельцем провайдера. */
     constructor(
         private readonly deps: {
-            readonly getTask_cb: (taskId: TC.TaskID) => TC.Task | undefined,
             /** Текущее состояние процессов задачи. */
-            readonly getRuntime_cb: (taskId: TC.TaskID) => TC.RuntimeState | undefined,
+            readonly getRuntime_cb: (taskId: TC.TaskID) => Readonly<TC.RuntimeState> | undefined,
             /** Конфигурация отображения узлов для заданного файла задач. */
-            readonly getNodeConfig_cb: (taskFile: TC.File) => TC.NodeConfig,
-            /** Детализация количества workspace-scope. */
-            readonly getWorkspaceDetail_cb: () => TC.WorkspaceDetail | undefined,
-            /** Детализация количества workspace-scope. */
-            readonly getScopedDetail_cb: (taskFile: TC.File) => TC.ScopedDetail
+            readonly getNodeConfig_cb: (taskFile: TC.File) => Readonly<TC.NodeConfig>,
         }
     ) { }
 
@@ -86,14 +83,18 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Tree.No
      * @param roots Новые корневые узлы. `undefined` очищает дерево.
      *
      * @fire `onDidChangeTreeData` */
-    public rebuild(roots?: ReadonlyArray<Readonly<Tree.RootNode>>) {
+    public rebuild(roots: ReadonlyArray<Readonly<Tree.RootNode>>): TC.WorkspaceDetail {
         // #region DEBUG
         log(LogLevel.Debug,
             'Rebuilding entire tree view ...');
         // #endregion DEBUG
 
-        this.roots = roots ? Array.from(roots) : undefined;
+        // Отфильтровать *корни*, помеченные как скрытые. (не задачи)
+        this.roots = roots.filter((r) => !r.hide);
+
         this.onDidChangeEmitter.fire();
+
+        return { total: roots.length, displayed: this.roots.length };
     }
 
 
@@ -129,7 +130,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Tree.No
      * начинает работать с новым деревом.
      *
      * @throws Если вызван для узла типа `Marker` — это нарушение инварианта. */
-    public getChildren(node?: Tree.Node.NodeType | undefined): Array<Tree.Node.NodeType> | undefined {
+    public getChildren(node?: Tree.Node.NodeType): Array<Tree.Node.NodeType> | undefined {
 
         // Если нода не передана — вернуть корни
         if (!node) {
@@ -146,7 +147,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Tree.No
             // выражаемый в системе типов без усложнения Builder.Node до дискриминированного union.
             // Tree.Node.NodeType сужается до Runnable с data: T — инвариант гарантирован логикой
             // построителя, но не типами.
-            return this.roots as Array<Tree.Node.WorkspaceRoot | Tree.Node.FolderRoot> | undefined;
+            return this.roots;
         }
 
         // Для маркеров вообще не должно запрашиваться
@@ -177,7 +178,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Tree.No
                 const taskId = node.id;
                 this.runnablesMap!.set(taskId, node); // @todo: не set если уже есть и === node
 
-                return Renderer.runnable(node, this.deps.getTask_cb(taskId)!/* @fixme */, this.deps.getNodeConfig_cb(taskFile), this.deps.getRuntime_cb(taskId));
+                return Renderer.runnable(node, this.deps.getNodeConfig_cb(taskFile), this.deps.getRuntime_cb(taskId));
             }
 
             return Renderer.intermediate(node, this.deps.getNodeConfig_cb(taskFile));
@@ -193,34 +194,34 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Tree.No
         return Renderer.marker(node);
     }
 
+    // @todo
+    // /** Дополняет `TreeItem` данными, вычисляемыми лениво (например, tooltip).
+    //  *
+    //  * Вызывается VS Code при раскрытии или наведении на узел. */
+    // public resolveTreeItem(item: vscode.TreeItem, node: Tree.Node.NodeType, token: vscode.CancellationToken): vscode.TreeItem {
 
-    /** Дополняет `TreeItem` данными, вычисляемыми лениво (например, tooltip).
-     *
-     * Вызывается VS Code при раскрытии или наведении на узел. */
-    public resolveTreeItem(item: vscode.TreeItem, node: Tree.Node.NodeType, token: vscode.CancellationToken): vscode.TreeItem {
+    //     if (Tree.Node.isRoot(node)) {
 
-        if (Tree.Node.isRoot(node)) {
+    //         const taskFile = Tree.Node.resolveScope(node);
 
-            const taskFile = Tree.Node.resolveScope(node);
+    //         if (Tree.Node.isWorkspaceRootNode(node)) {
 
-            if (Tree.Node.isWorkspaceRootNode(node)) {
+    //             return Resolver.workspace(
+    //                 item, node,
+    //                 this.deps.getWorkspaceDetail_cb()!,
+    //                 this.deps.getScopedDetail_cb(taskFile),
+    //                 token
+    //             );
+    //         }
+    //         return Resolver.folder(item, node, this.deps.getScopedDetail_cb(taskFile), token);
+    //     }
 
-                return Resolver.workspace(
-                    item, node,
-                    this.deps.getWorkspaceDetail_cb()!,
-                    this.deps.getScopedDetail_cb(taskFile),
-                    token
-                );
-            }
-            return Resolver.folder(item, node, this.deps.getScopedDetail_cb(taskFile), token);
-        }
+    //     if (Tree.Node.isRunnable(node)) {
+    //         return Resolver.runnable(item, node, this.deps.getTask_cb(node.id)!, token);
+    //     }
 
-        if (Tree.Node.isRunnable(node)) {
-            return Resolver.runnable(item, node, this.deps.getTask_cb(node.id)!, token);
-        }
-
-        return item;
-    }
+    //     return item;
+    // }
 
     // #endregion Public
 

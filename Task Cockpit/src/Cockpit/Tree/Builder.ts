@@ -104,6 +104,9 @@ function build<D extends object, S extends string>(scope: S, specs: readonly Spe
                 let node = nodeMap.get(nodePath);
 
                 if (!node) {
+                    // @fixme: нужен промежуточный тип? @decision: каст допустим —
+                    // объект доконструируется в рамках текущей итерации/прохода,
+                    // наружу из build() неполные узлы не выходят.
                     node = { segment, nodePath } as NodeType<D, S>;
                     nodeMap.set(nodePath, node);
                     (nodeMap.get(path)!.children ??= []).push(node);
@@ -112,12 +115,6 @@ function build<D extends object, S extends string>(scope: S, specs: readonly Spe
                 // Последний сегмент — записываем в него данные.
                 // Теперь он — "лист"
                 if (remaining === 0) {
-                    // // #region DEBUG
-                    // if (node.id) {
-                    //     log(LogLevel.Warning,
-                    //         `Path "${segments.join(' → ')}" collision at "${segment}" will be overwritten`);
-                    // }
-                    // // #endregion DEBUG
                     Object.assign(node, data);
                 }
 

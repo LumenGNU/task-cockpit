@@ -151,7 +151,17 @@ export interface TaskDefinition {
     hide: boolean | undefined;
     /** Пользовательская иконка для задачи */
     icon: IconDefinition;
+
     id: TaskID;
+
+    rejectFlag?: boolean;
+
+    isBackground?: boolean;
+
+    group?: {
+        kind: string;
+        isDefault: boolean;
+    };
 }
 
 
@@ -179,12 +189,12 @@ export type DefinitionsByFile = Map<File, ScopedDefinition>;
 
 export type SettingsByFile = Map<File, ScopedSettings>;
 
-export type RejectReport = Map<File, number>;
+// export type RejectReport = Map<File, number>;
 
 export interface FetchResult {
     readonly tasksByFile: Readonly<TasksByFile>,
     readonly definitionsByFile: Readonly<DefinitionsByFile>,
-    readonly rejectReport: Readonly<RejectReport>;
+    // readonly rejectReport: Readonly<RejectReport>;
 }
 
 
@@ -197,25 +207,25 @@ export interface TerminalsSnapshot {
 }
 
 
-/** Детализация количества задач в scope. */
-export interface ScopedDetail {
-    /** Общее количество задач. */
-    all: number;
-    // skipped: number; // @todo или да?
-    /** Количество скрытых задач (`hide: true`). */
-    hidden: number;
-}
+// /** Детализация количества задач в scope. */
+// export interface ScopedDetail {
+//     /** Общее количество задач. */
+//     all: number;
+//     // skipped: number; // @todo или да?
+//     /** Количество скрытых задач (`hide: true`). */
+//     hidden: number;
+// }
 
 
-export type DetailsByFile = Map<File, ScopedDetail>;
+// export type DetailsByFile = Map<File, ScopedDetail>;
 
 
 /** Детализация количества workspace-scope. */
 export interface WorkspaceDetail {
     /** Общее количество workspace-scopes. */
-    all: number;
-    /** Количество исключённых workspace-scope. */
-    excludes: number;
+    total: number;
+    /** Количество отображаемых workspace-scopes. */
+    displayed: number;
 }
 
 

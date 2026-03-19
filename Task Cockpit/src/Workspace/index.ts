@@ -182,6 +182,20 @@ export default class Workspace implements vscode.Disposable {
         return this.getTasks().get(taskFile)?.get(taskName);
     }
 
+
+    public getDefinitions(): Readonly<TC.DefinitionsByFile> {
+        if (!this.scanResult) {
+            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
+        }
+        return this.scanResult.tasksFetchResult.definitionsByFile;
+    }
+
+    public getDefinition(taskId: TC.TaskID): TC.TaskDefinition | undefined {
+        const { taskFile, taskName } = helpers.parseId(taskId);
+        return this.getDefinitions().get(taskFile)?.get(taskName);
+    }
+
+
     // #endregion Public
 
 
@@ -378,16 +392,17 @@ export default class Workspace implements vscode.Disposable {
         const fetchResult = await Tasks.fetch(scopes, token);
 
         // #region DEBUG
-        log(LogLevel.Debug, 'Tasks fetched summary:');
-        const { tasksByFile, rejectReport } = fetchResult;
-        table(LogLevel.Debug,
-            [...tasksByFile.entries()].map(([f, m]) => ({
-                File: f,
-                ['UserTask(s)']: m.size,
-                Rejected: rejectReport.get(f) || undefined
-            })),
-            { undefinedAsEmpty: true }
-        );
+        // @fixme
+        // log(LogLevel.Debug, 'Tasks fetched summary:');
+        // const { tasksByFile, definitionsByFile } = fetchResult;
+        // table(LogLevel.Debug,
+        //     [...tasksByFile.entries()].map(([f, m]) => ({
+        //         File: f,
+        //         ['UserTask(s)']: m.size,
+        //         Rejected: rejectReport.get(f) || undefined
+        //     })),
+        //     { undefinedAsEmpty: true }
+        // );
         // #endregion DEBUG
 
         return fetchResult;

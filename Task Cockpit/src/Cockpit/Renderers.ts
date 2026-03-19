@@ -102,7 +102,6 @@ function marker(node: Tree.Node.Marker): vscode.TreeItem {
  * @param runtimeState Карта процессов задачи; `undefined` если задача не запускалась. */
 function runnable(
     node: Tree.Node.Runnable,
-    task: TC.Task,
     scopedConfig: TC.NodeConfig,
     runtimeState: TC.RuntimeState | undefined
 ): vscode.TreeItem {
@@ -110,12 +109,18 @@ function runnable(
     const processes = runtimeState?.size ?? 0;
     const running = processes > 0 ? [...runtimeState!.values()].reduce((n, pInfo) => n + (pInfo.running ? 1 : 0), 0) : 0;
 
-    const contextValue = 'task-cockpit::Task' + (processes > 0 ? ':terminals' : '') + (running ? ':running' : '');
+    const contextValue = [
+        'task-cockpit',
+        'task',
+        processes > 0 ? 'terminals' : false,
+        running ? 'running' : false,
+        node.rejectFlag ? 'broken' : false
+    ].filter((s): s is string => Boolean(s)).join(':');
 
     const flags = [
-        task.hide ? 'Hidden' : false,
-        task.vscTask.group?.isDefault ? 'Default' : false,
-        task.vscTask.isBackground ? 'Background' : false
+        node.hide ? 'Hidden' : false,
+        node.group?.isDefault ? 'Default' : false,
+        node.isBackground ? 'Background' : false
     ].filter((s): s is string => Boolean(s));
 
     return {
@@ -126,15 +131,16 @@ function runnable(
             path: node.nodePath,
             query:
                 helpers.encodeQueryComponent({
-                    color: scopedConfig.tintLabel ? task.icon.color : undefined,
+                    color: scopedConfig.tintLabel ? node.icon.color : undefined,
                     processes,
-                    running
+                    running,
+                    special: node.rejectFlag ? 'BROKEN' : undefined
                 })
         }),
         label: node.segment,
         iconPath: new vscode.ThemeIcon(
-            task.icon.id || scopedConfig.defaultIconName,
-            task.icon.color ? new vscode.ThemeColor(task.icon.color) : undefined
+            node.icon.id || scopedConfig.defaultIconName,
+            node.icon.color ? new vscode.ThemeColor(node.icon.color) : undefined
         ),
         collapsibleState: Tree.Node.isBranch(node) ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
         description: flags.length > 0 ? `( ${flags.join(', ')} )` : undefined,

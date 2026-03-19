@@ -31,16 +31,16 @@ class Cockpit implements vscode.Disposable {
     private constructor(
         private readonly runtime: Runtime,
         private readonly workspace: Workspace,
-        private sproutResult: Readonly<Tree.SproutResult>,
+        private roots: ReadonlyArray<Tree.RootNode>,
         dirty: boolean
     ) {
 
         this.mainDataProvider = new MainDataProvider({
-            getTask_cb: (taskId) => this.workspace.getTask(taskId),
             getRuntime_cb: (taskId) => this.runtime.state(taskId),
+            // getTask_cb: (taskId) => this.workspace.getTask(taskId),
             getNodeConfig_cb: (file) => this.workspace.getResourceSettings().get(file)!.nodeConfig,
-            getWorkspaceDetail_cb: () => this.sproutResult.workspaceDetail,
-            getScopedDetail_cb: (file) => this.sproutResult.detailsByFile.get(file)!,
+            // getWorkspaceDetail_cb: () => this.roots.workspaceDetail,
+            // getScopedDetail_cb: (file) => this.roots.detailsByFile.get(file)!,
         });
 
         const listeners = vscode.Disposable.from(
@@ -79,7 +79,7 @@ class Cockpit implements vscode.Disposable {
     public dispose() {
 
         this.disposable.dispose();
-        this.sproutResult = undefined as never;
+        this.roots = undefined as never;
 
         // #region DEBUG
         log(LogLevel.Debug, 'Disposed', 'dispose');
@@ -101,7 +101,7 @@ class Cockpit implements vscode.Disposable {
             workspace,
             Tree.sproutRoots(
                 workspace.getScopes(),
-                workspace.getTasks(),
+                workspace.getDefinitions(),
                 workspace.getResourceSettings(),
                 workspace.getWindowSettings()
             ),
@@ -171,9 +171,9 @@ class Cockpit implements vscode.Disposable {
         try {
             await this.workspace.reScan();
 
-            this.sproutResult = Tree.sproutRoots(
+            this.roots = Tree.sproutRoots(
                 this.workspace.getScopes(),
-                this.workspace.getTasks(),
+                this.workspace.getDefinitions(),
                 this.workspace.getResourceSettings(),
                 this.workspace.getWindowSettings()
             );
@@ -221,24 +221,22 @@ class Cockpit implements vscode.Disposable {
         log(LogLevel.Trace, 'Rebuilding providers ...', 'rebuild');
         // #endregion DEBUG
 
-        this.mainDataProvider.rebuild(this.sproutResult.roots);
+        const { total, displayed } = this.mainDataProvider.rebuild(this.roots);
 
         // Сообщение если вювер после обновления стал визуально пустой —
         // "нет папок для отображения"
-        if (this.sproutResult.workspaceDetail) {
-            // workspaceDetail присутствует только в multi-root workspace.
+        if (displayed < total) {
             // В single-root workspace всегда отображается как минимум папка-имя проекта (возможно без задач).
             // А ситуацию "нет задач для отображения" обрабатывает дерево.
-            if ((this.sproutResult.workspaceDetail.all - this.sproutResult.workspaceDetail.excludes) < 1) {
+            if (displayed < 1) {
                 this.mainTreeView.message = 'All tasks are filtered out. Check Task Cockpit filtering settings.';
             }
-            if (this.sproutResult.workspaceDetail.excludes > 0) {
-                this.mainTreeView.description = `${this.sproutResult.workspaceDetail.all - this.sproutResult.workspaceDetail.excludes} of ${this.sproutResult.workspaceDetail.all} folders`;
-            }
+
+            this.mainTreeView.description = `${displayed} of ${total} folders`;
+
         }
 
         // #region DEBUG
-        log(LogLevel.Trace, JSON.stringify(this.sproutResult.workspaceDetail));
         log(LogLevel.Trace, 'Rebuilding providers finished', 'rebuild');
         // #endregion DEBUG
     }

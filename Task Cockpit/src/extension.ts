@@ -187,7 +187,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
             try {
 
-                await vscode.tasks.executeTask(workspace.getTask(taskId)!.vscTask);
+                // @fixme:
+                // await vscode.tasks.executeTask(workspace.getTask(taskId)!.vscTask);
 
                 // #region DEBUG
                 log(LogLevel.Debug,
