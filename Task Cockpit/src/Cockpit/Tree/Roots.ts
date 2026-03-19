@@ -160,8 +160,8 @@ function sproutRootNode(
     tasksMap: ReadonlyMap<TC.Name, Readonly<TC.Task>>,
     configs: Readonly<TC.BranchConfig>,
 ): {
-    hiddenCount: number
-    rootNode: RootNodeType
+    hiddenCount: number;
+    rootNode: RootNodeType;
 } {
 
     const tasksFile = scope.uri.fsPath;
@@ -193,7 +193,7 @@ function makeBranchSpec(
     tasksFile: TC.File,
     tasksMap: ReadonlyMap<TC.Name, Readonly<TC.Task>>,
     configs: Readonly<TC.BranchConfig>,
-): { branchSpec: Builder.Spec<TC.TaskID>[], hiddenCount: number } {
+): { branchSpec: Builder.Spec<TC.TaskID>[], hiddenCount: number; } {
 
     let hiddenCount = 0;
 
@@ -225,7 +225,7 @@ function makeBranchSpec(
 
         branchSpec.push({
             segments: internodes,
-            id: helpers.buildId(tasksFile, name)
+            data: helpers.buildId(tasksFile, name)
         });
     }
 

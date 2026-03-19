@@ -13,21 +13,34 @@ type NodePath<S extends string = string> = `${S}${typeof SEPARATOR}${string}`;
 
 
 /** Спецификация ветки: путь (сегменты) + данные на конце. */
-type SpecType<I extends string> = Readonly<{ segments: readonly string[], id: I; }>;
+type SpecType<D extends object> = Readonly<{ segments: readonly string[], data: D; }>;
 
 
 /** Узел дерева. */
-type NodeType<I extends string, S extends string> = {
+type InternodeNodeType<D extends object, S extends string> = {
     /** Имя узла (его часть пути). */
     segment: string;
     /** Дочерние узлы (если есть). */
-    children?: NodeType<I, S>[];
-    /** Данные (только у "листьев" — узлов-с-данными). */
-    id?: I;
+    children: (InternodeNodeType<D, S> | DataNodeType<D, S>)[];
+
     /** Уникальный идентификатор узла (не задачи) в пределах дерева.
      * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
     nodePath: NodePath<S>;
 };
+
+type DataNodeType<D extends object, S extends string> = {
+    /** Имя узла (его часть пути). */
+    segment: string;
+    /** Дочерние узлы (если есть). */
+    children?: (InternodeNodeType<D, S> | DataNodeType<D, S>)[];
+
+    /** Уникальный идентификатор узла (не задачи) в пределах дерева.
+     * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
+    nodePath: NodePath<S>;
+} & Omit<D, 'children' | 'segment' | 'nodePath'>;
+
+
+type NodeType<D extends object, S extends string> = InternodeNodeType<D, S> | DataNodeType<D, S>;
 
 
 // // @todo это не тип, а свойство
@@ -49,7 +62,7 @@ const SEPARATOR = '\0' as const;
  * @param scope уникальный идентификатор корня (используется как префикс nodeId)
  * @param specs массив спецификаций (путь + данные)
  * @returns корневые узлы построенного дерева */
-function build<I extends string, S extends string>(scope: S, specs: readonly SpecType<I>[]): NodeType<I, S>[] {
+function build<D extends object, S extends string>(scope: S, specs: readonly SpecType<D>[]): NodeType<D, S>[] {
 
     // #region DEBUG
     assert(scope, 'The "scope" should not be falsy');
@@ -69,12 +82,12 @@ function build<I extends string, S extends string>(scope: S, specs: readonly Spe
 
     // Карта для поиска node по полному пути на ветке
     // **Внутренняя структура**, используется при построении дерева.
-    const nodeMap = new Map<string, NodeType<I, S>>([
+    const nodeMap = new Map<string, NodeType<D, S>>([
         [rootPath, { segment: scope, children: [], nodePath: rootPath }]
     ]);
 
     // Обрабатываем массив спецификаций
-    for (const { segments, id } of specs) {
+    for (const { segments, data } of specs) {
 
         // #region DEBUG
         assert(segments.length > 0, 'The count of "segments" is at least one');
@@ -91,7 +104,7 @@ function build<I extends string, S extends string>(scope: S, specs: readonly Spe
                 let node = nodeMap.get(nodePath);
 
                 if (!node) {
-                    node = { segment, nodePath };
+                    node = { segment, nodePath } as NodeType<D, S>;
                     nodeMap.set(nodePath, node);
                     (nodeMap.get(path)!.children ??= []).push(node);
                 }
@@ -99,14 +112,13 @@ function build<I extends string, S extends string>(scope: S, specs: readonly Spe
                 // Последний сегмент — записываем в него данные.
                 // Теперь он — "лист"
                 if (remaining === 0) {
-                    // #region DEBUG
-                    if (node.id) {
-                        log(LogLevel.Warning,
-                            `Path "${segments.join(' → ')}" collision at "${segment}" will be overwritten`);
-                    }
-                    // #endregion DEBUG
-
-                    node.id = id;
+                    // // #region DEBUG
+                    // if (node.id) {
+                    //     log(LogLevel.Warning,
+                    //         `Path "${segments.join(' → ')}" collision at "${segment}" will be overwritten`);
+                    // }
+                    // // #endregion DEBUG
+                    Object.assign(node, data);
                 }
 
                 return { path: nodePath, remaining: remaining - 1 };
@@ -119,26 +131,18 @@ function build<I extends string, S extends string>(scope: S, specs: readonly Spe
 }
 
 
-/** Узел указывает на данные.
- *
- * Это не "тип", а "свойство". */
-function isDataNode<I extends string, S extends string>(node: NodeType<I, S>): boolean {
-    return node.id !== undefined;
-}
 
 
-/** Проверка возможности наличия дочерних узлов в принципе.
- *
- * Это не "тип", а "свойство".
+/**
  *
  * Дети добавляются через ??=, так что у чистых листьев ключа children нет вообще.
  * А у нод с детьми (с полем `children`) не может быть 0 детей. */
-function isBranch<I extends string, S extends string>(node: NodeType<I, S>): boolean {
+function isBranch<D extends object, S extends string>(node: NodeType<D, S>): node is InternodeNodeType<D, S> {
     return 'children' in node;
 }
 
 
-function parsePath<I extends string, S extends string>(node: NodeType<I, S>): [S, ...string[]] {
+function parsePath<D extends object, S extends string>(node: NodeType<D, S>): [S, ...string[]] {
 
     // #region DEBUG
     const p = node.nodePath.split(SEPARATOR);
@@ -194,14 +198,14 @@ const Builder = {
     build,
     parsePath,
     Node: {
-        isDataNode,
         isBranch,
     }
 } as const;
 
 namespace Builder {
-    export type Spec<I extends string> = SpecType<I>;
-    export type Node<I extends string, S extends string> = NodeType<I, S>;
+    export type Spec<D extends object> = SpecType<D>;
+    export type InternodeNode<D extends object, S extends string> = InternodeNodeType<D, S>;
+    export type DataNode<D extends object, S extends string> = DataNodeType<D, S>;
 }
 
 export default Builder;
