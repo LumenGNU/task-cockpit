@@ -120,7 +120,7 @@ export interface ValidationSettings {
 
 export interface RuntimeSettings {
     pollingCap: number,
-    terminalTimeout: number
+    terminalTimeout: number;
 }
 
 /** Область действия задач, с именем и URI файла, в котором они определены (источником задач).
@@ -149,25 +149,33 @@ export interface IconDefinition {
 export interface TaskDefinition {
     /** Флаг скрытия задачи из палитры задач */
     hide: boolean | undefined;
-
     /** Пользовательская иконка для задачи */
     icon: IconDefinition;
+    id: TaskID;
 }
 
 
-/** Задача, в терминах расширения. */
-export interface Task extends TaskDefinition {
-    /** Путь к источнику задач. */
-    source: File;
-    // id: TaskID; // @todo
-    /** vscode.Task, созданная средой. */
-    vscTask: Readonly<vscode.Task>;
-}
+// export type RunnableData = {
+//     id: TaskID;
+// } & TaskDefinition;
 
 
-export type ScopedTasks = Map<Name, Task>;
+// /** Задача, в терминах расширения. */
+// export interface Task extends TaskDefinition {
+//     /** Путь к источнику задач. */
+//     source: File;
+//     /** vscode.Task, созданная средой. */
+//     vscTask: Readonly<vscode.Task>;
+// }
+
+
+export type ScopedTasks = Map<Name, vscode.Task>;
 
 export type TasksByFile = Map<File, ScopedTasks>;
+
+export type ScopedDefinition = Map<Name, TaskDefinition>;
+
+export type DefinitionsByFile = Map<File, ScopedDefinition>;
 
 export type SettingsByFile = Map<File, ScopedSettings>;
 
@@ -175,7 +183,8 @@ export type RejectReport = Map<File, number>;
 
 export interface FetchResult {
     readonly tasksByFile: Readonly<TasksByFile>,
-    readonly rejectReport: Readonly<RejectReport>
+    readonly definitionsByFile: Readonly<DefinitionsByFile>,
+    readonly rejectReport: Readonly<RejectReport>;
 }
 
 

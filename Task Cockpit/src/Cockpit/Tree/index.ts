@@ -9,8 +9,8 @@ import Roots from './Roots';
 
 namespace Tree {
 
-    export type RootNode = Roots.RootNode
-    export type SproutResult = Roots.SproutResult
+    export type RootNode = Roots.RootNode;
+    export type SproutResult = Roots.SproutResult;
 
 
     /** Пространство типов для узлов дерева задач.
@@ -24,31 +24,25 @@ namespace Tree {
 
         /** Корневой узел workspace-scope (`.code-workspace`).
          * Содержит дополнительную информацию об исключении и статистику workspace задач. */
-        export interface WorkspaceRoot extends Roots.RootNode {
-            children: (Node.Segment | Node.Runnable | Node.Marker)[];
-        }
+        export type WorkspaceRoot = Omit<Roots.RootNode, 'kind'> & {
+            kind: 'Workspace';
+        };
 
 
         /** Корневой узел folder-scope (`.vscode/tasks.json`). */
-        export interface FolderRoot extends Roots.RootNode {
-            children: (Node.Segment | Node.Runnable | Node.Marker)[];
-        }
+        export type FolderRoot = Omit<Roots.RootNode, 'kind'> & {
+            kind: 'Folder';
+        };
 
 
         /** Запускаемый узел (задача). Может одновременно быть запускаемой задачей и группой,
          * содержащей дочерние узлы (например, compound task с зависимостями). */
-        export interface Runnable extends Builder.Node<TC.TaskID, TC.File> {
-            id: TC.TaskID;
-            /** Дочерние узлы. `undefined` — "чистый" лист, непустой массив — группа. */
-            children?: (Node.Segment | Node.Runnable)[];  // пусто = лист, не пусто = группа
-        }
+        export type Runnable = Builder.DataNode<TC.TaskDefinition, TC.File>;
 
 
         /** Промежуточный сегмент пути без привязанной задачи.
          * Создаётся автоматически при разбиении label по separator. */
-        export interface Segment extends Builder.Node<TC.TaskID, TC.File> {
-            children: (Node.Segment | Node.Runnable)[];
-        }
+        export type Segment = Builder.InternodeNode<TC.TaskDefinition, TC.File>;
 
 
         /** Визуальный маркер. Нефункциональный узел для отображения состояний. */
@@ -81,10 +75,7 @@ function isBranch(node: Tree.Node.Runnable): boolean {
 /** Проверяет, что узел является запускаемой задачей.
  * Отсекает корни, маркеры и промежуточные сегменты без привязанных данных задачи. */
 function isRunnable(node: Tree.Node.NodeType): node is Tree.Node.Runnable {
-    if ('tasksFile' in node) {
-        return false;
-    }
-    return Builder.Node.isDataNode(node);
+    return 'id' in node;
 }
 
 
@@ -99,13 +90,13 @@ function isRoot(node: Tree.Node.NodeType): node is Tree.Node.WorkspaceRoot | Tre
 
 /** Type guard: корневой узел относится к workspace-scope (`.code-workspace`). */
 function isWorkspaceRootNode(node: Tree.Node.WorkspaceRoot | Tree.Node.FolderRoot): node is Tree.Node.WorkspaceRoot {
-    return node.tasksFile.endsWith('.code-workspace');
+    return node.kind === 'Workspace';
 }
 
 
 /** Type guard: корневой узел относится к folder-scope (`tasks.json`). */
-function isFolderRootNode(node: Tree.Node.WorkspaceRoot | Tree.Node.FolderRoot): node is Tree.Node.FolderRoot {
-    return node.tasksFile.endsWith('tasks.json');
+function isFolderRootNode(node: Roots.RootNode): node is Tree.Node.FolderRoot {
+    return node.kind === 'Folder';
 }
 
 
@@ -131,11 +122,17 @@ function parseNodePath(node: Tree.Node.Runnable | Tree.Node.Segment): { taskFile
 /** Извлекает scope (файл задач) из любого узла дерева.
  * Для корней и маркеров — напрямую из `tasksFile`, для остальных — через {@link parseNodePath}. */
 function resolveScope(node: Tree.Node.NodeType): TC.File {
-    if ('tasksFile' in node) {
-        return node.tasksFile;
+    if ('nodePath' in node) {
+        return parseNodePath(node).taskFile;
     }
-
-    return parseNodePath(node).taskFile;
+    if ('kind' in node) {
+        const aaa = node.children.at(0)!;
+        if ('nodePath' in aaa) {
+            return parseNodePath(aaa).taskFile;
+        }
+        return aaa.tasksFile;
+    }
+    return node.tasksFile;
 }
 
 

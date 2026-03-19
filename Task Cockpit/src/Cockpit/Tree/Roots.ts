@@ -27,10 +27,11 @@ interface MarkerNodeType {
 interface RootNodeType {
     /** Отображаемое имя корня (имя папки или workspace). */
     segment: string;
-    /** Файл задач, определяющему этот scope. */
-    tasksFile: TC.File;
+    // /** Файл задач, определяющему этот scope. */
+    // tasksFile: TC.File;
+    kind: 'Workspace' | 'Folder';
     /** Дочерние узлы первого уровня. */
-    children: (Builder.Node<TC.TaskID, TC.File> | MarkerNodeType)[];
+    children: (Builder.DataNode<TC.___, TC.File> | Builder.InternodeNode<TC.___, TC.File> | MarkerNodeType)[];
 }
 
 
@@ -168,13 +169,13 @@ function sproutRootNode(
 
     const { branchSpec, hiddenCount } = makeBranchSpec(tasksFile, tasksMap, configs);
 
-    const branch = Builder.build<TC.TaskID, TC.File>(tasksFile, branchSpec);
+    const branch = Builder.build<TC.___, TC.File>(tasksFile, branchSpec);
 
     return {
         hiddenCount,
         rootNode: {
             segment: scope.name,
-            tasksFile,
+            kind: tasksFile.endsWith('.json') ? 'Folder' : 'Workspace',
             children: branch.length > 0 ? branch : [mkMarkerEmpty(tasksFile)],
         }
     };
@@ -193,18 +194,18 @@ function makeBranchSpec(
     tasksFile: TC.File,
     tasksMap: ReadonlyMap<TC.Name, Readonly<TC.Task>>,
     configs: Readonly<TC.BranchConfig>,
-): { branchSpec: Builder.Spec<TC.TaskID>[], hiddenCount: number; } {
+): { branchSpec: Builder.Spec<TC.___>[], hiddenCount: number; } {
 
     let hiddenCount = 0;
 
     const splitter = new Splitter(configs.segmentSeparator);
-    const branchSpec: Builder.Spec<TC.TaskID>[] = [];
+    const branchSpec: Builder.Spec<TC.___>[] = [];
 
     for (const [name, task] of tasksMap) {
 
-        if (task.hide && !configs.showHidden) {
+        if (task.hide) {// && !configs.showHidden) {
             hiddenCount++;
-            continue;
+            // continue; // @fixme скрывать на уровне вювера
         }
 
         const internodes =
@@ -225,7 +226,7 @@ function makeBranchSpec(
 
         branchSpec.push({
             segments: internodes,
-            data: helpers.buildId(tasksFile, name)
+            data: { hide: task.hide, icon: task.icon, id: helpers.buildId(tasksFile, name) }
         });
     }
 
@@ -252,7 +253,7 @@ function mkMarkerEmpty(tasksFile: TC.File): MarkerNodeType {
 
 function printTree(roots: RootNodeType[]): void {
 
-    const printBranch = (nodes: ReadonlyArray<Builder.Node<TC.TaskID, TC.File> | MarkerNodeType>, prefix: string): void => {
+    const printBranch = (nodes: ReadonlyArray<Builder.DataNode<TC.___, TC.File> | Builder.InternodeNode<TC.___, TC.File> | MarkerNodeType>, prefix: string): void => {
 
         nodes.forEach((node, i) => {
             const last = i === nodes.length - 1;
@@ -264,9 +265,9 @@ function printTree(roots: RootNodeType[]): void {
                 return;
             }
 
-            const mark = node.id ? '{*}' : '';
+            // @fixme const mark = node.id ? '{*}' : '';
 
-            log(LogLevel.Debug, `${prefix}${branch}${node.segment} ${mark}`);
+            // @fixme log(LogLevel.Debug, `${prefix}${branch}${node.segment} ${mark}`);
 
             if (node.children?.length) {
                 printBranch(node.children, prefix + child);

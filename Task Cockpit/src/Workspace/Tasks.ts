@@ -27,12 +27,17 @@ const { log } = Logger.get(module.filename);
  * @param scopes Области действия извлекаемых задач.
  *
  * @throws {vscode.CancellationError} */
-async function fetch(scopes: ReadonlyArray<TC.Scope>, ctsToken: vscode.CancellationToken): Promise<Readonly<TC.FetchResult>> {
+async function fetch(
+    scopes: ReadonlyArray<TC.Scope>,
+    ctsToken: vscode.CancellationToken
+): Promise<Readonly<TC.FetchResult>> {
 
 
     // Карта всех "подходящих" задач, полученных от VS Code
     const vTasksMap = new Map<TC.TaskID, vscode.Task>();
 
+    // @note: {@linkcode vscode.fetchTasks} никогда не вернёт задачу с TaskScope.Global.
+    // {@linkcode vscode.TaskScope}: "Global tasks are currently not supported."
     const fetchedTasks = await vscode.tasks.fetchTasks();
 
     if (ctsToken.isCancellationRequested) {
@@ -60,47 +65,48 @@ async function fetch(scopes: ReadonlyArray<TC.Scope>, ctsToken: vscode.Cancellat
         vTasksMap.set(taskId, task);
     }
 
-    const tasksByFile = new Map(
+    const definitionsByFile = new Map(
         await Promise.all(scopes.map(scope => fetchDefinitions(scope.uri, ctsToken)))
-    ) as TC.TasksByFile; // @note: рискованно, но экономит несколько проверок и кучку памяти
+    );
 
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
     }
 
-    const rejectReport = new Map();
-
     // #region DEBUG
     log(LogLevel.Debug,
-        `Parsed ${[...tasksByFile.values()].reduce((count, definitions) => count + definitions.size, 0)} user task definition(s) for ${tasksByFile.size} scope(s)`);
+        `Parsed ${[...definitionsByFile.values()].reduce((count, definitions) => count + definitions.size, 0)} user task definition(s) for ${definitionsByFile.size} scope(s)`);
     // #endregion DEBUG
 
-    for (const [file, definitions] of tasksByFile) {
+    const tasksByFile: TC.TasksByFile = new Map();
+    const rejectReport: TC.RejectReport = new Map();
+
+    // Перебираем в порядке "из файла"
+    for (const [file, definitions] of definitionsByFile) {
+
+        const scopedTasks: TC.ScopedTasks = new Map();
 
         for (const [name, definition] of definitions) {
 
-            const vTask = vTasksMap.get(helpers.buildId(file, name));
+            const vTask = vTasksMap.get(definition.id);
+
+            // Строим tasksByFile и заполняем rejectReport
 
             if (vTask) {
-                definition.source = file;
-                definition.vscTask = vTask;
+                scopedTasks.set(name, vTask);
             }
             else {
-
-                // Из этого definition VS Code не создавала задачу
-                definitions.delete(name);
-
-                // @todo: не выглядит оптимальным
                 rejectReport.set(file, (rejectReport.get(file) ?? 0) + 1);
-
                 // #region DEBUG
                 log(LogLevel.Warning, `No vscode.Task for definition — VS Code rejected or not yet loaded. Name: ${name}; File: ${file}.`);
                 // #endregion DEBUG
             }
         }
+
+        tasksByFile.set(file, scopedTasks);
     }
 
-    return { tasksByFile, rejectReport };
+    return { tasksByFile, rejectReport, definitionsByFile };
 }
 
 
@@ -135,6 +141,9 @@ type Definitions = readonly [TC.File, Map<TC.Name, Readonly<TC.TaskDefinition>>]
  *   Остальные ошибки не выбрасываются — всегда возвращается "пустой" результат.  */
 async function fetchDefinitions(uri: TC.Uri, ctsToken: vscode.CancellationToken): Promise<Definitions> {
 
+    if (ctsToken.isCancellationRequested) {
+        throw new vscode.CancellationError();
+    }
 
     try {
         const uint8Array = await vscode.workspace.fs.readFile(uri);
@@ -225,6 +234,7 @@ function remapRaw(file: TC.File, rawArr: Raw[]): Definitions {
                 // дубликаты label'ов молча перезаписываются —
                 // повторяю поведение VS Code
                 map.set(raw.label, {
+                    id: helpers.buildId(file, raw.label),
                     hide: raw.hide,
                     icon: {
                         id: raw.icon?.id,

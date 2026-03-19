@@ -177,7 +177,7 @@ export default class Workspace implements vscode.Disposable {
     }
 
 
-    public getTask(taskId: TC.TaskID): TC.Task | undefined {
+    public getTask(taskId: TC.TaskID): vscode.Task | undefined {
         const { taskFile, taskName } = helpers.parseId(taskId);
         return this.getTasks().get(taskFile)?.get(taskName);
     }
