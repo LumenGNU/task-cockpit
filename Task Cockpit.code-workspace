@@ -16,6 +16,9 @@
     "settings": {
         "taskCockpit.display.segmentSeparator": "|",
         "taskCockpit.validation.dependencies": true,
+                "taskCockpit.filtering.excludeFolders": [
+            "Task Cockpit (Workspace)"
+        ],
         "codeium.enableCodeLens": false,
         "files.exclude": {
             "**/node_modules/": true,
@@ -39,10 +42,6 @@
         "js/ts.preferences.quoteStyle": "single",
         "js/ts.workspaceSymbols.scope": "currentProject",
         "js/ts.implementationsCodeLens.enabled": true,
-        "js/ts.referencesCodeLens.enabled": true,
-        "taskCockpit.filtering.excludeFolders": [
-            "Task Cockpit (Workspace)"
-        ],
     },
 
 

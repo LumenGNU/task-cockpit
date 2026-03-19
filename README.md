@@ -217,9 +217,9 @@ Show tasks marked with `hide: true`.
 
 #### `excludeFolders`
 
-Excludes specified workspace folders from the task explorer.
+Exclude workspace folders from the task explorer.
 
-Matches the folder's display name as shown by VS Code — if a folder has a custom `name` in `.code-workspace`, use that name, not the directory name. This also works for the workspace scope: enter its name as it appears in VS Code (e.g. `\"my-project (Workspace)\"`).
+Matches folder display names as shown by VS Code — if a folder has a custom `name` in `.code-workspace`, use that name, not the directory name. The **workspace scope** can be excluded the same way, using its name as it appears in VS Code (e.g. `"something (Workspace)"`).
 
 Example: `["my-project (Workspace)", "tests", "docs"]`
 
@@ -228,7 +228,7 @@ Example: `["my-project (Workspace)", "tests", "docs"]`
 
 #### `excludeWorkspaceTasks`
 
-Deprecated. Use `taskCockpit.filtering.excludeFolders` instead.
+**Deprecated**. Use `taskCockpit.filtering.excludeFolders` instead.
 
 
 ### Validation

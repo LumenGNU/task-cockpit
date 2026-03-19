@@ -7,7 +7,7 @@
   "settings": {
     "taskCockpit.display.tintLabel": false,
     "taskCockpit.filtering.excludeFolders": [
-      "_Multiroot-HappyPath (Workspace)"
+      "Shared"
     ]
   },
   "tasks": {

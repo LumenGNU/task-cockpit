@@ -58,10 +58,13 @@ class Cockpit implements vscode.Disposable {
             canSelectMany: false
         });
 
-        this.mainTreeView.title = ''; // 'title Task Cockpit';
+        // this.mainTreeView.title = 'title Task Cockpit'; // 'title Task Cockpit';
+        // this.mainTreeView.description = 'description Task Cockpit';
+        // this.mainTreeView.message = 'message Task Cockpit';
+
 
         if (!dirty) {
-            this.rebuildProviders();
+            this.rebuildViews();
         }
 
         this.disposable = vscode.Disposable.from(
@@ -175,7 +178,11 @@ class Cockpit implements vscode.Disposable {
                 this.workspace.getWindowSettings()
             );
 
-            this.rebuildProviders();
+            this.rebuildViews();
+
+            // #region DEBUG
+            log(LogLevel.Debug, 'Rebuild finished', 'rebuild');
+            // #endregion DEBUG
         }
         // #region DEBUG
         catch (error) {
@@ -197,8 +204,43 @@ class Cockpit implements vscode.Disposable {
     }
 
 
-    private rebuildProviders() {
+    private rebuildViews() {
+
+        // Сброс сообщения вюверов. Если временно станут пусты — будет отображаться
+        // базовое "Loading..." из "viewsWelcome"
+
+        // this.mainTreeView.title = '';
+        this.mainTreeView.message = undefined;
+        this.mainTreeView.description = undefined;
+
+        // @todo может быть, если выполняется больше одной задачи? фигня. и не красиво
+        // this.mainTreeView.badge = { value: NaN, tooltip: 'xxx' };
+
+
+        // #region DEBUG
+        log(LogLevel.Trace, 'Rebuilding providers ...', 'rebuild');
+        // #endregion DEBUG
+
         this.mainDataProvider.rebuild(this.sproutResult.roots);
+
+        // Сообщение если вювер после обновления стал визуально пустой —
+        // "нет папок для отображения"
+        if (this.sproutResult.workspaceDetail) {
+            // workspaceDetail присутствует только в multi-root workspace.
+            // В single-root workspace всегда отображается как минимум папка-имя проекта (возможно без задач).
+            // А ситуацию "нет задач для отображения" обрабатывает дерево.
+            if ((this.sproutResult.workspaceDetail.all - this.sproutResult.workspaceDetail.excludes) < 1) {
+                this.mainTreeView.message = 'All tasks are filtered out. Check Task Cockpit filtering settings.';
+            }
+            if (this.sproutResult.workspaceDetail.excludes > 0) {
+                this.mainTreeView.description = `${this.sproutResult.workspaceDetail.all - this.sproutResult.workspaceDetail.excludes} of ${this.sproutResult.workspaceDetail.all} folders`;
+            }
+        }
+
+        // #region DEBUG
+        log(LogLevel.Trace, JSON.stringify(this.sproutResult.workspaceDetail));
+        log(LogLevel.Trace, 'Rebuilding providers finished', 'rebuild');
+        // #endregion DEBUG
     }
 }
 

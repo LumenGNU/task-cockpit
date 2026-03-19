@@ -130,3 +130,14 @@
 
 - [ ] Проверить reload window
 - [ ] Что если dependsOn ссылается на себя? (циклическая зависимость)
+
+
+### filtering.excludeFolders (default: пусто) ДЛЯ MULTI-ROOT
+
+- [ ] Пусто → все папки видны
+- [ ] Добавить одну папку → исчезает из дерева, в.с. остальных сохраняется
+- [ ] Убрать папку из списка → возвращается в дерево с актуальными в.с.
+- [ ] Добавить все папки → сообщение "All tasks are filtered out..."
+- [ ] Имя с кастомным `name` в `.code-workspace` → матчится по display name, не по директории
+- [ ] Workspace scope: добавить `"<name> (Workspace)"` → workspace-level задачи исчезают
+- [ ] Single-root workspace → настройка не имеет эффекта

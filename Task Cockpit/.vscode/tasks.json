@@ -452,6 +452,7 @@
       "dependsOn": [
         "Dev Environment|Prepare|Create/Clean '~out/'",
       ],
+      "dependsOrder": "sequence",
       "type": "shell",
       "command": "dev-scripts/transpile-typescript.bash",
       "options": {
@@ -502,9 +503,9 @@
         "Pack|Pack pre-release VSIX|Install production dependencies",
         "Pack|Pack pre-release VSIX|Pack VSIX"
       ],
+      "dependsOrder": "sequence",
       "type": "shell",
       "command": "echo '[All done]'",
-      "dependsOrder": "sequence",
       "presentation": {
         "panel": "shared",
         "clear": false,

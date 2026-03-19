@@ -145,7 +145,8 @@
       "task-cockpit-container": [
         {
           "id": "task-cockpit-view",
-          "name": "Task Explorer",
+          "name": "Task Cockpit",
+          "contextualTitle": "Task Cockpit",
           "icon": "icons/panel-icon.svg",
           "type": "tree"
         }
