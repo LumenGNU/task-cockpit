@@ -40,8 +40,7 @@
         "js/ts.format.semicolons": "insert",
         "js/ts.preferences.importModuleSpecifierEnding": "minimal",
         "js/ts.preferences.quoteStyle": "single",
-        "js/ts.workspaceSymbols.scope": "currentProject",
-        "js/ts.implementationsCodeLens.enabled": true,
+        "js/ts.workspaceSymbols.scope": "currentProject"
     },
 
 

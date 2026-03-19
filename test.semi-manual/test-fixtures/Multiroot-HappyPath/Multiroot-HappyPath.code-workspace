@@ -2,17 +2,27 @@
   "folders": [
     { "name": "Frontend", "path": "frontend" },
     { "name": "Backend", "path": "backend" },
-    { "name": "Shared", "path": "shared" }
+    { "name": "Shared", "path": "shared" },
+    { "name": "Shared-simlink", "path": "shared.lnk" },
   ],
   "settings": {
     "taskCockpit.display.tintLabel": false,
     "taskCockpit.filtering.excludeFolders": [
-      "Shared"
-    ]
+      "Multiroot-HappyPath (Workspace)",
+      "Frontend",
+      "Backend",
+      "Shared",
+      "Shared-simlink"
+    ],
+    "taskCockpit.filtering.showHidden": false
   },
   "tasks": {
     "version": "2.0.0",
-    "tasks": []
+    "tasks": [
+      {"label": "aaa", "hide":true, "type": "shell", "command": "node", "args": ["-e", "'process.exit(0)'"]},
+      {"label": "AAA", "type": "shell", "command": "node", "args": ["-e", "'process.exit(0)'"]},
+      {"label": "Task from workspace for Gimini", "type": "shell", "command": "node", "args": ["-e", "'process.exit(0)'"]},
+    
+    ]
   }
-
 }

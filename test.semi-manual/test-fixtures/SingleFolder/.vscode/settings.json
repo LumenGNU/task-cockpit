@@ -3,10 +3,13 @@
     "taskCockpit.display.segmentSeparator": ":",
     "taskCockpit.display.useGroupKind": true,
     "terminal.integrated.shellIntegration.enabled": false,
-    "taskCockpit.filtering.showHidden": true,
+    "taskCockpit.filtering.showHidden": false,
     "terminal.integrated.stickyScroll.enabled": false,
     "terminal.integrated.suggest.enabled": false,
     "taskCockpit.display.tintLabel": true,
     "taskCockpit.validation.dependencies": true,
-    "taskCockpit.display.useFolderIcon": false
+    "taskCockpit.display.useFolderIcon": false,
+    "taskCockpit.filtering.excludeFolders": [
+        "_SingleFolder"
+    ]
 }

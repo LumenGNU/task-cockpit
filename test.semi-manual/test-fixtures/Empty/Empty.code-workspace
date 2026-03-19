@@ -24,5 +24,9 @@
 	"tasks": {
 		"version": "2.0.0",
 		"tasks": []
+	},
+	"settings": {
+		"taskCockpit.display.useFolderIcon": false,
+		"taskCockpit.filtering.showHidden": false
 	}
 }

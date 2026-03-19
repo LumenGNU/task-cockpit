@@ -3,6 +3,7 @@
 # UNRELEASED
 
 - `excludeFolders` setting now also supports excluding the workspace scope
+- `excludeFolders` имеет эффект в сингл-воркспейсе
 
 ## [1.1.0] - 2025-06-20
 
