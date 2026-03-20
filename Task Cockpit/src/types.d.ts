@@ -148,7 +148,7 @@ export interface IconDefinition {
  * предоставляются через API vscode.Task. */
 export interface TaskDefinition {
     /** Флаг скрытия задачи из палитры задач */
-    hide: boolean | undefined;
+    hidden: boolean | undefined;
     /** Пользовательская иконка для задачи */
     icon: IconDefinition;
 

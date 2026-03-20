@@ -36,18 +36,6 @@ interface RootNodeType {
 }
 
 
-// /** Результат построения дерева корневых узлов. */
-// interface SproutResultType {
-//     /** Детализация по файлам задач: общее количество задач и количество скрытых. */
-//     detailsByFile: Readonly<TC.DetailsByFile>;
-//     /** Статистика workspace: количество папок и исключённых.
-//      * Присутствует только в multi-root workspace. */
-//     workspaceDetail?: Readonly<TC.WorkspaceDetail>;
-//     /** Корневые узлы дерева. */
-//     roots: ReadonlyArray<RootNodeType>;
-// }
-
-
 /** Строит дерево корневых узлов для заданных scope(s).
  *
  * Для **single-folder workspace** должен передаваться **один** {@linkcode TC.Scope} —
@@ -84,18 +72,6 @@ function sprout(
         // #region DEBUG
         log(LogLevel.Debug, `Sprout root node for "${scope.name}"`);
         // #endregion DEBUG
-
-        // if (isMultiRoot && windowSettings.excludeFolders.includes(scope.name)) {
-        //     // исключаемые каталоги имеют смысл только в multi-root workspace`е
-
-        //     // #region DEBUG
-        //     log(LogLevel.Debug, `Scope "${scope.name}" is excluded by user settings`);
-        //     // #endregion DEBUG
-
-        //     // workspaceDetail!.excludes += 1;
-
-        //     continue;
-        // }
 
         const file = scope.uri.fsPath;
 

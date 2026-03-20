@@ -187,8 +187,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
             try {
 
+                const task = workspace.getTask(taskId);
+
+                if (!task) {
+                    // #region DEBUG
+                    log(LogLevel.Debug, 'No task found in workspace. Command finished', commandId);
+                    // #endregion DEBUG
+                    return;
+                }
                 // @fixme:
-                // await vscode.tasks.executeTask(workspace.getTask(taskId)!.vscTask);
+                await vscode.tasks.executeTask(task);
 
                 // #region DEBUG
                 log(LogLevel.Debug,

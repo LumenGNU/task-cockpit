@@ -67,49 +67,49 @@
         "category": "Task Cockpit",
         "title": "Open Tasks File",
         "icon": "$(go-to-file)",
-        "enablement": "view == task-cockpit-view && viewItem == task-cockpit::Folder:Project"
+        "enablement": "view == task-cockpit-view && viewItem == task-cockpit:Folder:Project"
       },
       {
         "command": "_task-cockpit.tasks-file.open-workspace-file",
         "category": "Task Cockpit",
         "title": "Open Workspace File",
         "icon": "$(go-to-file)",
-        "enablement": "view == task-cockpit-view && viewItem == task-cockpit::Folder:Workspace"
+        "enablement": "view == task-cockpit-view && viewItem == task-cockpit:Folder:Workspace"
       },
       {
         "command": "_task-cockpit.task.execute",
         "category": "Task Cockpit",
         "title": "Run Task",
         "icon": "$(play)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:running|:empty|:broken/)"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/ && !(viewItem =~ /:running|:empty|:broken/)"
       },
       {
         "command": "task-cockpit.task.execute",
         "category": "Task Cockpit",
         "title": "Start New Instance",
         "icon": "$(play)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:empty|:broken/)"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/ && !(viewItem =~ /:empty|:broken/)"
       },
       {
         "command": "task-cockpit.task.abort-all",
         "category": "Task Cockpit",
         "title": "Abort All Running Instances",
         "icon": "$(stop)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && viewItem =~ /:running/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/ && viewItem =~ /:running/"
       },
       {
         "command": "task-cockpit.tasks-file.open-task",
         "category": "Task Cockpit",
         "title": "Edit Task",
         "icon": "$(edit)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/"
       },
       {
         "command": "task-cockpit.task.show-terminal",
         "category": "Task Cockpit",
         "title": "Show Task Terminal",
         "icon": "$(terminal)",
-        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && viewItem =~ /:terminals/"
+        "enablement": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/ && viewItem =~ /:terminals/"
       },
       {
         "command": "task-cockpit.open-help-page",
@@ -199,37 +199,37 @@
         },
         {
           "command": "_task-cockpit.task.execute",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/ && !(viewItem =~ /:running|:empty|:broken/)",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/ && !(viewItem =~ /:running|:empty|:broken/)",
           "group": "inline"
         },
         {
           "command": "task-cockpit.tasks-file.open-task",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/",
           "group": "z4_edit"
         },
         {
           "command": "task-cockpit.task.execute",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/",
           "group": "z3_execute@1"
         },
         {
           "command": "task-cockpit.task.abort-all",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/",
           "group": "z3_execute@2"
         },
         {
           "command": "task-cockpit.task.show-terminal",
-          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:task/",
+          "when": "view == task-cockpit-view && viewItem =~ /^task-cockpit:Task/",
           "group": "z5_terminals@1"
         },
         {
           "command": "_task-cockpit.tasks-file.open-tasks-file",
-          "when": "view == task-cockpit-view && viewItem == task-cockpit::Folder:Project",
+          "when": "view == task-cockpit-view && viewItem == task-cockpit:Folder:Project",
           "group": "inline"
         },
         {
           "command": "_task-cockpit.tasks-file.open-workspace-file",
-          "when": "view == task-cockpit-view && viewItem == task-cockpit::Folder:Workspace",
+          "when": "view == task-cockpit-view && viewItem == task-cockpit:Folder:Workspace",
           "group": "inline"
         }
       ]

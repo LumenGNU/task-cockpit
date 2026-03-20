@@ -193,6 +193,7 @@ function concatNodePath<S extends string>(path: NodePath<S>, segment: string): N
  * */
 const Builder = {
     build,
+    // concatNodePath,
     parsePath,
     Node: {
         isBranch,

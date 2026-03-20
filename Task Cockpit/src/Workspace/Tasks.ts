@@ -242,7 +242,7 @@ function remapRaw(file: TC.File, rawArr: Raw[]): Definitions {
                 // повторяю поведение VS Code
                 map.set(raw.label, {
                     id: helpers.buildId(file, raw.label),
-                    hide: raw.hide,
+                    hidden: raw.hide,
                     isBackground: raw.isBackground,
                     icon: {
                         id: raw.icon?.id,

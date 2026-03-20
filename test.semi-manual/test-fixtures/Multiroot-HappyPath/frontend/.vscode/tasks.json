@@ -3,6 +3,7 @@
   "tasks": [
     {
       "label": "Build",
+      "hide": true,
       "detail": "$(tools) Full frontend build\nCompiles TypeScript and bundles assets",
       "icon": {
         "id": "tools"

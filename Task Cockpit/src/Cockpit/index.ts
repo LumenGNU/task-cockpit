@@ -31,16 +31,14 @@ class Cockpit implements vscode.Disposable {
     private constructor(
         private readonly runtime: Runtime,
         private readonly workspace: Workspace,
-        private roots: ReadonlyArray<Tree.RootNode>,
+        private roots: ReadonlyArray<Tree.Node.RootNodeFolder | Tree.Node.RootNodeWorkspace>,
         dirty: boolean
     ) {
 
         this.mainDataProvider = new MainDataProvider({
             getRuntime_cb: (taskId) => this.runtime.state(taskId),
-            // getTask_cb: (taskId) => this.workspace.getTask(taskId),
-            getNodeConfig_cb: (file) => this.workspace.getResourceSettings().get(file)!.nodeConfig,
-            // getWorkspaceDetail_cb: () => this.roots.workspaceDetail,
-            // getScopedDetail_cb: (file) => this.roots.detailsByFile.get(file)!,
+            getResourceSettings_cb: (file) => this.workspace.getResourceSettings().get(file)!,
+            getTaskDetail_cb: (taskId) => this.workspace.getTask(taskId)?.detail,
         });
 
         const listeners = vscode.Disposable.from(
@@ -57,10 +55,6 @@ class Cockpit implements vscode.Disposable {
             treeDataProvider: this.mainDataProvider,
             canSelectMany: false
         });
-
-        // this.mainTreeView.title = 'title Task Cockpit'; // 'title Task Cockpit';
-        // this.mainTreeView.description = 'description Task Cockpit';
-        // this.mainTreeView.message = 'message Task Cockpit';
 
 
         if (!dirty) {
@@ -158,7 +152,16 @@ class Cockpit implements vscode.Disposable {
         if (!node) {
             return undefined;
         }
-        return Tree.Node.resolveScope(node);
+
+        if ('nodePath' in node) {
+            return Tree.Node.parseNodePath(node).taskFile;
+        }
+
+        if ('tasksFile' in node) {
+            return node.tasksFile;
+        }
+
+        return undefined;
     }
 
 
@@ -213,7 +216,7 @@ class Cockpit implements vscode.Disposable {
         this.mainTreeView.message = undefined;
         this.mainTreeView.description = undefined;
 
-        // @todo может быть, если выполняется больше одной задачи? фигня. и не красиво
+        // @todo может быть, если выполняется больше одной задачи? @reject: фигня. и не красиво
         // this.mainTreeView.badge = { value: NaN, tooltip: 'xxx' };
 
 
@@ -232,7 +235,7 @@ class Cockpit implements vscode.Disposable {
                 this.mainTreeView.message = 'All tasks are filtered out. Check Task Cockpit filtering settings.';
             }
 
-            this.mainTreeView.description = `${displayed} of ${total} folders`;
+            this.mainTreeView.description = `( ${displayed} of ${total} folders )`;
 
         }
 

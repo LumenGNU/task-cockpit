@@ -19,7 +19,7 @@ VERSION=$(git tag -l 'v[0-9]*' --sort=-committerdate | grep -E '^v[0-9]+\.[0-9]+
 # убираем дубликаты,
 # исключаем folder
 # и сортируем
-ICONS=$(jq '[.[] | .[]] | unique - ["folder"]' "${CODICONS_MAP_JSON}")
+ICONS=$(jq '[.[] | .[]] | unique - ["folder", "dash"]' "${CODICONS_MAP_JSON}")
 ICONS_COUNT=$(echo "${ICONS}" | jq 'length')
 
 jq --arg ver "${VERSION}" --argjson icons "${ICONS}" '

@@ -17,14 +17,13 @@ const { assert } = Logger.get(module.filename);
 /** Создаёт {@linkcode vscode.TreeItem} для корневого узла (workspace).
  *
  * Отображается как развёрнутый узел с иконкой `layers`. */
-function workspace(node: Tree.Node.WorkspaceRoot): vscode.TreeItem {
+function workspace(node: Tree.Node.RootNodeWorkspace): vscode.TreeItem {
 
     return {
-        // id: node.tasksFile,
         label: node.segment,
         resourceUri: vscode.Uri.file(node.tasksFile),
         iconPath: new vscode.ThemeIcon('layers'),
-        contextValue: 'task-cockpit::Folder:Workspace',
+        contextValue: 'task-cockpit:Folder:Workspace',
         collapsibleState: vscode.TreeItemCollapsibleState.Expanded
     };
 }
@@ -33,15 +32,29 @@ function workspace(node: Tree.Node.WorkspaceRoot): vscode.TreeItem {
 /** Создаёт {@linkcode vscode.TreeItem} для корневого узла (folder).
  *
  * Всегда развёрнут; иконка — `root-folder`. */
-function folder(node: Tree.Node.FolderRoot): vscode.TreeItem {
+function folder(node: Tree.Node.RootNodeFolder): vscode.TreeItem {
 
     return {
-        // id: node.tasksFile,
         label: node.segment,
         resourceUri: vscode.Uri.file(node.tasksFile),
         iconPath: new vscode.ThemeIcon('root-folder'),
-        contextValue: 'task-cockpit::Folder:Project',
+        contextValue: 'task-cockpit:Folder:Project',
         collapsibleState: vscode.TreeItemCollapsibleState.Expanded
+    };
+}
+
+
+function favorites(node: Tree.Node.RootNodeFavorites): vscode.TreeItem {
+    return {
+        label: 'XXXXXXXZZZZZZZZZZZYYYYYYYYYY',
+        resourceUri: vscode.Uri.from({
+            scheme: 'task-cockpit',
+            authority: 'favorites',
+            path: '/'
+        }),
+        iconPath: new vscode.ThemeIcon('pinned'),
+        collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
+        contextValue: 'task-cockpit:Folder:Pinned'
     };
 }
 
@@ -56,32 +69,24 @@ function folder(node: Tree.Node.FolderRoot): vscode.TreeItem {
  * для передачи параметров декорации через query-компонент. */
 function marker(node: Tree.Node.Marker): vscode.TreeItem {
 
-    if (node.markerType === 'EMPTY') {
+    return {
+        resourceUri: vscode.Uri.from({
+            scheme: 'task-cockpit',
+            authority: 'marker',
+            path: node.nodePath,
+            query:
+                helpers.encodeQueryComponent({
+                    color: 'list.deemphasizedForeground',
+                    special: node.markerType
+                })
+        }),
+        iconPath: new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.deemphasizedForeground')),
+        label: node.segment,
+        collapsibleState: vscode.TreeItemCollapsibleState.None,
+        tooltip: new vscode.MarkdownString(`*${node.segment}*\n`, false),
+        contextValue: 'task-cockpit:Marker'
+    };
 
-        return {
-            // id: `marker-${node.markerType}!${node.tasksFile}`,
-            resourceUri: vscode.Uri.from({
-                scheme: 'task-cockpit',
-                authority: 'marker',
-                path: node.tasksFile,
-                query:
-                    helpers.encodeQueryComponent({
-                        color: 'list.deemphasizedForeground',
-                        special: 'EMPTY'
-                    })
-            }),
-            iconPath: new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.deemphasizedForeground')),
-            label: 'No tasks to display in this scope',
-            collapsibleState: vscode.TreeItemCollapsibleState.None,
-            contextValue: 'task-cockpit::EmptyMarker',
-            tooltip: new vscode.MarkdownString(`*No tasks to display in this scope*\n`, false)
-        };
-    }
-
-    // #region DEBUG
-    assert(false, `Unhandled marker type: ${node.markerType}`);
-    // #endregion DEBUG
-    return {};
 }
 
 
@@ -89,8 +94,8 @@ function marker(node: Tree.Node.Marker): vscode.TreeItem {
  *
  * Отвечает за:
  * - **Иконку** — берётся из определения задачи (`icon.id`, `icon.color`)
- *   или используется `defaultIconName` из конфигурации скоупа.
- * - **Статус** — количество процессов и запущенных инстансов кодируется
+ *   или используется `defaultIconName` из конфигурации области.
+ * - **Статус** — количество процессов и запущенных экземпляров кодируется
  *   в `resourceUri` (query-компонент) для {@link DecorationProvider декоратора},
  *   а также определяет `contextValue` для контекстного меню
  *   (`:terminals` — есть терминалы, `:running` — есть живые процессы).
@@ -98,7 +103,7 @@ function marker(node: Tree.Node.Marker): vscode.TreeItem {
  * - **Вложенность** — если узел является ветвью (имеет потомков),
  *   он сворачиваем; иначе — лист.
  *
- * @param scopedConfig Настройки отображения для текущего скоупа (папки).
+ * @param scopedConfig Настройки отображения для текущей области (папки).
  * @param runtimeState Карта процессов задачи; `undefined` если задача не запускалась. */
 function runnable(
     node: Tree.Node.Runnable,
@@ -110,15 +115,14 @@ function runnable(
     const running = processes > 0 ? [...runtimeState!.values()].reduce((n, pInfo) => n + (pInfo.running ? 1 : 0), 0) : 0;
 
     const contextValue = [
-        'task-cockpit',
-        'task',
+        'task-cockpit:Task',
         processes > 0 ? 'terminals' : false,
         running ? 'running' : false,
         node.rejectFlag ? 'broken' : false
     ].filter((s): s is string => Boolean(s)).join(':');
 
     const flags = [
-        node.hide ? 'Hidden' : false,
+        node.hidden ? 'Hidden' : false,
         node.group?.isDefault ? 'Default' : false,
         node.isBackground ? 'Background' : false
     ].filter((s): s is string => Boolean(s));
@@ -167,7 +171,8 @@ function intermediate(
         label: node.segment,
         iconPath: scopedConfig.useFolderIcon ? new vscode.ThemeIcon('symbol-folder') : undefined,
         collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
-        tooltip: new vscode.MarkdownString(`**${node.segment}** group\n`)
+        tooltip: new vscode.MarkdownString(`**${node.segment}** group\n`),
+        contextValue: 'task-cockpit:Group',
     };
 }
 
@@ -178,11 +183,12 @@ function intermediate(
  * для первичного построения элементов дерева (без тултипов —
  * тултипы заполняются лениво через {@link Resolver | резолверы}). */
 const Renderer = {
-    marker,
-    workspace,
+    favorites,
     folder,
-    runnable,
     intermediate,
+    marker,
+    runnable,
+    workspace,
 } as const;
 
 export default Renderer;
