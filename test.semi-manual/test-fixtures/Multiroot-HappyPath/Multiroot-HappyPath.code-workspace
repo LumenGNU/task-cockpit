@@ -14,7 +14,7 @@
       "Shared",
       "Shared-simlink"
     ],
-    "taskCockpit.filtering.showHidden": false,
+    "taskCockpit.filtering.showHidden": true,
     "taskCockpit.display.useFolderIcon": true
   },
   "tasks": {

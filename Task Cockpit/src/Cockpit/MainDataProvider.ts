@@ -38,7 +38,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Readonl
 
 
     /** Корневые узлы дерева. */
-    private roots?: Array<Tree.Node.RootNode>;
+    private tree?: Array<Tree.Node.RootNode>;
 
     // private WorkspaceDetail?: TC.WorkspaceDetail;
 
@@ -93,91 +93,48 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Readonl
      *
      * @param roots Новые корневые узлы. `undefined` очищает дерево.
      * @fires onDidChangeTreeData */
-    public rebuild(roots?: ReadonlyArray<Readonly<Tree.Node.RootNodeWorkspace | Tree.Node.RootNodeFolder>>): TC.WorkspaceDetail {
+    public rebuild(roots?: ReadonlyArray<Readonly<Tree.Node.RootNodeWorkspace | Tree.Node.RootNodeFolder>>): void {
         // #region DEBUG
         log(LogLevel.Debug, 'Rebuilding entire tree view ...');
         // #endregion DEBUG
 
-        const total = roots?.length ?? 0;
-        const _roots = roots ? roots.filter((r) => !r.hide) : [];
+        // const total = roots?.length ?? 0;
+        // const _roots = roots ? structuredClone(roots.filter((r) => !r.hide)) : [];
 
-        this.pruneDetails = new Map<TC.File, { total: number; displayed: number; }>();
+        // this.pruneDetails = new Map<TC.File, { total: number; displayed: number; }>();
 
-        // Вычистить скрытые задачи, если нужно
-        for (const root of _roots) {
-            const { showHidden } = this.deps
-                .getResourceSettings_cb(root.tasksFile)
-                .branchConfig;
+        // // Вычистить скрытые задачи, если нужно
+        // for (const root of _roots) {
+        //     const { showHidden } = this.deps
+        //         .getResourceSettings_cb(root.tasksFile)
+        //         .branchConfig;
 
-            const details = this.pruneBranch(root, showHidden);
+        //     const details = this.pruneBranch(root, showHidden);
 
-            this.pruneDetails.set(root.tasksFile, details);
+        //     this.pruneDetails.set(root.tasksFile, details);
 
-            if (root.children.length < 1) {
-                // если корень был/становиться пустой
-                root.children.push(Tree.Node.makeEmptyMarker(root.tasksFile));
-            }
-        }
+        //     if (root.children.length < 1) {
+        //         // если корень был/становиться пустой
+        //         root.children.push(Tree.Node.makeEmptyMarker(root.tasksFile));
+        //     }
+        // }
 
-        this.workspaceDetail = { total, displayed: _roots.length };
+        // @todo
+        // if (root.children.length < 1) {
+        //     // если корень был/становиться пустой
+        //     root.children.push(Tree.Node.makeEmptyMarker(root.tasksFile));
+        // }
 
-        this.roots = [..._roots];
+        // this.workspaceDetail = { total, displayed: _roots.length };
+
+        // // @todo
+        // this.tree = [{ kind: 'Favorites', segment: 'Favorites', children: [] }, ..._roots];
 
         this.onDidChangeEmitter.fire();
 
-        return this.workspaceDetail;
     }
 
-    /** Рекурсивно вычистить ветку: удалить скрытые ноды (при `removeHidden`)
-     * и промежуточные узлы, оставшиеся без потомков, и не являющиеся Runnable+не скрытыми.
-     *
-     * Отростки:
-     * - Branch, нет детей → полное удаление.
-     * - Runnable + Branch, +видимый, но все дети вырезаны → остаётся как Runnable.
-     * - Runnable + Branch, +скрытый, дети выжили → становится чистой папкой.
-     * - Runnable + Branch, +скрытый, дети не выжили → полное удаление.
-     *
-     * @returns { total: number; displayed: number; }
-     *   - `total` — все Runnable в поддереве (включая скрытые/удалённые)
-     *   - `displayed` — только выжившие после отсечения */
-    private pruneBranch(
-        root: Tree.Node.RootNodeWorkspace | Tree.Node.RootNodeFolder,
-        showHidden: boolean
-    ): { total: number; displayed: number; } {
 
-        const removeHidden = !showHidden;
-
-        let total = 0;
-        let displayed = 0;
-
-        const prune = (node: Tree.Node.RootNodeWorkspace | Tree.Node.RootNodeFolder | Tree.Node.Runnable | Tree.Node.Segment) => {
-            node.children = node.children?.filter((child) => {
-
-                if (Tree.Node.isBranch(child)) {
-                    // есть дети, но возможно и Runnable
-                    prune(child); // рекурсия по потомкам
-                }
-                if (Tree.Node.isRunnable(child)) {
-                    total++;
-                    if (child.hidden && removeHidden) {
-                        // Если узел имеет потомков — теперь будет отображаться как
-                        // чистый сегмент (true). Или будет полностью исключен (false).
-                        return Tree.Node.switchToBranch(child);
-                    }
-                    displayed++;
-                    return true; // видимый Runnable — оставить, даже без детей
-                }
-                // чистый Segment — оставить только если есть потомки
-                // Если рекурсия вычистила всех потомков — удаляется
-                return !!child.children.length;
-            });
-
-        };
-
-        prune(root);
-
-        return { total, displayed };
-    }
 
     /** Обновить узел-задачу.
      *
@@ -222,7 +179,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Readonl
             // "просроченными" узлами.
             this.runnablesMap = new Map();
 
-            return this.roots;
+            return this.tree;
         }
 
         return node.children;
@@ -267,11 +224,6 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Readonl
 
         return Renderer.intermediate(node, this.deps.getResourceSettings_cb(taskFile).nodeConfig);
 
-
-        // #region DEBUG
-        throw node;
-        // #endregion DEBUG
-
     }
 
 
@@ -289,7 +241,7 @@ export default class MainDataProvider implements vscode.TreeDataProvider<Readonl
                 return item;
             }
             else if (Tree.Node.isWorkspace(node)) {
-                return Resolver.workspace(item, node, this.workspaceDetail!, this.pruneDetails?.get(node.tasksFile)!, token);
+                return Resolver.workspace(item, node, this.workspaceDetail!, this.pruneDetails!.get(node.tasksFile)!, token);
             }
             else if (Tree.Node.isFolder(node)) {
                 return Resolver.folder(item, node, this.pruneDetails?.get(node.tasksFile)!, token);

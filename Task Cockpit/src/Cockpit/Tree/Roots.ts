@@ -14,15 +14,6 @@ const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
 
-// /** Визуальный маркер — нефункциональный узел для отображения состояний */
-// interface MarkerNodeType {
-//     /** Тип маркера. */
-//     markerType: TC.MarkerType;
-//     /** Файл задач, к которому относится маркер. */
-//     tasksFile: TC.File;
-// }
-
-
 /** Базовый интерфейс корневого узла (общий для folder и workspace root). */
 interface RootNodeType {
     /** Отображаемое имя корня (имя папки или workspace). */
@@ -57,15 +48,10 @@ function sprout(
     scopes: ReadonlyArray<Readonly<TC.Scope>>,
     definitionsByFile: Readonly<TC.DefinitionsByFile>,
     settingsByFile: Readonly<TC.SettingsByFile>,
-    windowSettings: Readonly<TC.WindowSettings>,
+    windowSettings: Readonly<TC.WindowSettings>, // @todo тут просто excludeFolders
 ): ReadonlyArray<RootNodeType> {
 
-
-
     const roots: RootNodeType[] = [];
-    // const detailsByFile: TC.DetailsByFile = new Map();
-    // const workspaceDetail: TC.WorkspaceDetail | undefined = isMultiRoot ? { all: scopesArray.length, excludes: 0 } : undefined;
-
 
     for (const scope of scopes) {
 
@@ -95,7 +81,6 @@ function sprout(
             windowSettings.excludeFolders
         );
 
-        // detailsByFile.set(file, { all: scopedTasks.size, hidden: hiddenCount });
         roots.push(rootNode);
     }
 
@@ -175,11 +160,6 @@ function makeBranchSpec(
 
     for (const [name, taskDefinition] of tasksDefinitionMap) {
 
-        // if (task.hide) {// && !configs.showHidden) {
-        //     hiddenCount++;
-        //     // continue; // @fixme скрывать на уровне вювера
-        // }
-
         // Если `useGroupKind === true`, и у задачи есть группа, то
         // то первым сегментом будет название группы. Это поведение не зависит от
         // значения `segmentSeparator`.
@@ -200,17 +180,73 @@ function makeBranchSpec(
 }
 
 
-// /** Создаёт "визуальный" маркер (placeholder) для указанного файла задач.
-//  *
-//  * @param tasksFile файл задач, для которого создается маркер
-//  * @returns узел-маркер (placeholder) */
-// function mkMarkerEmpty(tasksFile: TC.File): MarkerNodeType {
-//     return {
-//         tasksFile,
-//         markerType: 'EMPTY'
-//     };
-// }
+/** Переключает узел в чистый сегмент. (Отбирается возможность быть Runnable)
+ * Возвращает `true`, если узел имеет потомков.
+ * False — если нет.
+ *
+ * @affects `id` У узла удаляется свойство `id`. */
+function switchToBranch(node: Builder.DataNode<TC.TaskDefinition, TC.File> | Builder.InternodeNode<TC.TaskDefinition, TC.File>): boolean {
+    if (Builder.Node.isBranch(node)) {
+        return false;
+    } else {
+        delete (node as Partial<TC.TaskDefinition>).id;
+        return true;
+    }
+}
 
+
+/** Рекурсивно вычистить ветку: удалить скрытые ноды (при `removeHidden`)
+ * и промежуточные узлы, оставшиеся без потомков, и не являющиеся Runnable+не скрытыми.
+ *
+ * Отростки:
+ * - Branch, нет детей → полное удаление.
+ * - Runnable + Branch, +видимый, но все дети вырезаны → остаётся как Runnable.
+ * - Runnable + Branch, +скрытый, дети выжили → становится чистой папкой.
+ * - Runnable + Branch, +скрытый, дети не выжили → полное удаление.
+ *
+ * @affects root
+ *
+ * @returns { total: number; displayed: number; }
+ *   - `total` — все Runnable в поддереве (включая скрытые/удалённые)
+ *   - `displayed` — только выжившие после отсечения */
+function pruneBranch(
+    root: RootNodeType,
+    showHidden: boolean
+): { total: number; displayed: number; } {
+
+    const removeHidden = !showHidden;
+
+    let total = 0;
+    let displayed = 0;
+
+    const prune = (node: RootNodeType | Builder.DataNode<TC.TaskDefinition, TC.File> | Builder.InternodeNode<TC.TaskDefinition, TC.File>) => {
+        node.children = node.children?.filter((child) => {
+
+            if (Builder.Node.isBranch(child)) {
+                // есть дети, но возможно и Runnable
+                prune(child); // рекурсия по потомкам
+            }
+            if (Tree.Node.isRunnable(child)) {
+                total++;
+                if (child.hidden && removeHidden) {
+                    // Если узел имеет потомков — теперь будет отображаться как
+                    // чистый сегмент (true). Или будет полностью исключен (false).
+                    return switchToBranch(child);
+                }
+                displayed++;
+                return true; // видимый Runnable — всегда оставить, даже без детей
+            }
+            // чистый Segment — оставить только если есть потомки
+            // Если рекурсия вычистила всех потомков — удаляется
+            return !!child.children.length;
+        });
+
+    };
+
+    prune(root);
+
+    return { total, displayed };
+}
 
 // #region DEBUG
 
@@ -249,13 +285,11 @@ function printTree(roots: RootNodeType[]): void {
 
 
 namespace Roots {
-    // export type MarkerNode = MarkerNodeType;
     export type RootNode = RootNodeType;
-    // export type SproutResult = SproutResultType;
 }
 
 const Roots = {
-    sprout
+
 } as const;
 
 export default Roots;

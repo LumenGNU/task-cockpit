@@ -102,19 +102,7 @@ function isRunnable(node: Tree.Node.NodeType): node is Tree.Node.Runnable {
 }
 
 
-/** Переключает узел в чистый сегмент. (Отбирается возможность быть Runnable)
- * Возвращает `true`, если узел имеет потомков.
- * False — если нет.
- *
- * @affects `id` У узла удаляется свойство `id`. */
-function switchToBranch(node: Tree.Node.Runnable): boolean {
-    if (isBranch(node)) {
-        delete (node as Partial<Tree.Node.Runnable>).id;
-        return true;
-    } else {
-        return false;
-    }
-}
+
 
 
 /** Type guard: узел является корневым (workspace или folder root). */
@@ -170,6 +158,47 @@ function makeEmptyMarker(tasksFile: TC.File): Tree.Node.Marker {
 }
 
 
+
+
+
+function cultivateTree(
+    scopes: ReadonlyArray<Readonly<TC.Scope>>,
+    definitionsByFile: Readonly<TC.DefinitionsByFile>,
+    settingsByFile: Readonly<TC.SettingsByFile>,
+    windowSettings: Readonly<TC.WindowSettings>, // @todo тут просто excludeFolders
+): {
+    roots: ReadonlyArray<Tree.Node.RootNodeWorkspace | Tree.Node.RootNodeFolder>;
+    total: number;
+    displayed: number;
+    pruneDetails: Map<TC.File, {
+        total: number;
+        displayed: number;
+    }>;
+} {
+    // прорастить-фильтрация-обрезка
+
+    const roots = Tree.sproutRoots(
+        scopes,
+        definitionsByFile,
+        settingsByFile,
+        windowSettings
+    ).filter((r) => !r.hide);
+
+    const total = roots.length;
+
+    const pruneDetails = new Map<TC.File, { total: number; displayed: number; }>();
+
+    // Вычистить скрытые задачи, если нужно
+    for (const root of roots) {
+        const { showHidden } = settingsByFile.get(root.tasksFile)!.branchConfig;
+        // Обрезка
+        const details = pruneBranch(root, showHidden);
+        pruneDetails.set(root.tasksFile, details);
+    }
+
+    return { roots, total, displayed: roots.length, pruneDetails };
+}
+
 const Tree = {
     Node: {
         isBranch,
@@ -182,9 +211,11 @@ const Tree = {
         makeEmptyMarker,
         parseNodePath,
         resolveScope,
-        switchToBranch,
+        // switchToBranch,
     },
-    sproutRoots: Roots.sprout
+    // pruneBranch,
+    cultivateTree,
+    // sproutRoots: Roots.sprout,
 } as const;
 
 

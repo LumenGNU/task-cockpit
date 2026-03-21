@@ -28,10 +28,21 @@ class Cockpit implements vscode.Disposable {
     private readonly disposable: vscode.Disposable;
 
 
+    private readonly workspaceDetail: {
+        readonly total: number;
+        readonly displayed: number;
+    };
+
+
     private constructor(
         private readonly runtime: Runtime,
         private readonly workspace: Workspace,
-        private roots: ReadonlyArray<Tree.Node.RootNodeFolder | Tree.Node.RootNodeWorkspace>,
+        private tree: {
+            readonly roots: ReadonlyArray<Tree.Node.RootNodeFolder | Tree.Node.RootNodeWorkspace>,
+            readonly total: number,
+            readonly displayed: number,
+            readonly pruneDetails: Map<TC.File, Readonly<{ total: number; displayed: number; }>>;
+        },
         dirty: boolean
     ) {
 
@@ -90,10 +101,12 @@ class Cockpit implements vscode.Disposable {
 
         listener.dispose();
 
+        // готовы создать дерево
+
         const cockpit = new Cockpit(
             runtime,
             workspace,
-            Tree.sproutRoots(
+            Tree.cultivateTree(
                 workspace.getScopes(),
                 workspace.getDefinitions(),
                 workspace.getResourceSettings(),
@@ -174,7 +187,7 @@ class Cockpit implements vscode.Disposable {
         try {
             await this.workspace.reScan();
 
-            this.roots = Tree.sproutRoots(
+            this.roots = Tree.cultivateTree(
                 this.workspace.getScopes(),
                 this.workspace.getDefinitions(),
                 this.workspace.getResourceSettings(),
@@ -224,7 +237,7 @@ class Cockpit implements vscode.Disposable {
         log(LogLevel.Trace, 'Rebuilding providers ...', 'rebuild');
         // #endregion DEBUG
 
-        const { total, displayed } = this.mainDataProvider.rebuild(this.roots);
+        this.mainDataProvider.rebuild(this.roots);
 
         // Сообщение если вювер после обновления стал визуально пустой —
         // "нет папок для отображения"
@@ -243,6 +256,7 @@ class Cockpit implements vscode.Disposable {
         log(LogLevel.Trace, 'Rebuilding providers finished', 'rebuild');
         // #endregion DEBUG
     }
+
 }
 
 

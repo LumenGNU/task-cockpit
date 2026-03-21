@@ -46,7 +46,7 @@ function folder(node: Tree.Node.RootNodeFolder): vscode.TreeItem {
 
 function favorites(node: Tree.Node.RootNodeFavorites): vscode.TreeItem {
     return {
-        label: 'XXXXXXXZZZZZZZZZZZYYYYYYYYYY',
+        label: node.segment,
         resourceUri: vscode.Uri.from({
             scheme: 'task-cockpit',
             authority: 'favorites',
@@ -54,7 +54,8 @@ function favorites(node: Tree.Node.RootNodeFavorites): vscode.TreeItem {
         }),
         iconPath: new vscode.ThemeIcon('pinned'),
         collapsibleState: vscode.TreeItemCollapsibleState.Expanded,
-        contextValue: 'task-cockpit:Folder:Pinned'
+        contextValue: 'task-cockpit:Folder:Pinned',
+        tooltip: new vscode.MarkdownString(`*${node.segment}*\n`, false)
     };
 }
 

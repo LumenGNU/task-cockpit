@@ -7,6 +7,9 @@
             "path": "test.semi-manual"
         },
         {
+            "path": "test.module-Cockpit.Tree"
+        },
+        {
             "path": "test.module-Panel.Workspace"
         },
         {

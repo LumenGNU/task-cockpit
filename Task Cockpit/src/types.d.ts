@@ -250,3 +250,57 @@ export interface VisualMetadata {
     running?: number;
     special?: 'EMPTY' | 'BROKEN';
 }
+
+
+export namespace Builder {
+
+    export type Separator = '\0';
+
+    type ProhibitedKeys = 'children' | 'segment' | 'nodePath';
+
+    export type NodePath<S extends string = string> = `${S}${Separator}${string}`;
+
+
+    /** Спецификация ветки: путь (сегменты) + данные на конце.
+     *
+     * @remarks
+     * Ключи `data` не должны пересекаться с {@linkcode ProhibitedKeys}
+     * Служебные поля узла:
+     * - `segment`,
+     * - `nodePath`,
+     * - `children`
+     * Типизация отсекает коллизию на этапе компиляции, но runtime не защищён —
+     * `Object.assign` затрёт служебные поля без предупреждения. */
+    export type SpecType<D extends object> = Readonly<{
+        segments: readonly string[];
+        data: { [K in keyof D]: K extends ProhibitedKeys ? never : D[K] };
+    }>;
+
+    /** Узел дерева. */
+    export type Node<D extends object, S extends string>
+        = {
+            /** Имя узла (его часть пути). */
+            segment: string;
+            /** Дочерние узлы (если есть). */
+            children: (Node<D, S> | DataNode<D, S>)[];
+
+            /** Уникальный идентификатор узла (не задачи) в пределах дерева.
+             * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
+            nodePath: NodePath<S>;
+        }
+        | DataNode<D, S>;
+
+    /** Узел дерева с данными. */
+    export type DataNode<D extends object, S extends string>
+        = {
+            /** Имя узла (его часть пути). */
+            segment: string;
+            /** Дочерние узлы (если есть). */
+            children?: (Node<D, S> | DataNode<D, S>)[];
+
+            /** Уникальный идентификатор узла (не задачи) в пределах дерева.
+             * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
+            nodePath: NodePath<S>;
+        }
+        & Omit<D, ProhibitedKeys>;
+}
