@@ -19,12 +19,13 @@ export default defineConfig(
 
     {
         rules: {
+            curly: "warn",
+            eqeqeq: "warn",
             "@typescript-eslint/naming-convention": ["warn", {
                 selector: "import",
                 format: ["camelCase", "PascalCase"],
             }],
-            curly: "warn",
-            eqeqeq: "warn",
+            "@typescript-eslint/consistent-type-definitions": ["warn", "interface"]
         },
     },
 

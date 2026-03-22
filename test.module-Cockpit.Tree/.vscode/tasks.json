@@ -4,6 +4,28 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Open as project",
+      "icon": {
+        "id": "vscode"
+      },
+      "detail": "",
+      "type": "shell",
+      "command": "setsid -f codium '${workspaceFolder}' && sleep 3",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "close": true,
+        "group": "run-external"
+      }
+    },
+    {
       "label": "Prepare Test Environvent",
       "icon": {
         "id": "symbol-event"
@@ -481,7 +503,7 @@
         "panel": "new",
         "showReuseMessage": false,
         "close": true,
-        "group": "run"
+        "group": "run-external"
       }
     }
   ],

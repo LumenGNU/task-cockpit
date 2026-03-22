@@ -4,10 +4,10 @@ set -eu
 
 trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
 
-# TARGET — директория, или файл для проверки
+# TARGET — директория, или файл для проверки (симлинк будет разименован)
 
 [[ -n "${TARGET:-}" ]] || { echo "[ERROR] Environment variable TARGET not set or empty" ; exit 1 ; }
-
+TARGET="$(readlink -f "${TARGET}")" || { echo "[ERROR] Failed to resolve TARGET path" ; exit 1 ; }
 
 if [[ -d "${TARGET}" ]]; then
     entity="directory"

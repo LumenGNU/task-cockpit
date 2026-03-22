@@ -13,11 +13,6 @@ const { log, assert } = Logger.get(module.filename);
 const DATA_MARKER: unique symbol = Symbol('data');
 
 
-/** Разделитель для формирования nodeId.
- * NUL-символ исключает коллизии с именами сегментов. */
-const SEPARATOR: Builder.Separator = '\0' as const;
-
-
 /** Модуль построения дерева из плоских путей.
  *
  * Принимает массив {@link Builder.SpecType | "спецификаций"} — путей вида `['a', 'b', 'c']` с данными —
@@ -28,6 +23,9 @@ const SEPARATOR: Builder.Separator = '\0' as const;
  *
  * Дубликаты путей создают коллизию —
  * данные перезаписываются с предупреждением в лог.
+ *
+ * Спецификации с пустым массивом сегментов (`segments: []`) молча игнорируются —
+ * не создают узлов и не влияют на остальное дерево.
  *
  * @example
  * // Вход:
@@ -52,8 +50,27 @@ const SEPARATOR: Builder.Separator = '\0' as const;
  * // └─ build [taskAll]
  * //    └─ dev [taskDev]
  *
+ * ## Builder — это "тупой" и быстрый
+ *
+ * {@linkcode Builder.build} должен быть быстрый построитель.
+ * Проверка 500 сегментов по 500 символов на символ, крайне маловероятный
+ * в "правильном" вводе — ненужное замедление. Поэтому:
+ *
+ *
+ * @warning
+ * Алгоритм в prod-сборке не защищен от SEPARATOR в scopeId!
+ *
+ * @warning
+ * Алгоритм в prod-сборке не защищен от сегментов, состоящих из пустых строк!
+ *
+ * @warning
+ * Алгоритм в prod-сборке не защищен от сегментов, содержащие SEPARATOR!
  * */
 const Builder = {
+
+    /** Разделитель для формирования nodeId. */
+    // U+001F is the Unit Separator
+    SEPARATOR: '\x1F' as const,
 
     /**  Построить дерево из списка {@linkcode Builder.SpecType | спецификаций}.
      *
@@ -64,13 +81,14 @@ const Builder = {
      * @template D тип данных, записываемых в data-узлы. Не должен пересекаться с {@linkcode ProhibitedKeys}.
      * @template S строковый scope — используется как префикс {@linkcode Builder.NodePath}
      *
-     * @param scope уникальный идентификатор корня (используется как префикс nodeId)
+     * @param scopeId идентификатор ветки — первый элемент {@linkcode Builder.Node.nodePath | nodePath} всех узлов в ней
      * @param specs массив {@link Builder.SpecType | спецификаций} (путь + данные)
      * @returns корневые узлы построенного дерева */
-    build: function <D extends object, S extends string>(scope: S, specs: readonly Builder.SpecType<D>[]): Builder.Node<D, S>[] {
+    build: function <D extends object, S extends string>(scopeId: S, specs: readonly Builder.SpecType<Readonly<D>>[]): Builder.Node<D, S>[] {
 
         // #region DEBUG
-        assert(scope, 'The "scope" should not be falsy');
+        assert(scopeId, 'The "scope" should not be falsy');
+        assert(scopeId.includes(this.SEPARATOR) === false, 'The "scope" should not contain SEPARATOR');
         // #endregion DEBUG
 
         // Корень — часть **внутренней реализации**, не выдается наружу.
@@ -83,12 +101,12 @@ const Builder = {
         // другое место. Либо усложняется логика поиска родителя.
         //
         // В любом случае: это деталь реализации, которая не видна наружу.
-        const rootPath = scope as Builder.NodePath<S>; // без trailing \0 (без SEPARATOR)
+        const rootPath = `${scopeId}${this.SEPARATOR}` satisfies Builder.NodePath<S>;
 
         // Карта для поиска node по полному пути на ветке
         // **Внутренняя структура**, используется при построении дерева.
         const nodeMap = new Map<Builder.NodePath<S>, Builder.Node<D, S>>([
-            [rootPath, { segment: scope, children: [], nodePath: rootPath }]
+            [rootPath, { _segment: scopeId, children: [], nodePath: rootPath }]
         ]);
 
         // Обрабатываем массив спецификаций
@@ -99,20 +117,24 @@ const Builder = {
             // #endregion DEBUG
 
             segments.reduce<{ path: Builder.NodePath<S>; remaining: number; }>(
-                ({ path, remaining }, segment) => {
+                ({ path, remaining }, _segment) => {
 
                     // #region DEBUG
-                    assert(segment.length > 0, 'The count of "segment" is at least one char');
+                    assert(_segment.length > 0, 'The count of "segment" is at least one char');
+                    assert(_segment.includes(this.SEPARATOR) === false, 'The "segment" should not contain SEPARATOR');
                     // #endregion DEBUG
 
-                    const nodePath = `${path}${SEPARATOR}${segment}` satisfies Builder.NodePath<S>;
+                    // Замена пустого сегмента
+                    _segment ||= this.Node.C0_SUB;
+
+                    const nodePath = `${path}${this.SEPARATOR}${_segment}` satisfies Builder.NodePath<S>;
                     let node = nodeMap.get(nodePath);
 
                     if (!node) {
                         // @fixme: нужен промежуточный тип? @decision: каст допустим —
                         // объект доконструируется в рамках текущей итерации/прохода,
                         // наружу из build() неполные узлы не выходят.
-                        node = { segment, nodePath } as Builder.Node<D, S>;
+                        node = { _segment, nodePath } as Builder.Node<D, S>;
                         nodeMap.set(nodePath, node);
                         (nodeMap.get(path)!.children ??= []).push(node);
                     }
@@ -122,7 +144,7 @@ const Builder = {
                     if (remaining === 0) {
                         // #region DEBUG
                         if (DATA_MARKER in node) {
-                            log(LogLevel.Warning, `Duplicate path in scope "${scope}": "${nodePath}". Data overwritten`);
+                            log(LogLevel.Warning, `Duplicate path in scope "${scopeId}": "${nodePath}". Data overwritten`);
                         }
                         // #endregion DEBUG
                         Object.assign(node, { [DATA_MARKER]: true, ...data });
@@ -140,21 +162,32 @@ const Builder = {
     /** Разобрать {@linkcode Builder.NodePath nodePath} узла на составляющие: scope и сегменты.
      *
      * @template D тип данных data-узлов
-     * @template S строковый scope
+     * @template S строковый идентификатор scope
+     *
      * @param node узел дерева, построенного через {@linkcode Builder.build}
-     * @returns кортеж `[scope, ...segments]` — минимум два элемента (scope + хотя бы один сегмент)
-     * @throws {AssertionError} (только в debug-сборке) если `nodePath` содержит менее двух компонентов (вызов на корневом узле) */
-    parsePath: function <D extends object, S extends string>(node: Builder.Node<D, S>): [S, ...string[]] {
+     * @returns объект, состоящий из scope и массива сегментов
+     * @throws {AssertionError} (только в debug-сборке) если `nodePath` содержит меньше|больше двух компонентов (S+[segments]) */
+    parsePath: function <D extends object, S extends string>(node: Builder.Node<D, S>): { scopeId: S, segments: string[]; } {
 
         // #region DEBUG
-        const p = node.nodePath.split(SEPARATOR);
-        assert(p.length >= 2, 'parsePath called on root node — expected at least scope + segment');
+        const p = node.nodePath.split(`${this.SEPARATOR}${this.SEPARATOR}`);
+        assert(p.length === 2, 'parsePath called on root node — expected at least scope + segment or BUG');
         // #endregion DEBUG
 
-        return node.nodePath.split(SEPARATOR) as [S, ...string[]];
+        const [scopeId, segments] = node.nodePath.split(`${this.SEPARATOR}${this.SEPARATOR}`) as [S, string];
+
+        return {
+            scopeId,
+            segments: segments.split(this.SEPARATOR)
+                .map( // востановление пустого сегмента
+                    (s) => (s === this.Node.C0_SUB) ? '' : s
+                )
+        };
     },
 
     Node: {
+
+        C0_SUB: '\x1a' as const,
 
         /** Имеет ли узел детей. Это проверка на свойство, НЕ тип.
          *
@@ -162,7 +195,7 @@ const Builder = {
          * А у нод с детьми (с полем `children`) не может быть 0 детей.
          *
          * "Чистый лист" = `!isBranch` — это всегда `DataNode`, но `DataNode` — не всегда "чистый лист"  */
-        isBranch: function <D extends object, S extends string>(node: Builder.Node<D, S>): boolean {
+        isBranch: function (node: Builder.Node<any, any>): boolean {
             return 'children' in node;
         },
 
@@ -174,8 +207,15 @@ const Builder = {
         isData: function <D extends object, S extends string>(node: Builder.Node<D, S>): node is Builder.DataNode<D, S> {
             return DATA_MARKER in node;
         },
+
+
+        decodeSegment: function (node: Builder.Node<any, any>): string {
+            return (node._segment === this.C0_SUB) ? '' : node._segment;
+        },
+
     }
 } as const;
 
 
+export type { Builder } from '../../types';
 export default Builder;

@@ -8,7 +8,7 @@ declare const __ProcessId: unique symbol;
 declare const __QueryComponent: unique symbol;
 
 
-export type Separator = '\0';
+export type Separator = '\x1F';
 
 type QueryComponent = string & { readonly [__QueryComponent]: never; };
 
@@ -254,12 +254,12 @@ export interface VisualMetadata {
 
 export namespace Builder {
 
-    export type Separator = '\0';
-
-    type ProhibitedKeys = 'children' | 'segment' | 'nodePath';
+    type ProhibitedKeys =
+        | 'children'
+        | 'nodePath'
+        | '_segment';
 
     export type NodePath<S extends string = string> = `${S}${Separator}${string}`;
-
 
     /** Спецификация ветки: путь (сегменты) + данные на конце.
      *
@@ -276,31 +276,29 @@ export namespace Builder {
         data: { [K in keyof D]: K extends ProhibitedKeys ? never : D[K] };
     }>;
 
+    interface NodeBase<S extends string> {
+        /** Имя узла (его часть пути).
+         *
+         * Нельзя обращаться напрямую, только через {@linkcode Builder.decodeSegment} */
+        _segment: string;
+
+        /** Уникальный идентификатор узла (не задачи) в пределах дерева.
+         * Формируется из полного пути, включая segment: `scope{SEP}seg1{SEP}seg2\segment`. */
+        nodePath: NodePath<S>;
+    }
+
     /** Узел дерева. */
     export type Node<D extends object, S extends string>
-        = {
-            /** Имя узла (его часть пути). */
-            segment: string;
-            /** Дочерние узлы (если есть). */
+        = (NodeBase<S> & {
+            /** Дочерние узлы есть. */
             children: (Node<D, S> | DataNode<D, S>)[];
-
-            /** Уникальный идентификатор узла (не задачи) в пределах дерева.
-             * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
-            nodePath: NodePath<S>;
-        }
+        })
         | DataNode<D, S>;
 
     /** Узел дерева с данными. */
     export type DataNode<D extends object, S extends string>
-        = {
-            /** Имя узла (его часть пути). */
-            segment: string;
+        = NodeBase<S> & {
             /** Дочерние узлы (если есть). */
             children?: (Node<D, S> | DataNode<D, S>)[];
-
-            /** Уникальный идентификатор узла (не задачи) в пределах дерева.
-             * Формируется из полного пути, включая segment: `scope\0seg1\0seg2\segment`. */
-            nodePath: NodePath<S>;
-        }
-        & Omit<D, ProhibitedKeys>;
+        } & Omit<D, ProhibitedKeys>;
 }
