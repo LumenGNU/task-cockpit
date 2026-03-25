@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import Builder, { toDebugJSON } from './Cockpit/Tree/Builder';
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
@@ -16,6 +17,32 @@ export function activate(context: vscode.ExtensionContext) {
 		// #region DEBUG
 		log(LogLevel.Debug, 'test-extension is now active');
 		// #endregion DEBUG
+
+		type LeafType = { calories: number, note?: string };
+
+		function spec(branch: string[], data: LeafType): Builder.Spec<typeof data> {
+			return {
+				segments: branch,
+				data
+			}
+		}
+
+		const topNodes = Builder.build<LeafType, string>('kitchen', [
+			spec(['pizza', 'margherita'], { calories: 250 }),
+			spec(['pizza', 'quattro formaggi'], { calories: 320 }),
+			spec(['pizza', 'diavola'], { calories: 290 }),
+			spec(['pizza'], { calories: 0, note: 'dough base' }), // данные + дети
+			spec(['sushi', 'nigiri', 'salmon'], { calories: 45 }),
+			spec(['sushi', 'nigiri', 'tuna'], { calories: 40 }),
+			spec(['sushi', 'roll', 'dragon'], { calories: 500 }),
+			spec(['sushi', 'roll', 'rainbow'], { calories: 470 }),
+			spec(['sushi', 'gunkan'], { calories: 60 }),  // лист на уровне группирующих
+			spec(['taco'], { calories: 210 }), // одиночный лист, без вложенности
+			spec(['ramen', 'tonkotsu'], { calories: 450 }),
+			spec(['ramen', 'miso'], { calories: 380 }),
+		]);
+
+		console.log(JSON.stringify(toDebugJSON(topNodes), null, 2));
 
 	});
 

@@ -51,7 +51,7 @@ type Dict<D extends object, S extends string> = { [segment: string]: SymbolsNode
 type SymbolsNode<D extends object, S extends string> = {
     /** Имя узла (его часть пути). */
     [SEGMENT]: string;
-    [PARENT]: NodeType<D, S> | SemanticRoot<D, S>;
+    [PARENT]: ActuallyBranch<D, S> | SemanticRoot<D, S>;
     [DATA_FLAG]?: true;
     [CHILDREN]?: Dict<D, S>;
 };
@@ -81,9 +81,12 @@ type NodeArrayType<D extends object, S extends string> = Array<NodeType<D, S>> &
 
 
 /** Type guard: является ли узел корневым (синтетическим). */
-function isRoot<D extends object, S extends string>(node: NodeType<D, S> | SemanticRoot<D, S>): node is SemanticRoot<D, S> {
+function isTop<D extends object, S extends string>(node: NodeType<D, S> | SemanticRoot<D, S>): node is SemanticRoot<D, S> {
     return node[PARENT] === undefined;
 }
+
+
+type ActuallyBranch<D extends object, S extends string> = NodeType<D, S> & { readonly [CHILDREN]: Dict<D, S>; };
 
 
 /** Модуль построения иерархии из плоских путей.
@@ -158,7 +161,7 @@ const Builder = {
         rootNode[CHILDREN] = Object.create(null) as Dict<D, S>;
 
         // helper to create a node for a given parentPath and segment
-        const createSeed = function (parent: SymbolsNode<D, S> | SemanticRoot<D, S>, segment: string): SymbolsNode<D, S> {
+        const createSeed = function (parent: ActuallyBranch<D, S> | SemanticRoot<D, S>, segment: string): SymbolsNode<D, S> {
             const seed = Object.create(null) as SymbolsNode<D, S>;
             seed[SEGMENT] = segment;
             seed[PARENT] = parent;
@@ -181,46 +184,51 @@ const Builder = {
                 rootNode[CHILDREN][firstSegment] = firstNode;
             }
 
-            let current = firstNode;
+            let parent = firstNode;
             // traverse remaining segments
             for (let si = 1; si < segments.length; si++) {
 
-                const segment = segments[si];
+                const currentSegment = segments[si];
 
                 // ensure children dict exists
-                let dict: Dict<D, S> | undefined = current[CHILDREN]
-                if (!dict) {
-                    dict = Object.create(null) as Dict<D, S>;
-                    current[CHILDREN] = dict;
+                if (!Builder.Node.isBranch(parent)) {
+                    const dict = Object.create(null);
+                    parent[CHILDREN] = dict as Dict<D, S>;
+                    // теперь приведение parent as ActuallyBranch<D, S> легитимно
                 }
+
+                const parentDict: Partial<Dict<D, S>> = (parent as ActuallyBranch<D, S>)[CHILDREN];
 
                 // lazily создание child node в dict
-                let childNode: SymbolsNode<D, S> | undefined = dict[segment];
+                let childNode = parentDict[currentSegment];
                 if (!childNode) {
-                    childNode = createSeed(current, segment);
-                    dict[segment] = childNode;
+                    // текущий сегмент еще не в родителе
+                    // создаем узел и помещаем в родителя
+                    childNode = createSeed((parent as ActuallyBranch<D, S>), currentSegment);
+                    parentDict[currentSegment] = childNode;
                 }
 
-                current = childNode;
+                parent = childNode;
             }
 
             // parent is the endpoint node for this spec; spread data onto it
-            if (DATA_FLAG in current) {
+            if (DATA_FLAG in parent) {
                 // #region DEBUG
                 log(LogLevel.Warning, `Duplicate path in scope "${scopeId}": "${segments.join(' • ')}". Data was overwritten`);
                 // #endregion DEBUG
                 // должна быть перезапись! не мерж!
-                for (const key of Reflect.ownKeys(current)) {
-                    const STRUCT_SYMBOLS: ReadonlySet<symbol> = new Set([SEGMENT, CHILDREN, PARENT]);
-                    if (typeof key === 'symbol' && STRUCT_SYMBOLS.has(key)) continue;
-                    delete (current as Record<string | symbol, unknown>)[key];
+                for (const key of Reflect.ownKeys(parent)) {
+                    if (typeof key === 'symbol' && [DATA_FLAG, SEGMENT, CHILDREN, PARENT].includes(key)) continue;
+                    delete (parent as Record<string | symbol, unknown>)[key];
                 }
             }
-            Object.assign(current, { [DATA_FLAG]: true, ...data });
+            Object.assign(parent, { [DATA_FLAG]: true, ...data });
 
         }
 
-        return Object.values<NodeType<D, S>>(rootNode[CHILDREN]) as NodeArrayType<D, S>;
+        return Object.freeze(
+            Object.values<NodeType<D, S>>(rootNode[CHILDREN]) as NodeArrayType<D, S>
+        )
     },
 
     /** Найти узел в дереве по пути сегментов.
@@ -234,7 +242,7 @@ const Builder = {
             return undefined;
         }
 
-        const dict = topNodes[0][PARENT][CHILDREN]!;
+        const dict = topNodes[0][PARENT][CHILDREN];
         let current: NodeType<D, S> | undefined = dict[segments[0]];
 
         for (let si = 1; current && si < segments.length; si++) {
@@ -250,7 +258,7 @@ const Builder = {
      * Удобная альтернатива паре {@linkcode Builder.Node.isBranch} + {@linkcode Builder.Node.getBranchChildren},
      * когда ветвление не нужно обрабатывать отдельно. */
     getNodeChildren: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): Array<Readonly<NodeType<D, S>>> {
-        if (this.Node.isBranch(node)) {
+        if (Builder.Node.isBranch(node)) {
             return Object.values<NodeType<D, S>>(node[CHILDREN]);
         }
         return [];
@@ -264,7 +272,9 @@ const Builder = {
          * У нод с детьми (с полем `children`) всегда ≥ 1 ребёнок.
          *
          * "Чистый лист" = `!isBranch` — это всегда "DataNode", но "DataNode" — не всегда "чистый лист"  */
-        isBranch: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): node is Required<SymbolsNode<D, S>> {
+        isBranch<D extends object, S extends string>(
+            node: Readonly<NodeType<D, S>>
+        ): node is ActuallyBranch<D, S> {
             return CHILDREN in node;
         },
 
@@ -298,7 +308,7 @@ const Builder = {
             };
             let current: NodeType<D, S> | SemanticRoot<D, S> = node;
             while (current) {
-                if (isRoot(current)) {
+                if (isTop(current)) {
                     result.scopeId = current[SEGMENT];
                     break;
                 }
@@ -312,18 +322,18 @@ const Builder = {
 
         /** Возвращает детей узла-контейнера.  
          * Метод доступен **только** для узлов, где `isBranch(node) === true`. */
-        getBranchChildren: function <D extends object, S extends string>(node: Required<SymbolsNode<D, S>>): Array<Readonly<NodeType<D, S>>> {
+        getBranchChildren: function <D extends object, S extends string>(node: Readonly<ActuallyBranch<D, S>>): Array<Readonly<NodeType<D, S>>> {
             return Object.values<NodeType<D, S>>(node[CHILDREN]);
         },
 
 
         /** Родительский узел, или `undefined` если узел находится на верхнем уровне. */
-        getParent: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): Readonly<NodeType<D, S>> | undefined {
-            const parent = node[PARENT] as NodeType<D, S> | SemanticRoot<D, S>;
-            if (isRoot(parent)) {
+        getParent: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): ActuallyBranch<D, S> | undefined {
+            const parent = node[PARENT];
+            if (isTop(parent)) {
                 return undefined
             }
-            return parent
+            return parent as ActuallyBranch<D, S>;
         }
 
     } as const,
@@ -335,6 +345,45 @@ namespace Builder {
     export type Spec<D extends object> = SpecType<D>;
     /** Узел иерархии. */
     export type Node<D extends object, S extends string> = NodeType<D, S>;
+    export type NodeArray<D extends object, S extends string> = NodeArrayType<D, S>;
 }
 
 export default Builder;
+
+
+// #region DEBUG
+/** Сериализация дерева в plain-объект для отладки.
+ *
+ * Символьные ключи и циклические ссылки убраны —
+ * результат безопасен для `JSON.stringify`. */
+export function toDebugJSON<D extends object, S extends string>(
+    topNodes: Readonly<Builder.NodeArray<D, S>>
+): Record<string, unknown> {
+
+    function nodeToPlain(node: Readonly<Builder.Node<D, S>>): Record<string, unknown> {
+        const result: Record<string, unknown> = {};
+
+        if (Builder.Node.isData(node)) {
+            for (const key of Object.keys(node)) {
+                result[key] = (node as Record<string, unknown>)[key];
+            }
+        }
+
+        if (Builder.Node.isBranch(node)) {
+            const children: Record<string, unknown> = {};
+            for (const child of Builder.Node.getBranchChildren(node)) {
+                children[Builder.Node.getSegment(child)] = nodeToPlain(child);
+            }
+            result['[children]'] = children;
+        }
+
+        return result;
+    }
+
+    const root: Record<string, unknown> = {};
+    for (const node of topNodes) {
+        root[Builder.Node.getSegment(node)] = nodeToPlain(node);
+    }
+    return root;
+}
+// #endregion DEBUG
