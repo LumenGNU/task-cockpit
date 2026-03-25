@@ -2,20 +2,22 @@ import * as assert from 'assert/strict';
 import Builder from '../Cockpit/Tree/Builder';
 
 
-type D = { tag: string; };
+type PLoad = { tag: string; };
 
 
 const SCOPE = '<S-id>';
 
 
-function spec(segments: ReadonlyArray<string>, data: D): Builder.SpecType<D> {
+
+
+function spec<D extends object = PLoad>(segments: ReadonlyArray<string>, data: D): Builder.Spec<D> {
     return { segments, data };
 }
 
 
-function nodePathCheck(node: Builder.Node<D, string>, expectScopeId: string, ...expectSegments: string[]): void {
+function nodePathCheck(node: Builder.Node<PLoad, string>, expectScopeId: string, ...expectSegments: string[]): void {
 
-    const { scopeId, segments } = Builder.parsePath(node);
+    const { scopeId, segments } = Builder.Node.resolvePath(node);
 
     assert.strictEqual(scopeId, expectScopeId, 'scopeId must match');
     assert.deepStrictEqual(segments, expectSegments, 'segments must match');
@@ -24,46 +26,7 @@ function nodePathCheck(node: Builder.Node<D, string>, expectScopeId: string, ...
 
 suite('@module Cockpit/Tree/Builder', function () {
 
-
-    setup(function () {
-
-    });
-
-    teardown(function () {
-
-    });
-
     suite('build', () => {
-
-        suite('SEPARATOR', () => {
-
-            // SEPARATOR — внутренний разделитель nodePath.
-            // Инвариант безопасности: разделитель — не-вводимый C0-символ, 
-            // не \t/\n/\r. Защита от коллизий с пользовательским вводом.
-            test('SEPARATOR is a non-input control character', function () {
-
-                assert.strictEqual(typeof Builder.SEPARATOR, 'string', 'must be string');
-                assert.ok(Builder.SEPARATOR.length > 0, 'must not be empty');
-                assert.strictEqual(Builder.SEPARATOR.length, 1, 'must be single character');
-
-                const code = Builder.SEPARATOR.charCodeAt(0);
-
-                // C0 control characters (U+0000–U+001F) не вводимы с клавиатуры
-                // и не допускаются в JSONC-строках как литералы.
-                assert.ok(
-                    code >= 0x00 && code <= 0x1F,
-                    `must be C0 control character, got U+${code.toString(16).padStart(4, '0')}`
-                );
-
-                // \t (0x09), \n (0x0A), \r (0x0D) — допустимы через escape в JSON-строках.
-                // SUB (0x1A) — используется алгоритмом как замена пустого сегмента - попадает в nodePath.
-                assert.ok(
-                    ![0x09, 0x0A, 0x0D, 0x1A].includes(code),
-                    'must not be tab/LF/CR (representable in JSON via escapes) or SUB (used as empty segment substitute)'
-                );
-            });
-        });
-
 
         suite('Node.isData', () => {
 
@@ -126,6 +89,50 @@ suite('@module Cockpit/Tree/Builder', function () {
         });
 
 
+        suite('Node.getParent', () => {
+
+            // Корневой узел → undefined.
+            test('returns undefined for root node', function () {
+
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b'], { tag: 'x' }),
+                ]);
+                const root = roots[0];
+                assert.ok(root, 'precondition');
+                assert.strictEqual(Builder.Node.getParent(root), undefined);
+            });
+
+            // Лист возвращает своего непосредственного родителя.
+            test('returns immediate parent for leaf', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b'], { tag: 'leaf' }),
+                ]);
+                const parent = roots[0];
+                assert.ok(parent, 'precondition');
+                assert.ok(Builder.Node.isBranch(parent));
+                const leaf = Builder.Node.getBranchChildren(parent).at(0);
+                assert.ok(leaf, 'precondition');
+                assert.ok(Builder.Node.isData(leaf));
+                assert.strictEqual(Builder.Node.getParent(leaf), parent);
+            });
+
+            // Промежуточный узел возвращает своего родителя.
+            test('returns parent for intermediate node', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b', 'c'], { tag: 'deep' }),
+                ]);
+                const nodeA = roots[0];
+                assert.ok(nodeA, 'precondition');
+                assert.ok(Builder.Node.isBranch(nodeA));
+                const nodeB = Builder.Node.getBranchChildren(nodeA).at(0);
+                assert.ok(nodeB, 'precondition');
+                assert.ok(Builder.Node.isBranch(nodeB));
+                assert.strictEqual(Builder.Node.getParent(nodeB), nodeA);
+            });
+
+        });
+
+
         suite('parsePath', () => {
 
             // Проверка формата nodePath на промежуточном и листовом узлах.
@@ -142,8 +149,8 @@ suite('@module Cockpit/Tree/Builder', function () {
                 const parent = roots.at(0);
                 assert.ok(parent, 'must exist');
                 nodePathCheck(parent, SCOPE, 'parent');
-
-                const child = parent.children?.at(0);
+                assert.ok(Builder.Node.isBranch(parent));
+                const child = Builder.Node.getBranchChildren(parent)?.at(0);
                 assert.ok(child, 'must exist');
                 nodePathCheck(child, SCOPE, 'parent', 'child');
             });
@@ -170,36 +177,73 @@ suite('@module Cockpit/Tree/Builder', function () {
             });
 
 
-            // Рекурсивная проверка структурного инварианта: 
-            // child.nodePath всегда, у всех нод начинается с parent.nodePath + SEPARATOR.
-            test('child nodePath starts with parent nodePath', function () {
+            // Структурный инвариант: parsePath(child) = parent.segments + segment.
+            // nodePath уникален в пределах дерева.
+            test('child segments extend parent segments; nodePaths are unique', function () {
+
+                const s1 = ['a', 'b', 'c'];
+                const s2 = ['a', 'b', 'd'];
+                const s3 = ['a'];
+                const s4 = ['x', 'y'];
+
                 const roots = Builder.build(SCOPE, [
-                    spec(['a', 'b', 'c'], { tag: '1' }),
-                    spec(['a', 'b', 'd'], { tag: '2' }),
-                    spec(['a'], { tag: '3' }),
-                    spec(['x', 'y'], { tag: '4' }),
+                    spec(s1, { tag: '1' }),
+                    spec(s2, { tag: '2' }),
+                    spec(s3, { tag: '3' }),
+                    spec(s4, { tag: '4' }),
                 ]);
 
-                function assertPrefix(parent: Builder.Node<D, string>): void {
-                    if (Builder.Node.isBranch(parent)) {
-                        for (const child of parent.children!) {
-                            assert.ok(
-                                child.nodePath.startsWith(parent.nodePath + Builder.SEPARATOR),
-                                `child "${child.nodePath}" must start with parent "${parent.nodePath}\{SEPARATOR}"`
-                            );
-                            assertPrefix(child);
+                const seen = new Set<string>();
+
+                function walk(parent: Builder.Node<PLoad, string> | null, node: Builder.Node<PLoad, string>): void {
+
+
+                    const np = Builder.Node.resolvePath(node);
+
+                    const nodePath = [np.scopeId, ...np.segments].join('\0-\0-\0')
+
+                    // uniqueness
+                    assert.ok(
+                        !seen.has(nodePath),
+                        `duplicate nodePath: "${nodePath}"`
+                    );
+                    seen.add(nodePath);
+
+                    // structural: child.segments = [...parent.segments, segment]
+                    if (parent) {
+                        const parentParsed = Builder.Node.resolvePath(parent);
+                        const childParsed = Builder.Node.resolvePath(node);
+                        assert.strictEqual(childParsed.scopeId, parentParsed.scopeId);
+
+                        assert.deepStrictEqual(
+                            childParsed.segments.slice(0, -1),
+                            parentParsed.segments,
+                            `child segments must extend parent segments`
+                        );
+
+                        assert.strictEqual(
+                            Builder.Node.getSegment(node),
+                            childParsed.segments.at(-1)
+                        );
+                    }
+
+                    if (Builder.Node.isBranch(node)) {
+                        for (const child of Builder.Node.getBranchChildren(node)!) {
+                            walk(node, child);
                         }
                     }
                 }
 
                 assert.ok(roots.length > 0, 'precondition: tree is not empty');
                 for (const root of roots) {
-                    assert.ok(
-                        root.nodePath.startsWith(SCOPE + Builder.SEPARATOR),
-                        `root "${root.nodePath}" must start with scope "${SCOPE}\{SEPARATOR}"`
-                    );
-                    assertPrefix(root);
+                    walk(null, root);
                 }
+
+                // sanity: мы действительно обошли всё дерево
+                const expUniqSize = new Set(
+                    [s1, s2, s3, s4].flatMap(s => s.map((_, i) => JSON.stringify(s.slice(0, i + 1))))
+                ).size;
+                assert.strictEqual(seen.size, expUniqSize, `expected ${expUniqSize} nodes, got ${seen.size}`);
             });
 
         });
@@ -225,33 +269,41 @@ suite('@module Cockpit/Tree/Builder', function () {
 
             suite('Edges', () => {
 
-                // Runtime не защищает от коллизии ключей data с 'segment'|'nodePath'|'children'.
-                // Типизация отсекает это на уровне компиляции.
-                // Если защиту обойти — алгоритм затрёт служебные поля.
-                test('runtime is not protected from data key collisions (types enforce this)', function () {
+                test('data node exposes only payload keys as own enumerable properties', function () {
 
                     const roots = Builder.build(SCOPE, [
-                        {
-                            segments: ['target'],
-                            data: {
-                                tag: 'ok',
-                                // @ts-expect-error
-                                _segment: 'evil',
-                                // @ts-expect-error
-                                children: 'evil',
-                                // @ts-expect-error
-                                nodePath: 'evil',
-                            }
-                        },
+                        spec(['solo'], {}),
+                    ]);
+                    const node = roots.at(0);
+                    assert.ok(node, 'node must exist');
+                    assert.ok(Builder.Node.isData(node));
+
+                    assert.deepStrictEqual(
+                        Object.keys(node),
+                        [],
+                        `Empty payload must produce zero own enumerable keys, got: ${JSON.stringify(Object.keys(node))}`
+                    );
+                });
+
+
+                // Перезапись полностью замещает старый payload: лишние ключи предыдущего spec удаляются.
+                test('duplicate path removes stale keys from previous data', function () {
+                    const roots = Builder.build<{ tag: string, extra?: any }, typeof SCOPE>(SCOPE, [
+                        { segments: ['target'], data: { tag: 'old', extra: 42 } },
+                        { segments: ['target'], data: { tag: 'new' } },
                     ]);
 
-                    const node = roots.at(0);
-                    assert.ok(node, 'must exist');
-
-                    assert.strictEqual(Builder.Node.decodeSegment(node), 'evil', 'The implementation overwrites the structural fields');
-                    assert.strictEqual(node.children, 'evil', 'The implementation overwrites the structural fields');
-                    assert.strictEqual(node.nodePath, 'evil', 'The implementation overwrites the structural fields');
+                    assert.strictEqual(roots.length, 1);
+                    const node = roots[0];
+                    assert.ok(node, 'precondition');
+                    assert.ok(Builder.Node.isData(node));
+                    assert.strictEqual(node.tag, 'new', 'new tag must win');
+                    assert.ok(
+                        !('extra' in node),
+                        `stale key "extra" must be removed, got: ${JSON.stringify(node)}`
+                    );
                 });
+
             });
 
         });
@@ -297,19 +349,42 @@ suite('@module Cockpit/Tree/Builder', function () {
 
                 nodePathCheck(nodeA, SCOPE, ...segments.slice(0, 1));
 
-                const nodeB = nodeA.children.at(0);
+                const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
                 assert.ok(nodeB, 'nodeB must exist');
                 assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
                 assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
 
                 nodePathCheck(nodeB, SCOPE, ...segments.slice(0, 2));
 
-                const nodeC = nodeB.children.at(0);
+                const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
                 assert.ok(nodeC, 'nodeC must exist');
                 assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
                 assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
                 assert.strictEqual(nodeC.tag, 'deep', 'nodeC must have tag "deep"');
                 nodePathCheck(nodeC, SCOPE, ...segments.slice(0, 3));
+            });
+
+
+            // Порядок children внутри ветки соответствует порядку поступления spec'ов.
+            test('children order within a branch follows spec insertion order', function () {
+
+                const roots = Builder.build(SCOPE, [
+                    spec(['trunk', 'alpha'], { tag: 'a' }),
+                    spec(['trunk', 'gamma'], { tag: 'g' }),
+                    spec(['trunk', 'beta'], { tag: 'b' }),
+                ]);
+
+                assert.strictEqual(roots.length, 1);
+                const trunk = roots[0];
+                assert.ok(trunk, 'precondition');
+                assert.ok(Builder.Node.isBranch(trunk));
+
+                const children = Builder.Node.getBranchChildren(trunk)!;
+                assert.strictEqual(children.length, 3, 'trunk must have 3 children');
+
+                assert.strictEqual(Builder.Node.getSegment(children[0]), 'alpha');
+                assert.strictEqual(Builder.Node.getSegment(children[1]), 'gamma');
+                assert.strictEqual(Builder.Node.getSegment(children[2]), 'beta');
             });
 
 
@@ -332,18 +407,21 @@ suite('@module Cockpit/Tree/Builder', function () {
                 assert.ok(trunk, 'trunk must exist');
 
                 assert.ok(!Builder.Node.isData(trunk), 'trunk is pure intermediate');
-                assert.strictEqual(trunk.children.length, 2, 'trunk has two children');
 
-                const left = trunk.children.at(0);
-                const right = trunk.children.at(1);
+                assert.ok(Builder.Node.isBranch(trunk));
+
+                assert.strictEqual(Builder.Node.getBranchChildren(trunk)?.length, 2, 'trunk has two children');
+
+                const left = Builder.Node.getBranchChildren(trunk)?.at(0);
+                const right = Builder.Node.getBranchChildren(trunk)?.at(1);
 
                 assert.ok(left, 'left must exist');
-                assert.strictEqual(Builder.Node.decodeSegment(left), 'left', 'left must have segment "left"');
+                assert.strictEqual(Builder.Node.getSegment(left), 'left', 'left must have segment "left"');
                 assert.ok(Builder.Node.isData(left), 'left must be DataNode');
                 assert.strictEqual(left.tag, 'L', 'left must have tag "L"');
 
                 assert.ok(right, 'right must exist');
-                assert.strictEqual(Builder.Node.decodeSegment(right), 'right', 'right must have segment "right"');
+                assert.strictEqual(Builder.Node.getSegment(right), 'right', 'right must have segment "right"');
                 assert.ok(Builder.Node.isData(right), 'right must be DataNode');
                 assert.strictEqual(right.tag, 'R', 'right must have tag "R"');
 
@@ -370,14 +448,14 @@ suite('@module Cockpit/Tree/Builder', function () {
                 assert.strictEqual(nodeA.tag, 'a-data', 'nodeA must have tag "a-data"');
                 nodePathCheck(nodeA, SCOPE, 'a');
 
-                const nodeB = nodeA.children?.at(0);
+                const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
                 assert.ok(nodeB, 'nodeB must exist');
                 assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
                 assert.ok(Builder.Node.isData(nodeB), 'nodeB must have data');
                 assert.strictEqual(nodeB.tag, 'b-data', 'nodeB must have tag "b-data"');
                 nodePathCheck(nodeB, SCOPE, 'a', 'b');
 
-                const nodeC = nodeB.children?.at(0);
+                const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
                 assert.ok(nodeC, 'nodeC must exist');
                 assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
                 assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
@@ -400,13 +478,13 @@ suite('@module Cockpit/Tree/Builder', function () {
                 // все шесть перестановок
                 for (const [i, j, k] of [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) {
 
-                    const test = Builder.build(SCOPE, [items[i], items[j], items[k]]);
+                    const result = Builder.build(SCOPE, [items[i], items[j], items[k]]);
 
                     // Быстрая проверка
-                    assert.strictEqual(test.length, 3);
-                    assert.strictEqual((test[0] as any).tag, names[i], `[0] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[i]}`);
-                    assert.strictEqual((test[1] as any).tag, names[j], `[1] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[j]}`);
-                    assert.strictEqual((test[2] as any).tag, names[k], `[2] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[k]}`);
+                    assert.strictEqual(result.length, 3);
+                    assert.strictEqual((result[0] as any).tag, names[i], `[0] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[i]}`);
+                    assert.strictEqual((result[1] as any).tag, names[j], `[1] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[j]}`);
+                    assert.strictEqual((result[2] as any).tag, names[k], `[2] in permutation ${names[i]}, ${names[j]}, ${names[k]} must be ${names[k]}`);
                 }
 
             });
@@ -430,14 +508,25 @@ suite('@module Cockpit/Tree/Builder', function () {
 
                 // Быстрая проверка образца на "правильность"
                 assert.strictEqual(expected.length, 1);
-                assert.strictEqual((expected[0] as any).tag, '1', 'a - tag must match');
-                assert.strictEqual((expected[0] as any).children[0].tag, '2', 'b - tag must match');
-                assert.strictEqual((expected[0] as any).children[0].children[0].tag, '3', 'c - tag must match');
+
+
+                const a1 = expected[0];
+                assert.ok(Builder.Node.isData(a1));
+                assert.strictEqual(a1.tag, '1', 'a - tag must match');
+
+                assert.ok(Builder.Node.isBranch(a1));
+                const b2 = Builder.Node.getBranchChildren(a1)![0];
+                assert.ok(Builder.Node.isData(b2));
+                assert.strictEqual(b2.tag, '2', 'b - tag must match');
+                assert.ok(Builder.Node.isBranch(b2));
+                const c3 = Builder.Node.getBranchChildren(b2)![0];
+                assert.ok(Builder.Node.isData(c3));
+                assert.strictEqual(c3.tag, '3', 'c - tag must match');
 
                 // все 5 перестановок
                 for (const [i, j, k] of [[0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) {
-                    const test = Builder.build(SCOPE, [items[i], items[j], items[k]]);
-                    assert.deepStrictEqual(test, expected, `expected must match in permutation ${names[i]}, ${names[j]}, ${names[k]}`);
+                    const result = Builder.build(SCOPE, [items[i], items[j], items[k]]);
+                    assert.deepStrictEqual(result, expected, `expected must match in permutation ${names[i]}, ${names[j]}, ${names[k]}`);
                 }
 
             });
@@ -484,24 +573,24 @@ suite('@module Cockpit/Tree/Builder', function () {
 
                     const root = roots.at(0);
                     assert.ok(root, 'must exist');
-                    assert.strictEqual(Builder.Node.decodeSegment(root), V);
+                    assert.strictEqual(Builder.Node.getSegment(root), V);
                     nodePathCheck(root, V, V);
                     assert.ok(Builder.Node.isData(root), 'root must carry data');
                     assert.ok(Builder.Node.isBranch(root), 'root must be branch');
                     assert.strictEqual(root.tag, 'root-data');
 
-                    assert.strictEqual(root.children?.length, 1);
-                    const mid = root.children.at(0);
+                    assert.strictEqual(Builder.Node.getBranchChildren(root)?.length, 1);
+                    const mid = Builder.Node.getBranchChildren(root)?.at(0);
                     assert.ok(mid, 'must exist');
-                    assert.strictEqual(Builder.Node.decodeSegment(mid), V);
+                    assert.strictEqual(Builder.Node.getSegment(mid), V);
                     nodePathCheck(mid, V, V, V);
                     assert.ok(!Builder.Node.isData(mid), 'intermediate must not have data');
                     assert.ok(Builder.Node.isBranch(mid), 'intermediate must be branch');
 
-                    assert.strictEqual(mid.children.length, 1);
-                    const leaf = mid.children.at(0);
+                    assert.strictEqual(Builder.Node.getBranchChildren(mid)?.length, 1);
+                    const leaf = Builder.Node.getBranchChildren(mid)?.at(0);
                     assert.ok(leaf, 'must exist');
-                    assert.strictEqual(Builder.Node.decodeSegment(leaf), V);
+                    assert.strictEqual(Builder.Node.getSegment(leaf), V);
                     nodePathCheck(leaf, V, V, V, V);
                     assert.ok(Builder.Node.isData(leaf), 'leaf must have data');
                     assert.strictEqual(leaf.tag, 'leaf');
@@ -534,7 +623,7 @@ suite('@module Cockpit/Tree/Builder', function () {
                         const p = `permutation [${i},${j},${k}]`;
                         const roots = Builder.build(SCOPE, [items[i], items[j], items[k]]);
 
-                        assert.ok(Array.isArray(roots), `${p}: must return an array`);
+                        // assert.ok(Array.isArray(roots), `${p}: must return an array`);
                         assert.strictEqual(roots.length, 2, `${p}: spec with empty segments must not produce a node`);
 
                         const first = roots.at(0);
@@ -554,7 +643,7 @@ suite('@module Cockpit/Tree/Builder', function () {
                 });
 
 
-                // Алгоритм защищен от пустого scopeId, но КОРРЕКТНО с ним работает
+                // Алгоритм защищен от пустого scopeId, и КОРРЕКТНО с ним работает
                 test('parsePath correctly recovers empty scopeId', function () {
 
                     const segments = ['a', 'b', 'c'];
@@ -566,30 +655,24 @@ suite('@module Cockpit/Tree/Builder', function () {
 
                     assert.strictEqual(roots.length, 1, 'single root branch');
 
-                    assert.doesNotThrow(() => {
+                    const nodeA = roots.at(0);
+                    assert.ok(nodeA, 'nodeA must exist');
+                    assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
+                    assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
+                    nodePathCheck(nodeA, emptyScopeId, ...segments.slice(0, 1));
 
-                        const nodeA = roots.at(0);
-                        assert.ok(nodeA, 'nodeA must exist');
-                        assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
-                        assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
-                        nodePathCheck(nodeA, emptyScopeId, ...segments.slice(0, 1));
+                    const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
+                    assert.ok(nodeB, 'nodeB must exist');
+                    assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
+                    assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
+                    nodePathCheck(nodeB, emptyScopeId, ...segments.slice(0, 2));
 
-                        const nodeB = nodeA.children.at(0);
-                        assert.ok(nodeB, 'nodeB must exist');
-                        assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
-                        assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
-                        nodePathCheck(nodeB, emptyScopeId, ...segments.slice(0, 2));
-
-                        const nodeC = nodeB.children.at(0);
-                        assert.ok(nodeC, 'nodeC must exist');
-                        assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
-                        assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
-                        assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
-                        nodePathCheck(nodeC, emptyScopeId, ...segments.slice(0, 3));
-
-                    },
-                        '"" в scopeId НЕ ломает parsePath'
-                    );
+                    const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
+                    assert.ok(nodeC, 'nodeC must exist');
+                    assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
+                    assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
+                    assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
+                    nodePathCheck(nodeC, emptyScopeId, ...segments.slice(0, 3));
 
                 });
 
@@ -609,119 +692,240 @@ suite('@module Cockpit/Tree/Builder', function () {
                     assert.ok(nodeA, 'nodeA must exist');
                     assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
                     assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
-                    nodePathCheck(nodeA, SCOPE, ...segments.slice(0, 1));
+                    nodePathCheck(nodeA, SCOPE, 'a');
 
-                    const nodeB = nodeA.children.at(0);
+                    const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
                     assert.ok(nodeB, 'nodeB must exist');
                     assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
                     assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
-                    // на всякий случай, для понимания:
-                    // `parsePath` — востанавливает, 
-                    // `decodeSegment` — востанавливает, 
-                    // но `_segment` не содержит
-                    nodePathCheck(nodeB, SCOPE, ...segments.slice(0, 2));
-                    assert.strictEqual(Builder.Node.decodeSegment(nodeB), '');
-                    assert.notStrictEqual(nodeB._segment, '', '`_segment` does not have to be empty');
+                    nodePathCheck(nodeB, SCOPE, 'a', '');
+                    assert.strictEqual(Builder.Node.getSegment(nodeB), '');
 
-                    const nodeC = nodeB.children.at(0);
+                    const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
                     assert.ok(nodeC, 'nodeC must exist');
                     assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
                     assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
                     assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
-                    nodePathCheck(nodeC, SCOPE, ...segments.slice(0, 3));
+                    nodePathCheck(nodeC, SCOPE, 'a', '', 'c');
 
                 });
 
 
-                suite('parsePath - Known Issues', function () {
+                // Алгоритм защищен от случая когда все сегменты пустые
+                test('parsePath correctly recovers empty segments', function () {
 
-                    // Алгоритм в prod-сборке не защищен от SEPARATOR в scopeId, и НЕ корректно с ним работает
-                    test('parsePath NOT correctly recovers scopeId with SEPARATOR (No treatment is required)', function () {
+                    const segments = ['', '', ''];
 
-                        const segments = ['a', 'b', 'c'];
-                        const evilScopeId = `ID${Builder.SEPARATOR}`;
+                    const roots = Builder.build('', [
+                        spec(segments, { tag: 'leaf' }),
+                    ]);
 
-                        const roots = Builder.build(evilScopeId, [
-                            spec(segments, { tag: 'leaf' }),
-                        ]);
+                    assert.strictEqual(roots.length, 1, 'single root branch');
 
-                        assert.strictEqual(roots.length, 1, 'single root branch');
+                    const nodeA = roots.at(0);
+                    assert.ok(nodeA, 'nodeA must exist');
+                    assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
+                    assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
+                    nodePathCheck(nodeA, '', '');
 
-                        assert.throws(() => {
+                    const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
+                    assert.ok(nodeB, 'nodeB must exist');
+                    assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
+                    assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
+                    nodePathCheck(nodeB, '', '', '');
+                    assert.strictEqual(Builder.Node.getSegment(nodeB), '');
 
-                            const nodeA = roots.at(0);
-                            assert.ok(nodeA, 'nodeA must exist');
-                            assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
-                            assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
-                            nodePathCheck(nodeA, evilScopeId, ...segments.slice(0, 1));
+                    const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
+                    assert.ok(nodeC, 'nodeC must exist');
+                    assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
+                    assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
+                    assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
+                    nodePathCheck(nodeC, '', '', '', '');
 
-                            const nodeB = nodeA.children.at(0);
-                            assert.ok(nodeB, 'nodeB must exist');
-                            assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
-                            assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
-                            nodePathCheck(nodeB, evilScopeId, ...segments.slice(0, 2));
-
-                            const nodeC = nodeB.children.at(0);
-                            assert.ok(nodeC, 'nodeC must exist');
-                            assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
-                            assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
-                            assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
-                            nodePathCheck(nodeC, evilScopeId, ...segments.slice(0, 3));
-                        },
-                            {
-                                // OK ­— SEPARATOR в scopeId ломает parsePath
-                                code: 'ERR_ASSERTION', message: /scopeId must match/
-                            }
-                        );
-
-                    });
+                });
 
 
-                    // Алгоритм в prod-сборке не защищен от сегментов, содержащих SEPARATOR
-                    test('parsePath NOT correctly recovers segments with SEPARATOR (No treatment is required)', function () {
+                // Спецсимволы в сегментах не ломают построение дерева и roundtrip.
+                test('parsePath correctly recovers segments with special characters', function () {
 
-                        const segments = ['a', `b${Builder.SEPARATOR}`, 'c'];
+                    const specialSegments = [
+                        'hello world',             // пробелы
+                        'path/to\\file',           // слэши
+                        'it\'s "fine"',            // кавычки
+                        '!@#$%^&*()',              // пунктуация
+                        'a\tb\nc',                 // управляющие: tab, newline
+                        'Привіт Світ',            // кириллица
+                        '日本語🚀',                // CJK + emoji
+                        '   ',                     // только пробелы
+                        '..',                      // точки (path-like)
+                        '~!@#$%^&*()_+-={}[],.<|>?!№;%:',
+                        'a\tb\nc',                 // управляющие: tab, newline
+                        '\0\x01\x1f\x7f',         // управляющие: NUL, SOH, US, DEL
+                        'a'.repeat(500),           // длинная строка
+                    ];
+
+                    for (const seg of specialSegments) {
+
+                        const segments = ['normal', seg, 'tail'];
 
                         const roots = Builder.build(SCOPE, [
-                            spec(segments, { tag: 'leaf' }),
+                            spec(segments, { tag: 'ok' }),
                         ]);
 
-                        assert.strictEqual(roots.length, 1, 'single root branch');
+                        assert.strictEqual(roots.length, 1, `"${seg.slice(0, 20)}…": single root`);
 
-                        assert.throws(() => {
+                        const nodeA = roots.at(0);
+                        assert.ok(nodeA, `"${seg.slice(0, 20)}…": nodeA must exist`);
+                        assert.ok(Builder.Node.isBranch(nodeA));
+                        nodePathCheck(nodeA, SCOPE, ...segments.slice(0, 1));
+                        assert.strictEqual(Builder.Node.getSegment(nodeA), 'normal');
 
-                            const nodeA = roots.at(0);
-                            assert.ok(nodeA, 'nodeA must exist');
-                            assert.ok(Builder.Node.isBranch(nodeA), 'nodeA must be branch');
-                            assert.ok(!Builder.Node.isData(nodeA), 'nodeA must not have data');
-                            nodePathCheck(nodeA, SCOPE, ...segments.slice(0, 1));
-
-                            const nodeB = nodeA.children.at(0);
-                            assert.ok(nodeB, 'nodeB must exist');
-                            assert.ok(Builder.Node.isBranch(nodeB), 'nodeB must be branch');
-                            assert.ok(!Builder.Node.isData(nodeB), 'nodeB must not have data');
-                            nodePathCheck(nodeB, SCOPE, ...segments.slice(0, 2));
-
-                            const nodeC = nodeB.children.at(0);
-                            assert.ok(nodeC, 'nodeC must exist');
-                            assert.ok(!Builder.Node.isBranch(nodeC), 'nodeC must not be branch');
-                            assert.ok(Builder.Node.isData(nodeC), 'nodeC must have data');
-                            assert.strictEqual(nodeC.tag, 'leaf', 'nodeC must have tag "leaf"');
-                            nodePathCheck(nodeC, SCOPE, ...segments.slice(0, 3));
-                        },
-                            {
-                                // OK ­— SEPARATOR в сегменте ломает parsePath
-                                code: 'ERR_ASSERTION', message: /segments must match/
-                            }
+                        const nodeB = Builder.Node.getBranchChildren(nodeA)?.at(0);
+                        assert.ok(nodeB, `"${seg.slice(0, 20)}…": nodeB must exist`);
+                        assert.ok(Builder.Node.isBranch(nodeB));
+                        nodePathCheck(nodeB, SCOPE, ...segments.slice(0, 2));
+                        assert.strictEqual(
+                            Builder.Node.getSegment(nodeB), seg,
+                            `decodeSegment must recover "${seg.slice(0, 30)}…"`
                         );
 
-                    });
+                        const nodeC = Builder.Node.getBranchChildren(nodeB)?.at(0);
+                        assert.ok(nodeC, `"${seg.slice(0, 20)}…": nodeC must exist`);
+                        assert.ok(Builder.Node.isData(nodeC));
+                        assert.strictEqual(nodeC.tag, 'ok');
+                        nodePathCheck(nodeC, SCOPE, ...segments.slice(0, 3));
 
+                    }
+                });
+
+
+                // suite('parsePath - Known Issues', function () {
+
+                // });
+
+            });
+
+        });
+
+
+        suite('lookup', () => {
+
+            // Находит листовой DataNode по полному пути.
+            test('finds leaf node by full path', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b', 'c'], { tag: 'leaf' }),
+                ]);
+                const found = Builder.lookup(roots, ['a', 'b', 'c']);
+                assert.ok(found, 'must find the node');
+                assert.ok(Builder.Node.isData(found));
+                assert.strictEqual(found.tag, 'leaf');
+            });
+
+            // Находит промежуточный (чистый branch) узел.
+            test('finds intermediate branch node', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b', 'c'], { tag: 'deep' }),
+                ]);
+                const found = Builder.lookup(roots, ['a', 'b']);
+                assert.ok(found, 'must find intermediate node');
+                assert.ok(Builder.Node.isBranch(found), 'must be branch');
+                assert.ok(!Builder.Node.isData(found), 'must not have data');
+                assert.strictEqual(Builder.Node.getSegment(found), 'b');
+            });
+
+            // Находит узел с двойной ролью (data + branch).
+            test('finds data+branch node', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b'], { tag: 'child' }),
+                    spec(['a'], { tag: 'parent' }),
+                ]);
+                const found = Builder.lookup(roots, ['a']);
+                assert.ok(found, 'must find the node');
+                assert.ok(Builder.Node.isData(found), 'must have data');
+                assert.ok(Builder.Node.isBranch(found), 'must have children');
+                assert.strictEqual(found.tag, 'parent');
+            });
+
+            // Roundtrip: resolvePath → lookup возвращает тот же узел (===).
+            test('roundtrip: resolvePath segments fed back into lookup return the same node', function () {
+                const roots = Builder.build(SCOPE, [
+                    spec(['a', 'b', 'c'], { tag: '1' }),
+                    spec(['a', 'b'], { tag: '2' }),
+                    spec(['x'], { tag: '3' }),
+                ]);
+
+                function walk(node: Builder.Node<PLoad, string>): void {
+                    const { segments } = Builder.Node.resolvePath(node);
+                    const found = Builder.lookup(roots, segments);
+
+                    assert.strictEqual(found, node, `roundtrip failed for path "${segments.join(' • ')}"`);
+
+                    if (Builder.Node.isBranch(node)) {
+                        for (const child of Builder.Node.getBranchChildren(node)!) {
+                            walk(child);
+                        }
+                    }
+                }
+
+                for (const root of roots) {
+                    walk(root);
+                }
+            });
+
+            suite('Edges', () => {
+
+                // lookup отвергает массив, потерявший бренд NodeArrayType.
+                test('rejects spread copy of roots at type level', function () {
+                    const roots = Builder.build(SCOPE, [spec(['a', 'b'], { tag: 'x' })]);
+                    // @ts-expect-error откажется работать с массивом, если не создавал его сам (spread-копия)
+                    assert.ok(Builder.lookup([...roots], ['a']), 'сработает, но tsc не пропускает');
+                });
+
+                // Пустой массив segments → undefined.
+                test('empty segments returns undefined', function () {
+                    const roots = Builder.build(SCOPE, [spec(['a', 'b'], { tag: 'x' })]);
+                    assert.strictEqual(Builder.lookup(roots, []), undefined);
+                });
+
+                // Пустой массив roots → undefined.
+                test('empty roots returns undefined', function () {
+                    const roots = Builder.build(SCOPE, []);
+                    assert.strictEqual(roots.length, 0, 'precondition: no roots');
+                    assert.strictEqual(Builder.lookup(roots, ['anything']), undefined);
+                });
+
+                // Первый сегмент существует, второй — нет → undefined.
+                test('partial match returns undefined', function () {
+                    const roots = Builder.build(SCOPE, [
+                        spec(['a', 'b'], { tag: 'x' }),
+                    ]);
+                    const found = Builder.lookup(roots, ['a', 'nope']);
+                    assert.strictEqual(found, undefined);
+                });
+
+                // Полностью несуществующий путь → undefined.
+                test('non-existent path returns undefined', function () {
+                    const roots = Builder.build(SCOPE, [
+                        spec(['a', 'b'], { tag: 'x' }),
+                    ]);
+                    const found = Builder.lookup(roots, ['zzz']);
+                    assert.strictEqual(found, undefined);
+                });
+
+                // Путь длиннее дерева (проходит сквозь лист) → undefined.
+                test('path beyond leaf depth returns undefined', function () {
+                    const roots = Builder.build(SCOPE, [
+                        spec(['a'], { tag: 'x' }),
+                    ]);
+                    assert.ok(!Builder.Node.isBranch(roots[0]), 'precondition: leaf has no children');
+                    const found = Builder.lookup(roots, ['a', 'ghost']);
+                    assert.strictEqual(found, undefined);
                 });
 
             });
 
         });
+
 
     });
 

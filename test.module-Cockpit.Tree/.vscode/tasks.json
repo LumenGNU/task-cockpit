@@ -226,7 +226,7 @@
         "env": {
           "SOURCE_DIR": "src",
           "DEST_DIR": "~stripped",
-          "FIND_FILTERS": "-wholename 'src/*.ts'"
+          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts'"
         }
       },
       "presentation": {
