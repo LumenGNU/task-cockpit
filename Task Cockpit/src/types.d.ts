@@ -55,24 +55,24 @@ export type Name = string & { readonly [__TaskLabel]: never; };
 export type TaskID = `${File}${Separator}${Name}` & { readonly [__Identity]: never; };
 
 
-/** Полный набор настроек расширения, разделённый по уровню действия. */
-export interface Settings {
-    /** Настройки уровня ресурса (per-folder в multi-root). */
-    readonly resource: ScopedSettings;
-    /** Настройки уровня окна (общие для всего workspace). */
-    readonly window: WindowSettings;
-}
+// /** Полный набор настроек расширения, разделённый по уровню действия. */
+// export interface Settings {
+//     /** Настройки уровня ресурса (per-folder в multi-root). */
+//     readonly resource: ScopedSettings;
+//     /** Настройки уровня окна (общие для всего workspace). */
+//     readonly window: WindowSettings;
+// }
 
 
-/** Настройки уровня ресурса — читаются отдельно для каждого scope.
- *
- * В multi-root workspace каждая папка может иметь свои значения. */
-export interface ScopedSettings {
-    /** Параметры построения ветки дерева (иерархия, группировка, фильтрация). */
-    readonly branchConfig: BranchConfig;
-    /** Параметры отображения элементов дерева (иконки, цвета). */
-    readonly nodeConfig: NodeConfig;
-}
+// /** Настройки уровня ресурса — читаются отдельно для каждого scope.
+//  *
+//  * В multi-root workspace каждая папка может иметь свои значения. */
+// export interface ScopedSettings {
+//     /** Параметры построения ветки дерева (иерархия, группировка, фильтрация). */
+//     readonly branchConfig: BranchConfig;
+//     /** Параметры отображения элементов дерева (иконки, цвета). */
+//     readonly nodeConfig: NodeConfig;
+// }
 
 
 /** Настройки уровня окна — общие для всего workspace, не зависят от scope. */
@@ -97,6 +97,9 @@ export interface BranchConfig {
     // /** Показывать ли задачи с `hide: true`. */ // @reject - не задача модели, задача представления
     // readonly showHidden: boolean;
 }
+
+
+export type BranchConfigByFile = Map<File, BranchConfig>;
 
 
 /** Параметры, определяющие визуальное отображение элементов дерева. */
@@ -174,7 +177,7 @@ export type ScopedDefinitions = Map<Name, TaskDefinition>;
 
 export type DefinitionsByFile = Map<File, ScopedDefinitions>;
 
-export type SettingsByFile = Map<File, ScopedSettings>;
+// export type SettingsByFile = Map<File, ScopedSettings>;
 
 // export type RejectReport = Map<File, number>;
 

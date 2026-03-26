@@ -1,5 +1,5 @@
-/** @file Cockpit/Tree/FolderRoots.ts */
-/** @module FolderRoots */
+/** @file Cockpit/Tree/Folders.ts */
+/** @module Folders */
 
 import type * as TC from '../../types';
 import Hierarchy from './Hierarchy';
@@ -13,26 +13,26 @@ const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
 
-const FolderRoots = {
+const Folders = {
 
     /** Строит дерево корневых узлов для заданных scope(s).
      *
-     * Scope без записей в `tasksByFile` или `settingsByFile` пропускается
+     * Scope без записей в `tasksByFile` или `` пропускается
      * (находится вне проекта).
      *
      * @param scopes Список scope-записей
      * @param definitionsByFile Карта задач по файлу задач
-     * @param settingsByFile Карта resource-настроек по файлу задач
-     * @param excludeNames Список имен каталогов, которые будут помечены как скрытые ({@linkcode FolderRoots.RootNode.hidden} = `true`)
-     * @returns Результат построения {@linkcode FolderRoots.RootNode} */
-    build: function (
+     * @param 
+     * @param excludeNames Список имен каталогов, которые будут помечены как скрытые ({@linkcode Entity.hidden} = `true`)
+     * @returns Результат построения {@linkcode Entity} */
+    buildEntities(
         scopes: ReadonlyArray<Readonly<TC.Scope>>,
         definitionsByFile: Readonly<TC.DefinitionsByFile>,
-        settingsByFile: Readonly<TC.SettingsByFile>,
+        branchConfigByFile: Readonly<TC.BranchConfigByFile>,
         excludeNames?: ReadonlyArray<string>,
-    ): ReadonlyArray<FolderRoots.RootNode> {
+    ): ReadonlyArray<Folders.Entity> {
 
-        const roots: FolderRoots.RootNode[] = [];
+        const roots: Folders.Entity[] = [];
 
         for (const scope of scopes) {
 
@@ -43,8 +43,8 @@ const FolderRoots = {
             const file = scope.uri.fsPath;
 
             const scopedTasks = definitionsByFile.get(file);
-            const scopedSettings = settingsByFile.get(file);
-            if (!scopedTasks || !scopedSettings) {
+            const scopedBranchConfig = branchConfigByFile.get(file);
+            if (!scopedTasks || !scopedBranchConfig) {
 
                 // #region DEBUG
                 log(LogLevel.Warning, `Scope "${scope.name}" has no tasks or resource settings (outside the project scope)`);
@@ -56,7 +56,7 @@ const FolderRoots = {
             const rootNode = buildRootNode(
                 scope,
                 scopedTasks,
-                scopedSettings.branchConfig,
+                scopedBranchConfig,
                 excludeNames
             );
 
@@ -67,41 +67,48 @@ const FolderRoots = {
     },
 
 
-    // #region DEBUG
+    Entity: {
+        Child: {
 
-    printTree: function (roots: FolderRoots.RootNode[]): void {
+            isRunnable: Hierarchy.Node.isData<TC.TaskDefinition, TC.File> as (node: Readonly<Folders.Entity.Child>) => node is typeof node & TC.TaskDefinition,
 
-        const printBranch = (nodes: ReadonlyArray<Hierarchy.Node<TC.TaskDefinition, TC.File>>, prefix: string): void => {
+            isGroup: Hierarchy.Node.isBranch<TC.TaskDefinition, TC.File> as (node: Readonly<Folders.Entity.Child>) => node is Hierarchy.ActuallyBranch<TC.TaskDefinition, TC.File>,
 
-            nodes.forEach((node, i) => {
-                const last = i === nodes.length - 1;
-                const branch = last ? '└─ ' : '├─ ';
-                const child = last ? '   ' : '│  ';
+            getChildren(
+                node: Hierarchy.ActuallyBranch<TC.TaskDefinition, TC.File>
+            ): Array<Readonly<Folders.Entity.Child>> {
+                return Hierarchy.Node.getBranchChildren(node);
+            }
 
-                const mark = Hierarchy.Node.isData(node) ? '{*}' : '';
-
-                log(LogLevel.Debug, `${prefix}${branch}${Hierarchy.Node.getSegment(node)} ${mark}`);
-
-                const children = Hierarchy.Node.getChildren(node);
-                if (children.length) {
-                    printBranch(children, prefix + child);
-                }
-
-            });
-        };
-
-        for (const root of roots) {
-            log(LogLevel.Debug, `◉ ${root.name}`);
-            printBranch(root.children, '');
-        }
-    },
-
-    // #endregion DEBUG
-
+        } as const,
+    } as const,
 } as const;
 
-/** Возвращает корневой узел дерева задач для заданного scope с
- * дополнительной информацией.
+
+declare namespace Folders {
+
+    export interface Entity {
+        readonly name: string;
+        readonly tasksFile: TC.File;
+        readonly kind: 'Workspace' | 'Folder';
+        readonly hidden: boolean;
+        readonly lookup: (...segments: ReadonlyArray<string>) => Folders.Entity.Child | undefined;
+        readonly children: Array<Folders.Entity.Child>
+    }
+
+    export namespace Entity {
+        export type Child = Hierarchy.Node<TC.TaskDefinition, TC.File>;
+    }
+
+}
+
+export default Folders;
+
+
+// ===
+
+
+/** Возвращает корневой узел дерева задач для заданного scope.
  *
  * @param scope информация о scope (файл задач)
  * @param scopedDefinitions карта задач, определенных в этом scope
@@ -112,19 +119,24 @@ function buildRootNode(
     scopedDefinitions: Readonly<TC.ScopedDefinitions>,
     config: Readonly<TC.BranchConfig>,
     excludeNames?: ReadonlyArray<string>
-): FolderRoots.RootNode {
+): Folders.Entity {
 
-    const tasksFile = scope.uri.fsPath;
+    const dict = Hierarchy.build<TC.TaskDefinition, TC.File>(
+        scope.uri.fsPath,
+        makeBranchSpecs(scopedDefinitions, config)
+    );
 
     return {
         name: scope.name,
         hidden: excludeNames?.includes(scope.name) ?? false,
-        tasksFile,
-        kind: tasksFile.endsWith('.json') ? 'Folder' : 'Workspace',
-        children: Hierarchy.build<TC.TaskDefinition, TC.File>(
-            tasksFile,
-            makeBranchSpecs(scopedDefinitions, config)
-        )
+        tasksFile: scope.uri.fsPath,
+        kind: scope.uri.fsPath.endsWith('.json') ? 'Folder' : 'Workspace',
+        lookup(...segments: ReadonlyArray<string>) {
+            return Hierarchy.lookup(dict, segments);
+        },
+        get children() {
+            return Object.values(dict);
+        }
     };
 }
 
@@ -162,18 +174,37 @@ function makeBranchSpecs(
 }
 
 
-declare namespace FolderRoots {
-    export interface RootNode {
-        /** Отображаемое имя корня (имя папки или workspace). */
-        name: string;
-        /** Файл задач (строковый идентификатор), определяющий этот scope. */
-        tasksFile: TC.File;
-        kind: 'Workspace' | 'Folder';
-        /** Дочерние узлы первого уровня. */
-        children: Readonly<Hierarchy.TopNodeArray<TC.TaskDefinition, TC.File>>;
-        /** Признак скрытия. `true` — если имя директории в списке исключений в настройках. */
-        hidden: boolean;
+// #region DEBUG
+
+export function printTree(entities: ReadonlyArray<Folders.Entity>): void {
+
+    const printBranch = (nodes: ReadonlyArray<Folders.Entity.Child>, prefix: string): void => {
+
+        nodes.forEach((node, i) => {
+            const last = i === nodes.length - 1;
+            const branch = last ? '└─ ' : '├─ ';
+            const child = last ? '   ' : '│  ';
+
+            const mark = Folders.Entity.Child.isRunnable(node) ? '{*}' : '';
+
+            log(LogLevel.Debug, `${prefix}${branch}${Hierarchy.Node.getSegment(node)} ${mark}`);
+
+            if (Folders.Entity.Child.isGroup(node)) {
+                const children = Folders.Entity.Child.getChildren(node);
+                printBranch(children, prefix + child);
+            }
+
+        });
+    };
+
+    for (const entity of entities) {
+        log(LogLevel.Debug, `◉ ${entity.name}`);
+        printBranch(entity.children, '');
     }
 }
 
-export default FolderRoots;
+
+// #endregion DEBUG
+
+
+
