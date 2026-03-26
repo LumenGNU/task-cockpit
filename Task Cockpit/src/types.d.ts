@@ -93,8 +93,9 @@ export interface BranchConfig {
     readonly segmentSeparator: string | false;
     /** Группировать ли задачи по свойству `group`. */
     readonly useGroupKind: boolean;
-    /** Показывать ли задачи с `hide: true`. */
-    readonly showHidden: boolean;
+
+    // /** Показывать ли задачи с `hide: true`. */ // @reject - не задача модели, задача представления
+    // readonly showHidden: boolean;
 }
 
 
@@ -159,33 +160,19 @@ export interface TaskDefinition {
     isBackground?: boolean;
 
     group?: {
+        /** Капитализированное имя группы */
         kind: string;
         isDefault: boolean;
     };
 }
 
-
-// export type RunnableData = {
-//     id: TaskID;
-// } & TaskDefinition;
-
-
-// /** Задача, в терминах расширения. */
-// export interface Task extends TaskDefinition {
-//     /** Путь к источнику задач. */
-//     source: File;
-//     /** vscode.Task, созданная средой. */
-//     vscTask: Readonly<vscode.Task>;
-// }
-
-
 export type ScopedTasks = Map<Name, vscode.Task>;
 
 export type TasksByFile = Map<File, ScopedTasks>;
 
-export type ScopedDefinition = Map<Name, TaskDefinition>;
+export type ScopedDefinitions = Map<Name, TaskDefinition>;
 
-export type DefinitionsByFile = Map<File, ScopedDefinition>;
+export type DefinitionsByFile = Map<File, ScopedDefinitions>;
 
 export type SettingsByFile = Map<File, ScopedSettings>;
 
@@ -253,3 +240,9 @@ export interface VisualMetadata {
 
 
 
+export interface NodeURI {
+    //
+    readonly authority: 'Folder' | 'Workspace' | 'Favorites' | 'Runnable' | 'Marker' | 'Group';
+    readonly path: string;
+    readonly fragment?: string;
+}

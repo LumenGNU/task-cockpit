@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import helpers from '../helpers';
 import MainDataProvider from './MainDataProvider';
-import Tree from './Tree';
+import Tree from './TreeModel';
 import type * as TC from '../types';
 
 import Runtime from '../Runtime';

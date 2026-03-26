@@ -4,7 +4,7 @@
 import * as vscode from 'vscode';
 import * as TC from '../types';
 import helpers from '../helpers';
-import Tree from './Tree';
+import Tree from './TreeModel';
 
 
 // #region DEBUG
@@ -20,7 +20,7 @@ const { assert } = Logger.get(module.filename);
 function workspace(node: Tree.Node.RootNodeWorkspace): vscode.TreeItem {
 
     return {
-        label: node.segment,
+        label: node.name,
         resourceUri: vscode.Uri.file(node.tasksFile),
         iconPath: new vscode.ThemeIcon('layers'),
         contextValue: 'task-cockpit:Folder:Workspace',
@@ -35,7 +35,7 @@ function workspace(node: Tree.Node.RootNodeWorkspace): vscode.TreeItem {
 function folder(node: Tree.Node.RootNodeFolder): vscode.TreeItem {
 
     return {
-        label: node.segment,
+        label: node.name,
         resourceUri: vscode.Uri.file(node.tasksFile),
         iconPath: new vscode.ThemeIcon('root-folder'),
         contextValue: 'task-cockpit:Folder:Project',

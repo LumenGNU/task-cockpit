@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import Builder, { toDebugJSON } from './Cockpit/Tree/Builder';
+import Hierarchy from './Cockpit/TreeModel/Hierarchy';
+
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
@@ -16,18 +17,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// #region DEBUG
 		log(LogLevel.Debug, 'test-extension is now active');
-		// #endregion DEBUG
 
-		type LeafType = { calories: number, note?: string };
+		type LeafType = { calories: number, note?: string; };
 
-		function spec(branch: string[], data: LeafType): Builder.Spec<typeof data> {
+		function spec(branch: string[], data: LeafType): Hierarchy.Spec<typeof data> {
 			return {
 				segments: branch,
 				data
-			}
+			};
 		}
 
-		const topNodes = Builder.build<LeafType, string>('kitchen', [
+		const topNodes = Hierarchy.build<LeafType, string>('kitchen', [
 			spec(['pizza', 'margherita'], { calories: 250 }),
 			spec(['pizza', 'quattro formaggi'], { calories: 320 }),
 			spec(['pizza', 'diavola'], { calories: 290 }),
@@ -42,8 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
 			spec(['ramen', 'miso'], { calories: 380 }),
 		]);
 
-		console.log(JSON.stringify(toDebugJSON(topNodes), null, 2));
+		console.log(JSON.stringify(Hierarchy.toDebugJSON(topNodes), null, 2));
 
+		// #endregion DEBUG
 	});
 
 	context.subscriptions.push(disposable);

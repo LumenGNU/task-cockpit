@@ -2,7 +2,7 @@
 /** @module Resolvers */
 
 import * as vscode from 'vscode';
-import Tree from './Tree';
+import Tree from './TreeModel';
 
 
 /** Резолвит {@link vscode.TreeItem} для корневого узла —
@@ -27,7 +27,7 @@ function workspace(
     tooltip.supportThemeIcons = true;
 
     tooltip.appendMarkdown(
-        `**${node.segment}**  \n` +
+        `**${node.name}**  \n` +
         `${foldersDetail ? `$(root-folder) Folders: ${foldersDetail}  \n` : ''}` +
         `$(tools) Tasks: ${formatTasksDetail(pruneDetails)}  \n` +
         '\u00A0'
@@ -57,7 +57,7 @@ function folder(
     tooltip.supportThemeIcons = true;
 
     tooltip.appendMarkdown(
-        `**${node.segment}** (*folder*)  \n` +
+        `**${node.name}** (*folder*)  \n` +
         `$(tools) Tasks: ${formatTasksDetail(pruneDetails)}  \n` +
         '\u00A0'
     );

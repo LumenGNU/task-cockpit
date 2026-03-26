@@ -5,7 +5,7 @@
 import * as vscode from 'vscode';
 import type * as TC from '../types';
 import helpers from '../helpers';
-import Tree from './Tree';
+import Tree from './TreeModel';
 import Renderer from './Renderers';
 import Resolver from './Resolvers';
 

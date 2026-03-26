@@ -1,32 +1,11 @@
-/** @file Cockpit/Tree/Builder.ts */
-/** @module Builder */
+/** @file Cockpit/Tree/Hierarchy.ts */
+/** @module Hierarchy */
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
-const { log, assert } = Logger.get(module.filename);
+const { log } = Logger.get(module.filename);
 // #endregion DEBUG
-
-
-/** Спецификация ветки: путь (сегменты) + данные на конце. */
-type SpecType<D extends object> = Readonly<{
-    segments: readonly string[];
-    data: D;
-}>;
-
-
-/** Узел иерархии.
- *
- * Три варианта:
- * - данные, без детей (лист)
- * - данные и дети (промежуточный с данными)
- * - только дети, без данных (чисто группирующий)
- *
- * Узел без данных и без детей не существует.
- *
- * @see {@linkcode Builder.Node.isData} — проверка наличия данных
- * @see {@linkcode Builder.Node.isBranch} — проверка наличия детей */
-type NodeType<D extends object, S extends string> = SymbolsNode<D, S> | (SymbolsNode<D, S> & D);
 
 // ---
 
@@ -41,7 +20,7 @@ const PARENT: unique symbol = Symbol('parent');
 
 
 /** Словарь дочерних узлов: сегмент → узел. */
-type Dict<D extends object, S extends string> = { [segment: string]: SymbolsNode<D, S> };
+type Dict<D extends object, S extends string> = { [segment: string]: SymbolsNode<D, S>; };
 
 
 /** Структурная часть узла дерева: сегмент, связи и флаг данных.
@@ -59,9 +38,9 @@ type SymbolsNode<D extends object, S extends string> = {
 
 /** Синтетический корень иерархии.
  *
- * Не входит в результат {@linkcode Builder.build} —
+ * Не входит в результат {@linkcode Hierarchy.build} —
  * служит общим `[PARENT]` для верхнеуровневых узлов.
- * 
+ *
  * Деталь реализации — не имеет смысла и семантики для потребителя.
  * */
 type SemanticRoot<D extends object, S extends string> = {
@@ -72,26 +51,21 @@ type SemanticRoot<D extends object, S extends string> = {
 
 // nominal typing для массива узлов, возвращаемого {@linkcode Builder.build()}
 declare const __NodeArray: unique symbol;
-/** Результат {@linkcode Builder.build} — массив узлов.
- *
- * Номинальная типизация предотвращает передачу произвольного `Array<NodeType>`. */
-type NodeArrayType<D extends object, S extends string> = Array<NodeType<D, S>> & {
-    readonly [__NodeArray]: never;
-}
+
 
 
 /** Type guard: является ли узел корневым (синтетическим). */
-function isTop<D extends object, S extends string>(node: NodeType<D, S> | SemanticRoot<D, S>): node is SemanticRoot<D, S> {
+function isTop<D extends object, S extends string>(node: Hierarchy.Node<D, S> | SemanticRoot<D, S>): node is SemanticRoot<D, S> {
     return node[PARENT] === undefined;
 }
 
 
-type ActuallyBranch<D extends object, S extends string> = NodeType<D, S> & { readonly [CHILDREN]: Dict<D, S>; };
+type ActuallyBranch<D extends object, S extends string> = Hierarchy.Node<D, S> & { readonly [CHILDREN]: Dict<D, S>; };
 
 
 /** Модуль построения иерархии из плоских путей.
  *
- * Принимает массив {@link Builder.SpecType | "спецификаций"} — путей вида `['a', 'b', 'c']` с данными —
+ * Принимает массив {@link Hierarchy.Spec | "спецификаций"} — путей вида `['a', 'b', 'c']` с данными —
  * и строит из них иерархию с общими префиксами.
  *
  * Порядок спецификаций не влияет на структуру иерархии:
@@ -130,18 +104,18 @@ type ActuallyBranch<D extends object, S extends string> = NodeType<D, S> & { rea
  *
  * ## Builder — "тупой" и **быстрый**
  *
- * {@linkcode Builder.build} должен быть быстрый построитель.
- * 
+ * {@linkcode Hierarchy.build} должен быть быстрый построитель.
+ *
  * Проверка 500 сегментов по 500 символов на символ, крайне маловероятный
  * в "правильном" вводе — ненужное замедление.
- * 
- * Оптимизации дающие прирост в одном сценарри, но добавляющие оверхед
+ *
+ * Оптимизации дающие прирост в одном сценарии, но добавляющие overhead
  * в других — не нужны.
- * 
+ *
  * */
-const Builder = {
+const Hierarchy = {
 
-    /**  Построить иерархию из плоского списка {@linkcode Builder.SpecType | спецификаций}.
+    /**  Построить иерархию из плоского списка {@linkcode Hierarchy.Spec | спецификаций}.
      *
      * Алгоритм: для каждой спецификации проходим по сегментам,
      * создавая узлы по мере необходимости (или повторно используя существующие).
@@ -151,9 +125,12 @@ const Builder = {
      * @template S строковый scope — идентификатор области этой иерархии
      *
      * @param scopeId идентификатор области этой иерархии
-     * @param specs массив {@link Builder.SpecType | спецификаций} (путь + данные)
+     * @param specs массив {@link Hierarchy.Spec | спецификаций} (путь + данные)
      * @returns верхнеуровневые узлы построенной иерархии */
-    build: function <D extends object, S extends string>(scopeId: S, specs: readonly SpecType<Readonly<D>>[]): Readonly<NodeArrayType<D, S>> {
+    build: function <D extends object, S extends string>(
+        scopeId: S,
+        specs: ReadonlyArray<Readonly<Hierarchy.Spec<Readonly<D>>>>
+    ): Readonly<Hierarchy.TopNodeArray<D, S>> {
 
         const rootNode = Object.create(null) as SemanticRoot<D, S>;
         rootNode[SEGMENT] = scopeId;
@@ -191,7 +168,7 @@ const Builder = {
                 const currentSegment = segments[si];
 
                 // ensure children dict exists
-                if (!Builder.Node.isBranch(parent)) {
+                if (!Hierarchy.Node.isBranch(parent)) {
                     const dict = Object.create(null);
                     parent[CHILDREN] = dict as Dict<D, S>;
                     // теперь приведение parent as ActuallyBranch<D, S> легитимно
@@ -216,7 +193,7 @@ const Builder = {
                 // #region DEBUG
                 log(LogLevel.Warning, `Duplicate path in scope "${scopeId}": "${segments.join(' • ')}". Data was overwritten`);
                 // #endregion DEBUG
-                // должна быть перезапись! не мерж!
+                // должна быть перезапись, не слияние
                 for (const key of Reflect.ownKeys(parent)) {
                     if (typeof key === 'symbol' && [DATA_FLAG, SEGMENT, CHILDREN, PARENT].includes(key)) continue;
                     delete (parent as Record<string | symbol, unknown>)[key];
@@ -227,23 +204,23 @@ const Builder = {
         }
 
         return Object.freeze(
-            Object.values<NodeType<D, S>>(rootNode[CHILDREN]) as NodeArrayType<D, S>
-        )
+            Object.values<Hierarchy.Node<D, S>>(rootNode[CHILDREN]) as Hierarchy.TopNodeArray<D, S>
+        );
     },
 
     /** Найти узел в дереве по пути сегментов.
      *
-     * @param topNodes верхнеуровневые узлы (результат {@linkcode Builder.build})
+     * @param topNodes верхнеуровневые узлы (результат {@linkcode Hierarchy.build})
      * @param segments путь от корня к искомому узлу
      * @returns найденный узел или `undefined` */
-    lookup: function <D extends object, S extends string>(topNodes: Readonly<NodeArrayType<D, S>>, segments: readonly string[]): Readonly<NodeType<D, S>> | undefined {
+    lookup: function <D extends object, S extends string>(topNodes: Readonly<Hierarchy.TopNodeArray<D, S>>, segments: readonly string[]): Readonly<Hierarchy.Node<D, S>> | undefined {
 
         if (segments.length === 0 || topNodes.length === 0) {
             return undefined;
         }
 
         const dict = topNodes[0][PARENT][CHILDREN];
-        let current: NodeType<D, S> | undefined = dict[segments[0]];
+        let current: Hierarchy.Node<D, S> | undefined = dict[segments[0]];
 
         for (let si = 1; current && si < segments.length; si++) {
             current = current[CHILDREN]?.[segments[si]];
@@ -252,17 +229,42 @@ const Builder = {
         return current;
     },
 
-
-    /** Дети узла, или пустой массив для листьев.
+    // #region DEBUG
+    /** Сериализация дерева в plain-объект для отладки.
      *
-     * Удобная альтернатива паре {@linkcode Builder.Node.isBranch} + {@linkcode Builder.Node.getBranchChildren},
-     * когда ветвление не нужно обрабатывать отдельно. */
-    getNodeChildren: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): Array<Readonly<NodeType<D, S>>> {
-        if (Builder.Node.isBranch(node)) {
-            return Object.values<NodeType<D, S>>(node[CHILDREN]);
+     * Символьные ключи и циклические ссылки убраны —
+     * результат безопасен для `JSON.stringify`. */
+    toDebugJSON: function <D extends object, S extends string>(
+        topNodes: Readonly<Hierarchy.TopNodeArray<D, S>>
+    ): Record<string, unknown> {
+
+        function nodeToPlain(node: Hierarchy.Node<D, S>): Record<string, unknown> {
+            const result: Record<string, unknown> = {};
+
+            if (Hierarchy.Node.isData(node)) {
+                for (const key of Object.keys(node)) {
+                    result[key] = (node as Record<string, unknown>)[key];
+                }
+            }
+
+            if (Hierarchy.Node.isBranch(node)) {
+                const children: Record<string, unknown> = {};
+                for (const child of Hierarchy.Node.getBranchChildren(node)) {
+                    children[Hierarchy.Node.getSegment(child)] = nodeToPlain(child);
+                }
+                result['[children]'] = children;
+            }
+
+            return result;
         }
-        return [];
+
+        const root: Record<string, unknown> = {};
+        for (const node of topNodes) {
+            root[Hierarchy.Node.getSegment(node)] = nodeToPlain(node);
+        }
+        return root;
     },
+    // #endregion DEBUG
 
     Node: {
 
@@ -273,7 +275,7 @@ const Builder = {
          *
          * "Чистый лист" = `!isBranch` — это всегда "DataNode", но "DataNode" — не всегда "чистый лист"  */
         isBranch<D extends object, S extends string>(
-            node: Readonly<NodeType<D, S>>
+            node: Readonly<Hierarchy.Node<D, S>>
         ): node is ActuallyBranch<D, S> {
             return CHILDREN in node;
         },
@@ -284,12 +286,12 @@ const Builder = {
          * (соответствует ли спецификации из {@linkcode build}).
          *
          * Это сужение не мешает узлу иметь свойство {@linkcode NodeType.isBranch}, и находиться в любой точке иерархии. */
-        isData: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): node is (SymbolsNode<D, S> & D) {
+        isData: function <D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): node is (SymbolsNode<D, S> & D) {
             return DATA_FLAG in node;
         },
 
         /** Имя узла — его сегмент пути. */
-        getSegment: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): string {
+        getSegment: function <D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): string {
             return node[SEGMENT];
         },
 
@@ -299,91 +301,94 @@ const Builder = {
          * @template D тип данных data-узлов
          * @template S строковый идентификатор scope
          *
-         * @param node узел иерархии, построенной через {@linkcode Builder.build}
+         * @param node узел иерархии, построенной через {@linkcode Hierarchy.build}
          * @returns объект, состоящий из scope и массива сегментов */
-        resolvePath: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): { scopeId: S, segments: string[]; } {
+        resolvePath: function <D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): { scopeId: S, segments: string[]; } {
             const result: { scopeId: S, segments: string[]; } = {
                 scopeId: '' as S,
                 segments: [],
             };
-            let current: NodeType<D, S> | SemanticRoot<D, S> = node;
+            let current: Hierarchy.Node<D, S> | SemanticRoot<D, S> = node;
+
             while (current) {
+
                 if (isTop(current)) {
                     result.scopeId = current[SEGMENT];
                     break;
                 }
+
                 result.segments.push(current[SEGMENT]);
                 current = current[PARENT];
             }
             result.segments.reverse();
+
             return result;
         },
 
 
-        /** Возвращает детей узла-контейнера.  
+        /** Возвращает детей узла-контейнера.
          * Метод доступен **только** для узлов, где `isBranch(node) === true`. */
-        getBranchChildren: function <D extends object, S extends string>(node: Readonly<ActuallyBranch<D, S>>): Array<Readonly<NodeType<D, S>>> {
-            return Object.values<NodeType<D, S>>(node[CHILDREN]);
+        getBranchChildren: function <D extends object, S extends string>(node: Readonly<ActuallyBranch<D, S>>): Array<Readonly<Hierarchy.Node<D, S>>> {
+            return Object.values<Hierarchy.Node<D, S>>(node[CHILDREN]);
+        },
+
+
+        /** Дети узла, или пустой массив для листьев.
+         *
+         * Удобная альтернатива паре {@linkcode Hierarchy.Node.isBranch} + {@linkcode Hierarchy.Node.getBranchChildren},
+         * когда ветвление не нужно обрабатывать отдельно. */
+        getChildren: function <D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): Array<Readonly<Hierarchy.Node<D, S>>> {
+            if (Hierarchy.Node.isBranch(node)) {
+                return Object.values<Hierarchy.Node<D, S>>(node[CHILDREN]);
+            }
+
+            return [];
         },
 
 
         /** Родительский узел, или `undefined` если узел находится на верхнем уровне. */
-        getParent: function <D extends object, S extends string>(node: Readonly<NodeType<D, S>>): ActuallyBranch<D, S> | undefined {
+        getParent: function <D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): ActuallyBranch<D, S> | undefined {
+
             const parent = node[PARENT];
             if (isTop(parent)) {
-                return undefined
+                return undefined;
             }
+
             return parent as ActuallyBranch<D, S>;
-        }
+        },
 
     } as const,
 } as const;
 
 
-namespace Builder {
+declare namespace Hierarchy {
+
     /** Спецификация ветки: путь (сегменты) + данные на конце. */
-    export type Spec<D extends object> = SpecType<D>;
-    /** Узел иерархии. */
-    export type Node<D extends object, S extends string> = NodeType<D, S>;
-    export type NodeArray<D extends object, S extends string> = NodeArrayType<D, S>;
-}
-
-export default Builder;
-
-
-// #region DEBUG
-/** Сериализация дерева в plain-объект для отладки.
- *
- * Символьные ключи и циклические ссылки убраны —
- * результат безопасен для `JSON.stringify`. */
-export function toDebugJSON<D extends object, S extends string>(
-    topNodes: Readonly<Builder.NodeArray<D, S>>
-): Record<string, unknown> {
-
-    function nodeToPlain(node: Readonly<Builder.Node<D, S>>): Record<string, unknown> {
-        const result: Record<string, unknown> = {};
-
-        if (Builder.Node.isData(node)) {
-            for (const key of Object.keys(node)) {
-                result[key] = (node as Record<string, unknown>)[key];
-            }
-        }
-
-        if (Builder.Node.isBranch(node)) {
-            const children: Record<string, unknown> = {};
-            for (const child of Builder.Node.getBranchChildren(node)) {
-                children[Builder.Node.getSegment(child)] = nodeToPlain(child);
-            }
-            result['[children]'] = children;
-        }
-
-        return result;
+    export interface Spec<D extends object> {
+        segments: readonly string[];
+        data: D;
     }
 
-    const root: Record<string, unknown> = {};
-    for (const node of topNodes) {
-        root[Builder.Node.getSegment(node)] = nodeToPlain(node);
+    /** Узел иерархии.
+     *
+     * Три варианта:
+     * - данные, без детей (лист)
+     * - данные и дети (промежуточный с данными)
+     * - только дети, без данных (чисто группирующий)
+     *
+     * Узел без данных и без детей не существует.
+     *
+     * @see {@linkcode Hierarchy.Node.isData} — проверка наличия данных
+     * @see {@linkcode Hierarchy.Node.isBranch} — проверка наличия детей */
+    export type Node<D extends object, S extends string> = SymbolsNode<D, S> | (SymbolsNode<D, S> & D)
+
+    /** Результат {@linkcode Hierarchy.build} — массив узлов верхнего уровня.
+     *
+     * Номинальная типизация предотвращает передачу произвольного `Array<NodeType>`. */
+    export type TopNodeArray<D extends object, S extends string> = Array<Hierarchy.Node<D, S>> & {
+        readonly [__NodeArray]: never;
     }
-    return root;
 }
-// #endregion DEBUG
+
+export default Hierarchy;
+
