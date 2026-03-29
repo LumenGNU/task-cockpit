@@ -3,12 +3,13 @@ import type * as vscode from 'vscode';
 declare const __TasksFile: unique symbol;
 declare const __TasksFileUri: unique symbol;
 declare const __TaskLabel: unique symbol;
+declare const __TasksGroup: unique symbol;
 declare const __Identity: unique symbol;
 declare const __ProcessId: unique symbol;
 declare const __QueryComponent: unique symbol;
 
 
-export type Separator = '\x1F';
+export type CG_Separator = '\x1D';
 
 type QueryComponent = string & { readonly [__QueryComponent]: never; };
 
@@ -45,6 +46,8 @@ export type Uri = vscode.Uri & {
  * Используется для type safety при работе с коллекциями. */
 export type Name = string & { readonly [__TaskLabel]: never; };
 
+export type Group = 'Build' | 'Test' | 'Clean' & { readonly [__TasksGroup]: never; };
+
 
 /** Строковой идентификатор задачи, в терминах расширения {@linkcode File} + {@linkcode Name}.
  *
@@ -52,7 +55,7 @@ export type Name = string & { readonly [__TaskLabel]: never; };
  *
  * Используется для type safety при работе с коллекциями;
  * для однозначного определения задачи; */
-export type TaskID = `${File}${Separator}${Name}` & { readonly [__Identity]: never; };
+export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [__Identity]: never; };
 
 
 // /** Полный набор настроек расширения, разделённый по уровню действия. */
@@ -164,7 +167,7 @@ export interface TaskDefinition {
 
     group?: {
         /** Капитализированное имя группы */
-        kind: string;
+        kind: Group;
         isDefault: boolean;
     };
 }

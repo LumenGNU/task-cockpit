@@ -13,11 +13,11 @@ function resolveTestFiles(pattern) {
 
 const defaults = {
 	// version: "1.109.5",
-	// version: "1.86.2",
-	mocha: {
-		timeout: 15_000,
-		slow: 99_000
-	}
+	version: "1.86.2",
+	// mocha: {
+	// 	timeout: 15_000,
+	// 	slow: 99_000
+	// }
 };
 
 export default defineConfig({

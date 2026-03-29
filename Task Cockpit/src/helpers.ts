@@ -5,22 +5,25 @@ import * as vscode from 'vscode';
 import type * as TC from './types';
 
 
-const SEPARATOR = '\0' as const;
+const C0_GS: TC.CG_Separator = '\x1D' as const;
 
 
-/** Создаёт TaskID из файла-источника и имени задачи.
+/** Создаёт строку TaskID из файла-источника и имени задачи.
  *
  * @param file путь к файлу задач
  * @param name метка задачи
  * @returns составной идентификатор задачи */
 function buildId(file: TC.File, name: TC.Name): TC.TaskID {
-    return `${file}${SEPARATOR}${name}` as TC.TaskID;
+    return `${file}${C0_GS}${name}` as TC.TaskID;
 }
 
 
-function parseId(taskId: TC.TaskID): { taskFile: TC.File, taskName: TC.Name } {
-    const [taskFile, taskName] = taskId.split(SEPARATOR) as [TC.File, TC.Name];
-    return { taskFile, taskName };
+function parseId(taskId: TC.TaskID): { taskFile: TC.File, taskName: TC.Name; } {
+    const [taskFile, taskName] = taskId.split(C0_GS) as [TC.File, TC.Name];
+    return {
+        taskFile,
+        taskName
+    };
 }
 
 /** Возвращает URI "валидного" файла-источника для задачи.
@@ -58,7 +61,10 @@ function resolveId(task: vscode.Task): TC.TaskID | undefined {
         return undefined;
     }
 
-    return buildId(file, task.name as TC.Name);
+    return buildId(
+        file,
+        task.name as TC.Name
+    );
 }
 
 
@@ -116,7 +122,7 @@ function decodeQueryComponent(queryComponent: TC.QueryComponent): TC.VisualMetad
 }
 
 
-type Authority = 'task' | 'marker'
+type Authority = 'task' | 'marker';
 
 function resolveMetadata(uri: vscode.Uri, ...authorities: Authority[]) {
 
@@ -133,7 +139,7 @@ function resolveMetadata(uri: vscode.Uri, ...authorities: Authority[]) {
 
 
 function isName(label: any): label is TC.Name {
-    return typeof label === 'string' && label.length > 0
+    return typeof label === 'string' && label.length > 0;
 }
 
 

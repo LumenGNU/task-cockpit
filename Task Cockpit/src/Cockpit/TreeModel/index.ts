@@ -3,7 +3,7 @@
 
 import type * as TC from '../../types';
 import Hierarchy from './Hierarchy';
-import FolderRoots from './FolderRoots';
+import FolderRoots from './Folders';
 
 
 declare namespace TreeModel {
@@ -120,43 +120,7 @@ function parseNodeURI(node: TreeModel.Node.NodeType): Readonly<TC.NodeURI> {
 
 
 
-function cultivateTree(
-    scopes: ReadonlyArray<Readonly<TC.Scope>>,
-    definitionsByFile: Readonly<TC.DefinitionsByFile>,
-    settingsByFile: Readonly<TC.SettingsByFile>,
-    windowSettings: Readonly<TC.WindowSettings>, // @todo тут просто excludeFolders
-): {
-    roots: ReadonlyArray<TreeModel.Node.RootNodeWorkspace | TreeModel.Node.RootNodeFolder>;
-    total: number;
-    displayed: number;
-    pruneDetails: Map<TC.File, {
-        total: number;
-        displayed: number;
-    }>;
-} {
-    // прорастить-фильтрация-обрезка
 
-    const roots = TreeModel.sproutRoots(
-        scopes,
-        definitionsByFile,
-        settingsByFile,
-        windowSettings
-    ).filter((r) => !r.hide);
-
-    const total = roots.length;
-
-    const pruneDetails = new Map<TC.File, { total: number; displayed: number; }>();
-
-    // Вычистить скрытые задачи, если нужно
-    for (const root of roots) {
-        const { showHidden } = settingsByFile.get(root.tasksFile)!.branchConfig;
-        // Обрезка
-        const details = pruneBranch(root, showHidden);
-        pruneDetails.set(root.tasksFile, details);
-    }
-
-    return { roots, total, displayed: roots.length, pruneDetails };
-}
 
 const TreeModel = {
     Node: {
@@ -167,7 +131,6 @@ const TreeModel = {
         isRunnable,
         isWorkspace,
     },
-    cultivateTree,
 } as const;
 
 

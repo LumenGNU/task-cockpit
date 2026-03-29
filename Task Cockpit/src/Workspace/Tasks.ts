@@ -238,21 +238,26 @@ function remapRaw(file: TC.File, rawArr: Raw[]): Definitions {
             // Пропускаем задачи без или с невалидным названием
             if (helpers.isName(raw.label)) {
 
+                const group = typeof raw.group === 'string'
+                    ? { kind: capitalizeKind(raw.group) as TC.Group, isDefault: false }
+                    : raw.group?.kind
+                        ? { kind: capitalizeKind(raw.group.kind) as TC.Group, isDefault: raw.group.isDefault ?? false }
+                        : undefined;
+
+
+                const id = helpers.buildId(file, raw.label);
+
                 // дубликаты label'ов молча перезаписываются —
                 // повторяю поведение VS Code
                 map.set(raw.label, {
-                    id: helpers.buildId(file, raw.label),
                     hidden: raw.hide,
                     isBackground: raw.isBackground,
                     icon: {
                         id: raw.icon?.id,
                         color: raw.icon?.color
                     },
-                    group: typeof raw.group === 'string'
-                        ? { kind: capitalizeKind(raw.group), isDefault: false }
-                        : raw.group?.kind
-                            ? { kind: capitalizeKind(raw.group.kind), isDefault: raw.group.isDefault ?? false }
-                            : undefined
+                    group,
+                    id,
                 });
             }
         }

@@ -4,105 +4,171 @@
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
+import { Scope } from '../../types';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
-// ---
+
+// =================================
+
+
+/** Структурная часть узла дерева.
+ *
+ * Data-узлы получаются пересечением ` & D` —
+ * свойства данных живут непосредственно на объекте. */
+interface Node<D extends object, S extends string> {
+    [SEGMENT]: S | string;
+    [PARENT]: Hierarchy.Branch<D, S> | undefined;
+    [CHILDREN]?: ChildrenDict<D, S>;
+    [DATA_FLAG]?: true | never;
+}
+
 
 /** Флаг: узел содержит данные из спецификации. */
 const DATA_FLAG: unique symbol = Symbol('data');
 /** Имя сегмента (часть пути) этого узла. */
 const SEGMENT: unique symbol = Symbol('segment');
-/** Словарь дочерних узлов. Отсутствие свойства = лист. */
+/** Словарь дочерних узлов. */
 const CHILDREN: unique symbol = Symbol('children');
 /** Ссылка на родительский узел или корень. */
 const PARENT: unique symbol = Symbol('parent');
 
 
-/** Структурная часть узла дерева: сегмент, связи и флаг данных.
- *
- * Data-узлы получаются пересечением `SymbolsNode & D` —
- * свойства данных живут непосредственно на объекте. */
-type SymbolsNode<D extends object, S extends string> = {
-    /** Имя узла (его часть пути). */
-    [SEGMENT]: string;
-    [PARENT]: Hierarchy.ActuallyBranch<D, S> | SemanticRoot<D, S>;
-    [DATA_FLAG]?: true;
-    [CHILDREN]?: Hierarchy.Dict<D, S>;
+/** Иерархия: словарь scope → корневой узел области. */
+type Hierarchy<D extends object, S extends string> = {
+    [scope in S]: Hierarchy.Scope<D, S>;
 };
 
 
-/** Синтетический корень иерархии.
- *
- * Не входит в результат {@linkcode Hierarchy.build} —
- * служит общим `[PARENT]` для верхнеуровневых узлов.
- *
- * Деталь реализации — не имеет смысла и семантики для потребителя.
- * */
-type SemanticRoot<D extends object, S extends string> = {
-    [SEGMENT]: S;
-    [CHILDREN]: Hierarchy.Dict<D, S>;
-    [PARENT]: undefined;
-};
-
-
-
-/** Type guard: является ли узел корневым (синтетическим). */
-function isTop<D extends object, S extends string>(node: Hierarchy.Node<D, S> | SemanticRoot<D, S>): node is SemanticRoot<D, S> {
-    return node[PARENT] === undefined;
+/** Словарь дочерних узлов: сегмент → узел. */
+type ChildrenDict<D extends object, S extends string> = {
+    [segment: string]: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>;
 }
 
 
 /** Модуль построения иерархии из плоских путей.
  *
- * Принимает массив {@link Hierarchy.Spec | "спецификаций"} — путей вида `['a', 'b', 'c']` с данными —
+ * Принимает массив {@link Spec | "спецификаций"} — путей вида `[id, a, b, c]` с данными —
  * и строит из них иерархию с общими префиксами.
  *
  * Порядок спецификаций не влияет на структуру иерархии:
- * `[a,b,c], [a,b]` и `[a,b], [a,b,c]` дадут идентичный результат.
+ * `[id, a,b,c], [a,b]` и `[id, a,b], [id, a,b,c]` дадут идентичный результат.
  *
  * Дубликаты путей создают коллизию —
  * данные будут замещены (в DEBUG с предупреждением в лог).
  *
  * Спецификации с пустым массивом сегментов (`segments: []`) молча игнорируются —
  * не создают узлов и не влияют на остальную иерархию.
+ * 
+ * ### Builder — "тупой" и "**быстрый**"
  *
- * @example
- * // Вход:
- * [
- *   { segments: ['build', 'dev'],  data: task1 },
- *   { segments: ['build', 'prod'], data: task2 },
- *   { segments: ['test'],          data: task3 }
- * ]
- * // Выход: [
- * //  ─ build
- * //    ├─ dev  [task1]
- * //    └─ prod [task2]
- * //  ─ test [task3]
- * // ]
- *
- * @example
- * // Узел может быть одновременно промежуточным и содержать данные:
- * [
- *   { segments: ['build'],        data: taskAll },
- *   { segments: ['build', 'dev'], data: taskDev }
- * ]
- * // Выход: [
- * //  ─ build [taskAll]
- * //    └─ dev [taskDev]
- * // ]
- *
- * ## Builder — "тупой" и **быстрый**
- *
- * {@linkcode Hierarchy.build} должен быть быстрый построитель.
- *
- * Проверка 500 сегментов по 500 символов на символ, крайне маловероятный
- * в "правильном" вводе — ненужное замедление.
- *
- * Оптимизации дающие прирост в одном сценарии, но добавляющие overhead
+ * - {@linkcode Hierarchy.build} должен быть быстрый построитель.
+ * - Проверка 500 сегментов по 500 символов на символ, крайне маловероятный
+ *   в "правильном" вводе — ненужное замедление.
+ * - Оптимизации дающие прирост в одном сценарии, но добавляющие overhead
  * в других — не нужны.
+ * 
+ * ### API
+ * 
+ * Hierarchy
+ *   build(specs) → Hierarchy
+ *   getScopes(hierarchy) → Scope[]
+ *   getScope(hierarchy, id) → Scope | undefined
+ *   lookup(hierarchy, path) → Node | undefined
+ * 
+ * Scope
+ *   getId(scope) → S
+ *   getChildren(scope) → Node[]
+ *   walk(scope, visitor)
+ * 
+ * Node
+ *   getSegment(node) → string
+ *   getParent(node) → Node | undefined
+ *   isData(node) → node is Data
+ *   isBranch(node) → node is Branch
+ *   getBranchChildren(node) → Node[]
+ *   resolvePath(node) → { scopeId, segments }
+ *   walk(node, visitor)
+ * 
+ * @example
+ * ```ts
+ * type MenuData = { calories: number; note?: string };
  *
- * */
+ * const hierarchy = Hierarchy.build<MenuData, 'kitchen'>([
+ *     { scope: 'kitchen', path: ['pizza', 'margherita'], data: { calories: 250 } },
+ *     { scope: 'kitchen', path: ['pizza', 'quattro formaggi'], data: { calories: 320 } },
+ *     { scope: 'kitchen', path: ['pizza', 'diavola'], data: { calories: 290 } },
+ *     { scope: 'kitchen', path: ['pizza'], data: { calories: 0, note: 'dough base' } }, // данные + дети
+ *     { scope: 'kitchen', path: ['sushi', 'nigiri', 'salmon'], data: { calories: 45 } },
+ *     { scope: 'kitchen', path: ['sushi', 'nigiri', 'tuna'], data: { calories: 40 } },
+ *     { scope: 'kitchen', path: ['sushi', 'roll', 'dragon'], data: { calories: 500 } },
+ *     { scope: 'kitchen', path: ['sushi', 'roll', 'rainbow'], data: { calories: 470 } },
+ *     { scope: 'kitchen', path: ['sushi', 'gunkan'], data: { calories: 60 } },  // лист на уровне группирующих
+ *     { scope: 'kitchen', path: ['taco'], data: { calories: 210 } },            // одиночный лист, без вложенности
+ *     { scope: 'kitchen', path: ['ramen', 'tonkotsu'], data: { calories: 450 } },
+ *     { scope: 'kitchen', path: ['ramen', 'miso'], data: { calories: 380 } },
+ * ]);
+ * ```
+ * 
+ * построит такую структуру:
+ * 
+ * ```
+ * ─ [kitchen]
+ *    ├─ pizza ( calories: 0 )
+ *    │  ├─ margherita ( calories: 250 )
+ *    │  ├─ quattro formaggi ( calories: 320 )
+ *    │  └─ diavola ( calories: 290 )
+ *    ├─ sushi
+ *    │  ├─ nigiri
+ *    │  │  ├─ salmon ( calories: 45 )
+ *    │  │  └─ tuna ( calories: 40 )
+ *    │  ├─ roll
+ *    │  │  ├─ dragon ( calories: 500 )
+ *    │  │  └─ rainbow ( calories: 470 )
+ *    │  └─ gunkan ( calories: 60 )
+ *    ├─ taco ( calories: 210 )
+ *    └─ ramen
+ *       ├─ tonkotsu ( calories: 450 )
+ *       └─ miso ( calories: 380 )
+ * ```
+ *
+ *  */
+declare namespace Hierarchy {
+
+    /** Спецификация узла: scope, путь (сегменты) и данные. */
+    export interface Spec<D extends object, S extends string> {
+        readonly scope: S,
+        readonly path: string[];
+        readonly data: D;
+    }
+
+    /** Узел-ветка: имеет дочерние узлы. */
+    export type Branch<D extends object, S extends string> = Node<D, S> & {
+        [SEGMENT]: string;
+        [CHILDREN]: ChildrenDict<D, S>;
+        [PARENT]: Branch<D, S>;
+    }
+
+    /** Корневой узел области (scope). Служит контейнером для верхнеуровневых узлов.
+     * Не содержит данных ({@linkcode DATA_FLAG} = `never`). */
+    export type Scope<D extends object, S extends string> = Node<D, S> & {
+        [SEGMENT]: S;
+        [CHILDREN]: ChildrenDict<D, S>;
+        [PARENT]: undefined;
+        [DATA_FLAG]?: never;
+    }
+
+    /** Узел с данными из спецификации. Может также иметь дочерние узлы. */
+    export type Data<D extends object, S extends string> = Node<D, S> & D & {
+        [SEGMENT]: string;
+        [CHILDREN]?: ChildrenDict<D, S>;
+        [DATA_FLAG]: true;
+        [PARENT]: Branch<D, S>;
+    }
+
+}
+
+
 const Hierarchy = {
 
     /**  Построить иерархию из плоского списка {@linkcode Hierarchy.Spec | спецификаций}.
@@ -114,283 +180,306 @@ const Hierarchy = {
      * @template D тип данных, записываемых в data-узлы.
      * @template S строковый scope — идентификатор области этой иерархии
      *
-     * @param scopeId идентификатор области этой иерархии
      * @param specs массив {@link Hierarchy.Spec | спецификаций} (путь + данные)
      * @returns верхнеуровневые узлы построенной иерархии */
     build<D extends object, S extends string>(
-        scopeId: S,
-        specs: ReadonlyArray<Readonly<Hierarchy.Spec<Readonly<D>>>>
-    ): Readonly<Hierarchy.Dict<D, S>> {
+        specs: ReadonlyArray<Readonly<Hierarchy.Spec<D, S>>>
+    ): Hierarchy<D, S> {
 
-        const rootNode = Object.create(null) as SemanticRoot<D, S>;
-        rootNode[SEGMENT] = scopeId;
-        // rootNode[PARENT] = undefined;
-        rootNode[CHILDREN] = Object.create(null) as Hierarchy.Dict<D, S>;
+        const scopeDict = Object.create(null) as Hierarchy<D, S>;
 
-        // helper to create a node for a given parentPath and segment
-        const createSeed = function (parent: Hierarchy.ActuallyBranch<D, S> | SemanticRoot<D, S>, segment: string): SymbolsNode<D, S> {
-            const seed = Object.create(null) as SymbolsNode<D, S>;
-            seed[SEGMENT] = segment;
-            seed[PARENT] = parent;
-            return seed;
-        };
+        if (specs.length < 1) {
+            return Object.freeze(scopeDict);
+        }
 
         // Обрабатываем массив спецификаций
-        for (const { segments, data } of specs) {
+        for (const { scope, path, data } of specs) {
 
-            const firstSegment = segments.at(0);
-
-            if (firstSegment === undefined) {
-                // The number of segments is less than one
-                continue;
+            let scopeNode = scopeDict[scope];
+            if (scopeNode === undefined) {
+                scopeNode = Object.create(null) as Hierarchy.Scope<D, S>;
+                scopeNode[SEGMENT] = scope;
+                scopeNode[PARENT] = undefined;
+                scopeNode[CHILDREN] = Object.create(null) as ChildrenDict<D, S>;
+                scopeDict[scope] = scopeNode;
             }
 
-            let firstNode = rootNode[CHILDREN][firstSegment];
-            if (!firstNode) {
-                firstNode = createSeed(rootNode, firstSegment);
-                rootNode[CHILDREN][firstSegment] = firstNode;
-            }
+            let parentNode: Node<D, S> = scopeNode;
 
-            let parent = firstNode;
             // traverse remaining segments
-            for (let si = 1; si < segments.length; si++) {
-
-                const currentSegment = segments[si];
-
-                // ensure children dict exists
-                if (!Hierarchy.Node.isBranch(parent)) {
-                    const dict = Object.create(null);
-                    parent[CHILDREN] = dict as Hierarchy.Dict<D, S>;
-                    // теперь приведение parent as ActuallyBranch<D, S> легитимно
-                }
-
-                const parentDict: Partial<Hierarchy.Dict<D, S>> = (parent as Hierarchy.ActuallyBranch<D, S>)[CHILDREN];
+            for (const segment of path) {
 
                 // lazily создание child node в dict
-                let childNode = parentDict[currentSegment];
-                if (!childNode) {
+                let childNode = parentNode[CHILDREN]?.[segment];
+                if (childNode === undefined) {
+
                     // текущий сегмент еще не в родителе
                     // создаем узел и помещаем в родителя
-                    childNode = createSeed((parent as Hierarchy.ActuallyBranch<D, S>), currentSegment);
-                    parentDict[currentSegment] = childNode;
+                    childNode = Object.create(null) as Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>;
+                    childNode[SEGMENT] = segment;
+                    childNode[PARENT] = parentNode as Hierarchy.Branch<D, S>;
+
+                    let parentChildren = parentNode[CHILDREN];
+                    // ensure children dict exists
+                    if (parentChildren === undefined) {
+                        parentChildren = Object.create(null) as ChildrenDict<D, S>;
+                        parentNode[CHILDREN] = parentChildren;
+                    }
+
+                    parentChildren[segment] = childNode;
                 }
 
-                parent = childNode;
+                parentNode = childNode;
             }
 
             // parent is the endpoint node for this spec; spread data onto it
-            if (DATA_FLAG in parent) {
+            if (DATA_FLAG in parentNode) {
                 // #region DEBUG
-                log(LogLevel.Warning, `Duplicate path in scope "${scopeId}": "${segments.join(' • ')}". Data was overwritten`);
+                log(LogLevel.Warning, `Duplicate path in scope "${scope}": "${path.join(' • ')}". Data was overwritten`);
                 // #endregion DEBUG
                 // должна быть перезапись, не слияние
-                for (const key of Reflect.ownKeys(parent)) {
-                    if (typeof key === 'symbol' && [DATA_FLAG, SEGMENT, CHILDREN, PARENT].includes(key)) continue;
-                    delete (parent as Record<string | symbol, unknown>)[key];
+                for (const key in parentNode) {
+                    delete (parentNode as any)[key];
                 }
             }
-            Object.assign(parent, { [DATA_FLAG]: true, ...data });
+            Object.assign(parentNode, { [DATA_FLAG]: true, ...data });
 
         }
 
-        return Object.freeze(
-            rootNode[CHILDREN]
-        );
+        return Object.freeze(scopeDict);
     },
 
-    /** Найти узел в дереве по пути сегментов.
-     *
-     * @param topNodesDict верхнеуровневые узлы (результат {@linkcode Hierarchy.build})
-     * @param segments путь от корня к искомому узлу
-     * @returns найденный узел или `undefined` */
-    lookup<D extends object, S extends string>(
-        topNodesDict: Readonly<Hierarchy.Dict<D, S>>,
-        segments: readonly string[]
-    ): Readonly<Hierarchy.Node<D, S>> | undefined {
+    /** Все scope-узлы иерархии. */
+    getScopes<D extends object, S extends string>(
+        hierarchy: Hierarchy<D, S>
+    ): ReadonlyArray<Hierarchy.Scope<D, S>> {
+        return Object.values(hierarchy);
+    },
 
-        if (segments.length === 0) {
-            return undefined;
+    /** Scope-узел по идентификатору, или `undefined` если отсутствует. */
+    getScope<D extends object, S extends string>(
+        hierarchy: Hierarchy<D, S>,
+        scopeId: S
+    ): Hierarchy.Scope<D, S> | undefined {
+        return hierarchy[scopeId];
+    },
+
+
+    /** Поиск узла по полному пути.
+     * Возвращает `undefined`, если путь не существует. */
+    lookup<D extends object, S extends string>(
+        hierarchy: Hierarchy<D, S>,
+        scope: S,
+        path: readonly string[]
+    ): Hierarchy.Branch<D, S> | Hierarchy.Data<D, S> | undefined {
+
+        const scopeNode = hierarchy[scope];
+        if (!scopeNode) {
+            return undefined
         }
 
-        let current: Hierarchy.Node<D, S> | undefined = topNodesDict[segments[0]];
+        let current:
+            | Hierarchy.Branch<D, S>
+            | Hierarchy.Data<D, S>
+            | undefined
+            = undefined;
 
-        for (let si = 1; current && si < segments.length; si++) {
-            current = current[CHILDREN]?.[segments[si]];
+        let dict = scopeNode[CHILDREN];
+
+        for (const segment of path) {
+            current = dict[segment];
+            if (!current) {
+                return undefined;
+            }
         }
 
         return current;
     },
 
+    // #region DEBUG
 
-    Node: {
+    /** Сериализация иерархии обратно в плоский массив {@linkcode Hierarchy.Spec}.
+     * Обходит все scope, собирая только data-узлы. */
+    toJSON<D extends object>(hierarchy: Hierarchy<D, string>): Array<Hierarchy.Spec<D, string>> {
 
-        /** Имеет ли узел детей. Это проверка на свойство, НЕ тип.
-         *
-         * У чистых листьев ключа `children` нет вообще.
-         * У нод с детьми (с полем `children`) всегда ≥ 1 ребёнок.
-         *
-         * "Чистый лист" = `!isBranch` — это всегда "DataNode", но "DataNode" — не всегда "чистый лист"  */
-        isBranch<D extends object, S extends string>(
-            node: Readonly<Hierarchy.Node<D, S>>
-        ): node is Hierarchy.ActuallyBranch<D, S> {
-            return CHILDREN in node;
-        },
+        const result: Array<Hierarchy.Spec<D, string>> = [];
 
+        for (const scope of Hierarchy.getScopes(hierarchy)) {
 
-        /** Type guard: Содержит ли узел данные.
-         *
-         * (соответствует ли спецификации из {@linkcode build}).
-         *
-         * Это сужение не мешает узлу иметь свойство {@linkcode Node.isBranch}, и находиться в любой точке иерархии. */
-        isData<D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): node is (SymbolsNode<D, S> & D) {
-            return DATA_FLAG in node;
-        },
+            Hierarchy.Scope.walk(scope, (node) => {
 
-        /** Имя узла — его сегмент пути. */
-        getSegment<D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): string {
-            return node[SEGMENT];
-        },
+                if (!Hierarchy.Node.isData(node)) return;
 
+                const { scope, path } = Hierarchy.Node.resolvePath(node);
 
-        /** Разобрать путь узла на составляющие: scope и сегменты.
-         *
-         * @template D тип данных data-узлов
-         * @template S строковый идентификатор scope
-         *
-         * @param node узел иерархии, построенной через {@linkcode Hierarchy.build}
-         * @returns объект, состоящий из scope и массива сегментов */
-        resolvePath<D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): { scopeId: S, segments: string[]; } {
-            const result: { scopeId: S, segments: string[]; } = {
-                scopeId: '' as S,
-                segments: [],
-            };
-            let current: Hierarchy.Node<D, S> | SemanticRoot<D, S> = node;
-
-            while (current) {
-
-                if (isTop(current)) {
-                    result.scopeId = current[SEGMENT];
-                    break;
+                const data = Object.create(null);
+                for (const key in node) {
+                    data[key] = (node as any)[key];
                 }
 
-                result.segments.push(current[SEGMENT]);
-                current = current[PARENT];
-            }
-            result.segments.reverse();
-
-            return result;
-        },
-
-
-        /** Возвращает детей узла-контейнера.
-         * Метод доступен **только** для узлов, где `isBranch(node) === true`. */
-        getBranchChildren<D extends object, S extends string>(node: Readonly<Hierarchy.ActuallyBranch<D, S>>): Array<Readonly<Hierarchy.Node<D, S>>> {
-            return Object.values<Hierarchy.Node<D, S>>(node[CHILDREN]);
-        },
-
-
-        /** Дети узла, или пустой массив для листьев.
-         *
-         * Удобная альтернатива паре {@linkcode Hierarchy.Node.isBranch} + {@linkcode Hierarchy.Node.getBranchChildren},
-         * когда ветвление не нужно обрабатывать отдельно. */
-        getChildren<D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): Array<Readonly<Hierarchy.Node<D, S>>> {
-            if (Hierarchy.Node.isBranch(node)) {
-                return Object.values<Hierarchy.Node<D, S>>(node[CHILDREN]);
-            }
-
-            return [];
-        },
-
-
-        /** Родительский узел, или `undefined` если узел находится на верхнем уровне. */
-        getParent<D extends object, S extends string>(node: Readonly<Hierarchy.Node<D, S>>): Hierarchy.ActuallyBranch<D, S> | undefined {
-
-            const parent = node[PARENT];
-            if (isTop(parent)) {
-                return undefined;
-            }
-
-            return parent as Hierarchy.ActuallyBranch<D, S>;
-        },
-
-    } as const,
-} as const;
-
-
-// #region DEBUG
-/** Сериализация дерева в plain-объект для отладки.
- *
- * Символьные ключи и циклические ссылки убраны —
- * результат безопасен для `JSON.stringify`. */
-export function toDebugJSON<D extends object, S extends string>(
-    topNodes: Readonly<Hierarchy.Dict<D, S>>
-): Record<string, unknown> {
-
-    function nodeToPlain(node: Hierarchy.Node<D, S>): Record<string, unknown> {
-        const result: Record<string, unknown> = {};
-
-        if (Hierarchy.Node.isData(node)) {
-            for (const key of Object.keys(node)) {
-                result[key] = (node as Record<string, unknown>)[key];
-            }
-        }
-
-        if (Hierarchy.Node.isBranch(node)) {
-            const children: Record<string, unknown> = {};
-            for (const child of Hierarchy.Node.getBranchChildren(node)) {
-                children[Hierarchy.Node.getSegment(child)] = nodeToPlain(child);
-            }
-            result['[children]'] = children;
+                result.push({ scope, path, data });
+            });
         }
 
         return result;
-    }
+    },
 
-    const root: Record<string, unknown> = {};
-    for (const node of Object.values(topNodes)) {
-        root[Hierarchy.Node.getSegment(node)] = nodeToPlain(node);
-    }
-    return root;
+    /** Текстовое представление иерархии (ASCII-дерево) для отладки.
+     * @param dataFormater форматирование данных узла в строку (по умолчанию `'(*)'`) */
+    printTree<D extends object, S extends string>(hierarchy: Hierarchy<D, S>, dataFormater: (data: D) => string = () => '(*)'): string {
+
+        const lines: string[] = [];
+
+        function printNode(
+            node: Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>,
+            prefix: string,
+            isLast: boolean,
+            lines: string[]
+        ): void {
+            const connector = isLast ? '└─' : '├─';
+            const dataMarker = Hierarchy.Node.isData(node) ? dataFormater(node) : '';
+            lines.push(`${prefix}${connector} ${node[SEGMENT]} ${dataMarker}`);
+
+            if (Hierarchy.Node.isBranch(node)) {
+                const childPrefix = prefix + (isLast ? '   ' : '│  ');
+                const children = Object.values(node[CHILDREN]);
+                for (let i = 0; i < children.length; i++) {
+                    printNode(children[i], childPrefix, i === children.length - 1, lines);
+                }
+            }
+        }
+
+        for (const scope of Hierarchy.getScopes(hierarchy)) {
+            lines.push(`─ [${scope[SEGMENT]}]`);
+            const children = Object.values(scope[CHILDREN]);
+            for (let i = 0; i < children.length; i++) {
+                printNode(children[i], '   ', i === children.length - 1, lines);
+            }
+        }
+
+        return lines.join('\n');
+    },
+
+    // #endregion DEBUG
+
+    Scope: {
+
+        /** Идентификатор области. */
+        getScopeId<D extends object, S extends string>(
+            scope: Hierarchy.Scope<D, S>
+        ): S {
+            return scope[SEGMENT];
+        },
+
+        /** Дочерние узлы первого уровня в scope. */
+        getChildren<D extends object, S extends string>(
+            scope: Hierarchy.Scope<D, S>
+        ): Array<Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>> {
+            return Object.values(scope[CHILDREN]);
+        },
+
+        /** Обход всех узлов scope в глубину (pre-order).
+         * @param visitor вызывается для каждого узла с текущей глубиной
+         * @param depth начальная глубина (по умолчанию 1) */
+        walk<D extends object, S extends string>(
+            scope: Hierarchy.Scope<D, S>,
+            visitor: (node: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>, depth: number) => void,
+            depth: number = 1
+        ): void {
+
+            for (const child of Object.values(scope[CHILDREN])) {
+
+                if (Hierarchy.Node.isBranch(child)) {
+                    Hierarchy.Node.walk(child, visitor, depth);
+                }
+                else {
+                    visitor(child, depth);
+                }
+            }
+        }
+    },
+
+    Node: {
+
+        /** Type guard: узел содержит данные из спецификации. */
+        isData<D extends object, S extends string>(node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>): node is Hierarchy.Data<D, S> {
+            return DATA_FLAG in node;
+        },
+
+        /** Type guard: узел имеет дочерние элементы. */
+        isBranch<D extends object, S extends string>(node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>): node is Hierarchy.Branch<D, S> {
+            return CHILDREN in node;
+        },
+
+        /** Type guard: является ли узел корневым. */
+        isScope<D extends object, S extends string>(node: Node<D, S>): node is Hierarchy.Scope<D, S> {
+            return node[PARENT] === undefined;
+        },
+
+        /** Имя сегмента этого узла (последняя часть пути). */
+        getSegment<D extends object, S extends string>(
+            node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>
+        ): string {
+            return node[SEGMENT];
+        },
+
+        /** Родительский узел. Для узлов первого уровня возвращает scope. */
+        getParent<D extends object, S extends string>(
+            node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>
+        ): Hierarchy.Branch<D, S> | Hierarchy.Scope<D, S> {
+            return node[PARENT];
+        },
+
+        /** Дочерние узлы ветки. */
+        getBranchChildren<D extends object, S extends string>(
+            node: Hierarchy.Branch<D, S>
+        ): Array<Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>> {
+            return Object.values(node[CHILDREN]);
+        },
+
+        /** Восстановление полного пути от узла до scope (подъём по PARENT-цепочке).
+         * @returns scopeId и массив сегментов от корня к узлу */
+        resolvePath<D extends object, S extends string>(
+            node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>
+        ): { scope: S; path: string[] } {
+
+            const path: string[] = [];
+            let current = node;
+
+            // Поднимаемся до scope, собирая сегменты
+            while (true) {
+                path.push(current[SEGMENT]);
+                const ref = current[PARENT];
+                if (Hierarchy.Node.isScope(ref)) {
+                    path.reverse();
+                    return { scope: ref[SEGMENT], path };
+                }
+                current = ref;
+            }
+        },
+
+        /** Обход поддерева в глубину (pre-order), включая сам узел.
+         * @param visitor вызывается для каждого узла с текущей глубиной
+         * @param depth начальная глубина (по умолчанию 1) */
+        walk<D extends object, S extends string>(
+            node: Hierarchy.Branch<D, S>,
+            visitor: (child: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>, depth: number) => void,
+            depth: number = 1
+        ): void {
+
+            visitor(node, depth);
+
+            for (const child of Object.values(node[CHILDREN])) {
+                if (Hierarchy.Node.isBranch(child)) {
+                    Hierarchy.Node.walk(child, visitor, depth + 1);
+                }
+                else {
+                    visitor(child, depth + 1);
+                }
+            }
+        },
+    },
 };
-// #endregion DEBUG
 
-
-
-declare namespace Hierarchy {
-
-    /** Спецификация ветки: путь (сегменты) + данные на конце. */
-    export interface Spec<D extends object> {
-        segments: readonly string[];
-        data: D;
-    }
-
-    /** Узел иерархии.
-     *
-     * Три варианта:
-     * - данные, без детей (лист)
-     * - данные и дети (промежуточный с данными)
-     * - только дети, без данных (чисто группирующий)
-     *
-     * Узел без данных и без детей не существует.
-     *
-     * @see {@linkcode Hierarchy.Node.isData} — проверка наличия данных
-     * @see {@linkcode Hierarchy.Node.isBranch} — проверка наличия детей */
-    export type Node<D extends object, S extends string> = SymbolsNode<D, S> | (SymbolsNode<D, S> & D)
-
-    // /** Результат {@linkcode Hierarchy.build} — массив узлов верхнего уровня.
-    //  *
-    //  * Номинальная типизация предотвращает передачу произвольного `Array<NodeType>`. */
-    // export type TopNodeArray<D extends object, S extends string> = Array<Hierarchy.Node<D, S>> & {
-    //     readonly [__NodeArray]: never;
-    // }
-
-
-    /** Словарь дочерних узлов: сегмент → узел. */
-    export type Dict<D extends object, S extends string> = { [segment: string]: SymbolsNode<D, S>; };
-
-
-    export type ActuallyBranch<D extends object, S extends string> = Hierarchy.Node<D, S> & { readonly [CHILDREN]: Dict<D, S>; }
-}
 
 export default Hierarchy;
-

@@ -41,7 +41,7 @@ export default class Splitter {
      * - После разделителя должен быть "значимый" символ (не пробел, не разделитель)
      *
      * `undefined` если разбиение отключено или разделитель невалиден. */
-    private readonly splitter: RegExp | undefined = undefined;
+    private readonly splitRegex: RegExp | undefined = undefined;
 
 
     /** Создает экземпляр Splitter с заданным разделителем.
@@ -63,7 +63,7 @@ export default class Splitter {
         if (delimiter) {
             const sanitized = (delimiter[0])?.trimStart().replace(/[.*+?^${}()|[\]\\]/, '\\$&') || false;
             if (sanitized) {
-                this.splitter = new RegExp(`(?<=[^${sanitized}\\s])${sanitized}(?=[^${sanitized}\\s])`);
+                this.splitRegex = new RegExp(`(?<=[^${sanitized}\\s])${sanitized}(?=[^${sanitized}\\s])`);
             }
         }
     }
@@ -79,8 +79,8 @@ export default class Splitter {
      * @returns Массив сегментов. Если разбиение невозможно или отключено,
      *          возвращается массив из одного элемента (исходная строка). */
     public split(segmentsSpec: string): string[] {
-        if (this.splitter) {
-            return segmentsSpec.split(this.splitter);
+        if (this.splitRegex) {
+            return segmentsSpec.split(this.splitRegex);
         }
         return [segmentsSpec];
     }

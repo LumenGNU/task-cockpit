@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
 import Hierarchy from './Cockpit/TreeModel/Hierarchy';
 
-// #region DEBUG
-import { toDebugJSON as Hierarchy_toDebugJSON } from './Cockpit/TreeModel/Hierarchy';
-// #endregion DEBUG
+
 
 
 // #region DEBUG
@@ -28,14 +26,15 @@ export function activate(context: vscode.ExtensionContext) {
 			description?: string;
 		};
 
-		function spec(branch: string[], data: LeafType): Hierarchy.Spec<typeof data> {
+		function spec(branch: string[], data: LeafType): Hierarchy.Spec<typeof data, 'kitchen'> {
 			return {
-				segments: branch,
+				scope: 'kitchen',
+				path: branch,
 				data
 			};
 		}
 
-		const topNodes = Hierarchy.build<LeafType, string>('kitchen', [
+		const topNodes = Hierarchy.build<LeafType, string>([
 			spec(['pizza', 'margherita'], { calories: 250 }),
 			spec(['pizza', 'quattro formaggi'], { calories: 320 }),
 			spec(['pizza', 'diavola'], { calories: 290 }),
@@ -50,8 +49,9 @@ export function activate(context: vscode.ExtensionContext) {
 			spec(['ramen', 'miso'], { calories: 380 }),
 		]);
 
-		console.log(JSON.stringify(Hierarchy_toDebugJSON(topNodes), null, 2));
+		console.log(JSON.stringify(Hierarchy.toJSON(topNodes), null, 2));
 
+		console.log(Hierarchy.printTree(topNodes, (d) => `( calories: ${d.calories} )`));
 		// #endregion DEBUG
 	});
 
