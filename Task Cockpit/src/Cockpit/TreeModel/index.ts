@@ -1,136 +1,164 @@
 /** @file Cockpit/TreeModel/index.ts */
-/** @module Tree */
+/** @module TreeModel */
 
-import type * as TC from '../../types';
-import Hierarchy from './Hierarchy';
-import FolderRoots from './Folders';
+import * as TC from '../../types';
+import Section from '../TreeModel/Section';
+import Hierarchy from '../TreeModel/Hierarchy';
 
-
-declare namespace TreeModel {
-
-
-    /** Пространство типов для узлов дерева задач.
-     *
-     * Дерево строится из корневых узлов ({@linkcode WorkspaceRoot}, {@linkcode FolderRoot}),
-     * внутренних сегментов ({@linkcode Segment}), узлов задач ({@linkcode Runnable})
-     * и визуальных маркеров ({@linkcode Marker}). */
-    export namespace Node {
-
-        // Корни
-
-        // /** Корневой узел workspace-scope (`.code-workspace`).
-        //  * Содержит дополнительную информацию об исключении и статистику workspace задач. */
-        // export type RootNodeWorkspace = {
-        //     kind: 'Workspace';
-        // } & Omit<Roots.RootNode, 'kind'>;
+// #region DEBUG
+import { LogLevel } from 'vscode';
+import Logger from '../../Logger';
+const { log, assert } = Logger.get(module.filename);
+// #endregion DEBUG
 
 
-        // /** Корневой узел folder-scope (`.vscode/tasks.json`). */
-        // export type RootNodeFolder = {
-        //     kind: 'Folder';
-        // } & Omit<Roots.RootNode, 'kind'>;
+// ── Узлы, которых нет в Section — создаются TreeModel ──
 
 
-        export type RootNodeFavorites = {
-            kind: 'Favorites';
-            children: TaskNode[];
-        };
-
-
-        export type TaskNode = Hierarchy.Node<TC.TaskDefinition, TC.File>;
-
-
-        export type RootNode =
-            | FolderRoots.RootNodeFolder
-            | RootNodeFavorites;
-
-
-        export type ChildrenNode =
-            | TaskNode;
-
-
-        /** Объединённый тип всех возможных узлов дерева. */
-        export type NodeType =
-            | RootNode
-            | ChildrenNode;
-
-    }
-
-
+interface FolderRoot {
+    readonly kind: TC.EntityKind.Folder;
+    readonly entity: Section.File;
 }
 
-
-
-/** Type guard: узел является корневым (workspace или folder root). */
-function isRoot(node: TreeModel.Node.NodeType): node is TreeModel.Node.RootNode {
-    return 'kind' in node;
+interface WorkspaceRoot {
+    readonly kind: TC.EntityKind.Workspace;
+    readonly entity: Section.File;
 }
 
-
-/** Проверяет, содержит ли TaskNode дочерние узлы (является группой). */
-function isBranch(node: TreeModel.Node.NodeType): boolean {
-    if (isRoot(node)) {
-        return true;
-    }
-    return Hierarchy.Node.isBranch(node);
+interface FavoritesRoot {
+    readonly kind: TC.EntityKind.Favorites;
+    readonly entity: Section.Favorite;
 }
 
-
-/** Проверяет, что узел является action-узлом.
- * Отсекает корни, маркеры и промежуточные сегменты без привязанных данных задачи. */
-function isRunnable(node: TreeModel.Node.NodeType): boolean {
-    if (isRoot(node)) {
-        return false;
-    }
-    return Hierarchy.Node.isData(node);
+interface BrokenFavorite {
+    readonly kind: TC.EntityKind.BrokenFavorite;
+    readonly ref: TC.FavoriteRef;
+    readonly parentNode: FavoritesRoot;
 }
 
-
-function isFolder(node: TreeModel.Node.RootNode): node is TreeModel.Node.RootNodeFolder {
-    return node.kind === 'Folder';
+interface Empty {
+    readonly kind: TC.EntityKind.Empty;
+    readonly parentNode: FolderRoot | WorkspaceRoot;
 }
 
-function isWorkspace(node: TreeModel.Node.RootNode): node is TreeModel.Node.RootNodeWorkspace {
-    return node.kind === 'Workspace';
+interface Runnable {
+    readonly kind: TC.EntityKind.Runnable;
+    readonly entity: Section.Item.Runnable;
+    readonly parentNode: Group | RunnableGroup | Root;
 }
 
-function isFavorites(node: TreeModel.Node.RootNode): node is TreeModel.Node.RootNodeFavorites {
-    return node.kind === 'Favorites';
+interface Group {
+    readonly kind: TC.EntityKind.Group;
+    readonly entity: Section.Item.Group;
+    readonly parentNode: Group | RunnableGroup | Root;
 }
 
-/** Разбирает `nodePath` на scope (файл задач) и массив сегментов пути. */
-function parseNodeURI(node: TreeModel.Node.NodeType): Readonly<TC.NodeURI> {
-
-    if (isRoot(node)) {
-        return {
-            authority: node.kind,
-            path: isFavorites(node) ? '/' : node.tasksFile,
-            fragment: undefined,
-        };
-    }
-
-    const { scopeId, segments } = Hierarchy.Node.resolvePath(node);
-
-    return {
-        authority: isRunnable(node) ? 'Runnable' : 'Group',
-        path: scopeId,
-        fragment: segments.join('\0'),
-    };
+interface RunnableGroup {
+    readonly kind: TC.EntityKind.RunnableGroup;
+    readonly entity: Section.Item.Group & Section.Item.Runnable;
+    readonly parentNode: Group | RunnableGroup | Root;
 }
 
+type Root = FolderRoot | WorkspaceRoot | FavoritesRoot;
 
+type Virtual = BrokenFavorite | Empty;
 
+type Item = Runnable | Group | RunnableGroup;
+
+type Child = Virtual | Item;
+
+/** Всё, с чем работает TreeDataProvider. */
+export type Node = Root | Child;
 
 
 const TreeModel = {
-    Node: {
-        isBranch,
-        isFavorites,
-        isFolder,
-        isRoot,
-        isRunnable,
-        isWorkspace,
+
+    /** Собирает корневые узлы.
+     * запрашиваются TreeDataProvider через {@linkcode getChildren}. */
+    build(
+        entities: ReadonlyArray<Section.Favorite | Section.File>
+    ): Root[] {
+
+        const roots: Root[] = [];
+
+        for (const entity of entities) {
+
+            if (!entity.hidden) {
+                const root = { kind: entity.kind, entity };
+                roots.push(root as Root);
+            }
+        }
+
+        return roots;
     },
+
+
+    /** . */
+    childFrom(item: Section.Item, parentNode: Group | RunnableGroup | Root): Item {
+        if (Section.Child.isRunnable(item)) {
+            if (Section.Child.isGroup(item)) {
+                return { kind: TC.EntityKind.RunnableGroup, entity: item };
+            }
+            return { kind: TC.EntityKind.Runnable, entity: item };
+        }
+        return { kind: TC.EntityKind.Group, entity: item as Section.Item.Group };
+    },
+
+
+    /** Children для TreeDataProvider.getChildren.
+     * Ленивый маппинг — Section.Child передаётся как есть. */
+    getChildren(node: Node): ReadonlyArray<Child> | undefined {
+
+        switch (node.kind) {
+
+            case TC.EntityKind.Folder:
+            case TC.EntityKind.Workspace: {
+
+                const children = node.entity.children;
+
+                return children.length > 0
+                    ? children.map((i) => TreeModel.childFrom(i, node))
+                    : [{ kind: TC.EntityKind.Empty, parentNode: node }];
+            };
+
+            case TC.EntityKind.Favorites: {
+
+                return [
+                    ...node.entity.stales.map(ref => ({ kind: TC.EntityKind.BrokenFavorite, ref, parentNode: node }) as const),
+                    ...node.entity.children.map((i) => TreeModel.childFrom(i, node))
+                ];
+            };
+
+            case TC.EntityKind.Group:
+            case TC.EntityKind.RunnableGroup: {
+                const children = Hierarchy.Node.getBranchChildren(node.entity);
+
+                return children.map((i) => TreeModel.childFrom(i, node));
+            };
+
+            // bare leafs
+            case TC.EntityKind.BrokenFavorite:
+            case TC.EntityKind.Empty:
+            case TC.EntityKind.Runnable: {
+                return undefined;
+            };
+
+            default: {
+                const _node: never = node;
+                assert(false, `${_node}`); // @todo
+                return undefined;
+            };
+        }
+    },
+
+
+
+
+
+
+
+
+
 } as const;
 
 

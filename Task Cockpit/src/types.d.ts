@@ -7,6 +7,7 @@ declare const __TasksGroup: unique symbol;
 declare const __Identity: unique symbol;
 declare const __ProcessId: unique symbol;
 declare const __QueryComponent: unique symbol;
+declare const __FolderName: unique symbol;
 
 
 export type CG_Separator = '\x1D';
@@ -58,24 +59,7 @@ export type Group = 'Build' | 'Test' | 'Clean' & { readonly [__TasksGroup]: neve
 export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [__Identity]: never; };
 
 
-// /** Полный набор настроек расширения, разделённый по уровню действия. */
-// export interface Settings {
-//     /** Настройки уровня ресурса (per-folder в multi-root). */
-//     readonly resource: ScopedSettings;
-//     /** Настройки уровня окна (общие для всего workspace). */
-//     readonly window: WindowSettings;
-// }
 
-
-// /** Настройки уровня ресурса — читаются отдельно для каждого scope.
-//  *
-//  * В multi-root workspace каждая папка может иметь свои значения. */
-// export interface ScopedSettings {
-//     /** Параметры построения ветки дерева (иерархия, группировка, фильтрация). */
-//     readonly branchConfig: BranchConfig;
-//     /** Параметры отображения элементов дерева (иконки, цвета). */
-//     readonly nodeConfig: NodeConfig;
-// }
 
 
 /** Настройки уровня окна — общие для всего workspace, не зависят от scope. */
@@ -90,19 +74,18 @@ export interface WindowSettings { // @todo имя не подходит
 
 
 /** Параметры, определяющие структуру ветки дерева для scope. */
-export interface BranchConfig {
+export interface TreeConfig {
     /** Символ-разделитель для разбиения label на сегменты иерархии.
      * `false` — иерархия отключена. */
     readonly segmentSeparator: string | false;
     /** Группировать ли задачи по свойству `group`. */
     readonly useGroupKind: boolean;
-
-    // /** Показывать ли задачи с `hide: true`. */ // @reject - не задача модели, задача представления
-    // readonly showHidden: boolean;
+    /** Показывать ли задачи с `hide: true`. */
+    readonly showHidden: boolean;
 }
 
 
-export type BranchConfigByFile = Map<File, BranchConfig>;
+export type TreeConfigByFile = Map<File, TreeConfig>;
 
 
 /** Параметры, определяющие визуальное отображение элементов дерева. */
@@ -114,6 +97,9 @@ export interface NodeConfig {
     /** Окрашивать ли label задачи в цвет её иконки. */
     readonly tintLabel: boolean;
 }
+
+
+export type NodeConfigByFile = Map<File, NodeConfig>;
 
 
 /** Настройки диагностики задач. */
@@ -130,12 +116,15 @@ export interface RuntimeSettings {
     terminalTimeout: number;
 }
 
+
+export type FolderName = string & { readonly [__FolderName]: never; };
+
 /** Область действия задач, с именем и URI файла, в котором они определены (источником задач).
  *
  * Resource settings читаются для scope, а не наоборот:
  * scope — первичная сущность, настройки вторичны. */
 export interface Scope {
-    readonly name: string;
+    readonly name: FolderName;
     readonly uri: Readonly<Uri>;
 }
 
@@ -172,6 +161,7 @@ export interface TaskDefinition {
     };
 }
 
+
 export type ScopedTasks = Map<Name, vscode.Task>;
 
 export type TasksByFile = Map<File, ScopedTasks>;
@@ -179,6 +169,7 @@ export type TasksByFile = Map<File, ScopedTasks>;
 export type ScopedDefinitions = Map<Name, TaskDefinition>;
 
 export type DefinitionsByFile = Map<File, ScopedDefinitions>;
+
 
 // export type SettingsByFile = Map<File, ScopedSettings>;
 
@@ -200,14 +191,7 @@ export interface TerminalsSnapshot {
 }
 
 
-// /** Детализация количества задач в scope. */
-// export interface ScopedDetail {
-//     /** Общее количество задач. */
-//     all: number;
-//     // skipped: number; // @todo или да?
-//     /** Количество скрытых задач (`hide: true`). */
-//     hidden: number;
-// }
+
 
 
 // export type DetailsByFile = Map<File, ScopedDetail>;
@@ -252,3 +236,35 @@ export interface NodeURI {
     readonly path: string;
     readonly fragment?: string;
 }
+
+
+export interface FavoriteRef {
+    scope: Scope;
+    label: Name;
+}
+
+export declare const enum FavoritesVisibility {
+    AUTO,
+    HIDE
+}
+
+export interface FavoritesConfig {
+    // visibility: FavoritesVisibility;
+    favoriteRecords: Array<Readonly<FavoriteRef>>;
+    staleRecords: Array<Readonly<FavoriteRef>>;
+}
+
+// export declare const FAVORITES_SCOPE = '\0\0favorites://';
+// export type FavoritesScope = typeof FAVORITES_SCOPE;
+
+export declare const enum EntityKind {
+    Folder = 1 << 0,
+    Workspace = 1 << 1,
+    Favorites = 1 << 2,
+    BrokenFavorite = 1 << 3,
+    Empty = 1 << 4,
+    Runnable = 1 << 5,
+    Group = 1 << 6,
+    RunnableGroup = Runnable | Group,
+}
+

@@ -4,7 +4,6 @@
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
-import { Scope } from '../../types';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
@@ -235,14 +234,14 @@ const Hierarchy = {
             // parent is the endpoint node for this spec; spread data onto it
             if (DATA_FLAG in parentNode) {
                 // #region DEBUG
-                log(LogLevel.Warning, `Duplicate path in scope "${scope}": "${path.join(' • ')}". Data was overwritten`);
+                log(LogLevel.Warning, `Duplicate path in scope "${scope}": "${path.join(' › ')}". Data was overwritten`);
                 // #endregion DEBUG
                 // должна быть перезапись, не слияние
                 for (const key in parentNode) {
                     delete (parentNode as any)[key];
                 }
             }
-            Object.assign(parentNode, { [DATA_FLAG]: true, ...data });
+            Object.assign(parentNode, { ...data, [DATA_FLAG]: true });
 
         }
 
@@ -265,6 +264,22 @@ const Hierarchy = {
     },
 
 
+    /** Обход всех узлов иерархии (все scope, в глубину, pre-order).
+     * @param visitor вызывается для каждого узла; третий аргумент — scope, которому принадлежит узел */
+    walk<D extends object, S extends string>(
+        hierarchy: Hierarchy<D, S>,
+        visitor: (node: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>) => void
+    ): void {
+
+        for (const scope in hierarchy) {
+            Hierarchy.Scope.walk(
+                hierarchy[scope],
+                visitor
+            );
+        }
+    },
+
+
     /** Поиск узла по полному пути.
      * Возвращает `undefined`, если путь не существует. */
     lookup<D extends object, S extends string>(
@@ -284,13 +299,17 @@ const Hierarchy = {
             | undefined
             = undefined;
 
-        let dict = scopeNode[CHILDREN];
+        let dict:
+            | ChildrenDict<D, S>
+            | undefined
+            = scopeNode[CHILDREN];
 
         for (const segment of path) {
-            current = dict[segment];
+            current = dict?.[segment];
             if (!current) {
                 return undefined;
             }
+            dict = current[CHILDREN]
         }
 
         return current;
@@ -325,41 +344,16 @@ const Hierarchy = {
     },
 
     /** Текстовое представление иерархии (ASCII-дерево) для отладки.
-     * @param dataFormater форматирование данных узла в строку (по умолчанию `'(*)'`) */
-    printTree<D extends object, S extends string>(hierarchy: Hierarchy<D, S>, dataFormater: (data: D) => string = () => '(*)'): string {
+     * @param formatter форматирование данных узла в строку (по умолчанию `'(*)'`) */
+    printTree<D extends object, S extends string>(
+        hierarchy: Hierarchy<D, S>,
+        formatter: (data: D) => string = () => '(*)'
+    ): string {
 
-        const lines: string[] = [];
-
-        function printNode(
-            node: Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>,
-            prefix: string,
-            isLast: boolean,
-            lines: string[]
-        ): void {
-            const connector = isLast ? '└─' : '├─';
-            const dataMarker = Hierarchy.Node.isData(node) ? dataFormater(node) : '';
-            lines.push(`${prefix}${connector} ${node[SEGMENT]} ${dataMarker}`);
-
-            if (Hierarchy.Node.isBranch(node)) {
-                const childPrefix = prefix + (isLast ? '   ' : '│  ');
-                const children = Object.values(node[CHILDREN]);
-                for (let i = 0; i < children.length; i++) {
-                    printNode(children[i], childPrefix, i === children.length - 1, lines);
-                }
-            }
-        }
-
-        for (const scope of Hierarchy.getScopes(hierarchy)) {
-            lines.push(`─ [${scope[SEGMENT]}]`);
-            const children = Object.values(scope[CHILDREN]);
-            for (let i = 0; i < children.length; i++) {
-                printNode(children[i], '   ', i === children.length - 1, lines);
-            }
-        }
-
-        return lines.join('\n');
+        return Hierarchy.getScopes(hierarchy)
+            .map(scope => `─ [${scope[SEGMENT]}]\n${Hierarchy.Scope.printTree(Object.values(scope[CHILDREN]), formatter, '  ')}`)
+            .join('\n');
     },
-
     // #endregion DEBUG
 
     Scope: {
@@ -383,25 +377,61 @@ const Hierarchy = {
          * @param depth начальная глубина (по умолчанию 1) */
         walk<D extends object, S extends string>(
             scope: Hierarchy.Scope<D, S>,
-            visitor: (node: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>, depth: number) => void,
-            depth: number = 1
+            visitor: (node: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>) => void
         ): void {
 
             for (const child of Object.values(scope[CHILDREN])) {
 
                 if (Hierarchy.Node.isBranch(child)) {
-                    Hierarchy.Node.walk(child, visitor, depth);
+                    Hierarchy.Node.walk(child, visitor);
                 }
                 else {
-                    visitor(child, depth);
+                    visitor(child);
                 }
             }
-        }
+        },
+
+        // #region DEBUG
+
+        printTree<D extends object, S extends string>(
+            children: ReadonlyArray<Readonly<Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>>>,
+            formatter: (data: D) => string = () => '(*)',
+            basePrefix: string = '  '
+        ): string {
+
+            const lines: string[] = [];
+
+            function printNode(
+                node: Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>,
+                prefix: string,
+                isLast: boolean,
+            ): void {
+                const connector = isLast ? '└─' : '├─';
+                const dataMarker = Hierarchy.Node.isData(node) ? formatter(node) : '';
+                lines.push(`${prefix}${connector} ${node[SEGMENT]} ${dataMarker}`);
+
+                if (Hierarchy.Node.isBranch(node)) {
+                    const childPrefix = prefix + (isLast ? '   ' : '│  ');
+                    const children = Object.values(node[CHILDREN]);
+                    for (let i = 0; i < children.length; i++) {
+                        printNode(children[i], childPrefix, i === children.length - 1);
+                    }
+                }
+            }
+
+            for (let i = 0; i < children.length; i++) {
+                printNode(children[i], basePrefix, i === children.length - 1);
+            }
+
+            return lines.join('\n');
+        },
+
+        // #endregion DEBUG
     },
 
     Node: {
 
-        /** Type guard: узел содержит данные из спецификации. */
+        /** Type guard: узел является данными ( & D). */
         isData<D extends object, S extends string>(node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>): node is Hierarchy.Data<D, S> {
             return DATA_FLAG in node;
         },
@@ -463,23 +493,22 @@ const Hierarchy = {
          * @param depth начальная глубина (по умолчанию 1) */
         walk<D extends object, S extends string>(
             node: Hierarchy.Branch<D, S>,
-            visitor: (child: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>, depth: number) => void,
-            depth: number = 1
+            visitor: (child: Readonly<Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>>) => void
         ): void {
 
-            visitor(node, depth);
+            visitor(node);
 
             for (const child of Object.values(node[CHILDREN])) {
                 if (Hierarchy.Node.isBranch(child)) {
-                    Hierarchy.Node.walk(child, visitor, depth + 1);
+                    Hierarchy.Node.walk(child, visitor);
                 }
                 else {
-                    visitor(child, depth + 1);
+                    visitor(child);
                 }
             }
         },
     },
-};
+} as const;
 
 
 export default Hierarchy;

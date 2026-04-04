@@ -6,7 +6,8 @@
     {
       "label": "Open as project",
       "icon": {
-        "id": "vscode"
+        "id": "vscode",
+        "color": "terminal.ansiBlue"
       },
       "detail": "",
       "type": "shell",
@@ -50,7 +51,7 @@
     {
       "label": "Build test extension",
       "icon": {
-        "id": "debug"
+        "id": "debug-alt-small"
       },
       "detail": "Compile TypeScript sources into `~out/` for test runner",
       "dependsOn": [

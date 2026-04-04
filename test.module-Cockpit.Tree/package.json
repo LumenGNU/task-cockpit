@@ -17,8 +17,29 @@
       {
         "command": "test-extension-activate",
         "title": "test extension activate"
+      },
+      {
+        "command": "test-entity-debug",
+        "title": "test entity debug"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "test-debug-container",
+          "title": "Debug",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "test-debug-container": [
+        {
+          "id": "test-debug-tree",
+          "name": "Debug Tree"
+        }
+      ]
+    }
   },
   "scripts": {},
   "devDependencies": {

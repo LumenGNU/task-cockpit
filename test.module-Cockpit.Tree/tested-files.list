@@ -3,6 +3,7 @@ Logger.ts
 types.d.ts
 
 
-Cockpit/TreeModel/Folders.ts
+Cockpit/TreeModel/Section.ts
 Cockpit/TreeModel/Hierarchy.ts
 Cockpit/TreeModel/Splitter.ts
+Cockpit/TreeModel/index.ts
