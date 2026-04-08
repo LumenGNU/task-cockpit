@@ -1,0 +1,25 @@
+// Кастомные иконки, цвета и propagation цвета на label.
+// Проверяет:
+// - icon.id: пользовательские иконки
+// - icon.color: цвет иконки
+// - tintLabel: true → цвет распространяется на текст label
+// - defaultIconName: "rocket" — задачи без icon получают rocket
+// - icon.id: "blank" → иконка-пустышка
+// - задача без icon → получает defaultIconName
+{
+	"scopes": {
+		"app": "/workspace/app/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/app/.vscode/tasks.json": [
+			{ "name": "build", "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+			{ "name": "test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "deploy", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+			{ "name": "lint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "secret-tool", "icon": { "id": "blank" } },
+			{ "name": "clean" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": "", "useGroupKind": false, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": false, "defaultIconName": "rocket", "tintLabel": true }
+}

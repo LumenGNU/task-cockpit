@@ -38,36 +38,45 @@ interface SpecsResult {
 declare namespace Section {
 
     /** Элемент дерева секции — запускаемая задача, и/или группирующий узел. */
-    export type Item = Readonly<Item.Runnable | Item.Group>;
+    // export type Item = Readonly<Item.Runnable | Item.Group>;
+    export type Item = Readonly<Hierarchy.Data<TC.TaskDefinition, TC.File> | Hierarchy.Branch<TC.TaskDefinition, TC.File>>;
 
-    export namespace Item {
-        /** Узел с данными задачи (data-узел иерархии). Содержит {@linkcode TC.TaskDefinition}. */
-        export type Runnable = Hierarchy.Data<TC.TaskDefinition, TC.File>;
-        /** Промежуточный группирующий узел (branch-узел иерархии). Имеет детей. */
-        export type Group = Hierarchy.Branch<TC.TaskDefinition, TC.File>;
-    }
 
     /** Секция избранных задач. (Всегда первая в массиве секций) */
-    export type Favorite = {
+    type FavoriteBase = {
         /** Фиксированное имя секции. */
         name: 'Pinned';
 
-        kind: TC.EntityKind.Favorites;
+        kind: TC.EntityKind.FavoritesSingle | TC.EntityKind.FavoritesMulti;
         /** Ссылки на избранные задачи, определения которых не найдены
          * в текущем {@linkcode TC.DefinitionsByFile | definitionMap}.
          * Отображаются в начале секции как "сломанные". */
-        stales: ReadonlyArray<Readonly<TC.FavoriteRef>>;
+        stales: ReadonlyArray<Readonly<TC.FavoriteStale>>;
         /** Файл задач — присутствует только в single-root workspace.
-         * В multi-root дочерние {@linkcode File} содержат свои `tasksFile`. */
+         * В multi-root дочерние {@linkcode Source} содержат свои `tasksFile`. */
         tasksFile?: TC.File;
         /** Дочерние элементы.
-         * - Single-root: `Item[]` — список узлов иерархии.
-         * - Multi-root: `File[]` — обёртки по одной на каждую workspace folder. */
-        children: ReadonlyArray<Item | File>;
+         * - Single-root ({@linkcode FavoriteSingle}): {@linkcode Item Item[]} — узлы иерархии.
+         * - Multi-root ({@linkcode FavoriteMulti}): {@linkcode FavoriteFolder FolderF[]} — обёртки по workspace folders. */
+        children: ReadonlyArray<Item | FavoriteFolder>;
     };
 
+    export interface FavoriteSingle extends FavoriteBase {
+        kind: TC.EntityKind.FavoritesSingle;
+        tasksFile: TC.File;
+        children: ReadonlyArray<Item>;
+    }
+
+    export interface FavoriteMulti extends FavoriteBase {
+        kind: TC.EntityKind.FavoritesMulti;
+        tasksFile?: undefined;
+        children: ReadonlyArray<FavoriteFolder>;
+    }
+
+    type Favorite = FavoriteSingle | FavoriteMulti;
+
     /** Секция файла задач — задачи одного `.vscode/tasks.json` или `.code-workspace`. */
-    export type File = {
+    export interface Source {
         /** Тип секции. Определяется по расширению файла:
          * `.json` → {@linkcode TC.EntityKind.Folder}, иначе → {@linkcode TC.EntityKind.Workspace}. */
         kind: TC.EntityKind.Workspace | TC.EntityKind.Folder;
@@ -79,7 +88,12 @@ declare namespace Section {
         children: ReadonlyArray<Item>;
         /** Статистика задач в файле. Присутствует только у файловых секций
          * (не у Favorite-обёрток в multi-root). */
-        taskCounts?: TaskCounts;
+        taskCounts: TaskCounts;
+    }
+
+    /** Папка-обёртка внутри Favorites */
+    export type FavoriteFolder = Omit<Source, 'kind' | 'taskCounts'> & {
+        kind: TC.EntityKind.FavoriteFolder;
     };
 
 }
@@ -99,7 +113,7 @@ declare namespace Section {
  * 
  * Фильтрация по hidden происходит в модели, а не в представлении, поскольку
  * представление не должно показывать цепочку пустых сегментов. Но понять
- * что что цепочка пуста оно сможет понять только достроив ветку до листа
+ * что цепочка пуста оно сможет понять только достроив ветку до листа
  * и проверив его поле hidden.
  *
  * Favorites проходят дополнительный этап: промежуточный trie строится для
@@ -116,7 +130,7 @@ const Section = {
      *      - Трансформация label → path (см. {@linkcode toPathSegments}).
      *      - Подсчёт {@linkcode TaskCounts} по файлам.
      * 1. Передаёт спецификации в {@linkcode Hierarchy.build} — единый trie для всех scope.
-     * 1. Извлекает дочерние узлы каждого scope из trie и оборачивает в {@linkcode Section.File}.
+     * 1. Извлекает дочерние узлы каждого scope из trie и оборачивает в {@linkcode Section.Source}.
      *
      * @param scopes Список workspace-scope (порядок определяет порядок секций).
      * @param favoritesConfig Конфигурация избранных: записи и устаревшие ссылки.
@@ -128,13 +142,13 @@ const Section = {
         favoritesConfig: Readonly<TC.FavoritesConfig>,
         definitionMap: Readonly<TC.DefinitionsByFile>,
         treeConfigMap: Readonly<TC.TreeConfigByFile>,
-    ): readonly [Section.Favorite, ...Section.File[]] {
+    ): readonly [Section.Favorite, ...Section.Source[]] {
 
-        const sections: [Section.Favorite, ...Section.File[]] = [
+        const sections: [Section.Favorite, ...Section.Source[]] = [
             buildFavoritesSection(scopes, favoritesConfig, definitionMap, treeConfigMap)
         ];
 
-        const { specs, taskCountsByFile: taskCountsByFile } = makeFileSpecs(
+        const { specs, taskCountsByFile } = makeFileSpecs(
             scopes,
             definitionMap,
             treeConfigMap
@@ -146,15 +160,15 @@ const Section = {
 
             const file = scope.uri.fsPath;
 
+            const hierarchyScope = Hierarchy.getScope(hierarchy, file);
             sections.push(
-                makeFile(
+                makeSource(
                     scope.name,
                     file,
-                    Hierarchy.Scope.getChildren(Hierarchy.getScope(hierarchy, file)!),
+                    hierarchyScope ? Hierarchy.Scope.getChildren(hierarchyScope) : [],
                     taskCountsByFile.get(file)!
                 )
             );
-
         }
 
         return sections;
@@ -163,28 +177,27 @@ const Section = {
     // #region DEBUG
 
     /** ASCII представление дерева секции (отладка). */
-    printTree(section: Section.Favorite | Section.File): string {
+    printTree(section: Section.Favorite | Section.Source | Section.FavoriteFolder, basePrefix?: string, formatter: (def: TC.TaskDefinition) => string = () => '(*)'): string {
 
-        const formatData = (task: TC.TaskDefinition) => `( ${helpers.printTaskId(task.id)} )`;
 
         const lines: string[] = [`─ [${section.name}]`];
 
-        if (section.kind === TC.EntityKind.Favorites) {
+        if (section.kind === TC.EntityKind.FavoritesSingle || section.kind === TC.EntityKind.FavoritesMulti) {
 
             for (const stale of section.stales) {
-                lines.push(`  ✗ ${stale.label} (${stale.scope.name})`);
+                lines.push(`  ✗ ${stale.label} (${stale.scopeName})`);
             }
 
-            if (section.children.length > 0 && 'tasksFile' in section.children[0]) {
-                // Multi-root Favorites: children — Section.File[], рекурсия в каждую обёртку.
-                for (const file of section.children as ReadonlyArray<Section.File>) {
-                    lines.push(`  ${Section.printTree(file)}`);
+            if (section.kind === TC.EntityKind.FavoritesMulti) {
+                // Multi-root Favorites: children — FolderF[], рекурсия в каждую обёртку.
+                for (const folder of section.children) {
+                    lines.push(`  ${Section.printTree(folder, `    ${basePrefix ?? ''}`)}`);
                 }
                 return lines.join('\n');
             }
         }
 
-        const tree = Hierarchy.Scope.printTree(section.children as ReadonlyArray<Section.Item>, formatData);
+        const tree = Hierarchy.Scope.printTree(section.children as ReadonlyArray<Section.Item>, formatter, basePrefix);
         if (tree) {
             lines.push(tree);
         }
@@ -194,16 +207,17 @@ const Section = {
 
     // #endregion DEBUG
 
+
     /** Type guards для элементов дерева секции. */
     Child: {
 
         /** Проверяет, является ли элемент группирующим узлом (имеет детей). */
-        isGroup(child: Section.Item): child is Section.Item.Group {
+        isGroup(child: Section.Item): boolean { //child is Section.Item.Group {
             return Hierarchy.Node.isBranch(child);
         },
 
         /** Проверяет, является ли элемент задачей (data-узел). */
-        isRunnable(child: Section.Item): child is Section.Item.Runnable {
+        isRunnable(child: Section.Item): boolean { //child is Section.Item.Runnable {
             return Hierarchy.Node.isData(child);
         }
 
@@ -222,7 +236,7 @@ const Section = {
  * `tasksFile` указывает на единственный файл задач.
  *
  * **Multi-root** (`scopes.length > 1`):
- * Каждый scope оборачивается в {@linkcode Section.File} (FavoriteFolder-обёртка).
+ * Каждый scope оборачивается в {@linkcode Section.FavoriteFolder} (FavoriteFolder-обёртка).
  * Порядок обёрток — по `scopes` (= порядок workspace folders).
  *
  * Алгоритм:
@@ -237,13 +251,13 @@ function buildFavoritesSection(
 ): Section.Favorite {
 
     // Favorites hierarchy
-    const { favoriteRecords, staleRecords } = favoritesConfig;
+    const { favoriteRecords, staleRecords, compressionBehavior } = favoritesConfig;
 
     const favoritesHierarchy = Hierarchy.build(
-        makeFavoriteSpecs(favoriteRecords, definitionMap, treeConfigMap)
+        makeFavoriteSpecs(favoriteRecords, compressionBehavior, definitionMap, treeConfigMap)
     );
 
-    //Favorites section
+    // Favorites section
     if (scopes.length > 1) {
 
         // Multi-root: каждый scope → FavoriteFolder-обёртка.
@@ -260,7 +274,7 @@ function buildFavoritesSection(
             }
         }
 
-        const fileChildren: Section.File[] = [];
+        const fileChildren: Section.FavoriteFolder[] = [];
 
         for (const name of orderedNames) {
             const scope = scopeByName.get(name)!;
@@ -269,7 +283,7 @@ function buildFavoritesSection(
             assert(folderScope, `Favorites hierarchy: scope '${name}' not found`);
             // #endregion DEBUG
             fileChildren.push(
-                makeFile(
+                makeFolderF(
                     name,
                     scope.uri.fsPath,
                     Hierarchy.Scope.getChildren(folderScope)
@@ -277,30 +291,36 @@ function buildFavoritesSection(
             );
         }
 
-        return makeFavorites(staleRecords, fileChildren);
+        return makeFavoritesMulti(staleRecords, fileChildren);
     } else {
-        const fs = Hierarchy.getScopes(favoritesHierarchy);
+
+        // Single-root
+
+        const favScopes = Hierarchy.getScopes(favoritesHierarchy);
         // #region DEBUG
-        assert(fs.length <= 1, `Favorites hierarchy: expected ≤1 scope in single-root, got ${fs.length}`);
+        assert(favScopes.length <= 1, `Favorites hierarchy: expected ≤1 scope in single-root, got ${favScopes.length}`);
         // #endregion DEBUG
 
-        return makeFavorites(staleRecords, Hierarchy.Scope.getChildren(fs[0]), scopes[0].uri.fsPath);
+        return makeFavoritesSingle(
+            staleRecords,
+            favScopes.length > 0 ? Hierarchy.Scope.getChildren(favScopes[0]) : [],
+            scopes[0].uri.fsPath);
     }
 }
 
 
-/** Фабрика объекта {@linkcode Section.Favorite}.
+/** Фабрика объекта {@linkcode Section.FavoriteSingle}.
  *
  * @param stales Ссылки на задачи, определения которых не найдены (stale/broken).
  * @param children Дочерние элементы секции.
  * @param tasksFile Файл задач (только для single-root). */
-function makeFavorites(
-    stales: ReadonlyArray<Readonly<TC.FavoriteRef>>,
-    children: ReadonlyArray<Section.Item | Section.File>,
-    tasksFile?: TC.File
-): Section.Favorite {
+function makeFavoritesSingle(
+    stales: ReadonlyArray<Readonly<TC.FavoriteStale>>,
+    children: ReadonlyArray<Section.Item>,
+    tasksFile: TC.File
+): Section.FavoriteSingle {
     return {
-        kind: TC.EntityKind.Favorites,
+        kind: TC.EntityKind.FavoritesSingle,
         name: 'Pinned',
         stales,
         children,
@@ -309,7 +329,20 @@ function makeFavorites(
 }
 
 
-/** Фабрика объекта {@linkcode Section.File}.
+function makeFavoritesMulti(
+    stales: ReadonlyArray<Readonly<TC.FavoriteStale>>,
+    children: ReadonlyArray<Section.FavoriteFolder>,
+): Section.FavoriteMulti {
+    return {
+        kind: TC.EntityKind.FavoritesMulti,
+        name: 'Pinned',
+        stales,
+        children,
+    };
+}
+
+
+/** Фабрика объекта {@linkcode Section.Source}.
  *
  * Тип секции (`kind`) определяется эвристикой по расширению `tasksFile`:
  * - `.json` → {@linkcode TC.EntityKind.Folder} (`.vscode/tasks.json`).
@@ -318,19 +351,32 @@ function makeFavorites(
  * @param name Display name папки workspace.
  * @param tasksFile Абсолютный путь к файлу задач.
  * @param children Узлы иерархии данного scope.
- * @param taskCounts Статистика задач (опционально — отсутствует у Favorite-обёрток). */
-function makeFile(
+ * @param taskCounts Статистика задач в файле. */
+function makeSource(
     name: TC.FolderName,
     tasksFile: TC.File,
     children: ReadonlyArray<Section.Item>,
-    taskCounts?: TaskCounts
-): Section.File {
+    taskCounts: TaskCounts
+): Section.Source {
     return {
         kind: tasksFile.endsWith('.json') ? TC.EntityKind.Folder : TC.EntityKind.Workspace,
         name,
         tasksFile,
         children,
         taskCounts
+    };
+}
+
+function makeFolderF(
+    name: TC.FolderName,
+    tasksFile: TC.File,
+    children: ReadonlyArray<Section.Item>,
+): Section.FavoriteFolder {
+    return {
+        kind: TC.EntityKind.FavoriteFolder,
+        name,
+        tasksFile,
+        children
     };
 }
 
@@ -503,6 +549,7 @@ function toPathSegments(
 // Пока оставляем двухпроходный вариант — он достаточно быстрый и понятный.
 function makeFavoriteSpecs(
     favoritesRefs: ReadonlyArray<Readonly<TC.FavoriteRef>>,
+    compressionBehavior: TC.CompressionBehavior,
     definitionMap: Readonly<TC.DefinitionsByFile>,
     treeConfigMap: Readonly<TC.TreeConfigByFile>,
 ): ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition, TC.FolderName>> {
@@ -554,16 +601,16 @@ function makeFavoriteSpecs(
             return;
         }
 
-        const { originFolder, compressed } = buildCompressedPath(node);
+        const { originFolder, compressed } = buildCompressedPath(node, compressionBehavior);
 
-        // Favorites Scope игнорирует поле hidden.
-        const path = [...compressed, Hierarchy.Node.getSegment(node)];
+        // (Favorites Scope игнорирует поле hidden).
 
-        // Область — синтетический идентификатор, имя каталога
         favoriteSpecs.push({
-            scope: originFolder,
-            path,
-            data: node // data-узел *является* данными, а *не содержит* их — поэтому "присвоение", а не "извлечение"
+            scope: originFolder,// Область — синтетический идентификатор, имя каталога
+            path: compressed,
+            data: Hierarchy.Node.getData(node) // "извлечение"! 
+            //> Если передавать напрямую (`data: node`) — BUG: {@linkcode Hierarchy.build}
+            //> не затрет уже установленные структурные поля
         });
     });
 
@@ -594,30 +641,52 @@ function makeFavoriteSpecs(
  *
  * @param dataNode Лист — data-узел иерархии.
  * @returns `originFolder` — имя папки (scope id) и `compressed` — массив сжатых сегментов
- *          от корня к листу (без самого листа — он добавляется вызывающим кодом). */
+ *   от корня к листу (без самого листа — он добавляется вызывающим кодом). */
 function buildCompressedPath(
     dataNode: Readonly<Hierarchy.Data<TC.TaskDefinition, TC.FolderName>>,
+    compressionBehavior: TC.CompressionBehavior
 ): {
     originFolder: TC.FolderName,
     compressed: string[];
 } {
 
+    // @note Смотри sketches/10.02-favorites-smart-subsegment.jsonc
+    // Для проверки поведения в SMART режиме.
+
     const chain: string[] = [];
     const compressed: string[] = [];
 
     // Стартуем от листа, поднимаемся к scope
-    // chain.push(Hierarchy.Node.getSegment(node));
 
-    let current = Hierarchy.Node.getParent(dataNode);
+    // (switch) - SMART режим path compression
+    if (compressionBehavior === TC.CompressionBehavior.SMART) {
+        chain.push(Hierarchy.Node.getSegment(dataNode));
+    }
+
+    let parent = Hierarchy.Node.getParent(dataNode);
 
     const reverseAndJoin = () => {
         chain.reverse();
         compressed.push(chain.join('\u2009›\u2009'));
     };
 
-    while (!Hierarchy.Node.isScope(current)) {
+    // подъем к scope по цепочке parent
+    while (!Hierarchy.Node.isScope(parent)) {
 
-        if (Hierarchy.Node.getBranchChildren(current).length > 1) {
+        const childrenCount = Hierarchy.Node.getBranchChildren(parent).length;
+
+        let isForcedBranch = childrenCount > 1;
+
+        // В SMART-режиме:
+        // если узел runnable И имеет хотя бы одного ребёнка в pinned-дереве → считаем 
+        // его forced branch point.
+        if (compressionBehavior === TC.CompressionBehavior.SMART) {
+            if (Hierarchy.Node.isData(parent) && (childrenCount > 0)) {
+                isForcedBranch = true;
+            }
+        }
+
+        if (isForcedBranch) {
             // @bug: `reverseAndJoin()` на пустом `chain` порождает
             // пустую строку в `compressed` (`[].join(...)` === `''`), которая
             // становится фантомным сегментом в итоговом path.
@@ -631,8 +700,8 @@ function buildCompressedPath(
             }
         }
 
-        chain.push(Hierarchy.Node.getSegment(current));
-        current = Hierarchy.Node.getParent(current);
+        chain.push(Hierarchy.Node.getSegment(parent));
+        parent = Hierarchy.Node.getParent(parent);
     }
 
     // Финальный flush — оставшиеся сегменты у корня
@@ -643,7 +712,12 @@ function buildCompressedPath(
         compressed.reverse();
     }
 
-    return { originFolder: Hierarchy.Scope.getScopeId(current), compressed };
+    // (switch) - Нормальный режим path compression
+    if (compressionBehavior === TC.CompressionBehavior.NORMAL) {
+        compressed.push(Hierarchy.Node.getSegment(dataNode));
+    }
+
+    return { originFolder: Hierarchy.Scope.getScopeId(parent), compressed };
 }
 
 export default Section;

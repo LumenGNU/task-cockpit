@@ -1,0 +1,48 @@
+// Скрытая задача-группа + favourite на скрытую задачу.
+// Комплексный сценарий, проверяет несколько взаимодействий:
+//
+// 1) "build" — task-as-group, помечена hidden.
+//    Дети "build:dev" и "build:prod" видимы.
+//    Вопрос: intermediate node "build" остаётся как группа, но без данных задачи?
+//
+// 2) Favorite ссылается на "build" (hidden) — broken ref или видна?
+//
+// 3) "a:b:Task & Group" — скрыта, дочерний "a:b:Task & Group:Sub Task" виден.
+//    Аналог последнего hardcoded сценария из extension.ts.
+//
+// Ожидаемое дерево (showHidden: false):
+// 
+// ─ [Pinned]
+//   ├─ build (*)   ← (1) в закрепленных это — запускаемая задача
+//   └─ a › b 
+//      └─ Task & Group (*)   ← (2) в закрепленных это — запускаемая задача
+// ─ [app]
+//   ├─ build    ← (1) implicit group (задача скрыта, но дети видимы)
+//   │  ├─ dev (*)
+//   │  └─ prod (*)
+//   ├─ a 
+//   │  └─ b 
+//   │     └─ Task & Group    ← (2) implicit group (задача скрыта)
+//   │        └─ Sub Task (*)
+//   └─ lint (*)
+{
+	"scopes": {
+		"app": "/workspace/app/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/app/.vscode/tasks.json": [
+			{ "name": "build:dev" },
+			{ "name": "build:prod" },
+			{ "name": "build", "hidden": true, "icon": { "id": "package" } },
+			{ "name": "a:b:Task & Group:Sub Task" },
+			{ "name": "a:b:Task & Group", "hidden": true },
+			{ "name": "lint" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": ":", "useGroupKind": false, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": false, "defaultIconName": "tools", "tintLabel": false },
+	"favorites": { "refs": [
+		{ "folder": "app", "label": "build" },
+		{ "folder": "app", "label": "a:b:Task & Group" }
+	]}
+}

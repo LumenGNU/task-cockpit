@@ -94,6 +94,8 @@ function assert(id: string, condition: unknown, text: string) {
         return;
     }
     out(id, vscode.LogLevel.Error, text, 'Assertion failed');
+    vscode.window.showErrorMessage(`Assertion failed: ${text}`);
+    throw new AssertionFailed(text);
 }
 
 function fail(id: string, condition: unknown, text: string) {

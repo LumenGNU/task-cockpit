@@ -1,0 +1,94 @@
+
+// Favorites с глубокой иерархией — тест path compression.
+// Все 4 favorites в глубоких ветках с общими prefix-ами.
+// Path compression должен схлопнуть однодетные промежуточные узлы.
+//
+
+{
+	"scopes": {
+		"app": "/workspace/app/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/app/.vscode/tasks.json": [
+			{ "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1" },
+			{ "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2" },
+			{ "name": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3" },
+			{ "name": "AAA:BBB:CCC:side-DDD:task4" },
+			{ "name": "AAA:side-BBB:task5" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": ":", "useGroupKind": false, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": false, "defaultIconName": "tools", "tintLabel": false },
+	"favorites": { 
+		"visibility": "AUTO", // AUTO | HIDE
+		"compressionBehavior": "SMART", // NORMAL | SMART
+		"refs": [
+		{ "folder": "app", "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1" },
+		{ "folder": "app", "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2" },
+		{ "folder": "app", "label": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3" },
+		{ "folder": "app", "label": "AAA:BBB:CCC:side-DDD:task4" },
+		{ "folder": "app", "label": "AAA:side-BBB:task5" }
+	]}
+}
+
+// Результат:
+// 
+// (-- Нормальный режим --)
+// ─ [Pinned]
+//   └─ AAA 
+//      ├─ BBB › CCC 
+//      │  ├─ DDD › EEE 
+//      │  │  ├─ FFF › GGG 
+//      │  │  │  ├─ task-G1 (*)
+//      │  │  │  └─ task-G2 (*)
+//      │  │  └─ side-FFF 
+//      │  │     └─ task3 (*)
+//      │  └─ side-DDD 
+//      │     └─ task4 (*)
+//      └─ side-BBB 
+//         └─ task5 (*)
+// ─ [app]
+//   └─ AAA 
+//      ├─ BBB 
+//      │  └─ CCC 
+//      │     ├─ DDD 
+//      │     │  └─ EEE 
+//      │     │     ├─ FFF 
+//      │     │     │  └─ GGG 
+//      │     │     │     ├─ task-G1 (*)
+//      │     │     │     └─ task-G2 (*)
+//      │     │     └─ side-FFF 
+//      │     │        └─ task3 (*)
+//      │     └─ side-DDD 
+//      │        └─ task4 (*)
+//      └─ side-BBB 
+//         └─ task5 (*)
+// 
+// 
+// (-- Агрессивный режим --)
+// ─ [Pinned]
+//   └─ AAA 
+//      ├─ BBB › CCC 
+//      │  ├─ DDD › EEE 
+//      │  │  ├─ FFF › GGG 
+//      │  │  │  ├─ task-G1 (*)
+//      │  │  │  └─ task-G2 (*)
+//      │  │  └─ side-FFF › task3 (*)
+//      │  └─ side-DDD › task4 (*)
+//      └─ side-BBB › task5 (*)
+// ─ [app]
+//   └─ AAA 
+//      ├─ BBB 
+//      │  └─ CCC 
+//      │     ├─ DDD 
+//      │     │  └─ EEE 
+//      │     │     ├─ FFF 
+//      │     │     │  └─ GGG 
+//      │     │     │     ├─ task-G1 (*)
+//      │     │     │     └─ task-G2 (*)
+//      │     │     └─ side-FFF 
+//      │     │        └─ task3 (*)
+//      │     └─ side-DDD 
+//      │        └─ task4 (*)
+//      └─ side-BBB 
+//         └─ task5 (*)

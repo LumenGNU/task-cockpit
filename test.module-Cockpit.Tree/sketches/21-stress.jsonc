@@ -1,0 +1,472 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// STRESS SKETCH: "Кувалда"
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// 5 scopes, 200+ задач, 20+ favorites (включая broken/dead/hidden refs).
+//
+// Нагрузка:
+//  • Multi-root workspace: backend, frontend, mobile, infra, shared
+//  • useGroupKind: true — build/test/deploy секции (backend, infra)
+//  • Глубина до 8 уровней (mobile:e2e:detox:android:suite:critical:smoke:run)
+//  • Path compression SMART — длинные однодетные цепочки в Pinned
+//  • Все комбинации флагов, включая невозможные
+//  • Массовые task-as-group (proto:codegen, k8s:deploy, etc.)
+//  • Hidden groups с видимыми детьми на 2+ уровнях
+//  • Коллизии имён: "build", "test", "lint", "run" повторяются в каждом scope
+//  • Иконки: 20+ уникальных id, blank, отсутствие (fallback на defaultIconName)
+//  • tintLabel: true — все цвета propagate на label
+//  • Favorites cross-scope, dead refs, hidden refs, task-as-group refs
+//  • Задачи с ":" в имени сегмента (edge case для парсера?)
+//    — нет, separator = ":", так что это просто глубокая вложенность
+//
+{
+	"scopes": {
+		"backend":  "/workspace/backend/.vscode/tasks.json",
+		"frontend": "/workspace/frontend/.vscode/tasks.json",
+		"mobile":   "/workspace/mobile/.vscode/tasks.json",
+		"infra":    "/workspace/infra/.vscode/tasks.json",
+		"shared":   "/workspace/shared/.vscode/tasks.json"
+	},
+
+	"tasks": {
+
+		// ═══════════════════════════════════════════════════════════
+		// BACKEND — ~55 задач
+		// useGroupKind: задачи распределяются по build / test / deploy
+		// ═══════════════════════════════════════════════════════════
+		"/workspace/backend/.vscode/tasks.json": [
+
+			// ── build ────────────────────────────────────────────
+			{ "name": "core:compile", "group": { "kind": "build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+			{ "name": "core:compile:watch", "group": { "kind": "build" }, "isBackground": true, "icon": { "id": "eye", "color": "terminal.ansiGreen" } },
+			{ "name": "core:compile:release", "group": { "kind": "build" }, "icon": { "id": "package", "color": "terminal.ansiYellow" } },
+			{ "name": "docker:build", "group": { "kind": "build" }, "icon": { "id": "server", "color": "terminal.ansiBlue" } },
+			{ "name": "docker:push", "group": { "kind": "build" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+			{ "name": "docker:build:multi-arch", "group": { "kind": "build" }, "icon": { "id": "server", "color": "terminal.ansiMagenta" } },
+
+			// ── test ─────────────────────────────────────────────
+			{ "name": "test:unit", "group": { "kind": "test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:unit:watch", "group": { "kind": "test" }, "isBackground": true, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:unit:coverage", "group": { "kind": "test" }, "icon": { "id": "graph", "color": "terminal.ansiCyan" } },
+			{ "name": "test:integration:api", "group": { "kind": "test" }, "icon": { "id": "beaker", "color": "terminal.ansiGreen" } },
+			{ "name": "test:integration:db", "group": { "kind": "test" }, "icon": { "id": "beaker", "color": "terminal.ansiGreen" } },
+			{ "name": "test:integration:redis", "group": { "kind": "test" }, "icon": { "id": "beaker", "color": "terminal.ansiRed" } },
+			{ "name": "test:integration:queue", "group": { "kind": "test" }, "icon": { "id": "beaker", "color": "terminal.ansiMagenta" } },
+			{ "name": "test:e2e:smoke", "group": { "kind": "test" }, "isBackground": true, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+			{ "name": "test:e2e:full", "group": { "kind": "test" }, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+			{ "name": "test:mutation", "group": { "kind": "test" }, "icon": { "id": "bug", "color": "terminal.ansiMagenta" } },
+
+			// ── deploy ───────────────────────────────────────────
+			{ "name": "deploy:staging", "group": { "kind": "deploy" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiYellow" } },
+			{ "name": "deploy:prod", "group": { "kind": "deploy" }, "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+			{ "name": "deploy:canary", "group": { "kind": "deploy" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiCyan" } },
+
+			// ── ungrouped ────────────────────────────────────────
+			{ "name": "db:migrate:up", "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+			{ "name": "db:migrate:down", "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+			{ "name": "db:migrate:create", "icon": { "id": "database", "color": "terminal.ansiGreen" } },
+			{ "name": "db:migrate:status", "icon": { "id": "database", "color": "terminal.ansiYellow" } },
+			{ "name": "db:seed:dev", "icon": { "id": "database", "color": "terminal.ansiMagenta" } },
+			{ "name": "db:seed:test", "icon": { "id": "database", "color": "terminal.ansiMagenta" } },
+			{ "name": "db:seed:reset", "icon": { "id": "database", "color": "terminal.ansiRed" } },
+			{ "name": "api:generate:openapi", "icon": { "id": "file-code", "color": "terminal.ansiCyan" } },
+			{ "name": "api:generate:client", "icon": { "id": "file-code", "color": "terminal.ansiCyan" } },
+			{ "name": "api:validate:schema" },
+			{ "name": "server:dev", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "server:start", "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "server:debug", "isBackground": true, "icon": { "id": "debug", "color": "terminal.ansiYellow" } },
+			{ "name": "server:inspect", "isBackground": true, "icon": { "id": "debug", "color": "terminal.ansiMagenta" } },
+			{ "name": "queue:worker:start", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiBlue" } },
+			{ "name": "queue:worker:restart", "icon": { "id": "refresh", "color": "terminal.ansiBlue" } },
+			{ "name": "queue:scheduler:start", "isBackground": true, "icon": { "id": "clock", "color": "terminal.ansiBlue" } },
+			{ "name": "cache:flush", "icon": { "id": "trash", "color": "terminal.ansiRed" } },
+			{ "name": "cache:warmup", "icon": { "id": "flame", "color": "terminal.ansiYellow" } },
+			{ "name": "cache:stats" },
+			{ "name": "lint:eslint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "lint:prettier", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "lint:typecheck", "icon": { "id": "search", "color": "terminal.ansiYellow" } },
+			{ "name": "lint:deadcode", "icon": { "id": "search", "color": "terminal.ansiRed" } },
+			// task-as-group: "lint" is a prefix AND we want it runnable
+			{ "name": "lint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			// невозможная комбинация флагов
+			{ "name": "nuke-everything", "hidden": true, "isBackground": true, "group": { "kind": "deploy", "isDefault": true }, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+			// blank icon
+			{ "name": "secret:internal:do-not-touch", "icon": { "id": "blank" } },
+			// no icon — fallback
+			{ "name": "misc:healthcheck" },
+			{ "name": "misc:version" },
+			{ "name": "misc:env:print" },
+			{ "name": "misc:env:validate" }
+		],
+
+		// ═══════════════════════════════════════════════════════════
+		// FRONTEND — ~50 задач
+		// Без useGroupKind — чистая иерархия по сегментам.
+		// ═══════════════════════════════════════════════════════════
+		"/workspace/frontend/.vscode/tasks.json": [
+
+			// ── ui:components — массив одинаковых leaf-имён ──────
+			{ "name": "ui:components:Button:build" },
+			{ "name": "ui:components:Button:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "ui:components:Button:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:components:Modal:build" },
+			{ "name": "ui:components:Modal:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "ui:components:Modal:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:components:Table:build" },
+			{ "name": "ui:components:Table:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "ui:components:Table:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:components:Table:perf", "icon": { "id": "dashboard", "color": "terminal.ansiCyan" } },
+			{ "name": "ui:components:Form:build" },
+			{ "name": "ui:components:Form:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "ui:components:Form:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:components:Form:validate", "icon": { "id": "check", "color": "terminal.ansiGreen" } },
+			{ "name": "ui:components:Nav:build" },
+			{ "name": "ui:components:Nav:test" },
+			{ "name": "ui:components:Sidebar:build" },
+			{ "name": "ui:components:Sidebar:test" },
+			{ "name": "ui:components:Toast:build" },
+			{ "name": "ui:components:Toast:test" },
+
+			// ── ui:design-system ─────────────────────────────────
+			{ "name": "ui:design-system:build", "icon": { "id": "paintcan", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:design-system:tokens", "icon": { "id": "symbol-color", "color": "terminal.ansiMagenta" } },
+			{ "name": "ui:design-system:icons", "icon": { "id": "symbol-misc", "color": "terminal.ansiCyan" } },
+
+			// ── app ──────────────────────────────────────────────
+			{ "name": "app:dev", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "app:build", "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+			{ "name": "app:build:analyze", "icon": { "id": "graph", "color": "terminal.ansiYellow" } },
+			{ "name": "app:preview", "icon": { "id": "browser" } },
+			{ "name": "app:ssr", "icon": { "id": "server", "color": "terminal.ansiBlue" } },
+
+			// ── test ─────────────────────────────────────────────
+			{ "name": "test:unit", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:unit:watch", "isBackground": true, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:integration" },
+			{ "name": "test:e2e:cypress:run" },
+			{ "name": "test:e2e:cypress:open", "isBackground": true },
+			{ "name": "test:e2e:playwright" },
+			{ "name": "test:visual:snapshot" },
+			{ "name": "test:visual:approve", "icon": { "id": "check", "color": "terminal.ansiGreen" } },
+
+			// ── lint ─────────────────────────────────────────────
+			{ "name": "lint:eslint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "lint:stylelint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "lint:typecheck", "icon": { "id": "search", "color": "terminal.ansiYellow" } },
+
+			// ── perf ─────────────────────────────────────────────
+			{ "name": "perf:lighthouse", "icon": { "id": "dashboard", "color": "terminal.ansiCyan" } },
+			{ "name": "perf:bundle-analyze", "icon": { "id": "graph", "color": "terminal.ansiYellow" } },
+			{ "name": "perf:web-vitals" },
+
+			// ── i18n ─────────────────────────────────────────────
+			{ "name": "i18n:extract" },
+			{ "name": "i18n:compile" },
+			{ "name": "i18n:validate" },
+
+			// ── storybook ────────────────────────────────────────
+			{ "name": "storybook:dev", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "storybook:build", "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+			{ "name": "storybook:deploy", "icon": { "id": "cloud-upload", "color": "terminal.ansiMagenta" } },
+
+			// hidden
+			{ "name": "legacy:webpack:build", "hidden": true },
+			{ "name": "legacy:webpack:serve", "hidden": true, "isBackground": true }
+		],
+
+		// ═══════════════════════════════════════════════════════════
+		// MOBILE — ~45 задач
+		// Глубина до 8 уровней. Коллизии "build", "run" с другими scope'ами.
+		// ═══════════════════════════════════════════════════════════
+		"/workspace/mobile/.vscode/tasks.json": [
+
+			// ── android ──────────────────────────────────────────
+			{ "name": "android:build:debug", "icon": { "id": "device-mobile", "color": "terminal.ansiGreen" } },
+			{ "name": "android:build:release", "icon": { "id": "device-mobile", "color": "terminal.ansiYellow" } },
+			{ "name": "android:build:release:signed", "icon": { "id": "device-mobile", "color": "terminal.ansiRed" } },
+			{ "name": "android:run", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "android:clean" },
+			{ "name": "android:bundle", "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+			{ "name": "android:aab:upload", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+
+			// ── ios ──────────────────────────────────────────────
+			{ "name": "ios:build:debug", "icon": { "id": "device-mobile", "color": "terminal.ansiGreen" } },
+			{ "name": "ios:build:release", "icon": { "id": "device-mobile", "color": "terminal.ansiYellow" } },
+			{ "name": "ios:run", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "ios:clean" },
+			{ "name": "ios:pod-install", "icon": { "id": "package", "color": "terminal.ansiRed" } },
+			{ "name": "ios:archive", "icon": { "id": "package", "color": "terminal.ansiBlue" } },
+			{ "name": "ios:archive:upload", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+
+			// ── test — ГЛУБИНА 8 ─────────────────────────────────
+			{ "name": "test:unit", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:unit:watch", "isBackground": true, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:integration" },
+			{ "name": "test:e2e:detox:android:suite:critical:smoke:run", "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+			{ "name": "test:e2e:detox:android:suite:critical:smoke:record", "icon": { "id": "record", "color": "terminal.ansiRed" } },
+			{ "name": "test:e2e:detox:android:suite:regression:full", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "test:e2e:detox:android:suite:regression:flaky-retry" },
+			{ "name": "test:e2e:detox:ios:suite:critical:smoke:run", "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+			{ "name": "test:e2e:detox:ios:suite:regression:full" },
+			{ "name": "test:snapshot:update" },
+			{ "name": "test:snapshot:verify" },
+
+			// ── codegen ──────────────────────────────────────────
+			{ "name": "codegen:assets", "icon": { "id": "file-media", "color": "terminal.ansiCyan" } },
+			{ "name": "codegen:icons", "icon": { "id": "symbol-misc", "color": "terminal.ansiCyan" } },
+			{ "name": "codegen:fonts" },
+			{ "name": "codegen:graphql", "icon": { "id": "file-code", "color": "terminal.ansiMagenta" } },
+			{ "name": "codegen:graphql:schema", "icon": { "id": "file-code", "color": "terminal.ansiMagenta" } },
+			{ "name": "codegen:graphql:types", "icon": { "id": "file-code", "color": "terminal.ansiMagenta" } },
+
+			// ── lint ─────────────────────────────────────────────
+			{ "name": "lint:eslint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "lint:kotlin", "icon": { "id": "search", "color": "terminal.ansiBlue" } },
+			{ "name": "lint:swift", "icon": { "id": "search", "color": "terminal.ansiRed" } },
+			{ "name": "lint:detekt", "icon": { "id": "search", "color": "terminal.ansiYellow" } },
+
+			// ── metro ────────────────────────────────────────────
+			{ "name": "metro:start", "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+			{ "name": "metro:reset-cache", "icon": { "id": "trash", "color": "terminal.ansiRed" } },
+
+			// ── deploy ───────────────────────────────────────────
+			{ "name": "deploy:staging:android", "icon": { "id": "cloud-upload", "color": "terminal.ansiYellow" } },
+			{ "name": "deploy:staging:ios", "icon": { "id": "cloud-upload", "color": "terminal.ansiYellow" } },
+			{ "name": "deploy:prod:android", "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+			{ "name": "deploy:prod:ios", "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+
+			// task-as-group: "deploy" runnable + prefix
+			{ "name": "deploy", "icon": { "id": "rocket", "color": "terminal.ansiBlue" } }
+		],
+
+		// ═══════════════════════════════════════════════════════════
+		// INFRA — ~40 задач
+		// useGroupKind: true. Много hidden (prod operations).
+		// ═══════════════════════════════════════════════════════════
+		"/workspace/infra/.vscode/tasks.json": [
+
+			// ── terraform ────────────────────────────────────────
+			{ "name": "terraform:plan", "group": { "kind": "build" }, "icon": { "id": "file-code", "color": "terminal.ansiMagenta" } },
+			{ "name": "terraform:plan:targeted", "group": { "kind": "build" }, "icon": { "id": "file-code", "color": "terminal.ansiMagenta" } },
+			{ "name": "terraform:apply", "group": { "kind": "deploy" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiGreen" } },
+			{ "name": "terraform:apply:auto-approve", "group": { "kind": "deploy" }, "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+			{ "name": "terraform:destroy", "group": { "kind": "deploy" }, "hidden": true, "icon": { "id": "trash", "color": "terminal.ansiRed" } },
+			{ "name": "terraform:validate", "group": { "kind": "test" }, "icon": { "id": "check", "color": "terminal.ansiGreen" } },
+			{ "name": "terraform:fmt" },
+			{ "name": "terraform:import", "hidden": true },
+			{ "name": "terraform:state:list" },
+			{ "name": "terraform:state:show" },
+			{ "name": "terraform:state:mv", "hidden": true },
+			{ "name": "terraform:state:rm", "hidden": true },
+
+			// ── k8s ──────────────────────────────────────────────
+			{ "name": "k8s:deploy:dev", "group": { "kind": "deploy" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiGreen" } },
+			{ "name": "k8s:deploy:staging", "group": { "kind": "deploy" }, "icon": { "id": "cloud-upload", "color": "terminal.ansiYellow" } },
+			{ "name": "k8s:deploy:prod", "group": { "kind": "deploy" }, "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+			{ "name": "k8s:rollback", "icon": { "id": "history", "color": "terminal.ansiYellow" } },
+			{ "name": "k8s:status", "icon": { "id": "info" } },
+			{ "name": "k8s:logs", "isBackground": true, "icon": { "id": "output", "color": "terminal.ansiCyan" } },
+			{ "name": "k8s:logs:tail", "isBackground": true, "icon": { "id": "output", "color": "terminal.ansiCyan" } },
+			{ "name": "k8s:port-forward", "isBackground": true, "icon": { "id": "plug", "color": "terminal.ansiGreen" } },
+			{ "name": "k8s:exec", "icon": { "id": "terminal", "color": "terminal.ansiYellow" } },
+
+			// ── docker ───────────────────────────────────────────
+			{ "name": "docker:build:all", "icon": { "id": "server", "color": "terminal.ansiBlue" } },
+			{ "name": "docker:push:all", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+			{ "name": "docker:compose:up", "isBackground": true, "icon": { "id": "server", "color": "terminal.ansiGreen" } },
+			{ "name": "docker:compose:down", "icon": { "id": "server", "color": "terminal.ansiRed" } },
+			{ "name": "docker:compose:logs", "isBackground": true },
+			{ "name": "docker:prune", "icon": { "id": "trash", "color": "terminal.ansiRed" } },
+
+			// ── monitoring ───────────────────────────────────────
+			{ "name": "monitoring:setup" },
+			{ "name": "monitoring:check", "icon": { "id": "pulse", "color": "terminal.ansiGreen" } },
+			{ "name": "monitoring:alerts:test", "icon": { "id": "bell", "color": "terminal.ansiYellow" } },
+			{ "name": "monitoring:alerts:silence", "icon": { "id": "bell-slash", "color": "terminal.ansiRed" } },
+			{ "name": "monitoring:dashboard:open", "isBackground": true, "icon": { "id": "browser", "color": "terminal.ansiCyan" } },
+
+			// ── secrets ──────────────────────────────────────────
+			{ "name": "secrets:rotate", "hidden": true, "icon": { "id": "key", "color": "terminal.ansiRed" } },
+			{ "name": "secrets:sync", "icon": { "id": "key", "color": "terminal.ansiYellow" } },
+			{ "name": "secrets:validate", "icon": { "id": "key", "color": "terminal.ansiGreen" } },
+
+			// ── dns ──────────────────────────────────────────────
+			{ "name": "dns:check" },
+			{ "name": "dns:update", "hidden": true },
+
+			// ── ci (task-as-group) ───────────────────────────────
+			{ "name": "ci", "icon": { "id": "gear", "color": "terminal.ansiBlue" } },
+			{ "name": "ci:lint" },
+			{ "name": "ci:test" },
+			{ "name": "ci:build" },
+			{ "name": "ci:deploy", "hidden": true },
+			{ "name": "ci:notify", "isBackground": true, "icon": { "id": "bell", "color": "terminal.ansiBlue" } }
+		],
+
+		// ═══════════════════════════════════════════════════════════
+		// SHARED — ~35 задач
+		// Libs, protos, docs. Максимум task-as-group.
+		// ═══════════════════════════════════════════════════════════
+		"/workspace/shared/.vscode/tasks.json": [
+
+			// ── proto (task-as-group на 2 уровнях) ───────────────
+			{ "name": "proto:codegen", "icon": { "id": "zap", "color": "terminal.ansiYellow" } },
+			{ "name": "proto:codegen:go" },
+			{ "name": "proto:codegen:ts" },
+			{ "name": "proto:codegen:python" },
+			{ "name": "proto:codegen:swift" },
+			{ "name": "proto:codegen:kotlin" },
+			{ "name": "proto:lint", "icon": { "id": "search", "color": "terminal.ansiMagenta" } },
+			{ "name": "proto:breaking-check", "icon": { "id": "warning", "color": "terminal.ansiRed" } },
+			// "proto" itself is also a task-as-group
+			{ "name": "proto", "icon": { "id": "file-code", "color": "terminal.ansiCyan" } },
+
+			// ── lib ──────────────────────────────────────────────
+			{ "name": "lib:utils:build" },
+			{ "name": "lib:utils:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "lib:logger:build" },
+			{ "name": "lib:logger:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "lib:config:build" },
+			{ "name": "lib:config:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+			{ "name": "lib:config:validate", "icon": { "id": "check", "color": "terminal.ansiGreen" } },
+			{ "name": "lib:auth:build" },
+			{ "name": "lib:auth:test", "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+
+			// ── docs ─────────────────────────────────────────────
+			{ "name": "docs:generate", "icon": { "id": "notebook", "color": "terminal.ansiCyan" } },
+			{ "name": "docs:serve", "isBackground": true, "icon": { "id": "browser", "color": "terminal.ansiCyan" } },
+			{ "name": "docs:deploy", "icon": { "id": "cloud-upload", "color": "terminal.ansiCyan" } },
+			{ "name": "docs:validate-links", "icon": { "id": "link", "color": "terminal.ansiYellow" } },
+			{ "name": "docs:spellcheck" },
+
+			// ── ci:pipeline ──────────────────────────────────────
+			{ "name": "ci:pipeline:validate" },
+			{ "name": "ci:pipeline:build-all", "group": { "kind": "build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+			{ "name": "ci:pipeline:notify", "isBackground": true, "icon": { "id": "bell", "color": "terminal.ansiBlue" } },
+			{ "name": "ci:pipeline:cleanup", "icon": { "id": "trash", "color": "terminal.ansiRed" } },
+
+			// ── deps ─────────────────────────────────────────────
+			{ "name": "deps:audit", "icon": { "id": "shield", "color": "terminal.ansiYellow" } },
+			{ "name": "deps:update" },
+			{ "name": "deps:licenses", "icon": { "id": "law", "color": "terminal.ansiCyan" } },
+			{ "name": "deps:graph", "icon": { "id": "graph", "color": "terminal.ansiMagenta" } },
+
+			// hidden group + visible children
+			{ "name": "internal:legacy:v1-compat", "hidden": true },
+			{ "name": "internal:legacy:v1-compat:shim-a" },
+			{ "name": "internal:legacy:v1-compat:shim-b" },
+			{ "name": "internal:legacy:v2-migration" }
+		]
+	},
+
+	"treeConfig": {
+		"segmentSeparator": ":",
+		"useGroupKind": true,
+		"showHidden": false
+	},
+	"nodeConfig": {
+		"useFolderIcon": false,
+		"defaultIconName": "tools",
+		"tintLabel": true
+	},
+
+	"favorites": {
+		"visibility": "AUTO",
+		"compressionBehavior": "SMART",
+		"refs": [
+			// ── cross-scope: backend ─────────────────────────────
+			{ "folder": "backend",  "label": "deploy:prod" },                                    // hidden task → visible in pinned
+			{ "folder": "backend",  "label": "db:migrate:up" },                                  // regular deep
+			{ "folder": "backend",  "label": "lint" },                                            // task-as-group
+			{ "folder": "backend",  "label": "server:dev" },                                      // isBackground
+			{ "folder": "backend",  "label": "nuke-everything" },                                 // hidden + all flags
+
+			// ── cross-scope: frontend ────────────────────────────
+			{ "folder": "frontend", "label": "ui:components:Button:test" },                       // deep, 4 levels
+			{ "folder": "frontend", "label": "ui:components:Table:perf" },                        // deep, 4 levels
+			{ "folder": "frontend", "label": "app:dev" },                                         // isBackground
+			{ "folder": "frontend", "label": "legacy:webpack:build" },                            // hidden, dead?
+
+			// ── cross-scope: mobile ──────────────────────────────
+			{ "folder": "mobile",   "label": "test:e2e:detox:android:suite:critical:smoke:run" }, // 8 LEVELS DEEP
+			{ "folder": "mobile",   "label": "deploy" },                                          // task-as-group
+			{ "folder": "mobile",   "label": "deploy:prod:android" },                             // hidden
+			{ "folder": "mobile",   "label": "metro:start" },                                     // isBackground
+
+			// ── cross-scope: infra ───────────────────────────────
+			{ "folder": "infra",    "label": "terraform:apply:auto-approve" },                    // hidden
+			{ "folder": "infra",    "label": "k8s:deploy:prod" },                                 // hidden
+			{ "folder": "infra",    "label": "ci" },                                              // task-as-group
+			{ "folder": "infra",    "label": "secrets:rotate" },                                   // hidden
+
+			// ── cross-scope: shared ──────────────────────────────
+			{ "folder": "shared",   "label": "proto:codegen" },                                   // task-as-group, 2-level
+			{ "folder": "shared",   "label": "proto" },                                           // task-as-group, parent
+			{ "folder": "shared",   "label": "internal:legacy:v1-compat:shim-a" }                 // child of hidden group
+		],
+		"stales": [
+		    // ── DEAD REFS ────────────────────────────────────────
+			{ "folder": "NONEXISTENT", "label": "phantom:task" },                                 // folder не существует
+			{ "folder": "backend",     "label": "this:task:does:not:exist" },                     // folder есть, задачи нет
+			{ "folder": "shared",      "label": "proto:codegen:rust" }                            // folder есть, leaf нет
+		
+		]
+	}
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// КАТАЛОГ EDGE CASES В ЭТОМ СКЕТЧЕ
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// 1.  ГЛУБИНА 8: mobile → test:e2e:detox:android:suite:critical:smoke:run
+//     + Favorite на неё → SMART compression в Pinned:
+//     test › e2e › detox › android › suite › critical › smoke › run (*)
+//
+// 2.  TASK-AS-GROUP (5 штук):
+//     - backend/lint (задача + дети lint:eslint, lint:prettier, ...)
+//     - mobile/deploy (задача + дети deploy:staging:android, ...)
+//     - infra/ci (задача + дети ci:lint, ci:test, ...)
+//     - shared/proto (задача + дети proto:codegen, proto:lint, ...)
+//     - shared/proto:codegen (задача + дети codegen:go, codegen:ts, ...)
+//     → двухуровневый task-as-group: proto → codegen → children
+//
+// 3.  HIDDEN GROUP, VISIBLE CHILDREN (3 случая):
+//     - shared/internal:legacy:v1-compat (hidden) → shim-a, shim-b видимы
+//     - frontend/legacy:webpack (оба hidden) → оба невидимы, dead branch
+//     - backend/deploy:prod (hidden) → нет детей, но есть sibling deploy:staging
+//
+// 4.  useGroupKind КОНФЛИКТ:
+//     backend и infra имеют group.kind, остальные — нет.
+//     "ci:build" в infra с group.kind vs "ci:pipeline:build-all" в shared с group.kind.
+//     Рендерер должен обрабатывать kind-секции per-scope.
+//
+// 5.  КОЛЛИЗИЯ ИМЁН (по leaf):
+//     "build": Button:build, Modal:build, Table:build, Form:build, app:build,
+//              android:build:*, ios:build:*, docker:build:*, ci:build, ...
+//     "test":  аналогично, 10+ одинаковых leaf'ов
+//     "lint":  5 scope'ов × свои lint:* задачи + task-as-group "lint" в backend
+//     "run":   detox:...:run, db:migrate:run — разные scope'ы
+//
+// 6.  FAVORITES (24 штуки):
+//     - 5 на hidden задачи → видимы в Pinned, невидимы в дереве
+//     - 3 на task-as-group → должны быть запускаемыми в Pinned
+//     - 1 на задачу глубиной 8 → проверка SMART compression
+//     - 3 dead refs: несуществующий folder, несуществующая задача,
+//       несуществующий leaf в существующем prefix
+//     - 1 на child of hidden group → shim-a видна в Pinned, parent hidden
+//
+// 7.  BLANK ICON: backend/secret:internal:do-not-touch
+//     NO ICON (fallback): ~15 задач без icon → defaultIconName "tools"
+//
+// 8.  ВСЕ ФЛАГИ ОДНОВРЕМЕННО: backend/nuke-everything
+//     hidden + isBackground + isDefault + group.kind="deploy"
+//     + Favorite на неё → видна в Pinned, невидима в дереве
+//
+// 9.  isBackground МАССОВО: 15+ задач с isBackground
+//     server:dev, metro:start, k8s:logs, docker:compose:up, ...
+//     Проверка что background badge не ломает layout при масштабе
+//
+// 10. tintLabel: true + 20+ уникальных иконок
+//     Цветовая каша в дереве — визуальный stress test для рендерера
+//
+// Итого: 225 задач, 5 scope'ов, 24 favorites (3 dead)

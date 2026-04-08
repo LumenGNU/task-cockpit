@@ -243,15 +243,26 @@ export interface FavoriteRef {
     label: Name;
 }
 
+export interface FavoriteStale {
+    scopeName: string;
+    label: string;
+}
+
 export declare const enum FavoritesVisibility {
-    AUTO,
-    HIDE
+    AUTO = 1,
+    HIDE = 0
+}
+
+export declare const enum CompressionBehavior {
+    NORMAL = 0,
+    SMART = 1
 }
 
 export interface FavoritesConfig {
-    // visibility: FavoritesVisibility;
+    visibility: FavoritesVisibility;
+    compressionBehavior: CompressionBehavior;
     favoriteRecords: Array<Readonly<FavoriteRef>>;
-    staleRecords: Array<Readonly<FavoriteRef>>;
+    staleRecords: Array<Readonly<FavoriteStale>>;
 }
 
 // export declare const FAVORITES_SCOPE = '\0\0favorites://';
@@ -259,12 +270,14 @@ export interface FavoritesConfig {
 
 export declare const enum EntityKind {
     Folder = 1 << 0,
-    Workspace = 1 << 1,
-    Favorites = 1 << 2,
-    BrokenFavorite = 1 << 3,
-    Empty = 1 << 4,
-    Runnable = 1 << 5,
-    Group = 1 << 6,
+    FavoriteFolder = 1 << 1,
+    Workspace = 1 << 2,
+    FavoritesSingle = 1 << 3,
+    FavoritesMulti = 1 << 4,
+    BrokenFavorite = 1 << 5,
+    Empty = 1 << 6,
+    Runnable = 1 << 7,
+    Group = 1 << 8,
     RunnableGroup = Runnable | Group,
 }
 

@@ -227,7 +227,19 @@
         "env": {
           "SOURCE_DIR": "src",
           "DEST_DIR": "~stripped",
-          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts'"
+          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts'",
+          "STRIP_MODE": "test"
+        }
+      },
+      "problemMatcher": {
+        "owner": "strip debug blocks",
+        "applyTo": "allDocuments",
+        "source": "strip-debug-blocks.bash",
+        "pattern": {
+          "regexp": "^\\[fail\\] (.+):(\\d+): (.*)",
+          "file": 1,
+          "location": 2,
+          "message": 3
         }
       },
       "presentation": {

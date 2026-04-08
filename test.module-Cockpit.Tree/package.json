@@ -19,8 +19,9 @@
         "title": "test extension activate"
       },
       {
-        "command": "test-entity-debug",
-        "title": "test entity debug"
+        "command": "-debug-open-sketch-",
+        "title": "-debug-open-sketch-",
+        "icon": "$(file)"
       }
     ],
     "viewsContainers": {
@@ -39,6 +40,15 @@
           "name": "Debug Tree"
         }
       ]
+    }, 
+    "menus": {
+      "view/title": [
+        {
+          "command": "-debug-open-sketch-",
+          "when": "view == test-debug-tree",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {},
@@ -51,5 +61,8 @@
     "eslint": "^9.39.3",
     "nyc": "^18.0.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
   }
 }

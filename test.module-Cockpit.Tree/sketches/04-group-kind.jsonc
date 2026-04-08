@@ -1,0 +1,32 @@
+// Группировка по свойству group (useGroupKind).
+// Separator отключён — иерархия только через group.
+// Проверяет: создание group-папок, capitalize имени группы,
+// задачи без group остаются на верхнем уровне,
+// group как строка vs group как объект { kind, isDefault }.
+//
+// Ожидаемое дерево:
+//   Build           ← "build"
+//     compile
+//     bundle
+//   Test            ← "test"
+//     unit
+//     integration
+//   lint            ← без group, на верхнем уровне
+//   format          ← без group, на верхнем уровне
+{
+	"scopes": {
+		"app": "/workspace/app/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/app/.vscode/tasks.json": [
+			{ "name": "compile", "group": { "kind": "*build", "isDefault": false } },
+			{ "name": "bundle", "group": { "kind": "*build", "isDefault": true } },
+			{ "name": "unit", "group": { "kind": "*test", "isDefault": false } },
+			{ "name": "integration", "group": { "kind": "*test", "isDefault": false } },
+			{ "name": "lint" },
+			{ "name": "format" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": "", "useGroupKind": true, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": true, "defaultIconName": "tools", "tintLabel": false }
+}

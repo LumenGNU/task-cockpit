@@ -1,0 +1,84 @@
+
+// Favorites:
+// Проверяет: Корректность в SMART режиме
+{
+	"scopes": {
+		"app1": "/workspace/app1/.vscode/tasks.json",
+		"app2": "/workspace/app2/.vscode/tasks.json",
+		"app3": "/workspace/app3/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/app1/.vscode/tasks.json": [
+			{ "name": "build-all" },
+			{ "name": "build-all:prepare" },
+			{ "name": "build-all:dev" },
+			{ "name": "build-all:prod" }
+		],
+		"/workspace/app2/.vscode/tasks.json": [
+			{ "name": "build-all" },
+			{ "name": "build-all:prepare" },
+			{ "name": "build-all:dev" },
+			{ "name": "build-all:prod" }
+		],
+		"/workspace/app3/.vscode/tasks.json": [
+			{ "name": "build-all" },
+			{ "name": "build-all:prepare" },
+			{ "name": "build-all:dev" },
+			{ "name": "build-all:prod" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": ":", "useGroupKind": false, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": false, "defaultIconName": "tools", "tintLabel": false },
+	"favorites": {
+		"compressionBehavior": "SMART", // NORMAL | SMART
+		"refs":[
+			{ "folder": "app1", "label": "build-all" },
+			{ "folder": "app1", "label": "build-all:prepare" },
+			{ "folder": "app2", "label": "build-all:prepare" },
+			// app3 - другой порядок - ветка будет как и для app1
+			{ "folder": "app3", "label": "build-all:prepare" },
+			{ "folder": "app3", "label": "build-all" }
+		]
+	}
+}
+// сейчас:
+// 
+// (NORMAL) - ОК: 
+// ─ [Pinned]
+//   ─ [app1]
+//     └─ build-all (*)
+//        └─ prepare (*)
+//   ─ [app2]
+//     └─ build-all 
+//        └─ prepare (*)
+// ─ ...
+// 
+// (SMART)  - НЕ ОК: 
+// ─ [Pinned]
+//   ─ [app1]
+//     ├─ build-all (*)           // <- тут плохо      : └─ build-all (*)
+//     └─ build-all › prepare (*) // <- должно быть так:    └─ prepare (*)
+//   ─ [app2]
+//     └─ build-all › prepare (*) <- тут норм
+// ─ ...
+// 
+// Нужно чтобы работало правило:
+// сжимать только линейные цепочки, где промежуточный узел не имеет
+// детей в pinned-дереве.
+// Если узел имеет хотя бы одного ребёнка (в pinned-дереве) — он никогда не 
+// сжимается, даже если дальше идёт линейная цепочка.
+// 
+// - pinned только `build-all:prepare`
+// - `build-all` не имеет детей → можно сжать
+// - Результат: 
+//   ~~~
+//   build-all › prepare
+//   ~~~
+// 
+// - pinned `build-all` и `build-all:prepare`
+// - `build-all` имеет ребёнка → нельзя сжимать
+// - Результат:
+//   ~~~ 
+//   build-all
+//   └─ prepare
+//   ~~~

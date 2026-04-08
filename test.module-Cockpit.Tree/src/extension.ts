@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import Hierarchy from './Cockpit/TreeModel/Hierarchy';
-import Entity from './Cockpit/TreeModel/Entity';
-import type * as TC from './types';
+import TreeModel from './Cockpit/TreeModel';
+import * as TC from './types';
 import helpers from './helpers';
 import DebugTreeViewer from './DebugTreeViewer';
-
+import Hierarchy from './Cockpit/TreeModel/Hierarchy';
+import { parse as parseJSONC } from 'jsonc-parser';
+import { parseSketch } from './Sketch';
 
 
 // #region DEBUG
@@ -69,298 +70,57 @@ export function activate(context: vscode.ExtensionContext) {
 			console.log('\n\n\n');
 		}),
 
-		vscode.commands.registerCommand('test-entity-debug', () => {
+		vscode.commands.registerCommand('-debug-open-sketch-', async () => {
 
-			log(LogLevel.Debug, 'Entity debug started');
+			try {
 
-			const { scopes, favoritesRefs, definitionMap, configMap, hiddenFolders } =
-				parseScenario(scenario);
+				log(LogLevel.Debug, `debug, open sketch...`);
 
-			const entities = Entity.buildEntities(
-				scopes, favoritesRefs, definitionMap, configMap, hiddenFolders,
-			);
+				const uris = await vscode.window.showOpenDialog({
+					canSelectMany: false,
+					filters: { 'Scenario': ['jsonc'] },
+					title: 'Select debug scenario',
+					canSelectFolders: false,
+					defaultUri: vscode.Uri.joinPath(context.extensionUri, 'sketches')
+				});
 
-			entities.forEach((e) => {
-				console.log(Entity.printTree(e));
-			});
+				if (!uris?.length) {
+					log(LogLevel.Debug, 'sketch: aborted');
+					return;
+				}
 
-			viewer.setData(entities);
+				log(LogLevel.Debug, `sketch: "${vscode.workspace.asRelativePath(uris[0])}":\n`);
+
+				const doc = await vscode.workspace.openTextDocument(uris[0]);
+				await vscode.window.showTextDocument(doc, { preview: true });
+				// await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
+
+				const raw = await vscode.workspace.fs.readFile(uris[0]);
+				const json = parseJSONC(Buffer.from(raw).toString('utf-8'));
+
+				const data = parseSketch(json);
+				const topRoots = TreeModel.build(data);
+
+				// const formatData = (task: TC.TaskDefinition) => `( ${helpers.printTaskId(task.id)} )`;
+				console.log(TreeModel.printTree(topRoots));
+				viewer.setData(topRoots);
+
+				console.log('\n');
+
+			}
+			catch (e) {
+				console.error(e);
+				throw e;
+			}
 		}),
 	);
-	// #endregion DEBUG
 
 	context.subscriptions.push(disposable);
+	// #endregion DEBUG
 }
 
 // --- Формат сценария ---
 
-interface DebugScenario {
-	folders: Record<string, string>; // name → fsPath (до tasks.json)
-	definitions: Record<TC.File, Record<TC.Name, TC.TaskDefinition>>; // fsPath → TaskDefinition
-	config: TC.BranchConfig;
-	favorites?: { folder: string; label: string }[];
-	hiddenFolders?: string[];
-}
-
-
-function buildDefinition(file: TC.File, name: TC.Name, def?: Partial<TC.TaskDefinition>): TC.TaskDefinition {
-	return {
-		id: helpers.buildId(file, name),
-		icon: def?.icon ?? {},
-		group: def?.group,
-		hidden: def?.hidden,
-		isBackground: def?.isBackground,
-		rejectFlag: def?.rejectFlag
-	}
-}
-
-
-function buildDefinitions(file: TC.File, tasks: ReadonlyArray<Readonly<{ name: string, def?: Partial<TC.TaskDefinition> }>>): Record<TC.File, Record<TC.Name, TC.TaskDefinition>> {
-	const j: Record<TC.Name, TC.TaskDefinition> = {};
-	for (const { name: _name, def } of tasks) {
-		const name = _name as TC.Name;
-		j[name] = buildDefinition(file, name, def);
-	}
-	return {
-		[file]: j
-	};
-}
-
-const frontend = '/workspace/frontend/.vscode/tasks.json' as TC.File;
-const backend = '/workspace/backend/.vscode/tasks.json' as TC.File;
-
-// --- Сценарий как plain-объект ---
-
-/*
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-		backend,
-	},
-	definitions: {
-
-		...buildDefinitions(frontend, [
-			{
-				name: 'build:dev',
-				def: { group: { kind: 'Build', isDefault: false } }
-			},
-			{
-				name: 'build:prod',
-				def: { group: { kind: 'Build', isDefault: true } }
-			},
-			{
-				name: 'lint',
-				def: {}
-			},
-			{
-				name: 'test:unit',
-				def: { group: { kind: 'Test', isDefault: false } }
-			},
-			{
-				name: 'test:e2e',
-				def: { group: { kind: 'Test', isDefault: false } }
-			}
-		]),
-
-		...buildDefinitions(backend, [
-			{
-				name: 'build:server'
-			},
-			{
-				name: 'migrate'
-			},
-			{
-				name: 'seed'
-			}
-		]),
-	},
-	config: { segmentSeparator: ':', useGroupKind: true },
-	favorites: [
-		{ folder: 'frontend', label: 'build:dev' },
-		{ folder: 'backend', label: 'build:server' },
-		{ folder: 'frontend', label: 'lint' },
-	],
-	hiddenFolders: ['backend'],
-};
-*/
-
-/*
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-	},
-	definitions: {
-
-		...buildDefinitions(frontend, [
-			{
-				name: 'build:dev',
-				def: { group: { kind: 'Build', isDefault: false } }
-			},
-			{
-				name: 'build:prod',
-				def: { group: { kind: 'Build', isDefault: true } }
-			},
-			{
-				name: 'lint',
-				def: {}
-			},
-			{
-				name: 'test:unit',
-				def: { group: { kind: 'Test', isDefault: false } }
-			},
-			{
-				name: 'test:e2e',
-				def: { group: { kind: 'Test', isDefault: false } }
-			}
-		]),
-
-	},
-	config: { segmentSeparator: ':', useGroupKind: true },
-	favorites: [
-		{ folder: 'frontend', label: 'build:dev' },
-		{ folder: 'frontend', label: 'lint' },
-	],
-	hiddenFolders: [],
-};
-*/
-
-/*
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-		backend,
-	},
-	definitions: {
-
-		...buildDefinitions(frontend, [
-			{
-				name: 'build-dev',
-			},
-		]),
-
-		...buildDefinitions(backend, [
-			{
-				name: 'build-server'
-			}
-		]),
-	},
-	config: { segmentSeparator: false, useGroupKind: true },
-	favorites: [
-		{ folder: 'frontend', label: 'build-dev' },
-		{ folder: 'backend', label: 'build-server' },
-	],
-	hiddenFolders: [],
-};
-*/
-
-/*
-// демонстрирует проблему @bug: `reverseAndJoin()` на пустом `chain` порождает...
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-		// backend,
-	},
-	definitions: {
-
-		...buildDefinitions(frontend, [
-			{
-				name: 'a:b:c:task2',
-			},
-			{
-				name: 'a:b:c:d:e:task1',
-			},
-		]),
-
-	},
-	config: { segmentSeparator: ':', useGroupKind: true },
-	favorites: [
-		{ folder: 'frontend', label: 'a:b:c:task2' },
-		{ folder: 'frontend', label: 'a:b:c:d:e:task1' },
-	],
-	hiddenFolders: [],
-};
-*/
-
-/*
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-	},
-	definitions: {
-		...buildDefinitions(frontend, [
-			// a(branch) → b → c(branch) → d → e(branch) → f → g → task1
-			// + побочные ветки на каждом branch point
-			{ name: 'a:b:c:d:e:f:g:task1' },
-			{ name: 'a:b:c:d:e:sideF:task2' },
-			{ name: 'a:b:c:sideD:task3' },
-			{ name: 'a:sideB:task4' },
-		]),
-	},
-	config: { segmentSeparator: ':', useGroupKind: false },
-	favorites: [
-		{ folder: 'frontend', label: 'a:b:c:d:e:f:g:task1' },
-		{ folder: 'frontend', label: 'a:b:c:d:e:sideF:task2' },
-		{ folder: 'frontend', label: 'a:b:c:sideD:task3' },
-		{ folder: 'frontend', label: 'a:sideB:task4' },
-	],
-	hiddenFolders: [],
-};
-*/
-
-const scenario: DebugScenario = {
-	folders: {
-		frontend,
-	},
-	definitions: {
-		...buildDefinitions(frontend, [
-			{ name: 'a:b:Task & Group:Sub Task' },
-			{ name: 'a:b:Task & Group', def: { hidden: true } },
-		]),
-	},
-	config: { segmentSeparator: ':', useGroupKind: false, showHidden: false },
-	favorites: [
-		{ folder: 'frontend', label: 'a:b:Task & Group' },
-	],
-	hiddenFolders: [],
-};
-
-// --- Парсер сценария → аргументы Entity.buildEntities ---
-
-function parseScenario(s: DebugScenario) {
-
-	const folderScopes = new Map<string, TC.Scope>();
-	for (const [name, fsPath] of Object.entries(s.folders)) {
-		const uri = vscode.Uri.file(fsPath) as TC.Uri;
-		folderScopes.set(name, { name: name as TC.FolderName, uri });
-	}
-
-	const scopes: Parameters<typeof Entity.buildEntities>[0] = [
-		...(s.favorites?.length ? [] : []),
-		...folderScopes.values(),
-	];
-
-	const definitionMap: TC.DefinitionsByFile = new Map();
-
-	for (const [_file, defs] of Object.entries(s.definitions)) {
-		const file = _file as TC.File;
-		const scopedDefs: TC.ScopedDefinitions = new Map();
-		for (const [name, definition] of Object.entries(defs)) {
-			scopedDefs.set(name as TC.Name, definition);
-		}
-		definitionMap.set(file, scopedDefs);
-	}
-
-	const configMap: TC.BranchConfigByFile = new Map(
-		Object.keys(s.definitions).map(file => [file as TC.File, s.config]),
-	);
-
-	const favoritesRefs = (s.favorites ?? []).map(f => ({
-		scope: folderScopes.get(f.folder)!,
-		label: f.label as TC.Name,
-	}));
-
-	return { scopes, favoritesRefs, definitionMap, configMap, hiddenFolders: s.hiddenFolders ?? [] };
-}
 
 
 // This method is called when your extension is deactivated

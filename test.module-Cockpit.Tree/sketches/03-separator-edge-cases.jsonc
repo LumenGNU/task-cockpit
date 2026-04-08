@@ -1,0 +1,33 @@
+// Граничные случаи поведения separator.
+// Проверяет правила игнорирования separator из README:
+// - в начале/конце label
+// - подряд идущие separators
+// - separator рядом с пробелом
+//
+// Ожидаемое поведение:
+//   "/leading"         → label целиком (leading / в начале игнорируется)
+//   "trailing/"        → label целиком (trailing / в конце игнорируется)
+//   "a//b"             → label целиком (consecutive // игнорируется)
+//   "Scripts/npm: install" → Scripts → "npm: install" (пробел после : → не split)
+//   "Compile/build"    → единственный нормальный split
+//   "out/"             → label целиком (trailing / игнорируется)
+//
+// Separator "/" чтобы проверить с не-двоеточным разделителем.
+{
+	"scopes": {
+		"project": "/workspace/project/.vscode/tasks.json"
+	},
+	"tasks": {
+		"/workspace/project/.vscode/tasks.json": [
+			{ "name": "Compile/build" },
+			{ "name": "Compile/run" },
+			{ "name": "/leading" },
+			{ "name": "trailing/" },
+			{ "name": "a//b" },
+			{ "name": "Scripts/npm: install" },
+			{ "name": "make in out/" }
+		]
+	},
+	"treeConfig": { "segmentSeparator": "/", "useGroupKind": false, "showHidden": false },
+	"nodeConfig": { "useFolderIcon": false, "defaultIconName": "tools", "tintLabel": false }
+}

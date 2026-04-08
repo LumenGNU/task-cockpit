@@ -9,7 +9,7 @@
 		"sourceMap": true,
 		"rootDir": "src",
 		"strict": true,
-		"removeComments": true
+		"removeComments": true,
 	},
 	"exclude": [
 		"**/~*"
