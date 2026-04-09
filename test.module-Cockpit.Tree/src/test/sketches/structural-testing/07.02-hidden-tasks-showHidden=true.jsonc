@@ -1,0 +1,42 @@
+
+//
+{
+    "title": "hidden tasks · visible",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "AAA:visible" },
+                { "name": "AAA:HIDDEN", "hidden": true },
+                { "name": "BBB:CCC:visible" },
+                { "name": "BBB:b:bb:bbb:HIDDEN", "hidden": true }, // пути b:bb:bbb будет построено
+                { "name": "HIDDEN-tool", "hidden": true },
+                { "name": "FFF:segment&task", "hidden": true }, // segment&task как задача - работает
+                { "name": "FFF:segment&task:visible" },         // segment&task как группирующий сегмент - видим
+                { "name": "HIDDEN:tool", "hidden": true }
+            ]
+        },
+        "treeConfig": { "showHidden": true, "segmentSeparator": ":"}
+    },
+    "asciiTree": [
+        "[F[ scope ]]              ",
+        " ├─ AAA                   ",
+        " │  ├─ ▶ visible          ",
+        " │  └─ ▶ HIDDEN           ",
+        " ├─ BBB                   ",
+        " │  ├─ CCC                ",
+        " │  │  └─ ▶ visible       ",
+        " │  └─ b                  ",
+        " │     └─ bb              ",
+        " │        └─ bbb          ",
+        " │           └─ ▶ HIDDEN  ",
+        " ├─ ▶ HIDDEN-tool         ",
+        " ├─ FFF                   ",
+        " │  └─ ▶ segment&task     ",
+        " │     └─ ▶ visible       ",
+        " └─ HIDDEN                ",
+        "    └─ ▶ tool             "
+    ]
+}

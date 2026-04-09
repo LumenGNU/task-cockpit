@@ -1,0 +1,50 @@
+
+// Multi-root workspace: несколько папок.
+// Проверяет:
+// - отображение заголовков папок (Workspace-узлы в multi-root)
+// - изоляцию задач по scope
+// - одноимённые ветки в разных scope не конфликтуют
+//
+// Задействованные настройки: segmentSeparator=":".
+{
+    "title": "Multi-root · task isolation across scopes",
+    "sketch": {
+        "scopes": {
+            "scope1": "scope1/.vscode/tasks.json",
+            "scope2": "scope2/.vscode/tasks.json",
+            "scope3": "scope3/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope1": [
+                { "name": "AAA:child-task-1" },
+                { "name": "AAA:child-task-2" },
+                { "name": "BBB" }
+            ],
+            "scope2": [
+                { "name": "AAA:child-task-1" },
+                { "name": "AAA:child-task-2" },
+                { "name": "BBB" }
+            ],
+            "scope3": [
+                { "name": "CCC" }
+            ]
+        },
+        "treeConfig": { "segmentSeparator": ":" }
+    },
+    "asciiTree": [
+        "[F[ scope1 ]]          ",
+        " ├─ AAA                ",
+        " │  ├─ ▶ child-task-1  ",
+        " │  └─ ▶ child-task-2  ",
+        " └─ ▶ BBB              ",
+        "                       ",
+        "[F[ scope2 ]]          ",
+        " ├─ AAA                ",
+        " │  ├─ ▶ child-task-1  ",
+        " │  └─ ▶ child-task-2  ",
+        " └─ ▶ BBB              ",
+        "                       ",
+        "[F[ scope3 ]]          ",
+        " └─ ▶ CCC              "
+    ]
+}

@@ -1,18 +1,18 @@
 import type * as vscode from 'vscode';
 
-declare const __TasksFile: unique symbol;
-declare const __TasksFileUri: unique symbol;
-declare const __TaskLabel: unique symbol;
-declare const __TasksGroup: unique symbol;
-declare const __Identity: unique symbol;
-declare const __ProcessId: unique symbol;
-declare const __QueryComponent: unique symbol;
-declare const __FolderName: unique symbol;
+declare const ___TasksFile: unique symbol;
+declare const ___TasksFileUri: unique symbol;
+declare const ___TaskLabel: unique symbol;
+declare const ___TasksGroup: unique symbol;
+declare const ___Identity: unique symbol;
+declare const ___ProcessId: unique symbol;
+declare const ___QueryComponent: unique symbol;
+declare const ___FolderName: unique symbol;
 
 
 export type CG_Separator = '\x1D';
 
-type QueryComponent = string & { readonly [__QueryComponent]: never; };
+type QueryComponent = string & { readonly [___QueryComponent]: never; };
 
 /** Номинальный тип для fsPath файла задач.
  *
@@ -30,14 +30,14 @@ type QueryComponent = string & { readonly [__QueryComponent]: never; };
  *
  * Используется для type safety при работе с коллекциями.
  *  */
-export type File = string & { readonly [__TasksFile]: never; };
+export type File = string & { readonly [___TasksFile]: never; };
 
 
 /** Брендированный URI файла задач.
  *
  * Гарантирует, что `fsPath` возвращает {@linkcode File}. */
 export type Uri = vscode.Uri & {
-    readonly [__TasksFileUri]: never;
+    readonly [___TasksFileUri]: never;
     fsPath: File;
 };
 
@@ -45,9 +45,9 @@ export type Uri = vscode.Uri & {
 /** Номинальный тип для имени задачи.
  *
  * Используется для type safety при работе с коллекциями. */
-export type Name = string & { readonly [__TaskLabel]: never; };
+export type Name = string & { readonly [___TaskLabel]: never; };
 
-export type Group = 'Build' | 'Test' | 'Clean' & { readonly [__TasksGroup]: never; };
+export type Group = ('Build' | 'Test' | 'Clean') & { readonly [___TasksGroup]: never; };
 
 
 /** Строковой идентификатор задачи, в терминах расширения {@linkcode File} + {@linkcode Name}.
@@ -56,7 +56,7 @@ export type Group = 'Build' | 'Test' | 'Clean' & { readonly [__TasksGroup]: neve
  *
  * Используется для type safety при работе с коллекциями;
  * для однозначного определения задачи; */
-export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [__Identity]: never; };
+export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [___Identity]: never; };
 
 
 
@@ -117,7 +117,7 @@ export interface RuntimeSettings {
 }
 
 
-export type FolderName = string & { readonly [__FolderName]: never; };
+export type FolderName = string & { readonly [___FolderName]: never; };
 
 /** Область действия задач, с именем и URI файла, в котором они определены (источником задач).
  *
@@ -182,7 +182,7 @@ export interface FetchResult {
 }
 
 
-export type ProcessId = number & { readonly [__ProcessId]: never; };
+export type ProcessId = number & { readonly [___ProcessId]: never; };
 
 
 export interface TerminalsSnapshot {
@@ -243,12 +243,12 @@ export interface FavoriteRef {
     label: Name;
 }
 
-export interface FavoriteStale {
+export interface PinnedStale {
     scopeName: string;
     label: string;
 }
 
-export declare const enum FavoritesVisibility {
+export declare const enum PinnedVisibility {
     AUTO = 1,
     HIDE = 0
 }
@@ -258,11 +258,11 @@ export declare const enum CompressionBehavior {
     SMART = 1
 }
 
-export interface FavoritesConfig {
-    visibility: FavoritesVisibility;
+export interface PinnedConfig {
+    visibility: PinnedVisibility;
     compressionBehavior: CompressionBehavior;
-    favoriteRecords: Array<Readonly<FavoriteRef>>;
-    staleRecords: Array<Readonly<FavoriteStale>>;
+    pinnedRecords: Array<Readonly<FavoriteRef>>;
+    staleRecords: Array<Readonly<PinnedStale>>;
 }
 
 // export declare const FAVORITES_SCOPE = '\0\0favorites://';
@@ -270,11 +270,11 @@ export interface FavoritesConfig {
 
 export declare const enum EntityKind {
     Folder = 1 << 0,
-    FavoriteFolder = 1 << 1,
+    PinnedFolder = 1 << 1,
     Workspace = 1 << 2,
-    FavoritesSingle = 1 << 3,
-    FavoritesMulti = 1 << 4,
-    BrokenFavorite = 1 << 5,
+    PinnedSingle = 1 << 3,
+    PinnedMulti = 1 << 4,
+    BrokenPinned = 1 << 5,
     Empty = 1 << 6,
     Runnable = 1 << 7,
     Group = 1 << 8,

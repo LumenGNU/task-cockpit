@@ -1,0 +1,32 @@
+
+// Pinned: single-folder, visibility=HIDE.
+// Проверяет: секция Pinned скрыта при наличии живых refs (HIDE).
+// Рабочие refs есть — раздел не отображается.
+{
+    "title": "Pinned · single-folder HIDE visibility",
+    "sketch": {
+        "scopes": {
+            "app": "app/.vscode/tasks.json"
+        },
+        "tasks": {
+            "app": [
+                { "name": "task-1" },
+                { "name": "task-2" },
+                { "name": "task-3" }
+            ]
+        },
+        "pinned": {
+            "visibility": "HIDE",
+            "refs": [
+                { "scope": "app", "label": "task-1" },
+                { "scope": "app", "label": "task-2" }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[F[ app ]]   ",
+        " ├─ ▶ task-1 ",
+        " ├─ ▶ task-2 ",
+        " └─ ▶ task-3 "
+    ]
+}

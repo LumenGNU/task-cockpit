@@ -1,0 +1,57 @@
+
+// Pinned · порядок отображения определяется порядком в refs, а не структурой дерева.
+// app1: сначала в refs идёт child-task-B, потом child-task-A →
+//   в Pinned они должны отображаться в том же порядке.
+// app2: обратный порядок relative to app1 — для симметричной проверки.
+//
+// Задействованные настройки: segmentSeparator=":", compressionBehavior="SMART".
+{
+    "title": "Pinned · display order follows refs, not tree structure",
+    "sketch": {
+        "scopes": {
+            "app1": "app1/.vscode/tasks.json",
+            "app2": "app2/.vscode/tasks.json"
+        },
+        "tasks": {
+            "app1": [
+                { "name": "parent:child-task-A" },
+                { "name": "parent:child-task-B" }
+            ],
+            "app2": [
+                { "name": "parent:child-task-B" },
+                { "name": "parent:child-task-A" }
+            ]
+        },
+        "treeConfig": { "segmentSeparator": ":" },
+        "pinned": {
+            "compressionBehavior": "SMART",
+            "refs": [
+                { "scope": "app1", "label": "parent:child-task-B" },
+                { "scope": "app1", "label": "parent:child-task-A" },
+                { "scope": "app2", "label": "parent:child-task-A" },
+                { "scope": "app2", "label": "parent:child-task-B" }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[★[ Pinned ]]                        ",
+        " ├─ [ app1 ]                         ",
+        " │  └─ parent                        ",
+        " │     ├─ ▶ child-task-B             ", // порядок из refs
+        " │     └─ ▶ child-task-A             ",
+        " └─ [ app2 ]                         ",
+        "    └─ parent                        ",
+        "       ├─ ▶ child-task-A             ", // порядок из refs
+        "       └─ ▶ child-task-B             ",
+        "                                     ",
+        "[F[ app1 ]]                          ",
+        " └─ parent                           ",
+        "    ├─ ▶ child-task-A                ",
+        "    └─ ▶ child-task-B                ",
+        "                                     ",
+        "[F[ app2 ]]                          ",
+        " └─ parent                           ",
+        "    ├─ ▶ child-task-B                ",
+        "    └─ ▶ child-task-A                "
+    ]
+}

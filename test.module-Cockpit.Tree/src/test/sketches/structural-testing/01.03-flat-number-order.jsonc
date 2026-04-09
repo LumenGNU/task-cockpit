@@ -1,0 +1,41 @@
+
+// Цифры НЕ всплывают и НЕ сортируются.
+{
+    "title": "flat · numeric labels preserve insertion order",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "100" },
+                { "name": "BBB" },
+                { "name": "AAA" },
+                { "name": "3" },
+                { "name": "1" },
+                { "name": "0" },
+                { "name": "00" }
+                
+            ]
+        }
+    },
+    // было (bug: integer index sorting in plain object)
+    // [F[ scope ]]
+    //  ├─ ▶ 0
+    //  ├─ ▶ 1
+    //  ├─ ▶ 3
+    //  ├─ ▶ 100
+    //  ├─ ▶ BBB
+    //  ├─ ▶ AAA
+    //  └─ ▶ 00
+    "asciiTree": [
+        "[F[ scope ]]    ",
+        " ├─ ▶ 100       ",
+        " ├─ ▶ BBB       ",
+        " ├─ ▶ AAA       ",
+        " ├─ ▶ 3         ",
+        " ├─ ▶ 1         ",
+        " ├─ ▶ 0         ",
+        " └─ ▶ 00        "
+    ]
+}

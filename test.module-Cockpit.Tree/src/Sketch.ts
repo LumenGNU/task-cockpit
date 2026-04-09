@@ -1,176 +1,254 @@
-import * as vscode from 'vscode';
+import { z } from 'zod';
 import * as TC from './types';
+import * as vscode from 'vscode';
 import helpers from './helpers';
 
-// @fixme валидация
+// --- Атомарные куски ---
 
-// /** Пользовательская иконка для задачи. */
-// export interface IconDefinition {
-//     /** Идентификатор иконки */
-//     id?: string,
-//     /** Цвет иконки */
-//     color?: string;
-// }
-// /** Описание задачи.
-//  *
-//  * Описывает пользовательские поля задачи, которые не
-//  * предоставляются через API vscode.Task. */
-// export interface TaskDefinition {
-//     /** Флаг скрытия задачи из палитры задач */
-//     hidden: boolean | undefined;
-//     /** Пользовательская иконка для задачи */
-//     icon: IconDefinition;
-//     id: TaskID;
-//     rejectFlag?: boolean;
-//     isBackground?: boolean;
-//     group?: {
-//         /** Капитализированное имя группы */
-//         kind: Group;
-//         isDefault: boolean;
-//     };
-// }
-// /** Параметры, определяющие структуру ветки дерева для scope. */
-// export interface TreeConfig {
-//     /** Символ-разделитель для разбиения label на сегменты иерархии.
-//      * `false` — иерархия отключена. */
-//     readonly segmentSeparator: string | false;
-//     /** Группировать ли задачи по свойству `group`. */
-//     readonly useGroupKind: boolean;
-//     /** Показывать ли задачи с `hide: true`. */
-//     readonly showHidden: boolean;
-// }
-// /** Параметры, определяющие визуальное отображение элементов дерева. */
-// export interface NodeConfig {
-//     /** Показывать ли иконку папки для промежуточных (intermediate) узлов. */
-//     readonly useFolderIcon: boolean;
-//     /** Имя иконки по умолчанию для задач без кастомной иконки. */
-//     readonly defaultIconName: string;
-//     /** Окрашивать ли label задачи в цвет её иконки. */
-//     readonly tintLabel: boolean;
-// }
+const iconSchema = z
+    .object({
+        id: z.string().optional(),
+        color: z.string().optional(),
+    })
+    .strict()
+    .optional()
+    .default({});
 
-// @fixme ?? для скетча не использовать TC типы как входные ??
-interface Sketch {
-    scopes: Record<string, string>;
-    definitions: Record<TC.File, Record<TC.Name, TC.TaskDefinition>>;
-    treeConfig?: TC.TreeConfig; // @todo значения по умолчанию
-    nodeConfig?: TC.NodeConfig; // @todo значения по умолчанию
-    favorites?: {
-        visibility: 'AUTO' | 'HIDE';
-        compressionBehavior: 'NORMAL' | 'SMART';
-        refs?: { folder: string; label: string; }[];
-        stales?: { folder: string; label: string; }[];
-    };
-    excludeFolders?: string[];
-    asciiTree?: string[]; // @todo // @todo нужен трим в конце
-}
+const groupSchema = z
+    .object({
+        kind: z.enum(['Build', 'Test', 'Clean'] as const).transform((v) => v as TC.Group),
+        isDefault: z.boolean().default(false),
+    })
+    .strict();
+
+const taskSchema = z
+    .object({
+        name: z.string().min(1, "name обязателен").transform((v) => v as TC.Name),
+        hidden: z.boolean().optional().default(false),
+        icon: iconSchema,
+        rejectFlag: z.boolean().optional().default(false),
+        isBackground: z.boolean().optional().default(false),
+        group: groupSchema.optional(),
+    })
+    .strict();
 
 
-function buildDefinition(file: TC.File, name: TC.Name, def?: Partial<TC.TaskDefinition>): TC.TaskDefinition {
-    return {
-        id: helpers.buildId(file, name),
-        icon: def?.icon ?? {},
-        group: def?.group,
-        hidden: def?.hidden,
-        isBackground: def?.isBackground,
-        rejectFlag: def?.rejectFlag
-    };
-}
+const bodySchema = z.object({
+    scopes: z.record(
+        z.string().min(1).transform((v) => v as TC.FolderName),
+        z.string()
+            .regex(
+                /\.vscode\/tasks\.json$|\.code-workspace$/,
+                "значение должно заканчиваться на .vscode/tasks.json или .code-workspace"
+            )
+            .transform((u) => vscode.Uri.file(u) as TC.Uri)
+    )
+        .refine(
+            (scopes) => Object.keys(scopes).length > 0,
+            "scopes обязателен и не может быть пустым"
+        )
+        .refine(
+            (scopes) => {
+                const values = Object.values(scopes);
+                return new Set(values).size === values.length;
+            },
+            "значения в scopes должны быть уникальными"
+        ),
 
+    tasks: z.record(z.string().min(1), z.array(taskSchema)),
 
-function buildDefinitions(file: TC.File, tasks: ReadonlyArray<Readonly<{ name: string, def?: Partial<TC.TaskDefinition>; }>>): Record<TC.File, Record<TC.Name, TC.TaskDefinition>> {
-    const j: Record<TC.Name, TC.TaskDefinition> = {};
-    for (const { name: _name, def } of tasks) {
-        const name = _name as TC.Name;
-        j[name] = buildDefinition(file, name, def);
-    }
-    return {
-        [file]: j
-    };
-}
+    pinned: z
+        .object({
+            visibility: z.enum(['AUTO', 'HIDE'] as const)
+                .default('AUTO')
+                .transform((v) => v === 'AUTO' ? TC.PinnedVisibility.AUTO : TC.PinnedVisibility.HIDE),
+            compressionBehavior: z.enum(['NORMAL', 'SMART'] as const)
+                .default('NORMAL')
+                .transform((v) => v === 'NORMAL' ? TC.CompressionBehavior.NORMAL : TC.CompressionBehavior.SMART),
+            refs: z.array(
+                z.object({
+                    scope: z.string().min(1).transform((v) => v as TC.FolderName),
+                    label: z.string().min(1).transform((v) => v as TC.Name),
+                })
+                    .strict()
+            )
+                .optional()
+                .default([]),
+            stales: z.array(
+                z.object({
+                    scopeName: z.string().min(1),
+                    label: z.string().min(1),
+                })
+                    .strict()
+            )
+                .optional()
+                .default([]),
+        })
+        .strict()
+        .optional()
+        .default({
+            visibility: TC.PinnedVisibility.AUTO,
+            compressionBehavior: TC.CompressionBehavior.NORMAL,
+            refs: [],
+            stales: []
+        }),
 
-// --- Парсер сценария → аргументы Entity.buildEntities ---
+    treeConfig: z
+        .object({
+            segmentSeparator: z.union([z.string(), z.literal(false)]).default(false),
+            useGroupKind: z.boolean().default(false),
+            showHidden: z.boolean().default(false),
+        })
+        .strict()
+        .optional()
+        .default({
+            segmentSeparator: false,
+            useGroupKind: false,
+            showHidden: false,
+        }),
 
-export function parseSketch(json: {
-    scopes: Record<string, string>;
-    tasks: Record<string, { name: string;[k: string]: unknown; }[]>;
-    treeConfig: TC.TreeConfig;
-    nodeConfig: TC.NodeConfig;
-    favorites?: Sketch['favorites'];
-    excludeFolders?: string[];
-}) {
+    nodeConfig: z
+        .object({
+            useFolderIcon: z.boolean().default(false),
+            defaultIconName: z.string().default("tools"),
+            tintLabel: z.boolean().default(false),
+        })
+        .strict()
+        .optional()
+        .default({
+            useFolderIcon: false,
+            defaultIconName: "tools",
+            tintLabel: false,
+        }),
 
-    const s = fromJSON(json);
+    excludeFolders: z.array(z.string().transform(v => v as TC.FolderName)).optional().default([]),
+})
+    .strict()
+    .superRefine((data, ctx) => {
+        const scopeKeys = Object.keys(data.scopes).sort();
+        const taskKeys = Object.keys(data.tasks).sort();
 
-    const folderScopes = new Map<string, TC.Scope>();
-    for (const [name, fsPath] of Object.entries(s.scopes)) {
-        const uri = vscode.Uri.file(fsPath) as TC.Uri;
-        folderScopes.set(name, { name: name as TC.FolderName, uri });
-    }
-
-    const scopes: ReadonlyArray<TC.Scope> = [...folderScopes.values()];
-
-    const definitionMap: TC.DefinitionsByFile = new Map();
-    for (const [_file, defs] of Object.entries(s.definitions)) {
-        const file = _file as TC.File;
-        const scopedDefs: TC.ScopedDefinitions = new Map();
-        for (const [name, definition] of Object.entries(defs)) {
-            scopedDefs.set(name as TC.Name, definition);
+        if (JSON.stringify(scopeKeys) !== JSON.stringify(taskKeys)) {
+            ctx.addIssue({
+                code: 'custom',
+                message: "Ключи в tasks должны точно соответствовать ключам в scopes",
+                path: ["tasks"],
+            });
         }
-        definitionMap.set(file, scopedDefs);
-    }
 
-    const treeConfigMap: TC.TreeConfigByFile = new Map(
-        Object.keys(s.definitions).map(file => [file as TC.File, s.treeConfig]),
-    );
+        data.pinned.refs.forEach((ref, i) => {
+            // scope существует?
+            if (!scopeKeys.includes(ref.scope)) {
+                ctx.addIssue({
+                    code: 'custom',
+                    message: `scope "${ref.scope}" в pinned.refs не найден в scopes`,
+                    path: ["pinned", "refs", i, "scope"],
+                });
+                return; // нет scope — label проверять бессмысленно
+            }
 
-    const nodeConfigMap: TC.NodeConfigByFile = new Map(
-        Object.keys(s.definitions).map(file => [file as TC.File, s.nodeConfig]),
-    );
-
-    const toRef = (f: { folder: string; label: string; }): TC.FavoriteRef => ({
-        scope: folderScopes.get(f.folder)!,
-        label: f.label as TC.Name,
+            // label существует среди задач этого scope?
+            const tasks = data.tasks[ref.scope];
+            if (!tasks?.some(t => t.name === ref.label)) {
+                ctx.addIssue({
+                    code: 'custom',
+                    message: `label "${ref.label}" не найден среди задач scope "${ref.scope}"`,
+                    path: ["pinned", "refs", i, "label"],
+                });
+            }
+        });
     });
 
-    const favoritesConfig: TC.FavoritesConfig = {
-        visibility: s.favorites?.visibility ? (s.favorites.visibility === 'HIDE' ? TC.FavoritesVisibility.HIDE : TC.FavoritesVisibility.AUTO) : TC.FavoritesVisibility.AUTO,
-        compressionBehavior: s.favorites?.compressionBehavior ? (s.favorites.compressionBehavior === 'SMART' ? TC.CompressionBehavior.SMART : TC.CompressionBehavior.NORMAL) : TC.CompressionBehavior.NORMAL,
-        favoriteRecords: s.favorites?.refs?.map(toRef) ?? [],
-        staleRecords: s.favorites?.stales?.map(f => ({ label: f.label, scopeName: f.folder })) ?? [],
+
+//------------------
+export const sketchSchema = z
+    .object({
+        title: z.string().min(1, "title обязателен"),
+        sketch: bodySchema,
+        asciiTree: z.array(z.string()).optional().default([]),
+    })
+    .strict();
+
+// ------------------
+export type Sketch = z.infer<typeof sketchSchema>;
+
+
+export function load(data: unknown): {
+    title: string,
+    asciiTree: string,
+    data: {
+        scopes: ReadonlyArray<TC.Scope>,
+        definitionMap: Readonly<TC.DefinitionsByFile>,
+        treeConfigMap: Readonly<TC.TreeConfigByFile>,
+        nodeConfigMap: Readonly<TC.NodeConfigByFile>,
+        pinnedConfig: Readonly<TC.PinnedConfig>,
+        excludeFolders: ReadonlySet<TC.FolderName>;
     };
+} {
 
-    const excludeFolders = new Set(
-        (s.excludeFolders ?? []).map(n => n as TC.FolderName),
-    );
+    const result = sketchSchema.safeParse(data);
 
-    return { scopes, favoritesConfig, definitionMap, treeConfigMap, nodeConfigMap, excludeFolders };
-}
-
-
-function fromJSON(json: {
-    scopes: Record<string, string>;
-    tasks: Record<string, { name: string;[k: string]: unknown; }[]>;
-    treeConfig: TC.TreeConfig;
-    nodeConfig: TC.NodeConfig;
-    favorites?: Sketch['favorites'];
-    excludeFolders?: string[];
-}): Sketch {
-    const definitions: Record<TC.File, Record<TC.Name, TC.TaskDefinition>> = {};
-
-    for (const [file, taskList] of Object.entries(json.tasks)) {
-        Object.assign(definitions, buildDefinitions(
-            file as TC.File,
-            taskList.map(t => ({ name: t.name, def: t as Partial<TC.TaskDefinition> })),
-        ));
+    if (!result.success) {
+        console.error(z.prettifyError(result.error));
+        throw new Error();
     }
 
-    return {
-        scopes: json.scopes,
-        definitions,
-        treeConfig: json.treeConfig,
-        nodeConfig: json.nodeConfig,
-        favorites: json.favorites,
-        excludeFolders: json.excludeFolders,
+    const scopesMap = new Map<TC.FolderName, TC.Scope>();
+
+    const definitionMap: TC.DefinitionsByFile = new Map();
+    const treeConfigMap: TC.TreeConfigByFile = new Map();
+    const nodeConfigMap: TC.NodeConfigByFile = new Map();
+
+    for (const [scopeName, uri] of Object.entries(result.data.sketch.scopes)) {
+
+        const folderName = scopeName as TC.FolderName;
+        scopesMap.set(folderName, {
+            name: folderName,
+            uri
+        });
+
+        const file = uri.fsPath;
+        const defs = result.data.sketch.tasks[scopeName];
+        const scopedDefinitions: TC.ScopedDefinitions = new Map();
+
+        for (const def of defs) {
+            const { name, ...fields } = def;
+            const taskDefinition: TC.TaskDefinition = {
+                id: helpers.buildId(file, name),
+                ...fields
+            };
+            scopedDefinitions.set(name, taskDefinition);
+        }
+
+        definitionMap.set(file, scopedDefinitions);
+        treeConfigMap.set(file, result.data.sketch.treeConfig);
+        nodeConfigMap.set(file, result.data.sketch.nodeConfig);
+
+    }
+
+    const pinnedConfig: TC.PinnedConfig = {
+        visibility: result.data.sketch.pinned.visibility,
+        compressionBehavior: result.data.sketch.pinned.compressionBehavior,
+        pinnedRecords: result.data.sketch.pinned.refs.map((f) => {
+            const scope = scopesMap.get(f.scope)!;
+            return { scope, label: f.label };
+        }),
+        staleRecords: result.data.sketch.pinned.stales
     };
+
+    // console.log([...definitionMap.values()].flatMap(m => [...m.keys()]));
+
+    return {
+        title: result.data.title,
+        asciiTree: result.data.asciiTree.map((s) => s.trimEnd()).join('\n'),
+        data: {
+            scopes: [...scopesMap.values()],
+            definitionMap,
+            treeConfigMap,
+            nodeConfigMap,
+            pinnedConfig,
+            excludeFolders: new Set(result.data.sketch.excludeFolders)
+        }
+    };
+
 }

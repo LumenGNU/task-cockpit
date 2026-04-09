@@ -18,7 +18,7 @@ const defaults = {
 	// version: "1.109.5",
 	version: "1.86.2",
 	mocha: {
-		timeout: 50,
+		timeout: 33,
 		slow: 16
 	}
 };
@@ -26,15 +26,15 @@ const defaults = {
 export default defineConfig({
 	tests: [
 		{
-			label: 'Empty-folder Tests',
+			label: 'Basic Tests',
 			workspaceFolder: 'test-fixtures/empty-folder',
-			files: resolveTestFiles('~out/test/**/*-empty-folder.test.js'),
+			files: resolveTestFiles('~out/test/**/*-basic.test.js'),
 			...defaults
 		},
 		{
-			label: 'Single-folder Tests',
-			workspaceFolder: 'test-fixtures/single-folder',
-			files: resolveTestFiles('~out/test/**/*-single-folder.test.js'),
+			label: 'Sketches Tests',
+			workspaceFolder: 'test-fixtures/empty-folder',
+			files: resolveTestFiles('~out/test/**/*-sketches.test.js'),
 			...defaults
 		}
 	],

@@ -1,0 +1,36 @@
+
+// pinned: пиннед-ссылка на задачу, которая одновременно является группой (hidden=true).
+// Ожидается: в Pinned-секции узел рендерится как группа, не как ▶ задача.
+// Задействованные настройки: segmentSeparator=":" (иерархия по сегментам),
+//                            showHidden=false (скрытые задачи не показываются).
+{
+    "title": "Pinned · hidden RunnableGroup renders as group in Pinned",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "AAA:BBB:Task & Group", "hidden": true },
+                { "name": "AAA:BBB:Task & Group:Sub Task" }
+            ]
+        },
+        "treeConfig": { "segmentSeparator": ":", "showHidden": false },
+        "pinned": {
+            "refs": [
+                { "scope": "scope", "label": "AAA:BBB:Task & Group" }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[★[ Pinned ]]           ",
+        " └─ AAA › BBB           ",
+        "    └─ ▶ Task & Group   ", // если закреплена -- отображается как задача
+        "                        ", // Sub Task не закреплена -- ее нет, артефактов нет
+        "[F[ scope ]]            ",
+        " └─ AAA                 ",
+        "    └─ BBB              ",
+        "       └─ Task & Group  ", // здесь просто группа, задача скрыта
+        "          └─ ▶ Sub Task "
+    ]
+}

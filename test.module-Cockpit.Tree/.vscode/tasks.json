@@ -262,8 +262,8 @@
       "dependsOn": [
         "_cleanTerminal_test",
         // "Run tests|Multi-root Tests",
-        "Run tests|Empty-folder Tests",
-        // "Run tests|Single-folder Tests",
+        "Run tests|Basic Tests",
+        "Run tests|Sketches Tests",
       ],
       "dependsOrder": "sequence",
       "type": "shell",
@@ -330,7 +330,7 @@
     //   }
     // },
     {
-      "label": "Run tests|Empty-folder Tests",
+      "label": "Run tests|Basic Tests",
       "icon": {
         "id": "beaker"
       },
@@ -341,10 +341,10 @@
         "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
         "npx vscode-test ",
         "--coverage ",
-        "--coverage-output '~coverage-reports/Empty-folder' ",
+        "--coverage-output '~coverage-reports/Basic' ",
         "--coverage-reporter json ",
         "--config './vscode-test.mjs' ",
-        "--label 'Empty-folder Tests'"
+        "--label 'Basic Tests'"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -360,37 +360,39 @@
         "group": "test"
       }
     },
-    // {
-    //   "label": "Run tests|Single-folder Tests",
-    //   "icon": {
-    //     "id": "beaker"
-    //   },
-    //   "detail": "Integration tests for single-folder workspace",
-    //   "dependsOn": "(Pre Test)",
-    //   "type": "shell",
-    //   "command": [
-    //     "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
-    //     "npx vscode-test ",
-    //     "--coverage ",
-    //     "--coverage-output '~coverage-reports/Single-folder' ",
-    //     "--coverage-reporter json ",
-    //     "--config './vscode-test.mjs' ",
-    //     "--label 'Single-folder Tests'"
-    //   ],
-    //   "options": {
-    //     "cwd": "${workspaceFolder}"
-    //   },
-    //   "presentation": {
-    //     "clear": false,
-    //     "echo": false,
-    //     "reveal": "always",
-    //     "focus": true,
-    //     "panel": "shared",
-    //     "showReuseMessage": false,
-    //     "revealProblems": "onProblem",
-    //     "group": "test"
-    //   }
-    // },
+    {
+      "label": "Run tests|Sketches Tests",
+      "icon": {
+        "id": "beaker"
+      },
+      "detail": "",
+      "dependsOn": [
+        "(Pre Test)",
+      ],
+      "type": "shell",
+      "command": [
+        "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
+        "npx vscode-test ",
+        "--coverage ",
+        "--coverage-output '~coverage-reports/Sketches' ",
+        "--coverage-reporter json ",
+        "--config './vscode-test.mjs' ",
+        "--label 'Sketches Tests'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "test"
+      }
+    },
     {
       "label": "Generate summary coverage report",
       "icon": {

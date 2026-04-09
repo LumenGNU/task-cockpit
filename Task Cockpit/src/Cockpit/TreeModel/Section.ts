@@ -47,33 +47,33 @@ declare namespace Section {
         /** Фиксированное имя секции. */
         name: 'Pinned';
 
-        kind: TC.EntityKind.FavoritesSingle | TC.EntityKind.FavoritesMulti;
+        kind: TC.EntityKind.PinnedSingle | TC.EntityKind.PinnedMulti;
         /** Ссылки на избранные задачи, определения которых не найдены
          * в текущем {@linkcode TC.DefinitionsByFile | definitionMap}.
          * Отображаются в начале секции как "сломанные". */
-        stales: ReadonlyArray<Readonly<TC.FavoriteStale>>;
+        stales: ReadonlyArray<Readonly<TC.PinnedStale>>;
         /** Файл задач — присутствует только в single-root workspace.
          * В multi-root дочерние {@linkcode Source} содержат свои `tasksFile`. */
         tasksFile?: TC.File;
         /** Дочерние элементы.
-         * - Single-root ({@linkcode FavoriteSingle}): {@linkcode Item Item[]} — узлы иерархии.
-         * - Multi-root ({@linkcode FavoriteMulti}): {@linkcode FavoriteFolder FolderF[]} — обёртки по workspace folders. */
-        children: ReadonlyArray<Item | FavoriteFolder>;
+         * - Single-root ({@linkcode PinnedSingle}): {@linkcode Item Item[]} — узлы иерархии.
+         * - Multi-root ({@linkcode PinnedMulti}): {@linkcode PinnedFolder FolderF[]} — обёртки по workspace folders. */
+        children: ReadonlyArray<Item | PinnedFolder>;
     };
 
-    export interface FavoriteSingle extends FavoriteBase {
-        kind: TC.EntityKind.FavoritesSingle;
+    export interface PinnedSingle extends FavoriteBase {
+        kind: TC.EntityKind.PinnedSingle;
         tasksFile: TC.File;
         children: ReadonlyArray<Item>;
     }
 
-    export interface FavoriteMulti extends FavoriteBase {
-        kind: TC.EntityKind.FavoritesMulti;
+    export interface PinnedMulti extends FavoriteBase {
+        kind: TC.EntityKind.PinnedMulti;
         tasksFile?: undefined;
-        children: ReadonlyArray<FavoriteFolder>;
+        children: ReadonlyArray<PinnedFolder>;
     }
 
-    type Favorite = FavoriteSingle | FavoriteMulti;
+    type Favorite = PinnedSingle | PinnedMulti;
 
     /** Секция файла задач — задачи одного `.vscode/tasks.json` или `.code-workspace`. */
     export interface Source {
@@ -91,9 +91,9 @@ declare namespace Section {
         taskCounts: TaskCounts;
     }
 
-    /** Папка-обёртка внутри Favorites */
-    export type FavoriteFolder = Omit<Source, 'kind' | 'taskCounts'> & {
-        kind: TC.EntityKind.FavoriteFolder;
+    /** Папка-обёртка внутри Pinned */
+    export type PinnedFolder = Omit<Source, 'kind' | 'taskCounts'> & {
+        kind: TC.EntityKind.PinnedFolder;
     };
 
 }
@@ -116,15 +116,15 @@ declare namespace Section {
  * что цепочка пуста оно сможет понять только достроив ветку до листа
  * и проверив его поле hidden.
  *
- * Favorites проходят дополнительный этап: промежуточный trie строится для
+ * Pinned проходят дополнительный этап: промежуточный trie строится для
  * path compression (склейка "пустых" участков через ` › `), после чего
  * сжатые спецификации передаются в финальный {@link Hierarchy.build}. */
 const Section = {
 
-    /** Строит полную модель дерева: секция Favorites + по одной File секции на scope.
+    /** Строит полную модель дерева: секция Pinned + по одной File секции на scope.
      *
      * Алгоритм:
-     * 1. Строит секцию Favorites (см. {@linkcode buildFavoritesSection}).
+     * 1. Строит секцию Pinned (см. {@linkcode buildPinnedSection}).
      * 1. Собирает спецификации из определений задач (см. {@linkcode makeFileSpecs}):
      *      - Фильтрация hidden-задач.
      *      - Трансформация label → path (см. {@linkcode toPathSegments}).
@@ -136,16 +136,16 @@ const Section = {
      * @param favoritesConfig Конфигурация избранных: записи и устаревшие ссылки.
      * @param definitionMap Определения задач, сгруппированные по файлу (`fsPath` → Map<label, def>).
      * @param treeConfigMap Конфигурация отображения дерева по файлу (`fsPath` → config).
-     * @returns Кортеж `[Favorite, ...File[]]` — Favorites всегда первый элемент. */
+     * @returns Кортеж `[Favorite, ...File[]]` — Pinned всегда первый элемент. */
     buildEntities(
         scopes: ReadonlyArray<TC.Scope>,
-        favoritesConfig: Readonly<TC.FavoritesConfig>,
+        favoritesConfig: Readonly<TC.PinnedConfig>,
         definitionMap: Readonly<TC.DefinitionsByFile>,
         treeConfigMap: Readonly<TC.TreeConfigByFile>,
     ): readonly [Section.Favorite, ...Section.Source[]] {
 
         const sections: [Section.Favorite, ...Section.Source[]] = [
-            buildFavoritesSection(scopes, favoritesConfig, definitionMap, treeConfigMap)
+            buildPinnedSection(scopes, favoritesConfig, definitionMap, treeConfigMap)
         ];
 
         const { specs, taskCountsByFile } = makeFileSpecs(
@@ -174,38 +174,38 @@ const Section = {
         return sections;
     },
 
-    // #region DEBUG
+    // // #region DEBUG
 
-    /** ASCII представление дерева секции (отладка). */
-    printTree(section: Section.Favorite | Section.Source | Section.FavoriteFolder, basePrefix?: string, formatter: (def: TC.TaskDefinition) => string = () => '(*)'): string {
+    // /** ASCII представление дерева секции (отладка). */
+    // printTree(section: Section.Favorite | Section.Source | Section.PinnedFolder, basePrefix?: string, formatter: (def: TC.TaskDefinition) => string = () => '(*)'): string {
 
 
-        const lines: string[] = [`─ [${section.name}]`];
+    //     const lines: string[] = [`─ [${section.name}]`];
 
-        if (section.kind === TC.EntityKind.FavoritesSingle || section.kind === TC.EntityKind.FavoritesMulti) {
+    //     if (section.kind === TC.EntityKind.PinnedSingle || section.kind === TC.EntityKind.PinnedMulti) {
 
-            for (const stale of section.stales) {
-                lines.push(`  ✗ ${stale.label} (${stale.scopeName})`);
-            }
+    //         for (const stale of section.stales) {
+    //             lines.push(`  ✗ ${stale.label} (${stale.scopeName})`);
+    //         }
 
-            if (section.kind === TC.EntityKind.FavoritesMulti) {
-                // Multi-root Favorites: children — FolderF[], рекурсия в каждую обёртку.
-                for (const folder of section.children) {
-                    lines.push(`  ${Section.printTree(folder, `    ${basePrefix ?? ''}`)}`);
-                }
-                return lines.join('\n');
-            }
-        }
+    //         if (section.kind === TC.EntityKind.PinnedMulti) {
+    //             // Multi-root Pinned: children — FolderF[], рекурсия в каждую обёртку.
+    //             for (const folder of section.children) {
+    //                 lines.push(`  ${Section.printTree(folder, `    ${basePrefix ?? ''}`)}`);
+    //             }
+    //             return lines.join('\n');
+    //         }
+    //     }
 
-        const tree = Hierarchy.Scope.printTree(section.children as ReadonlyArray<Section.Item>, formatter, basePrefix);
-        if (tree) {
-            lines.push(tree);
-        }
+    //     const tree = Hierarchy.Scope.printTree(section.children as ReadonlyArray<Section.Item>, formatter, basePrefix);
+    //     if (tree) {
+    //         lines.push(tree);
+    //     }
 
-        return lines.join('\n');
-    },
+    //     return lines.join('\n');
+    // },
 
-    // #endregion DEBUG
+    // // #endregion DEBUG
 
 
     /** Type guards для элементов дерева секции. */
@@ -227,7 +227,7 @@ const Section = {
 
 
 
-/** Строит секцию Favorites.
+/** Строит секцию Pinned.
  *
  * Поведение зависит от количества scope:
  *
@@ -236,28 +236,28 @@ const Section = {
  * `tasksFile` указывает на единственный файл задач.
  *
  * **Multi-root** (`scopes.length > 1`):
- * Каждый scope оборачивается в {@linkcode Section.FavoriteFolder} (FavoriteFolder-обёртка).
+ * Каждый scope оборачивается в {@linkcode Section.PinnedFolder} (FavoriteFolder-обёртка).
  * Порядок обёрток — по `scopes` (= порядок workspace folders).
  *
  * Алгоритм:
  * 1. Строит спецификации через {@linkcode makeFavoriteSpecs} (с path compression).
  * 1. Передаёт их в {@linkcode Hierarchy.build} — trie со scope = `folderName`.
  * 1. Извлекает дочерние узлы каждого scope и оборачивает в итоговую структуру. */
-function buildFavoritesSection(
+function buildPinnedSection(
     scopes: ReadonlyArray<TC.Scope>,
-    favoritesConfig: Readonly<TC.FavoritesConfig>,
+    favoritesConfig: Readonly<TC.PinnedConfig>,
     definitionMap: Readonly<TC.DefinitionsByFile>,
     treeConfigMap: Readonly<TC.TreeConfigByFile>,
 ): Section.Favorite {
 
-    // Favorites hierarchy
-    const { favoriteRecords, staleRecords, compressionBehavior } = favoritesConfig;
+    // Pinned hierarchy
+    const { pinnedRecords: favoriteRecords, staleRecords, compressionBehavior } = favoritesConfig;
 
     const favoritesHierarchy = Hierarchy.build(
         makeFavoriteSpecs(favoriteRecords, compressionBehavior, definitionMap, treeConfigMap)
     );
 
-    // Favorites section
+    // Pinned section
     if (scopes.length > 1) {
 
         // Multi-root: каждый scope → FavoriteFolder-обёртка.
@@ -274,13 +274,13 @@ function buildFavoritesSection(
             }
         }
 
-        const fileChildren: Section.FavoriteFolder[] = [];
+        const fileChildren: Section.PinnedFolder[] = [];
 
         for (const name of orderedNames) {
             const scope = scopeByName.get(name)!;
             const folderScope = Hierarchy.getScope(favoritesHierarchy, name)!;
             // #region DEBUG
-            assert(folderScope, `Favorites hierarchy: scope '${name}' not found`);
+            assert(folderScope, `Pinned hierarchy: scope '${name}' not found`);
             // #endregion DEBUG
             fileChildren.push(
                 makeFolderF(
@@ -291,17 +291,17 @@ function buildFavoritesSection(
             );
         }
 
-        return makeFavoritesMulti(staleRecords, fileChildren);
+        return makePinnedMulti(staleRecords, fileChildren);
     } else {
 
         // Single-root
 
         const favScopes = Hierarchy.getScopes(favoritesHierarchy);
         // #region DEBUG
-        assert(favScopes.length <= 1, `Favorites hierarchy: expected ≤1 scope in single-root, got ${favScopes.length}`);
+        assert(favScopes.length <= 1, `Pinned hierarchy: expected ≤1 scope in single-root, got ${favScopes.length}`);
         // #endregion DEBUG
 
-        return makeFavoritesSingle(
+        return makePinnedSingle(
             staleRecords,
             favScopes.length > 0 ? Hierarchy.Scope.getChildren(favScopes[0]) : [],
             scopes[0].uri.fsPath);
@@ -309,18 +309,18 @@ function buildFavoritesSection(
 }
 
 
-/** Фабрика объекта {@linkcode Section.FavoriteSingle}.
+/** Фабрика объекта {@linkcode Section.PinnedSingle}.
  *
  * @param stales Ссылки на задачи, определения которых не найдены (stale/broken).
  * @param children Дочерние элементы секции.
  * @param tasksFile Файл задач (только для single-root). */
-function makeFavoritesSingle(
-    stales: ReadonlyArray<Readonly<TC.FavoriteStale>>,
+function makePinnedSingle(
+    stales: ReadonlyArray<Readonly<TC.PinnedStale>>,
     children: ReadonlyArray<Section.Item>,
     tasksFile: TC.File
-): Section.FavoriteSingle {
+): Section.PinnedSingle {
     return {
-        kind: TC.EntityKind.FavoritesSingle,
+        kind: TC.EntityKind.PinnedSingle,
         name: 'Pinned',
         stales,
         children,
@@ -329,12 +329,12 @@ function makeFavoritesSingle(
 }
 
 
-function makeFavoritesMulti(
-    stales: ReadonlyArray<Readonly<TC.FavoriteStale>>,
-    children: ReadonlyArray<Section.FavoriteFolder>,
-): Section.FavoriteMulti {
+function makePinnedMulti(
+    stales: ReadonlyArray<Readonly<TC.PinnedStale>>,
+    children: ReadonlyArray<Section.PinnedFolder>,
+): Section.PinnedMulti {
     return {
-        kind: TC.EntityKind.FavoritesMulti,
+        kind: TC.EntityKind.PinnedMulti,
         name: 'Pinned',
         stales,
         children,
@@ -371,9 +371,9 @@ function makeFolderF(
     name: TC.FolderName,
     tasksFile: TC.File,
     children: ReadonlyArray<Section.Item>,
-): Section.FavoriteFolder {
+): Section.PinnedFolder {
     return {
-        kind: TC.EntityKind.FavoriteFolder,
+        kind: TC.EntityKind.PinnedFolder,
         name,
         tasksFile,
         children
@@ -381,7 +381,7 @@ function makeFolderF(
 }
 
 
-/** Строит массив спецификаций для файловых (не Favorites) секций.
+/** Строит массив спецификаций для файловых (не Pinned) секций.
  *
  * Для каждого scope:
  * 1. Извлекает конфигурацию дерева (`useGroupKind`, `segmentSeparator`, `showHidden`).
@@ -391,7 +391,7 @@ function makeFolderF(
  *      - Для остальных строится `path` через {@linkcode toPathSegments}.
  * 1. Ведёт подсчёт {@linkcode TaskCounts} (total / hidden) по каждому файлу.
  *
- * Scope спецификации — `fsPath` файла (в отличие от Favorites, где scope = folderName).
+ * Scope спецификации — `fsPath` файла (в отличие от Pinned, где scope = folderName).
  *
  * @returns Спецификации для {@linkcode Hierarchy.build} и статистику по файлам. */
 function makeFileSpecs(
@@ -481,14 +481,14 @@ function toPathSegments(
 }
 
 
-/** Строит спецификации для секции Favorites с *path compression*.
+/** Строит спецификации для секции Pinned с *path compression*.
  *
  * Алгоритм в три этапа:
  *
  * ### 1. Построение pre-trie спецификаций
  * Для каждой записи `favoriteRecords` находится определение задачи в `definitionMap`
  * и строится path через {@linkcode toPathSegments} (с учётом конфигурации scope).
- * Scope спецификации — `folderName` (не `fsPath`), т.к. в Favorites группировка по папкам.
+ * Scope спецификации — `folderName` (не `fsPath`), т.к. в Pinned группировка по папкам.
  * {@linkcode Splitter} кешируется по `segmentSeparator` для повторного использования между scope.
  *
  * ### 2. Промежуточный trie
@@ -506,14 +506,14 @@ function toPathSegments(
  * Результат — финальные спецификации с объединенными путями, готовые для
  * повторного {@linkcode Hierarchy.build}.
  *
- * **Замечание:** Favorites игнорируют поле `hidden` — скрытые задачи
+ * **Замечание:** Pinned игнорируют поле `hidden` — скрытые задачи
  * не фильтруются (в отличие от {@linkcode makeFileSpecs}).
  *
  * @param favoritesRefs Записи избранных из конфигурации.
  * @param definitionMap Определения задач по файлам.
  * @param treeConfigMap Конфигурация дерева по файлам.
  * @returns Сжатые спецификации для финального {@linkcode Hierarchy.build}. */
-// @todo: (оптимизация "на потом"): path compression для Favorites за один проход.
+// @todo: (оптимизация "на потом"): path compression для Pinned за один проход.
 //
 // Сейчас используется двухпроходная схема:
 //  1. preTrieSpecs → Hierarchy.build() → временный trie
@@ -603,7 +603,7 @@ function makeFavoriteSpecs(
 
         const { originFolder, compressed } = buildCompressedPath(node, compressionBehavior);
 
-        // (Favorites Scope игнорирует поле hidden).
+        // (Pinned Scope игнорирует поле hidden).
 
         favoriteSpecs.push({
             scope: originFolder,// Область — синтетический идентификатор, имя каталога
@@ -618,7 +618,7 @@ function makeFavoriteSpecs(
 }
 
 
-/** Строит сжатый путь от data-узла к scope-корню (path compression для Favorites).
+/** Строит сжатый путь от data-узла к scope-корню (path compression для Pinned).
  *
  * Обход снизу вверх — от родителя `dataNode` до scope-корня.
  * Накапливает сегменты в `chain`. При встрече *branch point* (узел с >1 ребёнком):

@@ -1,0 +1,98 @@
+
+// Pinned · SMART compression на неадекватно глубокой вложенности.
+// Все 5 задач закреплены. Цепочки длиной 6–9 сегментов.
+// Проверяет: SMART корректно сжимает длинные линейные цепочки,
+// не сжимает узлы с несколькими детьми в pinned-дереве.
+//
+// Задействованные настройки: segmentSeparator=":", compressionBehavior="SMART".
+{
+    "title": "Pinned · SMART compression on absurdly deep nesting",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2" },
+                { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3" },
+                { "name": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1" },
+                { "name": "a:b:c:d:e:g:h:task-4" },
+                { "name": "x:y:z:task-5" }
+            ]
+        },
+        "treeConfig": { "segmentSeparator": ":" },
+        "pinned": {
+            "compressionBehavior": "SMART",
+            "refs": [
+                { "scope": "scope", "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2" },
+                { "scope": "scope", "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3" },
+                { "scope": "scope", "label": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1" },
+                { "scope": "scope", "label": "a:b:c:d:e:g:h:task-4" },
+                { "scope": "scope", "label": "x:y:z:task-5" }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[★[ Pinned ]]                                                                                     ",
+        " ├─ a › b › c › d › e                                                                                  ",
+        " │  ├─ f › g › h › k › l › m › n › o › p › r › s › t › x › y › z                                                    ",
+        " │  │  ├─ ▶ task-2                                                                                ",
+        " │  │  └─ ▶ task-3                                                                                ",
+        " │  └─ ▶ g › h › task-4                                                                              ",
+        " ├─ ▶ S › a › b › c › d › e › f › g › h › k › l › m › n › o › p › r › s › t › x › y › z › task-1                              ",
+        " └─ ▶ x › y › z › task-5                                                                              ",
+        "                                                                                                  ",
+        "[F[ scope ]]                                                                                      ",
+        " ├─ a                                                                                             ",
+        " │  └─ b                                                                                          ",
+        " │     └─ c                                                                                       ",
+        " │        └─ d                                                                                    ",
+        " │           └─ e                                                                                 ",
+        " │              ├─ f                                                                              ",
+        " │              │  └─ g                                                                           ",
+        " │              │     └─ h                                                                        ",
+        " │              │        └─ k                                                                     ",
+        " │              │           └─ l                                                                  ",
+        " │              │              └─ m                                                               ",
+        " │              │                 └─ n                                                            ",
+        " │              │                    └─ o                                                         ",
+        " │              │                       └─ p                                                      ",
+        " │              │                          └─ r                                                   ",
+        " │              │                             └─ s                                                ",
+        " │              │                                └─ t                                             ",
+        " │              │                                   └─ x                                          ",
+        " │              │                                      └─ y                                       ",
+        " │              │                                         └─ z                                    ",
+        " │              │                                            ├─ ▶ task-2                          ",
+        " │              │                                            └─ ▶ task-3                          ",
+        " │              └─ g                                                                              ",
+        " │                 └─ h                                                                           ",
+        " │                    └─ ▶ task-4                                                                 ",
+        " ├─ S                                                                                             ",
+        " │  └─ a                                                                                          ",
+        " │     └─ b                                                                                       ",
+        " │        └─ c                                                                                    ",
+        " │           └─ d                                                                                 ",
+        " │              └─ e                                                                              ",
+        " │                 └─ f                                                                           ",
+        " │                    └─ g                                                                        ",
+        " │                       └─ h                                                                     ",
+        " │                          └─ k                                                                  ",
+        " │                             └─ l                                                               ",
+        " │                                └─ m                                                            ",
+        " │                                   └─ n                                                         ",
+        " │                                      └─ o                                                      ",
+        " │                                         └─ p                                                   ",
+        " │                                            └─ r                                                ",
+        " │                                               └─ s                                             ",
+        " │                                                  └─ t                                          ",
+        " │                                                     └─ x                                       ",
+        " │                                                        └─ y                                    ",
+        " │                                                           └─ z                                 ",
+        " │                                                              └─ ▶ task-1                       ",
+        " └─ x                                                                                             ",
+        "    └─ y                                                                                          ",
+        "       └─ z                                                                                       ",
+        "          └─ ▶ task-5                                                                             "
+    ]
+}

@@ -1,0 +1,34 @@
+
+{
+    "title": "excludeFolders · workspace-level",
+    "sketch": {
+
+        "scopes": {
+            "project (workspace)": "project.code-workspace",
+            "f1": "f1/.vscode/tasks.json",
+            "excluded": "excluded/.vscode/tasks.json",
+            "f2": "f2/.vscode/tasks.json"
+        },
+        "tasks": {
+            "project (workspace)": [],
+            "f1": [
+                { "name": "in-f1" }
+            ],
+            // (не видно в дереве)
+            "excluded": [
+                { "name": "in-excluded" }
+            ],
+            "f2": [
+                { "name": "in-f2" }
+            ]
+        },
+        "excludeFolders": ["excluded", "project (workspace)"]
+    },
+    "asciiTree": [
+        "[F[ f1 ]]      ",
+        " └─ ▶ in-f1    ",
+        "               ", // excluded исключена
+        "[F[ f2 ]]      ",
+        " └─ ▶ in-f2    "
+    ]
+}

@@ -1,0 +1,42 @@
+
+// Пограничные случаи: пустые состояния.
+// Проверяет:
+// 1) Папка "empty" — без задач. Отображается ли пустая папка?
+// 2) Папка "one-task" — единственная задача. Минимальный непустой случай.
+// 3) Папка "all-hidden" — все задачи скрыты при showHidden: false.
+//    По сути пустая, но технически задачи есть.
+{
+    "title": "empty states · no tasks/all hidden",
+    "sketch": {
+        "scopes": {
+            "project (ws)": "empty.code-workspace",
+            "empty": "empty/.vscode/tasks.json",
+            "one-task": "one-task/.vscode/tasks.json",
+            "all-hidden": "all-hidden/.vscode/tasks.json"
+        },
+        "tasks": {
+            "project (ws)": [],
+            "empty": [],
+            "one-task": [
+                { "name": "the-only-task" }
+            ],
+            "all-hidden": [
+                { "name": "ghost-1", "hidden": true },
+                { "name": "ghost-2", "hidden": true }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[W[ project (ws) ]]                         ",
+        " └─ « No tasks to display in this scope »   ",
+        "                                            ",
+        "[F[ empty ]]                                ",
+        " └─ « No tasks to display in this scope »   ",
+        "                                            ",
+        "[F[ one-task ]]                             ",
+        " └─ ▶ the-only-task                         ",
+        "                                            ",
+        "[F[ all-hidden ]]                           ",
+        " └─ « No tasks to display in this scope »   "
+    ]
+}

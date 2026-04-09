@@ -1,0 +1,73 @@
+{
+    "title": "BUG phantom segment in pinned · SMART compression",
+    "sketch": {
+        "scopes": {
+            "scope1": "scope1/.vscode/tasks.json",
+            "scope2": "scope1/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope1": [
+                { "name": "aaa:bbb:ccc:ddd:task-in-ddd" },
+                { "name": "aaa:bbb:ccc:task-in-ccc" }
+            ],
+            "scope2": [
+                { "name": "aaa:bbb:ccc:task-in-ccc" },
+                { "name": "aaa:bbb:ccc:ddd:task-in-ddd" }
+            ]
+        },
+        "treeConfig": {
+            "segmentSeparator": ":"
+        },
+        "pinned": {
+            "compressionBehavior": "SMART",
+            "refs": [
+                // BUG: (решено) Section::buildCompressedPath
+                // Без guard'а reverseAndJoin() породит фантомный пустой сегмент.
+                {
+                    "scope": "scope1",
+                    "label": "aaa:bbb:ccc:ddd:task-in-ddd"
+                },
+                {
+                    "scope": "scope1",
+                    "label": "aaa:bbb:ccc:task-in-ccc"
+                },
+                // --- разный порядок, для проверки ---
+                {
+                    "scope": "scope2",
+                    "label": "aaa:bbb:ccc:task-in-ccc"
+                },
+                {
+                    "scope": "scope2",
+                    "label": "aaa:bbb:ccc:ddd:task-in-ddd"
+                }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[★[ Pinned ]]                  ",
+        " ├─ [ scope1 ]                 ",
+        " │  └─ aaa › bbb › ccc            ",
+        " │     ├─ ▶ ddd › task-in-ddd   ", // BUG`а нет
+        " │     └─ ▶ task-in-ccc        ",
+        " └─ [ scope2 ]                 ",
+        "    └─ aaa › bbb › ccc            ",
+        "       ├─ ▶ task-in-ccc        ",
+        "       └─ ▶ ddd › task-in-ddd   ", // BUG`а нет
+        "                               ",
+        "[F[ scope1 ]]                  ",
+        " └─ aaa                        ",
+        "    └─ bbb                     ",
+        "       └─ ccc                  ",
+        "          ├─ ▶ task-in-ccc     ",
+        "          └─ ddd               ",
+        "             └─ ▶ task-in-ddd  ",
+        "                               ",
+        "[F[ scope2 ]]                  ",
+        " └─ aaa                        ",
+        "    └─ bbb                     ",
+        "       └─ ccc                  ",
+        "          ├─ ▶ task-in-ccc     ",
+        "          └─ ddd               ",
+        "             └─ ▶ task-in-ddd  "
+    ]
+}

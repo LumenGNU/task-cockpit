@@ -24,18 +24,18 @@ interface Icon {
 type FolderRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Folder; nodeConfig: TC.NodeConfig; };
 type WorkspaceRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Workspace; nodeConfig: TC.NodeConfig; };
 
-type FavoriteFolder = Section.FavoriteFolder & {
+type PinnedFolder = Section.PinnedFolder & {
     nodeConfig: TC.NodeConfig;
 };
 
-type FavoriteSingle = Section.FavoriteSingle & { nodeConfig: TC.NodeConfig; };
-type FavoriteMulti = Section.FavoriteMulti & { nodeConfig: TC.NodeConfigByFile; };
+type PinnedSingle = Section.PinnedSingle & { nodeConfig: TC.NodeConfig; };
+type PinnedMulti = Section.PinnedMulti & { nodeConfig: TC.NodeConfigByFile; };
 
 
-interface BrokenFavorite {
-    readonly kind: TC.EntityKind.BrokenFavorite;
-    readonly ref: TC.FavoriteStale;
-    readonly parentNode: FavoriteSingle | FavoriteMulti;
+interface BrokenPinned {
+    readonly kind: TC.EntityKind.BrokenPinned;
+    readonly ref: TC.PinnedStale;
+    readonly parentNode: PinnedSingle | PinnedMulti;
 }
 
 interface Empty {
@@ -63,8 +63,8 @@ interface RunnableGroup {
 
 /** Узел, у которого могут быть children из childFrom(). */
 type ParentNode =
-    | FavoriteFolder
-    | FavoriteSingle
+    | PinnedFolder
+    | PinnedSingle
     | FolderRoot
     | Group
     | RunnableGroup
@@ -81,16 +81,16 @@ type HierarchyChild =
 declare namespace TreeModel {
     /** Всё, с чем работает TreeDataProvider. */
     type Node =
-        | BrokenFavorite
+        | BrokenPinned
         | Empty
-        | FavoriteFolder
+        | PinnedFolder
         | TopRoot
         | HierarchyChild
         ;
 
     type TopRoot =
-        | FavoriteMulti
-        | FavoriteSingle
+        | PinnedMulti
+        | PinnedSingle
         | FolderRoot
         | WorkspaceRoot
         ;
@@ -112,7 +112,7 @@ const TreeModel = {
     build(
         data: {
             scopes: ReadonlyArray<TC.Scope>,
-            favoritesConfig: Readonly<TC.FavoritesConfig>,
+            pinnedConfig: Readonly<TC.PinnedConfig>,
             definitionMap: Readonly<TC.DefinitionsByFile>,
             treeConfigMap: Readonly<TC.TreeConfigByFile>,
             nodeConfigMap: Readonly<TC.NodeConfigByFile>,
@@ -122,7 +122,7 @@ const TreeModel = {
 
         const entities = Section.buildEntities(
             data.scopes,
-            data.favoritesConfig,
+            data.pinnedConfig,
             data.definitionMap,
             data.treeConfigMap
         );
@@ -131,9 +131,9 @@ const TreeModel = {
 
         for (const entity of entities) {
 
-            if (entity.kind === TC.EntityKind.FavoritesSingle || entity.kind === TC.EntityKind.FavoritesMulti) {
+            if (entity.kind === TC.EntityKind.PinnedSingle || entity.kind === TC.EntityKind.PinnedMulti) {
 
-                if (data.favoritesConfig.visibility === TC.FavoritesVisibility.HIDE) {
+                if (data.pinnedConfig.visibility === TC.PinnedVisibility.HIDE) {
                     continue;
                 }
 
@@ -141,7 +141,7 @@ const TreeModel = {
                     continue;
                 }
 
-                if (entity.kind === TC.EntityKind.FavoritesSingle) {
+                if (entity.kind === TC.EntityKind.PinnedSingle) {
                     roots.push({ ...entity, nodeConfig: data.nodeConfigMap.get(entity.tasksFile)! });
                 }
                 else {
@@ -162,7 +162,7 @@ const TreeModel = {
 
     /** Children для TreeDataProvider.getChildren.
      * Ленивый маппинг — Section.Child передаётся как есть. */
-    getChildren(node: TreeModel.Node): Array<BrokenFavorite | Empty | FavoriteFolder | HierarchyChild> | undefined {
+    getChildren(node: TreeModel.Node): Array<BrokenPinned | Empty | PinnedFolder | HierarchyChild> | undefined {
 
         switch (node.kind) {
 
@@ -174,21 +174,21 @@ const TreeModel = {
                     : [{ kind: TC.EntityKind.Empty, parentNode: node }];
             }
 
-            case TC.EntityKind.FavoritesSingle: {
+            case TC.EntityKind.PinnedSingle: {
                 return [
-                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenFavorite, ref, parentNode: node }) as const),
+                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned, ref, parentNode: node }) as const),
                     ...node.children.map((sectionItem) => childFrom(sectionItem, node))
                 ];
             };
 
-            case TC.EntityKind.FavoritesMulti: {
+            case TC.EntityKind.PinnedMulti: {
                 return [
-                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenFavorite, ref, parentNode: node }) as const),
-                    ...node.children.map((favoriteFolder) => ({ ...favoriteFolder, nodeConfig: node.nodeConfig.get(favoriteFolder.tasksFile)! }))
+                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned, ref, parentNode: node }) as const),
+                    ...node.children.map((pinnedFolder) => ({ ...pinnedFolder, nodeConfig: node.nodeConfig.get(pinnedFolder.tasksFile)! }))
                 ];
             }
 
-            case TC.EntityKind.FavoriteFolder: {
+            case TC.EntityKind.PinnedFolder: {
                 return node.children.map((i) => childFrom(i, node));
             }
 
@@ -201,7 +201,7 @@ const TreeModel = {
             };
 
             // bare leafs
-            case TC.EntityKind.BrokenFavorite:
+            case TC.EntityKind.BrokenPinned:
             case TC.EntityKind.Empty:
             case TC.EntityKind.Runnable: {
                 return undefined;
@@ -233,16 +233,16 @@ const TreeModel = {
                         return `[W[ ${node.name} ]]`;
                     }
 
-                    case TC.EntityKind.FavoritesSingle:
-                    case TC.EntityKind.FavoritesMulti: {
+                    case TC.EntityKind.PinnedSingle:
+                    case TC.EntityKind.PinnedMulti: {
                         return `[★[ ${node.name} ]]`;
                     }
 
-                    case TC.EntityKind.FavoriteFolder: {
+                    case TC.EntityKind.PinnedFolder: {
                         return `[ ${node.name} ]`;
                     }
 
-                    case TC.EntityKind.BrokenFavorite: {
+                    case TC.EntityKind.BrokenPinned: {
                         return `« ✗ ${node.ref.label} »`;
                     }
 
@@ -256,7 +256,7 @@ const TreeModel = {
 
                     case TC.EntityKind.Runnable:
                     case TC.EntityKind.RunnableGroup: {
-                        return `▶ ${Hierarchy.Node.getSegment(node.entity).replaceAll('\u2009', ' ')}`;
+                        return `▶ ${Hierarchy.Node.getSegment(node.entity)}`;
                     }
 
                     default: {
@@ -313,13 +313,13 @@ const TreeModel = {
                 break;
             }
 
-            case TC.EntityKind.FavoriteFolder:
-            case TC.EntityKind.FavoritesSingle:
-            case TC.EntityKind.FavoritesMulti: {
+            case TC.EntityKind.PinnedFolder:
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedMulti: {
                 props.id = rootPrefix(node);
                 props.label = node.name;
                 props.iconPath =
-                    node.kind === TC.EntityKind.FavoriteFolder
+                    node.kind === TC.EntityKind.PinnedFolder
                         ? new vscode.ThemeIcon('symbol-folder', undefined)
                         : new vscode.ThemeIcon('pinned', new vscode.ThemeColor('list.highlightForeground')); // @todo может без цвета?
                 props.description = undefined;
@@ -336,7 +336,7 @@ const TreeModel = {
                 break;
             }
 
-            case TC.EntityKind.BrokenFavorite: {
+            case TC.EntityKind.BrokenPinned: {
                 props.id = `${rootPrefix(node.parentNode)}\0\0BROKEN-MARKER\0${node.ref.scopeName}\0${node.ref.label}`;
                 props.label = node.ref.label;
                 props.iconPath = new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.warningForeground'));
@@ -351,7 +351,7 @@ const TreeModel = {
                 props.label = Hierarchy.Node.getSegment(node.entity);
                 props.iconPath = root.nodeConfig.useFolderIcon ? new vscode.ThemeIcon('symbol-folder', undefined) : undefined;
                 props.description = undefined;
-                props.collapsibleState = (root.kind === TC.EntityKind.FavoritesSingle || root.kind === TC.EntityKind.FavoriteFolder)
+                props.collapsibleState = (root.kind === TC.EntityKind.PinnedSingle || root.kind === TC.EntityKind.PinnedFolder)
                     ? vscode.TreeItemCollapsibleState.Expanded
                     : vscode.TreeItemCollapsibleState.Collapsed;
                 break;
@@ -374,7 +374,7 @@ const TreeModel = {
                 props.collapsibleState
                     = (node.kind === TC.EntityKind.Runnable)
                         ? vscode.TreeItemCollapsibleState.None
-                        : (root.kind === TC.EntityKind.FavoritesSingle || root.kind === TC.EntityKind.FavoriteFolder)
+                        : (root.kind === TC.EntityKind.PinnedSingle || root.kind === TC.EntityKind.PinnedFolder)
                             ? vscode.TreeItemCollapsibleState.Expanded
                             : vscode.TreeItemCollapsibleState.Collapsed;
                 break;
@@ -395,6 +395,10 @@ const TreeModel = {
     },
 
     Accessors: {
+
+        getLabel(node: HierarchyChild): string {
+            return Hierarchy.Node.getSegment(node.entity);
+        }
 
         /*
         getLabel(node: TreeModel.Node): string {
@@ -635,7 +639,7 @@ function childFrom(
 
 
 
-function getRootGroup(node: HierarchyChild): FavoriteFolder | FavoriteSingle | FolderRoot | WorkspaceRoot {
+function getRootGroup(node: HierarchyChild): PinnedFolder | PinnedSingle | FolderRoot | WorkspaceRoot {
     let parent = node.parentNode;
     while (true) {
         switch (parent.kind) {
@@ -648,8 +652,8 @@ function getRootGroup(node: HierarchyChild): FavoriteFolder | FavoriteSingle | F
 
             case TC.EntityKind.Folder:
             case TC.EntityKind.Workspace:
-            case TC.EntityKind.FavoritesSingle:
-            case TC.EntityKind.FavoriteFolder: {
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedFolder: {
                 return parent;
             }
 
@@ -665,7 +669,7 @@ function getRootGroup(node: HierarchyChild): FavoriteFolder | FavoriteSingle | F
 
 
 function walkToRoot(node: HierarchyChild): {
-    root: FavoriteFolder | FavoriteSingle | FolderRoot | WorkspaceRoot;
+    root: PinnedFolder | PinnedSingle | FolderRoot | WorkspaceRoot;
     segments: string[];
 } {
     const segments: string[] = [];
@@ -680,8 +684,8 @@ function walkToRoot(node: HierarchyChild): {
             }
             case TC.EntityKind.Folder:
             case TC.EntityKind.Workspace:
-            case TC.EntityKind.FavoritesSingle:
-            case TC.EntityKind.FavoriteFolder: {
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedFolder: {
                 return { root: parent, segments: segments.reverse() };
             }
 
@@ -696,14 +700,14 @@ function walkToRoot(node: HierarchyChild): {
 }
 
 
-function rootPrefix(root: FavoriteFolder | FavoriteSingle | FavoriteMulti | FolderRoot | WorkspaceRoot): string {
+function rootPrefix(root: PinnedFolder | PinnedSingle | PinnedMulti | FolderRoot | WorkspaceRoot): string {
     switch (root.kind) {
-        case TC.EntityKind.FavoritesMulti:
-        case TC.EntityKind.FavoritesSingle: {
+        case TC.EntityKind.PinnedMulti:
+        case TC.EntityKind.PinnedSingle: {
             return '\0\0favorites://';
         }
 
-        case TC.EntityKind.FavoriteFolder: {
+        case TC.EntityKind.PinnedFolder: {
             return `\0\0favorites://\0${root.tasksFile}\0//`;
         }
 

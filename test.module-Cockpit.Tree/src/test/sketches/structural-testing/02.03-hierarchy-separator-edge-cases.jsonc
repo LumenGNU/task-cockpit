@@ -1,0 +1,36 @@
+
+// 
+{
+    "title": "hierarchy · separator edge cases",
+    "sketch": {
+        "scopes": {
+            "scope": ".vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "AAA/in-aaa" },
+                { "name": "AAA//flat"  },
+                { "name": "AAA /flat"  },
+                { "name": "AAA flat/"  },
+                { "name": "/FLAT"      },
+                { "name": "FLAT/"      },
+                { "name": "/FLAT/"     }
+            ]
+        },
+        "treeConfig": {
+            "segmentSeparator": "/"
+        }
+    },
+    "asciiTree": [
+        "[F[ scope ]]        ",
+        " ├─ AAA             ",
+        " │  └─ ▶ in-aaa     ", // единственный сработавший разделитель
+        " ├─ ▶ AAA//flat     ",
+        " ├─ ▶ AAA /flat     ",
+        " ├─ ▶ AAA flat/     ",
+        " ├─ ▶ /FLAT         ",
+        " ├─ ▶ FLAT/         ",
+        " └─ ▶ /FLAT/        "
+
+    ]
+}

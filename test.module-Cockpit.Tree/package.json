@@ -40,7 +40,7 @@
           "name": "Debug Tree"
         }
       ]
-    }, 
+    },
     "menus": {
       "view/title": [
         {
@@ -60,7 +60,8 @@
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.39.3",
     "nyc": "^18.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

@@ -1,0 +1,32 @@
+
+// Базовая иерархия через separator.
+{
+    "title": "hierarchy · colon separator",
+    "sketch": {
+        "scopes": {
+            "scope": ".vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "AAA:in-aaa-1" },
+                { "name": "AAA:in-aaa-2" },
+                { "name": "BBB:in-bbb-1" },
+                { "name": "BBB:in-bbb-2" },
+                { "name": "ccc" }
+            ]
+        },
+        "treeConfig": {
+            "segmentSeparator": ":"
+        }
+    },
+    "asciiTree": [
+        "[F[ scope ]]       ",
+        " ├─ AAA            ",
+        " │  ├─ ▶ in-aaa-1  ",
+        " │  └─ ▶ in-aaa-2  ",
+        " ├─ BBB            ",
+        " │  ├─ ▶ in-bbb-1  ",
+        " │  └─ ▶ in-bbb-2  ",
+        " └─ ▶ ccc          "
+    ]
+}
