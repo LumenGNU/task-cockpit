@@ -350,7 +350,10 @@ const Hierarchy = {
             let parentNode: Node<D, S> = scopeNode;
 
             // traverse remaining segments
-            for (const segment of path) {
+            for (const _segment of path) {
+
+                // \0-префикс предотвращает integer index sorting в plain object
+                const segment = '\0' + _segment;
 
                 // lazily создание child node в dict
                 let childNode = parentNode[CHILDREN]?.[segment];
@@ -449,7 +452,9 @@ const Hierarchy = {
             = scopeNode[CHILDREN];
 
         for (const segment of path) {
-            current = dict?.[segment];
+            // @bug: integer index sorting in plain object @resolved
+            // смотри Hierarchy.build цикл for (const _segment of path)
+            current = dict?.['\0' + segment];
             if (!current) {
                 return undefined;
             }
@@ -598,7 +603,9 @@ const Hierarchy = {
         getSegment<D extends object, S extends string>(
             node: Hierarchy.Data<D, S> | Hierarchy.Branch<D, S>
         ): string {
-            return node[SEGMENT];
+            // .slice(1) нужен для избавления от '\0' в начале
+            // смотри bug: integer index sorting in plain object
+            return node[SEGMENT].slice(1);
         },
 
         /** Чистые данные узла, без структурных полей иерархии.
@@ -648,7 +655,7 @@ const Hierarchy = {
 
             // Поднимаемся до scope, собирая сегменты
             while (true) {
-                path.push(current[SEGMENT]);
+                path.push(Hierarchy.Node.getSegment(current));
                 const ref = current[PARENT];
                 if (Hierarchy.Node.isScope(ref)) {
                     path.reverse();
