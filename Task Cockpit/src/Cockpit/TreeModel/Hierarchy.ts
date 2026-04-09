@@ -459,44 +459,44 @@ const Hierarchy = {
         return current;
     },
 
-    // #region DEBUG
+    // // #region DEBUG
 
-    /** Сериализация иерархии обратно в плоский массив {@linkcode Hierarchy.Spec}.
-     * Обходит все scope, собирая только data-узлы. */
-    toJSON<D extends object>(
-        hierarchy: Hierarchy<D, string>
-    ): Array<Hierarchy.Spec<D, string>> {
+    // /** Сериализация иерархии обратно в плоский массив {@linkcode Hierarchy.Spec}.
+    //  * Обходит все scope, собирая только data-узлы. */
+    // toJSON<D extends object>(
+    //     hierarchy: Hierarchy<D, string>
+    // ): Array<Hierarchy.Spec<D, string>> {
 
-        const result: Array<Hierarchy.Spec<D, string>> = [];
+    //     const result: Array<Hierarchy.Spec<D, string>> = [];
 
-        for (const scope of Hierarchy.getScopes(hierarchy)) {
+    //     for (const scope of Hierarchy.getScopes(hierarchy)) {
 
-            Hierarchy.Scope.walk(scope, (node) => {
+    //         Hierarchy.Scope.walk(scope, (node) => {
 
-                if (!Hierarchy.Node.isData(node)) return;
+    //             if (!Hierarchy.Node.isData(node)) return;
 
-                const { scope, path } = Hierarchy.Node.resolvePath(node);
-                const data = Hierarchy.Node.getData(node);
+    //             const { scope, path } = Hierarchy.Node.resolvePath(node);
+    //             const data = Hierarchy.Node.getData(node);
 
-                result.push({ scope, path, data });
-            });
-        }
+    //             result.push({ scope, path, data });
+    //         });
+    //     }
 
-        return result;
-    },
+    //     return result;
+    // },
 
-    /** Текстовое представление иерархии (ASCII-дерево) для отладки.
-     * @param formatter форматирование данных узла в строку (по умолчанию `'(*)'`) */
-    printTree<D extends object, S extends string>(
-        hierarchy: Hierarchy<D, S>,
-        formatter: (data: D) => string = () => '(*)'
-    ): string {
+    // /** Текстовое представление иерархии (ASCII-дерево) для отладки.
+    //  * @param formatter форматирование данных узла в строку (по умолчанию `'(*)'`) */
+    // printTree<D extends object, S extends string>(
+    //     hierarchy: Hierarchy<D, S>,
+    //     formatter: (data: D) => string = () => '(*)'
+    // ): string {
 
-        return Hierarchy.getScopes(hierarchy)
-            .map(scope => `─ [${scope[SEGMENT]}]\n${Hierarchy.Scope.printTree(Object.values(scope[CHILDREN]), formatter, '  ')}`)
-            .join('\n');
-    },
-    // #endregion DEBUG
+    //     return Hierarchy.getScopes(hierarchy)
+    //         .map(scope => `─ [${scope[SEGMENT]}]\n${Hierarchy.Scope.printTree(Object.values(scope[CHILDREN]), formatter, '  ')}`)
+    //         .join('\n');
+    // },
+    // // #endregion DEBUG
 
     Scope: {
 
@@ -533,42 +533,42 @@ const Hierarchy = {
             }
         },
 
-        // #region DEBUG
+        // // #region DEBUG
 
-        printTree<D extends object, S extends string>(
-            children: ReadonlyArray<Readonly<Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>>>,
-            formatter: (data: D) => string = () => '(*)',
-            basePrefix: string = '  '
-        ): string {
+        // printTree<D extends object, S extends string>(
+        //     children: ReadonlyArray<Readonly<Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>>>,
+        //     formatter: (data: D) => string = () => '(*)',
+        //     basePrefix: string = '  '
+        // ): string {
 
-            const lines: string[] = [];
+        //     const lines: string[] = [];
 
-            function printNode(
-                node: Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>,
-                prefix: string,
-                isLast: boolean,
-            ): void {
-                const connector = isLast ? '└─' : '├─';
-                const dataMarker = Hierarchy.Node.isData(node) ? formatter(node) : '';
-                lines.push(`${prefix}${connector} ${node[SEGMENT]} ${dataMarker}`);
+        //     function printNode(
+        //         node: Hierarchy.Branch<D, S> | Hierarchy.Data<D, S>,
+        //         prefix: string,
+        //         isLast: boolean,
+        //     ): void {
+        //         const connector = isLast ? '└─' : '├─';
+        //         const dataMarker = Hierarchy.Node.isData(node) ? formatter(node) : '';
+        //         lines.push(`${prefix}${connector} ${node[SEGMENT]} ${dataMarker}`);
 
-                if (Hierarchy.Node.isBranch(node)) {
-                    const childPrefix = prefix + (isLast ? '   ' : '│  ');
-                    const children = Object.values(node[CHILDREN]);
-                    for (let i = 0; i < children.length; i++) {
-                        printNode(children[i], childPrefix, i === children.length - 1);
-                    }
-                }
-            }
+        //         if (Hierarchy.Node.isBranch(node)) {
+        //             const childPrefix = prefix + (isLast ? '   ' : '│  ');
+        //             const children = Object.values(node[CHILDREN]);
+        //             for (let i = 0; i < children.length; i++) {
+        //                 printNode(children[i], childPrefix, i === children.length - 1);
+        //             }
+        //         }
+        //     }
 
-            for (let i = 0; i < children.length; i++) {
-                printNode(children[i], basePrefix, i === children.length - 1);
-            }
+        //     for (let i = 0; i < children.length; i++) {
+        //         printNode(children[i], basePrefix, i === children.length - 1);
+        //     }
 
-            return lines.join('\n');
-        },
+        //     return lines.join('\n');
+        // },
 
-        // #endregion DEBUG
+        // // #endregion DEBUG
     },
 
     Node: {
