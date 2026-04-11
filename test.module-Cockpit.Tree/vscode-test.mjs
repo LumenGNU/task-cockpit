@@ -34,7 +34,7 @@ export default defineConfig({
 		{
 			label: 'Sketches Tests',
 			workspaceFolder: 'test-fixtures/empty-folder',
-			files: resolveTestFiles('~out/test/**/*-sketches.test.js'),
+			files: resolveTestFiles('~out/test/**/sketches.test.js'),
 			...defaults
 		}
 	],

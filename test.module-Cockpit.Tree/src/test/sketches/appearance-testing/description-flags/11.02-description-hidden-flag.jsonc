@@ -1,0 +1,24 @@
+
+// Задача с hidden=true: флаг отражается в description при showHidden=true.
+// Проверяет: hidden-флаг виден в description; задача присутствует в дереве.
+// Задействованные настройки: showHidden=true.
+{
+    "title": "Description · hidden flag visible",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "normal"                  },
+                { "name": "hidden-task", "hidden": true }
+            ]
+        },
+        "treeConfig": { "showHidden": true }
+    },
+    "asciiTree": [
+        "[F[ scope ]]              ",
+        " ├─ ▶ normal              ",
+        " └─ ▶ hidden-task · ( Hidden )  "
+    ]
+}

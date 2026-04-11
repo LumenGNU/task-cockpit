@@ -1,0 +1,34 @@
+
+// Запинованная задача с hidden=true: флаг отображается в description.
+// Pinned показывает hidden-задачи независимо от showHidden.
+// Флаг в description объясняет, почему задачи нет в основном дереве.
+//
+// Задействованные настройки: showHidden=false (дефолт).
+{
+    "title": "Description · hidden flag on pinned task",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "normal-task" },
+                { "name": "hidden-task", "hidden": true }
+            ]
+        },
+        "pinned": {
+            "refs": [
+                { "scope": "scope", "label": "normal-task" },
+                { "scope": "scope", "label": "hidden-task" }
+            ]
+        }
+    },
+    "asciiTree": [
+        "[★[ Pinned ]]                   ",
+        " ├─ ▶ normal-task               ",
+        " └─ ▶ hidden-task · ( Hidden ) ",
+        "                                ",
+        "[F[ scope ]]                    ",
+        " └─ ▶ normal-task               "
+    ]
+}

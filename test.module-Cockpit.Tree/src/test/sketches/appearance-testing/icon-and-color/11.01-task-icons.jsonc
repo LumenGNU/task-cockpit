@@ -1,0 +1,26 @@
+
+// Базовый сценарий: иконки задач.
+// Проверяет: кастомная иконка с цветом, кастомная без цвета, дефолтная иконка.
+// Задействованные настройки: defaultIconName="gear" (переопределён дефолт).
+{
+    "title": "Icon and color · task icons",
+    "sketch": {
+        "scopes": {
+            "scope": "scope/.vscode/tasks.json"
+        },
+        "tasks": {
+            "scope": [
+                { "name": "task-default-icon" },
+                { "name": "task-custom-icon",       "icon": { "id": "package" } },
+                { "name": "task-custom-icon-color",  "icon": { "id": "rocket", "color": ".red" } }
+            ]
+        },
+        "nodeConfig": { "defaultIconName": "gear" }
+    },
+    "asciiTree": [
+        "[F[ scope ]]                                          ",
+        " ├─ ▶ task-default-icon · $(gear)                     ",
+        " ├─ ▶ task-custom-icon · $(package)                   ",
+        " └─ ▶ task-custom-icon-color · $(rocket~.red)   "
+    ]
+}

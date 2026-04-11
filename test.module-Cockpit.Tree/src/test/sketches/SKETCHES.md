@@ -93,7 +93,7 @@
 
 Текст меток зависит от используемого formatter.
 
-`simpleFormatter` (по умолчанию):
+`simpleLabelFormatter` (используется по умолчанию):
 
 | Тип узла                          | Формат                                  |
 |---                                |---                                      |
@@ -125,6 +125,7 @@ NN.MM-kebab-description.jsonc
     - 08 = multi-root особенности
     - 09 = exclude
     - 10 = pinned
+    - 11 = appearance
     - 16 = empty
     - 21 = stress
 - `MM` — вариант внутри темы
