@@ -1,5 +1,8 @@
 import type * as vscode from 'vscode';
 
+
+// -- Символы брендирования -----------------------------------
+
 declare const ___TasksFile: unique symbol;
 declare const ___TasksFileUri: unique symbol;
 declare const ___TaskLabel: unique symbol;
@@ -10,8 +13,12 @@ declare const ___QueryComponent: unique symbol;
 declare const ___FolderName: unique symbol;
 
 
+// -- Брендированные примитивы ---------------------------------
+
+/** Символ-разделитель компонентов составных идентификаторов (Group Separator, U+001D). */
 export type CG_Separator = '\x1D';
 
+/** @todo */
 type QueryComponent = string & { readonly [___QueryComponent]: never; };
 
 /** Номинальный тип для fsPath файла задач.
@@ -32,7 +39,6 @@ type QueryComponent = string & { readonly [___QueryComponent]: never; };
  *  */
 export type File = string & { readonly [___TasksFile]: never; };
 
-
 /** Брендированный URI файла задач.
  *
  * Гарантирует, что `fsPath` возвращает {@linkcode File}. */
@@ -41,14 +47,13 @@ export type Uri = vscode.Uri & {
     fsPath: File;
 };
 
-
 /** Номинальный тип для имени задачи.
  *
  * Используется для type safety при работе с коллекциями. */
 export type Name = string & { readonly [___TaskLabel]: never; };
 
+/** Номинальный тип для группы задачи (Build | Test | Clean). */
 export type Group = ('Build' | 'Test' | 'Clean') & { readonly [___TasksGroup]: never; };
-
 
 /** Строковой идентификатор задачи, в терминах расширения {@linkcode File} + {@linkcode Name}.
  *
@@ -58,9 +63,14 @@ export type Group = ('Build' | 'Test' | 'Clean') & { readonly [___TasksGroup]: n
  * для однозначного определения задачи; */
 export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [___Identity]: never; };
 
+/** Номинальный тип для имени папки workspace. */
+export type FolderName = string & { readonly [___FolderName]: never; };
+
+/** Номинальный тип для идентификатора системного процесса. */
+export type ProcessId = number & { readonly [___ProcessId]: never; };
 
 
-
+// -- Настройки -------------------------------------------
 
 /** Настройки уровня окна — общие для всего workspace, не зависят от scope. */
 export interface WindowSettings { // @todo имя не подходит
@@ -71,7 +81,6 @@ export interface WindowSettings { // @todo имя не подходит
     // /** Настройки валидации задач. */
     // readonly validationSettings: ValidationSettings; // @todo не должно быть тут
 }
-
 
 /** Параметры, определяющие структуру ветки дерева для scope. */
 export interface TreeConfig {
@@ -84,9 +93,8 @@ export interface TreeConfig {
     readonly showHidden: boolean;
 }
 
-
+/** @todo */
 export type TreeConfigByFile = Map<File, TreeConfig>;
-
 
 /** Параметры, определяющие визуальное отображение элементов дерева. */
 export interface NodeConfig {
@@ -98,9 +106,8 @@ export interface NodeConfig {
     readonly tintLabel: boolean;
 }
 
-
+/** @todo */
 export type NodeConfigByFile = Map<File, NodeConfig>;
-
 
 /** Настройки диагностики задач. */
 export interface ValidationSettings {
@@ -110,14 +117,14 @@ export interface ValidationSettings {
     readonly dependencies: boolean;
 }
 
-
+/** @todo */
 export interface RuntimeSettings {
     pollingCap: number,
     terminalTimeout: number;
 }
 
 
-export type FolderName = string & { readonly [___FolderName]: never; };
+// -- Задачи ---------------------------------------------
 
 /** Область действия задач, с именем и URI файла, в котором они определены (источником задач).
  *
@@ -128,7 +135,6 @@ export interface Scope {
     readonly uri: Readonly<Uri>;
 }
 
-
 /** Пользовательская иконка для задачи. */
 export interface IconDefinition {
     /** Идентификатор иконки */
@@ -136,7 +142,6 @@ export interface IconDefinition {
     /** Цвет иконки */
     color?: string;
 }
-
 
 /** Описание задачи.
  *
@@ -161,20 +166,23 @@ export interface TaskDefinition {
     };
 }
 
-
+/** Задачи в рамках одного scope, индексированные по имени. */
 export type ScopedTasks = Map<Name, vscode.Task>;
 
+/** Задачи всех scopes, индексированные по файлу. */
 export type TasksByFile = Map<File, ScopedTasks>;
 
+/** Определения задач в рамках одного scope, индексированные по имени. */
 export type ScopedDefinitions = Map<Name, TaskDefinition>;
 
+/** Определения задач всех scopes, индексированные по файлу. */
 export type DefinitionsByFile = Map<File, ScopedDefinitions>;
-
 
 // export type SettingsByFile = Map<File, ScopedSettings>;
 
 // export type RejectReport = Map<File, number>;
 
+/** Результат загрузки задач из всех scopes. */
 export interface FetchResult {
     readonly tasksByFile: Readonly<TasksByFile>,
     readonly definitionsByFile: Readonly<DefinitionsByFile>,
@@ -182,20 +190,25 @@ export interface FetchResult {
 }
 
 
-export type ProcessId = number & { readonly [___ProcessId]: never; };
+// -- Runtime / процессы -------------------------------------
 
-
+/** Снимок состояния открытых терминалов в момент времени. */
 export interface TerminalsSnapshot {
     timestamp: number,
     processIds: ReadonlySet<ProcessId>;
 }
 
+/** Детализация состояния процессов задачи. */
+export type RuntimeState = ReadonlyMap<ProcessId, Readonly<ProcessInfo>>;
+
+/** @todo */
+export interface ProcessInfo {
+    running: boolean,
+    timestamp: number;
+}
 
 
-
-
-// export type DetailsByFile = Map<File, ScopedDetail>;
-
+// -- Узлы дерева -----------------------------------------
 
 /** Детализация количества workspace-scope. */
 export interface WorkspaceDetail {
@@ -205,22 +218,13 @@ export interface WorkspaceDetail {
     displayed: number;
 }
 
-
+/** @todo */
 declare const MarkerType: {
     readonly EMPTY: 'EMPTY';
 };
 export type MarkerType = typeof MarkerType[keyof typeof MarkerType];
 
-
-/** Детализация состояния процессов задачи. */
-export type RuntimeState = ReadonlyMap<ProcessId, Readonly<ProcessInfo>>;
-
-export interface ProcessInfo {
-    running: boolean,
-    timestamp: number;
-}
-
-
+/** Визуальные метаданные узла дерева, используемые при рендеринге. */
 export interface VisualMetadata {
     color?: string | undefined,
     processes?: number,
@@ -228,8 +232,7 @@ export interface VisualMetadata {
     special?: 'EMPTY' | 'BROKEN';
 }
 
-
-
+/** Адрес узла дерева. Определяет его тип (authority) и положение (path). */
 export interface NodeURI {
     //
     readonly authority: 'Folder' | 'Workspace' | 'Favorites' | 'Runnable' | 'Marker' | 'Group';
@@ -237,37 +240,7 @@ export interface NodeURI {
     readonly fragment?: string;
 }
 
-
-export interface FavoriteRef {
-    scope: Scope;
-    label: Name;
-}
-
-export interface PinnedStale {
-    scopeName: string;
-    label: string;
-}
-
-export declare const enum PinnedVisibility {
-    AUTO = 1,
-    HIDE = 0
-}
-
-export declare const enum CompressionBehavior {
-    NORMAL = 0,
-    SMART = 1
-}
-
-export interface PinnedConfig {
-    visibility: PinnedVisibility;
-    compressionBehavior: CompressionBehavior;
-    pinnedRecords: Array<Readonly<FavoriteRef>>;
-    staleRecords: Array<Readonly<PinnedStale>>;
-}
-
-// export declare const FAVORITES_SCOPE = '\0\0favorites://';
-// export type FavoritesScope = typeof FAVORITES_SCOPE;
-
+/** Перечисление типов узлов дерева. */
 export declare const enum EntityKind {
     Folder = 1 << 0,
     PinnedFolder = 1 << 1,
@@ -281,3 +254,37 @@ export declare const enum EntityKind {
     RunnableGroup = Runnable | Group,
 }
 
+
+// -- Избранное (Pinned) -------------------------------------
+
+/** Ссылка на закреплённую задачу: scope + имя задачи. */
+export interface FavoriteRef {
+    scope: Scope;
+    label: Name;
+}
+
+/** Устаревшая запись закреплённой задачи, scope которой больше не существует. */
+export interface PinnedStale {
+    scopeName: string;
+    label: string;
+}
+
+/** Режим видимости раздела закреплённых задач. */
+export declare const enum PinnedVisibility {
+    AUTO = 1,
+    HIDE = 0
+}
+
+/** Поведение сжатия (компрессии) узлов в разделе закреплённых задач. */
+export declare const enum CompressionBehavior {
+    NORMAL = 0,
+    SMART = 1
+}
+
+/** Конфигурация раздела закреплённых задач. */
+export interface PinnedConfig {
+    visibility: PinnedVisibility;
+    compressionBehavior: CompressionBehavior;
+    pinnedRecords: Array<Readonly<FavoriteRef>>;
+    staleRecords: Array<Readonly<PinnedStale>>;
+}

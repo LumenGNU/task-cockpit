@@ -112,10 +112,10 @@ const TreeModel = {
     build(
         data: {
             scopes: ReadonlyArray<TC.Scope>,
-            pinnedConfig: Readonly<TC.PinnedConfig>,
             definitionMap: Readonly<TC.DefinitionsByFile>,
             treeConfigMap: Readonly<TC.TreeConfigByFile>,
             nodeConfigMap: Readonly<TC.NodeConfigByFile>,
+            pinnedConfig: Readonly<TC.PinnedConfig>,
             excludeFolders: ReadonlySet<TC.FolderName>;
         }
     ): Array<TreeModel.TopRoot> {
