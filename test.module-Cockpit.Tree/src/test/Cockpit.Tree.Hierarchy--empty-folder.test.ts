@@ -579,6 +579,51 @@ suite('@module Cockpit/Tree/Hierarchy', function () {
             });
 
 
+
+            // Порядок children (числовых) внутри ветки соответствует порядку поступления spec'ов.
+            test('children order (number) within a branch follows spec insertion order', function () {
+
+                const hierarchy = Hierarchy.build([
+                    { scope: SCOPE, path: ['trunk', '3'], data: { tag: 'a' } },
+                    { scope: SCOPE, path: ['trunk', '1'], data: { tag: 'g' } },
+                    { scope: SCOPE, path: ['trunk', '2'], data: { tag: 'b' } },
+                ]);
+
+                const scope = Hierarchy.getScope(hierarchy, SCOPE);
+                assert.ok(scope);
+                const trunk = Hierarchy.Scope.getChildren(scope).at(0);
+                assert.ok(trunk, 'trunk must exist');
+                assert.ok(Hierarchy.Node.isBranch(trunk));
+
+                const children = Hierarchy.Node.getBranchChildren(trunk);
+                assert.strictEqual(children.length, 3, 'trunk must have 3 children');
+
+                assert.strictEqual(Hierarchy.Node.getSegment(children[0]), '3');
+                assert.strictEqual(Hierarchy.Node.getSegment(children[1]), '1');
+                assert.strictEqual(Hierarchy.Node.getSegment(children[2]), '2');
+
+                // Обратная проверка: другой порядок spec'ов → другой порядок children.
+                const hierarchy2 = Hierarchy.build([
+                    { scope: SCOPE, path: ['trunk', '2'], data: { tag: 'b' } },
+                    { scope: SCOPE, path: ['trunk', '3'], data: { tag: 'a' } },
+                    { scope: SCOPE, path: ['trunk', '1'], data: { tag: 'g' } },
+                ]);
+
+                const scope2 = Hierarchy.getScope(hierarchy2, SCOPE);
+                assert.ok(scope2);
+                const trunk2 = Hierarchy.Scope.getChildren(scope2).at(0);
+                assert.ok(trunk2, 'trunk2 must exist');
+                assert.ok(Hierarchy.Node.isBranch(trunk2));
+
+                const children2 = Hierarchy.Node.getBranchChildren(trunk2);
+                assert.strictEqual(children2.length, 3, 'trunk2 must have 3 children');
+
+                assert.strictEqual(Hierarchy.Node.getSegment(children2[0]), '2');
+                assert.strictEqual(Hierarchy.Node.getSegment(children2[1]), '3');
+                assert.strictEqual(Hierarchy.Node.getSegment(children2[2]), '1');
+            });
+
+
             // Переиспользование узлов: два spec'а с общим префиксом → один промежуточный trunk.
             test('shared prefix reuses intermediate node', function () {
 
@@ -696,8 +741,8 @@ suite('@module Cockpit/Tree/Hierarchy', function () {
 
                 const specs = [
                     { scope: SCOPE, path: ['a'], data: { tag: '1' } },
-                    { scope: SCOPE, path: ['a', 'b', 'c'], data: { tag: '3' } },
                     { scope: SCOPE, path: ['a', 'b'], data: { tag: '2' } },
+                    { scope: SCOPE, path: ['a', 'b', 'c'], data: { tag: '3' } },
                 ];
 
                 const expected = Hierarchy.build([specs[0], specs[1], specs[2]]);
