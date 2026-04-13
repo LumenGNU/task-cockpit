@@ -1,0 +1,45 @@
+
+// Закрепленные задачи в списке, даже если их папки исключены из дерева
+{
+    "title": "Pinned · tasks from excluded scopes",
+    "sketch": {
+        "scopes": {
+            "prj": {
+                "tasksFile": "prj.code-workspace",
+                "tasks": [
+                    { "name": "task-from-prj" }
+                ],
+                "pinned": [
+                    "task-from-prj"
+                ]
+            },
+            "folder": {
+                "tasksFile": ".vscode/tasks.json",
+                "tasks": [
+                    { "name": "task-from-folder" }
+                ],
+                "pinned": [
+                    "task-from-folder"
+                ]
+            }
+        },
+
+        "pinned": {
+            "visibility": "AUTO"
+        },
+        "excludeFolders": [
+            "prj",
+            "folder"
+        ]
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[★[ Pinned ]]                ", // все scopes исключены,
+            "  ├─ [ prj ]                  ", // закрепленные задачи 
+            "  │  └─ ▶ task-from-prj       ", // все равно отображаются
+            "  └─ [ folder ]               ",
+            "     └─ ▶ task-from-folder    "
+        ]
+    }
+}

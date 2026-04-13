@@ -1,0 +1,44 @@
+
+// 
+//
+{
+    "title": "Pinned · only all stale",
+    "sketch": {
+        "scopes": {
+            "scope1": {
+                "tasksFile": "scope1.code-workspace",
+                "tasks": [
+                    { "name": "child-task-1" }                    
+                ]
+            },
+            "scope2": {
+                "tasksFile": "scope2/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "child-task-2" }
+                ]
+            }
+        },
+
+        "treeConfig": { "segmentSeparator": ":" },
+        "pinned": {
+            "stales": [
+                { "scopeName": "_scope1", "label": "missing-task-1" },
+                { "scopeName": "_scope2", "label": "missing-task-2" }
+            ]
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[★[ Pinned ]]                              ", // секция Pinned отображается если есть 
+            "  ├─ « ✗ missing-task-1 »                   ", // только stales ссылки на закрепленные
+            "  └─ « ✗ missing-task-2 »                   ", // задачи
+            "                                            ",
+            "━[W[ scope1 ]]                              ",
+            "  └─ ▶ child-task-1                         ",
+            "                                            ",
+            "━[F[ scope2 ]]                              ",
+            "  └─ ▶ child-task-2                         "
+        ]
+    }
+}

@@ -113,6 +113,6 @@ export function makeTest({ sketchDir, sketchFile }: { sketchDir: string, sketchF
     test(`${title}: (${sketchFile})`, function () {
         const { sections } = TreeModel.build(treeInput);
         const actualSnapshot = Sketch.printTree(sections, Sketch.formatter[expectedRender.formatter]);
-        assert.strictEqual(expectedRender.snapshot, actualSnapshot);
+        assert.strictEqual(expectedRender.snapshot, actualSnapshot, 'Snapshots don\'t match');
     });
 }

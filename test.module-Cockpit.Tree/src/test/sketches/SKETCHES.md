@@ -144,34 +144,42 @@
 
 ## Именование файлов
 
-`NN.MM-kebab-description.jsonc`
+`kebab-description.jsonc`
 
-- `NN` — номер темы
-    - 01 = flat
-    - 02 = hierarchy (segmentSeparator, useGroupKind)
-    - 07 = hidden
-    - 08 = multi-root особенности
-    - 09 = exclude
-    - 10 = pinned
-    - 11 = appearance
-    - 16 = empty
-    - 21 = stress
-- `MM` — вариант внутри темы
-- Описание через дефис, строчными буквами
+- Строчные буквы, слова через дефис
+- Тема определяется подпапкой
+- Для группировки связанных вариантов используй общий префикс:
+  `deep-paths-normal.jsonc`, `deep-paths-smart.jsonc`
 
-Примеры: `01.01-flat.jsonc`, `02.03-hierarchy-separator-edge-cases.jsonc`, `09.02-exclude-folders-workspace.jsonc`
+Примеры: `flat.jsonc`, `separator-edge-cases.jsonc`, `basic-auto.jsonc`
 
-**Баг-кейсы** именуются с префиксом `BUG.`:
+**Баг-кейсы** размещаются в подпапке `bugs/` соответствующей темы.
 
-`BUG.NN.MM-short-description.jsonc`
-
-Пример: `BUG.10.01-pinned-fantom-segment-compressionBehavior=NORMAL.jsonc`
+Пример: `pinned/bugs/phantom-segment-normal.jsonc`
 
 
 ## Директории
 
-- `src/test/sketches` — общая для файлов sketch.jsonc
-- `src/test/sketches/structural-testing` — тесты структуры, правила построения дерева
+~~~
+src/test/sketches/
+  01-structural/
+    flat/
+    hierarchy/
+    hidden/
+    multi-root/
+    exclude-folders/
+    pinned/
+      bugs/
+    empty-states/
+  02-appearance/
+    description-flags/
+    icon-and-color/
+  03-stress/
+  ...
+  и т.д
+~~~
+
+Числовые префиксы папок определяют порядок выполнения тестов, там где это нужно.
 
 ---
 

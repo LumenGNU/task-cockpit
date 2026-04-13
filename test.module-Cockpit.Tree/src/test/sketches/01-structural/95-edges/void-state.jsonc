@@ -1,0 +1,30 @@
+
+// Пограничные случаи
+{
+    "title": "void states · all scopes excluded",
+    "sketch": {
+        "scopes": {
+            "project": {
+                "tasksFile": "empty.code-workspace",
+                "tasks": []
+            },
+            "empty": {
+                "tasksFile": "empty/.vscode/tasks.json",
+                "tasks": []
+            }
+        },
+        "excludeFolders": [
+            "project",
+            "empty"
+        ],
+        "pinned": {
+            "visibility": "HIDE"
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "TODO"
+        ]
+    }
+}
