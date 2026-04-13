@@ -38,33 +38,36 @@
         }
         
     },
-    "asciiTree": [
-        "[★[ Pinned ]]                  ",
-        " ├─ [ scope1 ]                 ",
-        " │  └─ aaa › bbb › ccc            ",
-        " │     ├─ ddd                  ",
-        " │     │  └─ ▶ task-in-ddd     ", // BUG`а нет
-        " │     └─ ▶ task-in-ccc        ",
-        " └─ [ scope2 ]                 ",
-        "    └─ aaa › bbb › ccc            ",
-        "       ├─ ▶ task-in-ccc        ",
-        "       └─ ddd                  ",
-        "          └─ ▶ task-in-ddd     ", // BUG`а нет
-        "                               ",
-        "[F[ scope1 ]]                  ",
-        " └─ aaa                        ",
-        "    └─ bbb                     ",
-        "       └─ ccc                  ",
-        "          ├─ ▶ task-in-ccc     ",
-        "          └─ ddd               ",
-        "             └─ ▶ task-in-ddd  ",
-        "                               ",
-        "[F[ scope2 ]]                  ",
-        " └─ aaa                        ",
-        "    └─ bbb                     ",
-        "       └─ ccc                  ",
-        "          ├─ ▶ task-in-ccc     ",
-        "          └─ ddd               ",
-        "             └─ ▶ task-in-ddd  "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]                  ",
+            " ├─ [ scope1 ]                 ",
+            " │  └─ aaa › bbb › ccc            ",
+            " │     ├─ ddd                  ",
+            " │     │  └─ ▶ task-in-ddd     ", // BUG`а нет
+            " │     └─ ▶ task-in-ccc        ",
+            " └─ [ scope2 ]                 ",
+            "    └─ aaa › bbb › ccc            ",
+            "       ├─ ▶ task-in-ccc        ",
+            "       └─ ddd                  ",
+            "          └─ ▶ task-in-ddd     ", // BUG`а нет
+            "                               ",
+            "[F[ scope1 ]]                  ",
+            " └─ aaa                        ",
+            "    └─ bbb                     ",
+            "       └─ ccc                  ",
+            "          ├─ ▶ task-in-ccc     ",
+            "          └─ ddd               ",
+            "             └─ ▶ task-in-ddd  ",
+            "                               ",
+            "[F[ scope2 ]]                  ",
+            " └─ aaa                        ",
+            "    └─ bbb                     ",
+            "       └─ ccc                  ",
+            "          ├─ ▶ task-in-ccc     ",
+            "          └─ ddd               ",
+            "             └─ ▶ task-in-ddd  "
+        ]
+    }
 }

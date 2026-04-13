@@ -23,15 +23,18 @@
         "treeConfig": { "useGroupKind": true },
         "nodeConfig": { "useFolderIcon": true }
     },
-    "asciiTree": [
-        "[F[ app ]]                      ",
-        " ├─ ▶ task-1                    ",
-        " ├─ Build                       ",
-        " │  ├─ ▶ task-in-Build-group-1  ",
-        " │  └─ ▶ task-in-Build-group-2  ",
-        " ├─ Test                        ",
-        " │  ├─ ▶ task-in-Test-group-1   ",
-        " │  └─ ▶ task-in-Test-group-2   ",
-        " └─ ▶ task-2                    "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ app ]]                      ",
+            " ├─ ▶ task-1                    ",
+            " ├─ Build                       ",
+            " │  ├─ ▶ task-in-Build-group-1  ",
+            " │  └─ ▶ task-in-Build-group-2  ",
+            " ├─ Test                        ",
+            " │  ├─ ▶ task-in-Test-group-1   ",
+            " │  └─ ▶ task-in-Test-group-2   ",
+            " └─ ▶ task-2                    "
+        ]
+    }
 }

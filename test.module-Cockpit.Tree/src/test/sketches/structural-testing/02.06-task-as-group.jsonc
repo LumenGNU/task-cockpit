@@ -26,16 +26,19 @@
 
         "treeConfig": { "segmentSeparator": ":" }
     },
-    "asciiTree": [
-        "[F[ app ]]            ",
-        " ├─ test              ",
-        " │  ├─ ▶ test-task-1  ",
-        " │  ├─ ▶ test-task-2  ",
-        " │  └─ ▶ test-task-3  ",
-        " ├─ ▶ build-all       ", // и задача, и группа
-        " │  ├─ ▶ build-task-1 ",
-        " │  ├─ ▶ build-task-2 ",
-        " │  └─ ▶ build-task-3 ",
-        " └─ ▶ task            "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ app ]]            ",
+            " ├─ test              ",
+            " │  ├─ ▶ test-task-1  ",
+            " │  ├─ ▶ test-task-2  ",
+            " │  └─ ▶ test-task-3  ",
+            " ├─ ▶ build-all       ", // и задача, и группа
+            " │  ├─ ▶ build-task-1 ",
+            " │  ├─ ▶ build-task-2 ",
+            " │  └─ ▶ build-task-3 ",
+            " └─ ▶ task            "
+        ]
+    }
 }

@@ -19,11 +19,14 @@
 
         "treeConfig": { "showHidden": true }
     },
-    "asciiTree": [
-        "[F[ scope ]]                                      ",
-        " ├─ ▶ plain                                       ",
-        " ├─ ▶ bg · ( Background )                        ",
-        " ├─ ▶ default · ( Default )                      ",
-        " └─ ▶ bg_&_default · ( Default, Background )     "
-    ]
+    "expectedRender": {
+        "formatter": "description",
+        "snapshot": [
+            "[F[ scope ]]                                      ",
+            " ├─ ▶ plain                                       ",
+            " ├─ ▶ bg · ( Background )                        ",
+            " ├─ ▶ default · ( Default )                      ",
+            " └─ ▶ bg_&_default · ( Default, Background )     "
+        ]
+    }
 }

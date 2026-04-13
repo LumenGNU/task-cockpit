@@ -3,12 +3,20 @@
     "title": "Sketch",
     "type": "object",
     "additionalProperties": false,
-    "required": ["title", "sketch"],
+    "required": ["title", "sketch", "expectedRender"],
     "properties": {
         "title": { "type": "string", "minLength": 1 },
-        "asciiTree": {
-            "type": "array",
-            "items": { "type": "string" }
+        "expectedRender": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["formatter", "snapshot"],
+            "properties": {
+                "formatter": { "$ref": "#/definitions/formatterName" },
+                "snapshot": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
         },
         "sketch": {
             "type": "object",
@@ -32,6 +40,7 @@
     },
 
     "definitions": {
+
         "scopeEntry": {
             "type": "object",
             "additionalProperties": false,
@@ -125,6 +134,10 @@
                 "defaultIconName": { "type": "string" },
                 "tintLabel": { "type": "boolean" }
             }
+        },
+
+        "formatterName": {
+            "enum": ["simple", "icon", "description"]
         }
     }
 }

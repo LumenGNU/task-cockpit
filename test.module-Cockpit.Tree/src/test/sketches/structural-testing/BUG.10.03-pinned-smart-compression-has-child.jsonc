@@ -40,20 +40,23 @@
             "compressionBehavior": "SMART"
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]                 ",
-        " ├─ [ app1 ]                  ",
-        " │  └─ ▶ build-all            ", // имеет ребёнка → не сжимается
-        " │     └─ ▶ prepare           ",
-        " └─ [ app2 ]                  ",
-        "    └─ ▶ build-all › prepare  ", // промежуточный без детей → сжимается
-        "                              ",
-        "[F[ app1 ]]                   ",
-        " └─ ▶ build-all               ", // закреплена
-        "    └─ ▶ prepare              ", // закреплена
-        "                              ",
-        "[F[ app2 ]]                   ",
-        " └─ ▶ build-all               ", // НЕ закреплена
-        "    └─ ▶ prepare              "  // закреплена
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]                 ",
+            " ├─ [ app1 ]                  ",
+            " │  └─ ▶ build-all            ", // имеет ребёнка → не сжимается
+            " │     └─ ▶ prepare           ",
+            " └─ [ app2 ]                  ",
+            "    └─ ▶ build-all › prepare  ", // промежуточный без детей → сжимается
+            "                              ",
+            "[F[ app1 ]]                   ",
+            " └─ ▶ build-all               ", // закреплена
+            "    └─ ▶ prepare              ", // закреплена
+            "                              ",
+            "[F[ app2 ]]                   ",
+            " └─ ▶ build-all               ", // НЕ закреплена
+            "    └─ ▶ prepare              "  // закреплена
+        ]
+    }
 }

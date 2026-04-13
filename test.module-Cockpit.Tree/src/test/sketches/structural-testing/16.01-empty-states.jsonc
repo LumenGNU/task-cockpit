@@ -33,17 +33,20 @@
         }
 
     },
-    "asciiTree": [
-        "[W[ project (ws) ]]                         ",
-        " └─ « No tasks to display in this scope »   ",
-        "                                            ",
-        "[F[ empty ]]                                ",
-        " └─ « No tasks to display in this scope »   ",
-        "                                            ",
-        "[F[ one-task ]]                             ",
-        " └─ ▶ the-only-task                         ",
-        "                                            ",
-        "[F[ all-hidden ]]                           ",
-        " └─ « No tasks to display in this scope »   "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[W[ project (ws) ]]                         ",
+            " └─ « No tasks to display in this scope »   ",
+            "                                            ",
+            "[F[ empty ]]                                ",
+            " └─ « No tasks to display in this scope »   ",
+            "                                            ",
+            "[F[ one-task ]]                             ",
+            " └─ ▶ the-only-task                         ",
+            "                                            ",
+            "[F[ all-hidden ]]                           ",
+            " └─ « No tasks to display in this scope »   "
+        ]
+    }
 }

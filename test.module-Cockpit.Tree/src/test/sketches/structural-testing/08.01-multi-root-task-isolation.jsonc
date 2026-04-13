@@ -36,20 +36,23 @@
 
         "treeConfig": { "segmentSeparator": ":" }
     },
-    "asciiTree": [
-        "[F[ scope1 ]]             ",
-        " ├─ AAA                   ",
-        " │  ├─ ▶ child-task-s1.1  ",
-        " │  └─ ▶ child-task-s1.2  ",
-        " └─ ▶ BBB                 ",
-        "                          ",
-        "[F[ scope2 ]]             ",
-        " ├─ AAA                   ",
-        " │  ├─ ▶ child-task-s2.1  ",
-        " │  └─ ▶ child-task-s2.2  ",
-        " └─ ▶ BBB                 ",
-        "                          ",
-        "[F[ scope3 ]]             ",
-        " └─ ▶ CCC                 "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope1 ]]             ",
+            " ├─ AAA                   ",
+            " │  ├─ ▶ child-task-s1.1  ",
+            " │  └─ ▶ child-task-s1.2  ",
+            " └─ ▶ BBB                 ",
+            "                          ",
+            "[F[ scope2 ]]             ",
+            " ├─ AAA                   ",
+            " │  ├─ ▶ child-task-s2.1  ",
+            " │  └─ ▶ child-task-s2.2  ",
+            " └─ ▶ BBB                 ",
+            "                          ",
+            "[F[ scope3 ]]             ",
+            " └─ ▶ CCC                 "
+        ]
+    }
 }

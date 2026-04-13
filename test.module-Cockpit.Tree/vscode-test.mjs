@@ -19,7 +19,7 @@ const defaults = {
 	version: "1.86.2",
 	mocha: {
 		timeout: 33,
-		slow: 16
+		slow: 16,
 	}
 };
 

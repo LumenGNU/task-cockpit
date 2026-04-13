@@ -37,17 +37,20 @@
 
         "treeConfig": { "segmentSeparator": ":" }
     },
-    "asciiTree": [
-        "[F[ app ]]              ",
-        " ├─ ▶ AAA               ", // ветка 1-я: по child-task-1, хотя AAA — последний в файле
-        " │  ├─ ▶ child-task-1   ",
-        " │  └─ ▶ child-task-2   ",
-        " ├─ ▶ BBB               ", // ветка 2-я
-        " │  ├─ ▶ child-task-1   ",
-        " │  ├─ ▶ child-task-2   ",
-        " │  └─ ▶ child-task-3   ",
-        " └─ ▶ CCC               ", // ветка 3-я
-        "    ├─ ▶ child-task-1   ",
-        "    └─ ▶ child-task-2   "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ app ]]              ",
+            " ├─ ▶ AAA               ", // ветка 1-я: по child-task-1, хотя AAA — последний в файле
+            " │  ├─ ▶ child-task-1   ",
+            " │  └─ ▶ child-task-2   ",
+            " ├─ ▶ BBB               ", // ветка 2-я
+            " │  ├─ ▶ child-task-1   ",
+            " │  ├─ ▶ child-task-2   ",
+            " │  └─ ▶ child-task-3   ",
+            " └─ ▶ CCC               ", // ветка 3-я
+            "    ├─ ▶ child-task-1   ",
+            "    └─ ▶ child-task-2   "
+        ]
+    }
 }

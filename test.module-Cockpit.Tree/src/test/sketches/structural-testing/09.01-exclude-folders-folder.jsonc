@@ -31,14 +31,17 @@
 
         "excludeFolders": ["excluded"]
     },
-    "asciiTree": [
-        "[W[ project (workspace) ]]                  ",
-        " └─ « No tasks to display in this scope »   ",
-        "                                            ",
-        "[F[ f1 ]]                                   ",
-        " └─ ▶ in-f1                                 ",
-        "                                            ",
-        "[F[ f2 ]]                                   ",
-        " └─ ▶ in-f2                                 "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[W[ project (workspace) ]]                  ",
+            " └─ « No tasks to display in this scope »   ",
+            "                                            ",
+            "[F[ f1 ]]                                   ",
+            " └─ ▶ in-f1                                 ",
+            "                                            ",
+            "[F[ f2 ]]                                   ",
+            " └─ ▶ in-f2                                 "
+        ]
+    }
 }

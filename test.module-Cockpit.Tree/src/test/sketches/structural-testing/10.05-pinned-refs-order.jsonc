@@ -38,25 +38,28 @@
             "compressionBehavior": "SMART"
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]                        ",
-        " ├─ [ app1 ]                         ",
-        " │  └─ parent                        ",
-        " │     ├─ ▶ child-task-B             ", // порядок из refs
-        " │     └─ ▶ child-task-A             ",
-        " └─ [ app2 ]                         ",
-        "    └─ parent                        ",
-        "       ├─ ▶ child-task-A             ", // порядок из refs
-        "       └─ ▶ child-task-B             ",
-        "                                     ",
-        "[F[ app1 ]]                          ",
-        " └─ parent                           ",
-        "    ├─ ▶ child-task-A                ",
-        "    └─ ▶ child-task-B                ",
-        "                                     ",
-        "[F[ app2 ]]                          ",
-        " └─ parent                           ",
-        "    ├─ ▶ child-task-B                ",
-        "    └─ ▶ child-task-A                "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]                        ",
+            " ├─ [ app1 ]                         ",
+            " │  └─ parent                        ",
+            " │     ├─ ▶ child-task-B             ", // порядок из refs
+            " │     └─ ▶ child-task-A             ",
+            " └─ [ app2 ]                         ",
+            "    └─ parent                        ",
+            "       ├─ ▶ child-task-A             ", // порядок из refs
+            "       └─ ▶ child-task-B             ",
+            "                                     ",
+            "[F[ app1 ]]                          ",
+            " └─ parent                           ",
+            "    ├─ ▶ child-task-A                ",
+            "    └─ ▶ child-task-B                ",
+            "                                     ",
+            "[F[ app2 ]]                          ",
+            " └─ parent                           ",
+            "    ├─ ▶ child-task-B                ",
+            "    └─ ▶ child-task-A                "
+        ]
+    }
 }

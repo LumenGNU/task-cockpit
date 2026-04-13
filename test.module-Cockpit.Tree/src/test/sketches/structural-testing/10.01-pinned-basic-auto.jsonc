@@ -32,22 +32,25 @@
             "visibility": "AUTO"
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]   ",
-        " ├─ ▶ lint      ",
-        " ├─ test        ",
-        " │  └─ ▶ e2e    ",
-        " └─ build       ",
-        "    ├─ ▶ prod   ",
-        "    └─ ▶ dev    ",
-        "                ",
-        "[F[ app ]]      ",
-        " ├─ build       ",
-        " │  ├─ ▶ dev    ",
-        " │  └─ ▶ prod   ",
-        " ├─ test        ",
-        " │  ├─ ▶ unit   ",
-        " │  └─ ▶ e2e    ",
-        " └─ ▶ lint      "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]   ",
+            " ├─ ▶ lint      ",
+            " ├─ test        ",
+            " │  └─ ▶ e2e    ",
+            " └─ build       ",
+            "    ├─ ▶ prod   ",
+            "    └─ ▶ dev    ",
+            "                ",
+            "[F[ app ]]      ",
+            " ├─ build       ",
+            " │  ├─ ▶ dev    ",
+            " │  └─ ▶ prod   ",
+            " ├─ test        ",
+            " │  ├─ ▶ unit   ",
+            " │  └─ ▶ e2e    ",
+            " └─ ▶ lint      "
+        ]
+    }
 }

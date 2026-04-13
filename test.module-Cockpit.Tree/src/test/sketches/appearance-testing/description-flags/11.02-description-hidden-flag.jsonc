@@ -17,9 +17,12 @@
 
         "treeConfig": { "showHidden": true }
     },
-    "asciiTree": [
-        "[F[ scope ]]              ",
-        " ├─ ▶ normal              ",
-        " └─ ▶ hidden-task · ( Hidden )  "
-    ]
+    "expectedRender": {
+        "formatter": "description",
+        "snapshot": [
+            "[F[ scope ]]              ",
+            " ├─ ▶ normal              ",
+            " └─ ▶ hidden-task · ( Hidden )  "
+        ]
+    }
 }

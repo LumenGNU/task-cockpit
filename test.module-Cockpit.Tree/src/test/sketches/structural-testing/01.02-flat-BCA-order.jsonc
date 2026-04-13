@@ -14,10 +14,13 @@
             }
         }
     },
-    "asciiTree": [
-        "[F[ scope ]] ",
-        " ├─ ▶ BBB  ",
-        " ├─ ▶ CCC  ",
-        " └─ ▶ AAA  "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]] ",
+            " ├─ ▶ BBB  ",
+            " ├─ ▶ CCC  ",
+            " └─ ▶ AAA  "
+        ]
+    }
 }

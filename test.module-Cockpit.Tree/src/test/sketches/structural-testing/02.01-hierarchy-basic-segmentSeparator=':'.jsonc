@@ -20,14 +20,17 @@
             "segmentSeparator": ":"
         }
     },
-    "asciiTree": [
-        "[F[ scope ]]       ",
-        " ├─ AAA            ",
-        " │  ├─ ▶ in-aaa-1  ",
-        " │  └─ ▶ in-aaa-2  ",
-        " ├─ BBB            ",
-        " │  ├─ ▶ in-bbb-1  ",
-        " │  └─ ▶ in-bbb-2  ",
-        " └─ ▶ ccc          "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]]       ",
+            " ├─ AAA            ",
+            " │  ├─ ▶ in-aaa-1  ",
+            " │  └─ ▶ in-aaa-2  ",
+            " ├─ BBB            ",
+            " │  ├─ ▶ in-bbb-1  ",
+            " │  └─ ▶ in-bbb-2  ",
+            " └─ ▶ ccc          "
+        ]
+    }
 }

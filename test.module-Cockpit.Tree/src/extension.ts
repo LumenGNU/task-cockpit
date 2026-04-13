@@ -103,26 +103,26 @@ export function activate(context: vscode.ExtensionContext) {
 					disallowComments: false
 				});
 
-				const { title, treeInput, asciiTree } = Sketch.load(json);
+				const { title, treeInput, expectedRender } = Sketch.load(json);
 
 				console.log(`Loaded sketch "${title}"\n`);
 
 				const { sections, folderCounts } = TreeModel.build(treeInput);
 
-				const actualAsciiTree = TreeModel.printTree(sections);
+				const actualSnapshot = TreeModel.printTree(sections, Sketch.formatter[expectedRender.formatter]);
 
-				if (asciiTree.length > 0) {
-					if (actualAsciiTree === asciiTree) {
-						console.log(actualAsciiTree);
+				if (expectedRender.snapshot.length > 0) {
+					if (actualSnapshot === expectedRender.snapshot) {
+						console.log(actualSnapshot);
 					}
 					else {
 						vscode.window.showErrorMessage('Sketch: asciiTree no match');
-						console.error(actualAsciiTree);
+						console.error(actualSnapshot);
 					}
 				}
 				else {
 					vscode.window.showErrorMessage('Sketch: asciiTree empty');
-					console.log(actualAsciiTree);
+					console.log(actualSnapshot);
 				}
 				console.log('\n');
 

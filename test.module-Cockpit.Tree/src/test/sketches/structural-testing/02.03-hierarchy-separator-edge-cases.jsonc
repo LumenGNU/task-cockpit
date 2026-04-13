@@ -22,16 +22,18 @@
             "segmentSeparator": "/"
         }
     },
-    "asciiTree": [
-        "[F[ scope ]]        ",
-        " ├─ AAA             ",
-        " │  └─ ▶ in-aaa     ", // единственный сработавший разделитель
-        " ├─ ▶ AAA//flat     ",
-        " ├─ ▶ AAA /flat     ",
-        " ├─ ▶ AAA flat/     ",
-        " ├─ ▶ /FLAT         ",
-        " ├─ ▶ FLAT/         ",
-        " └─ ▶ /FLAT/        "
-
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]]        ",
+            " ├─ AAA             ",
+            " │  └─ ▶ in-aaa     ", // единственный сработавший разделитель
+            " ├─ ▶ AAA//flat     ",
+            " ├─ ▶ AAA /flat     ",
+            " ├─ ▶ AAA flat/     ",
+            " ├─ ▶ /FLAT         ",
+            " ├─ ▶ FLAT/         ",
+            " └─ ▶ /FLAT/        "
+        ]
+    }
 }

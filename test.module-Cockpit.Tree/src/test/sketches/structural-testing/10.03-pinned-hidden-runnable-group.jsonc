@@ -22,15 +22,18 @@
         "treeConfig": { "segmentSeparator": ":", "showHidden": false }
 
     },
-    "asciiTree": [
-        "[★[ Pinned ]]            ",
-        " └─ AAA › BBB             ",
-        "    └─ ▶ Task & Group    ", // если закреплена -- отображается как задача
-        "                         ", // Sub Task не закреплена -- ее нет, артефактов нет
-        "[F[ scope ]]             ",
-        " └─ AAA                  ",
-        "    └─ BBB               ",
-        "       └─ Task & Group   ", // здесь просто группа, задача скрыта
-        "          └─ ▶ Sub Task  "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]            ",
+            " └─ AAA › BBB             ",
+            "    └─ ▶ Task & Group    ", // если закреплена -- отображается как задача
+            "                         ", // Sub Task не закреплена -- ее нет, артефактов нет
+            "[F[ scope ]]             ",
+            " └─ AAA                  ",
+            "    └─ BBB               ",
+            "       └─ Task & Group   ", // здесь просто группа, задача скрыта
+            "          └─ ▶ Sub Task  "
+        ]
+    }
 }

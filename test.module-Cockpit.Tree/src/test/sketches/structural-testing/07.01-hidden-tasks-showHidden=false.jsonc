@@ -26,15 +26,18 @@
 
         "treeConfig": { "showHidden": false, "segmentSeparator": ":"}
     },
-    "asciiTree": [
-        "[F[ scope ]]         ",
-        " ├─ AAA              ",
-        " │  └─ ▶ visible     ",
-        " ├─ BBB              ",
-        " │  └─ CCC           ",
-        " │     └─ ▶ visible  ",
-        " └─ FFF              ",
-        "    └─ segment&task  ", // не задача, только группа
-        "       └─ ▶ visible  "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]]         ",
+            " ├─ AAA              ",
+            " │  └─ ▶ visible     ",
+            " ├─ BBB              ",
+            " │  └─ CCC           ",
+            " │     └─ ▶ visible  ",
+            " └─ FFF              ",
+            "    └─ segment&task  ", // не задача, только группа
+            "       └─ ▶ visible  "
+        ]
+    }
 }

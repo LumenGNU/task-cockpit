@@ -38,19 +38,22 @@
             "compressionBehavior": "SMART"
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]              ",
-        " ├─ ▶ parent-task          ", // hidden, но в pinned — runnable
-        " └─ ▶ a › b › Task & Group    ", // линейная цепочка без детей → сжата. hidden, но в pinned — runnable
-        "                           ",
-        "[F[ app ]]                 ",
-        " ├─ parent-task            ", // implicit group (задача скрыта, дети видимы)
-        " │  ├─ ▶ child-task-1      ",
-        " │  └─ ▶ child-task-2      ",
-        " ├─ a                      ",
-        " │  └─ b                   ",
-        " │     └─ Task & Group     ", // implicit group (задача скрыта)
-        " │        └─ ▶ Sub Task    ",
-        " └─ ▶ standalone-task      "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]              ",
+            " ├─ ▶ parent-task          ", // hidden, но в pinned — runnable
+            " └─ ▶ a › b › Task & Group    ", // линейная цепочка без детей → сжата. hidden, но в pinned — runnable
+            "                           ",
+            "[F[ app ]]                 ",
+            " ├─ parent-task            ", // implicit group (задача скрыта, дети видимы)
+            " │  ├─ ▶ child-task-1      ",
+            " │  └─ ▶ child-task-2      ",
+            " ├─ a                      ",
+            " │  └─ b                   ",
+            " │     └─ Task & Group     ", // implicit group (задача скрыта)
+            " │        └─ ▶ Sub Task    ",
+            " └─ ▶ standalone-task      "
+        ]
+    }
 }

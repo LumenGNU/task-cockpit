@@ -46,23 +46,26 @@
             ]
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]                              ",
-        " ├─ « ✗ missing-task »                     ",
-        " ├─ [ scope1 ]                             ",
-        " │  └─ AAA                                 ",
-        " │     └─ ▶ child-task-1                   ",
-        " └─ [ scope2 ]                             ",
-        "    ├─ ▶ BBB                               ",
-        "    └─ ▶ CCC                               ",
-        "                                           ",
-        "[F[ scope1 ]]                              ",
-        " └─ AAA                                    ",
-        "    ├─ ▶ child-task-1                      ",
-        "    └─ ▶ child-task-2                      ",
-        "                                           ",
-        "[F[ scope2 ]]                              ",
-        " ├─ ▶ BBB                                  ",
-        " └─ ▶ CCC                                  "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[★[ Pinned ]]                              ",
+            " ├─ « ✗ missing-task »                     ",
+            " ├─ [ scope1 ]                             ",
+            " │  └─ AAA                                 ",
+            " │     └─ ▶ child-task-1                   ",
+            " └─ [ scope2 ]                             ",
+            "    ├─ ▶ BBB                               ",
+            "    └─ ▶ CCC                               ",
+            "                                           ",
+            "[F[ scope1 ]]                              ",
+            " └─ AAA                                    ",
+            "    ├─ ▶ child-task-1                      ",
+            "    └─ ▶ child-task-2                      ",
+            "                                           ",
+            "[F[ scope2 ]]                              ",
+            " ├─ ▶ BBB                                  ",
+            " └─ ▶ CCC                                  "
+        ]
+    }
 }

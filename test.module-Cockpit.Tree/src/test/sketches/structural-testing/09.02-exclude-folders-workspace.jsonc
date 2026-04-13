@@ -32,11 +32,14 @@
 
         "excludeFolders": ["excluded", "project (workspace)"]
     },
-    "asciiTree": [
-        "[F[ f1 ]]      ",
-        " └─ ▶ in-f1    ",
-        "               ", // excluded исключена
-        "[F[ f2 ]]      ",
-        " └─ ▶ in-f2    "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ f1 ]]      ",
+            " └─ ▶ in-f1    ",
+            "               ", // excluded исключена
+            "[F[ f2 ]]      ",
+            " └─ ▶ in-f2    "
+        ]
+    }
 }

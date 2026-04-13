@@ -17,10 +17,13 @@
         },
         "nodeConfig": { "defaultIconName": "gear" }
     },
-    "asciiTree": [
-        "[F[ scope ]]                                          ",
-        " ├─ ▶ task-default-icon · $(gear)                     ",
-        " ├─ ▶ task-custom-icon · $(package)                   ",
-        " └─ ▶ task-custom-icon-color · $(rocket~.red)   "
-    ]
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "[F[ scope ]]                                          ",
+            " ├─ ▶ task-default-icon · $(gear)                     ",
+            " ├─ ▶ task-custom-icon · $(package)                   ",
+            " └─ ▶ task-custom-icon-color · $(rocket~.red)   "
+        ]
+    }
 }

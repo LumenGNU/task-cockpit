@@ -24,12 +24,12 @@ function resolveSketches(dir: string): { sketchDir: string, sketchFile: string; 
 suite('Sketches', () => {
 
     [
-        ['Structural Testing', 'structural-testing', simpleLabelFormatter] as const,
-        ['Appearance Testing (description flags)', 'appearance-testing/description-flags', descriptionFormatter] as const,
-        ['Appearance Testing (icon and color)', 'appearance-testing/icon-and-color', iconFormatter] as const,
-        ['Stress Tests', 'stress', simpleLabelFormatter] as const,
+        ['Structural Testing', 'structural-testing'] as const,
+        ['Appearance Testing (description flags)', 'appearance-testing/description-flags'] as const,
+        ['Appearance Testing (icon and color)', 'appearance-testing/icon-and-color'] as const,
+        ['Stress Tests', 'stress'] as const,
 
-    ].forEach(([suiteTitle, folder, formatter]) => {
+    ].forEach(([suiteTitle, folder]) => {
 
         suite(suiteTitle, () => {
 
@@ -62,12 +62,12 @@ suite('Sketches', () => {
                     assert.fail(`${sketchFile}:\n${(error as Error).message}`);
                 }
 
-                const { title, treeInput, asciiTree } = sketch;
+                const { title, treeInput, expectedRender } = sketch;
 
                 test(`${title}: (${sketchFile})`, () => {
                     const { sections } = TreeModel.build(treeInput);
-                    const actualAsciiTree = TreeModel.printTree(sections, formatter);
-                    assert.strictEqual(asciiTree, actualAsciiTree);
+                    const actualSnapshot = TreeModel.printTree(sections, Sketch.formatter[expectedRender.formatter]);
+                    assert.strictEqual(expectedRender.snapshot, actualSnapshot);
                 });
             }
 
@@ -78,164 +78,9 @@ suite('Sketches', () => {
 });
 
 
-//
-function simpleLabelFormatter(node: TreeModel.Node) {
-
-    const {
-        label,
-        // collapsibleState,
-        // description,
-        // iconPath,
-        // id
-    } = TreeModel.describe(node);
-
-    switch (node.kind) {
-        case TC.EntityKind.Folder: {
-            return `[F[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.Workspace: {
-            return `[W[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedStaleOnly:
-        case TC.EntityKind.PinnedSingle:
-        case TC.EntityKind.PinnedMulti: {
-            return `[★[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedFolder: {
-            return `[ ${label} ]`;
-        }
-
-        case TC.EntityKind.BrokenPinned: {
-            return `« ✗ ${label} »`;
-        }
-
-        case TC.EntityKind.Empty: {
-            return `« ${label} »`;
-        }
-
-        case TC.EntityKind.Group: {
-            return label;
-        }
-
-        case TC.EntityKind.Runnable:
-        case TC.EntityKind.RunnableGroup: {
-            return `▶ ${label}`;
-        }
-
-        default: {
-            const _node: never = node;
-            return '== ERROR ==';
-        }
-    }
-};
 
 
-function descriptionFormatter(node: TreeModel.Node) {
-
-    const { label, description } = TreeModel.describe(node);
-
-    const withDesc = (text: string) =>
-        description ? `${text} · ${description}` : text;
-
-    switch (node.kind) {
-        case TC.EntityKind.Folder: {
-            return `[F[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.Workspace: {
-            return `[W[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedStaleOnly:
-        case TC.EntityKind.PinnedSingle:
-        case TC.EntityKind.PinnedMulti: {
-            return `[★[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedFolder: {
-            return `[ ${label} ]`;
-        }
-
-        case TC.EntityKind.BrokenPinned: {
-            return `« ✗ ${label} »`;
-        }
-
-        case TC.EntityKind.Empty: {
-            return `« ${label} »`;
-        }
-
-        case TC.EntityKind.Group: {
-            return withDesc(label);
-        }
-
-        case TC.EntityKind.Runnable:
-        case TC.EntityKind.RunnableGroup: {
-            return withDesc(`▶ ${label}`);
-        }
-
-        default: {
-            const _node: never = node;
-            return '== ERROR ==';
-        }
-    }
-}
 
 
-function iconFormatter(node: TreeModel.Node) {
-
-    const { label, iconPath } = TreeModel.describe(node);
-
-    function fmtIcon(icon: vscode.IconPath | undefined): string {
-        if (icon instanceof vscode.ThemeIcon) {
-            const color = icon.color ? `~${icon.color.id}` : '';
-            return `$(${icon.id}${color})`;
-        }
-        return '';
-    }
 
 
-    switch (node.kind) {
-        case TC.EntityKind.Folder: {
-            return `[F[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.Workspace: {
-            return `[W[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedStaleOnly:
-        case TC.EntityKind.PinnedSingle:
-        case TC.EntityKind.PinnedMulti: {
-            return `[★[ ${label} ]]`;
-        }
-
-        case TC.EntityKind.PinnedFolder: {
-            return `[ ${label} ]`;
-        }
-
-        case TC.EntityKind.BrokenPinned: {
-            return `« ✗ ${label} »`;
-        }
-
-        case TC.EntityKind.Empty: {
-            return `« ${label} »`;
-        }
-
-        case TC.EntityKind.Group: {
-            return `${label} · ${fmtIcon(iconPath)}`;
-        }
-
-        case TC.EntityKind.Runnable:
-        case TC.EntityKind.RunnableGroup: {
-            return `▶ ${label} · ${fmtIcon(iconPath)}`;
-        }
-
-        default: {
-            const _node: never = node;
-            return '== ERROR ==';
-        }
-    }
-}

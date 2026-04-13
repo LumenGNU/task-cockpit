@@ -20,12 +20,15 @@
             "segmentSeparator": false // сепаратор отключен
         }
     },
-    "asciiTree": [
-        "[F[ scope ]]       ",
-        " ├─ ▶ AAA:in-aaa-1 ",
-        " ├─ ▶ AAA:in-aaa-2 ",
-        " ├─ ▶ BBB:in-bbb-1 ",
-        " ├─ ▶ BBB:in-bbb-2 ",        
-        " └─ ▶ ccc          "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]]       ",
+            " ├─ ▶ AAA:in-aaa-1 ",
+            " ├─ ▶ AAA:in-aaa-2 ",
+            " ├─ ▶ BBB:in-bbb-1 ",
+            " ├─ ▶ BBB:in-bbb-2 ",        
+            " └─ ▶ ccc          "
+        ]
+    }
 }

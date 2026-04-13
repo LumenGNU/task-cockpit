@@ -21,23 +21,26 @@
 
         "treeConfig": { "showHidden": true, "segmentSeparator": ":"}
     },
-    "asciiTree": [
-        "[F[ scope ]]              ",
-        " ├─ AAA                   ",
-        " │  ├─ ▶ visible          ",
-        " │  └─ ▶ HIDDEN           ",
-        " ├─ BBB                   ",
-        " │  ├─ CCC                ",
-        " │  │  └─ ▶ visible       ",
-        " │  └─ b                  ",
-        " │     └─ bb              ",
-        " │        └─ bbb          ",
-        " │           └─ ▶ HIDDEN  ",
-        " ├─ ▶ HIDDEN-tool         ",
-        " ├─ FFF                   ",
-        " │  └─ ▶ segment&task     ",
-        " │     └─ ▶ visible       ",
-        " └─ HIDDEN                ",
-        "    └─ ▶ tool             "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ scope ]]              ",
+            " ├─ AAA                   ",
+            " │  ├─ ▶ visible          ",
+            " │  └─ ▶ HIDDEN           ",
+            " ├─ BBB                   ",
+            " │  ├─ CCC                ",
+            " │  │  └─ ▶ visible       ",
+            " │  └─ b                  ",
+            " │     └─ bb              ",
+            " │        └─ bbb          ",
+            " │           └─ ▶ HIDDEN  ",
+            " ├─ ▶ HIDDEN-tool         ",
+            " ├─ FFF                   ",
+            " │  └─ ▶ segment&task     ",
+            " │     └─ ▶ visible       ",
+            " └─ HIDDEN                ",
+            "    └─ ▶ tool             "
+        ]
+    }
 }

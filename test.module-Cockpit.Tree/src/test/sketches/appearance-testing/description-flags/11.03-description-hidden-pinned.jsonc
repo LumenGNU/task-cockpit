@@ -22,12 +22,15 @@
         }
 
     },
-    "asciiTree": [
-        "[★[ Pinned ]]                   ",
-        " ├─ ▶ normal-task               ",
-        " └─ ▶ hidden-task · ( Hidden ) ",
-        "                                ",
-        "[F[ scope ]]                    ",
-        " └─ ▶ normal-task               "
-    ]
+    "expectedRender": {
+        "formatter": "description",
+        "snapshot": [
+            "[★[ Pinned ]]                   ",
+            " ├─ ▶ normal-task               ",
+            " └─ ▶ hidden-task · ( Hidden ) ",
+            "                                ",
+            "[F[ scope ]]                    ",
+            " └─ ▶ normal-task               "
+        ]
+    }
 }

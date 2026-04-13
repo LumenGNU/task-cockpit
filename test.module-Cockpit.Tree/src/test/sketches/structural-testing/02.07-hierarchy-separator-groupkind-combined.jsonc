@@ -29,17 +29,20 @@
         "treeConfig": { "segmentSeparator": ":", "useGroupKind": true },
         "nodeConfig": { "useFolderIcon": true }
     },
-    "asciiTree": [
-        "[F[ project ]]           ",
-        " ├─ Build                ", // group folder
-        " │  └─ Build             ", // сегмент — дублирование!
-        " │     ├─ ▶ child-task-1 ",
-        " │     └─ ▶ child-task-2 ",
-        " ├─ Test                 ", // group folder
-        " │  └─ deploy            ", // сегмент — дублирования нет
-        " │     ├─ ▶ child-task-1 ",
-        " │     └─ ▶ child-task-2 ",
-        " └─ AAA                  ", // только segment-иерархия
-        "    └─ ▶ child-task-1    "
-    ]
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "[F[ project ]]           ",
+            " ├─ Build                ", // group folder
+            " │  └─ Build             ", // сегмент — дублирование!
+            " │     ├─ ▶ child-task-1 ",
+            " │     └─ ▶ child-task-2 ",
+            " ├─ Test                 ", // group folder
+            " │  └─ deploy            ", // сегмент — дублирования нет
+            " │     ├─ ▶ child-task-1 ",
+            " │     └─ ▶ child-task-2 ",
+            " └─ AAA                  ", // только segment-иерархия
+            "    └─ ▶ child-task-1    "
+        ]
+    }
 }

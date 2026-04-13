@@ -28,13 +28,16 @@
             "compressionBehavior": "SMART"
         }
     },
-    "asciiTree": [
-        "[★[ Pinned ]]",
-        " └─ ▶ build › task-1 · $(play~.red) ", // иконка от task-1
-        "                                   ",
-        "[F[ scope ]]                       ",
-        " └─ ▶ build · $(package)           ",
-        "    ├─ ▶ task-1 · $(play~.red)     ",
-        "    └─ ▶ task-2 · $(tools)         "
-    ]
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "[★[ Pinned ]]",
+            " └─ ▶ build › task-1 · $(play~.red) ", // иконка от task-1
+            "                                   ",
+            "[F[ scope ]]                       ",
+            " └─ ▶ build · $(package)           ",
+            "    ├─ ▶ task-1 · $(play~.red)     ",
+            "    └─ ▶ task-2 · $(tools)         "
+        ]
+    }
 }

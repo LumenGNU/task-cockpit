@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import * as TC from './types';
 import helpers from './helpers';
+import TreeModel from './Cockpit/TreeModel';
+import * as vscode from 'vscode';
+
+const formatterNames = ['simple', 'icon', 'description'] as const;
 
 // ============================================================
 // Schemas — атомы
@@ -59,6 +63,14 @@ const nodeConfigSchema = z.object({
     useFolderIcon: z.boolean().prefault(false),
     defaultIconName: z.string().prefault('tools'),
     tintLabel: z.boolean().prefault(false),
+}).strict();
+
+const formatterNameSchema = z.enum(formatterNames);
+export type FormatterName = z.infer<typeof formatterNameSchema>;
+
+const expectedRenderSchema = z.object({
+    formatter: formatterNameSchema,
+    snapshot: z.array(z.string()),
 }).strict();
 
 
@@ -135,8 +147,8 @@ const bodySchema = z.object({
 
 export const sketchSchema = z.object({
     title: z.string().min(1, 'title обязателен'),
+    expectedRender: expectedRenderSchema,
     sketch: bodySchema,
-    asciiTree: z.array(z.string()).prefault([]),
 }).strict();
 
 export type Sketch = z.infer<typeof sketchSchema>;
@@ -147,9 +159,14 @@ type Body = z.infer<typeof bodySchema>;
 // Loader
 // ============================================================
 
+export interface ExpectedRender {
+    readonly formatter: FormatterName;
+    readonly snapshot: string;
+}
+
 export interface LoadResult {
     readonly title: string;
-    readonly asciiTree: string;
+    readonly expectedRender: ExpectedRender;
     readonly treeInput: TC.TreeInput;
 }
 
@@ -159,11 +176,14 @@ export function load(data: unknown): LoadResult {
         throw new Error(`Sketch validation failed:\n${z.prettifyError(parsed.error)}`);
     }
 
-    const { title, sketch, asciiTree } = parsed.data;
+    const { title, sketch, expectedRender } = parsed.data;
 
     return {
         title,
-        asciiTree: asciiTree.map(s => s.trimEnd()).join('\n'),
+        expectedRender: {
+            formatter: expectedRender.formatter,
+            snapshot: expectedRender.snapshot.map(s => s.trimEnd()).join('\n'),
+        },
         treeInput: buildTreeInput(sketch),
     };
 }
@@ -209,3 +229,167 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
 }
 
 
+type NodeFormatter = (node: TreeModel.Node) => string;
+
+type FormatterNameType = typeof formatterNames[number];
+
+export const formatter: Record<FormatterNameType, NodeFormatter> = {
+    // ---
+    simple: (node) => {
+        const {
+            label,
+            // collapsibleState,
+            // description,
+            // iconPath,
+            // id
+        } = TreeModel.describe(node);
+
+        switch (node.kind) {
+            case TC.EntityKind.Folder: {
+                return `[F[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.Workspace: {
+                return `[W[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedStaleOnly:
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedMulti: {
+                return `[★[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedFolder: {
+                return `[ ${label} ]`;
+            }
+
+            case TC.EntityKind.BrokenPinned: {
+                return `« ✗ ${label} »`;
+            }
+
+            case TC.EntityKind.Empty: {
+                return `« ${label} »`;
+            }
+
+            case TC.EntityKind.Group: {
+                return label;
+            }
+
+            case TC.EntityKind.Runnable:
+            case TC.EntityKind.RunnableGroup: {
+                return `▶ ${label}`;
+            }
+
+            default: {
+                const _node: never = node;
+                return '== ERROR ==';
+            }
+        }
+    },
+
+    // ---
+    icon: (node) => {
+        const { label, iconPath } = TreeModel.describe(node);
+
+        function fmtIcon(icon: vscode.IconPath | undefined): string {
+            if (icon instanceof vscode.ThemeIcon) {
+                const color = icon.color ? `~${icon.color.id}` : '';
+                return `$(${icon.id}${color})`;
+            }
+            return '';
+        }
+
+
+        switch (node.kind) {
+            case TC.EntityKind.Folder: {
+                return `[F[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.Workspace: {
+                return `[W[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedStaleOnly:
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedMulti: {
+                return `[★[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedFolder: {
+                return `[ ${label} ]`;
+            }
+
+            case TC.EntityKind.BrokenPinned: {
+                return `« ✗ ${label} »`;
+            }
+
+            case TC.EntityKind.Empty: {
+                return `« ${label} »`;
+            }
+
+            case TC.EntityKind.Group: {
+                return `${label} · ${fmtIcon(iconPath)}`;
+            }
+
+            case TC.EntityKind.Runnable:
+            case TC.EntityKind.RunnableGroup: {
+                return `▶ ${label} · ${fmtIcon(iconPath)}`;
+            }
+
+            default: {
+                const _node: never = node;
+                return '== ERROR ==';
+            }
+        }
+    },
+
+    // ---
+    description: (node) => {
+        const { label, description } = TreeModel.describe(node);
+
+        const withDesc = (text: string) =>
+            description ? `${text} · ${description}` : text;
+
+        switch (node.kind) {
+            case TC.EntityKind.Folder: {
+                return `[F[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.Workspace: {
+                return `[W[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedStaleOnly:
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedMulti: {
+                return `[★[ ${label} ]]`;
+            }
+
+            case TC.EntityKind.PinnedFolder: {
+                return `[ ${label} ]`;
+            }
+
+            case TC.EntityKind.BrokenPinned: {
+                return `« ✗ ${label} »`;
+            }
+
+            case TC.EntityKind.Empty: {
+                return `« ${label} »`;
+            }
+
+            case TC.EntityKind.Group: {
+                return withDesc(label);
+            }
+
+            case TC.EntityKind.Runnable:
+            case TC.EntityKind.RunnableGroup: {
+                return withDesc(`▶ ${label}`);
+            }
+
+            default: {
+                const _node: never = node;
+                return '== ERROR ==';
+            }
+        }
+    },
+};
