@@ -23,89 +23,99 @@
     "title": "Stress · The Full Monty — 3 scopes, deep hierarchy, all flags, SMART",
     "sketch": {
         "scopes": {
-            "backend":  "backend/.vscode/tasks.json",
-            "frontend": "frontend/.vscode/tasks.json",
-            "shared":   "shared/.vscode/tasks.json"
-        },
+            "backend":  {
+                "tasksFile": "backend/.vscode/tasks.json",
+                "tasks": [
+                    // Build
+                    { "name": "core:compile",       "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "core:compile:watch",  "group": { "kind": "Build", "isDefault": true }, "isBackground": true, "icon": { "id": "eye", "color": "terminal.ansiGreen" } },
 
-        "tasks": {
+                    // Test
+                    { "name": "unit",            "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "integration:api", "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "integration:db",  "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "e2e:smoke",       "group": { "kind": "Test" }, "isBackground": true, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
 
-            // ── BACKEND ──────────────────────────────────────────────
-            "backend": [
-                // Build
-                { "name": "core:compile",       "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
-                { "name": "core:compile:watch",  "group": { "kind": "Build", "isDefault": true }, "isBackground": true, "icon": { "id": "eye", "color": "terminal.ansiGreen" } },
+                    // deploy (ungrouped — kind "deploy" невалиден)
+                    { "name": "infra:k8s:deploy-staging", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+                    { "name": "infra:k8s:deploy-prod", "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
 
-                // Test
-                { "name": "unit",            "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
-                { "name": "integration:api", "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
-                { "name": "integration:db",  "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
-                { "name": "e2e:smoke",       "group": { "kind": "Test" }, "isBackground": true, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+                    // ungrouped
+                    { "name": "db:migrate:run",      "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+                    { "name": "db:migrate:rollback",  "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+                    { "name": "db:migrate:seed",      "icon": { "id": "database", "color": "terminal.ansiMagenta" } },
+                    { "name": "lint", "icon": { "id": "search" } },
+                    // невозможная комбинация флагов
+                    { "name": "all-flags", "hidden": true, "isBackground": true, "group": { "kind": "Build", "isDefault": true } }
 
-                // deploy (ungrouped — kind "deploy" невалиден)
-                { "name": "infra:k8s:deploy-staging", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
-                { "name": "infra:k8s:deploy-prod", "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+                ],
+                "pinned": [
+                    "infra:k8s:deploy-prod",         // hidden → visible in pinned
+                    "db:migrate:run",
+                    "lint"
+                ]
+            },
+            "frontend": {
+                "tasksFile": "frontend/.vscode/tasks.json",
+                "tasks": [
+                    // ui components — глубокая вложенность, одинаковые leaf-имена
+                    { "name": "ui:components:Button:build" },
+                    { "name": "ui:components:Button:test",      "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "ui:components:Button:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+                    { "name": "ui:components:Modal:build" },
+                    { "name": "ui:components:Table:build" },
+                    { "name": "ui:components:Table:test" },
 
-                // ungrouped
-                { "name": "db:migrate:run",      "icon": { "id": "database", "color": "terminal.ansiCyan" } },
-                { "name": "db:migrate:rollback",  "icon": { "id": "database", "color": "terminal.ansiCyan" } },
-                { "name": "db:migrate:seed",      "icon": { "id": "database", "color": "terminal.ansiMagenta" } },
-                { "name": "lint", "icon": { "id": "search" } },
-                // невозможная комбинация флагов
-                { "name": "all-flags", "hidden": true, "isBackground": true, "group": { "kind": "Build", "isDefault": true } }
-            ],
+                    // styles
+                    { "name": "styles:build-tokens", "icon": { "id": "paintcan", "color": "terminal.ansiMagenta" } },
 
-            // ── FRONTEND ─────────────────────────────────────────────
-            "frontend": [
-                // ui components — глубокая вложенность, одинаковые leaf-имена
-                { "name": "ui:components:Button:build" },
-                { "name": "ui:components:Button:test",      "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
-                { "name": "ui:components:Button:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
-                { "name": "ui:components:Modal:build" },
-                { "name": "ui:components:Table:build" },
-                { "name": "ui:components:Table:test" },
+                    // app
+                    { "name": "app:dev",     "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+                    { "name": "app:build",   "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "app:preview", "icon": { "id": "browser" } },
 
-                // styles
-                { "name": "styles:build-tokens", "icon": { "id": "paintcan", "color": "terminal.ansiMagenta" } },
+                    // e2e
+                    { "name": "e2e:cypress:run" },
+                    { "name": "e2e:cypress:open", "isBackground": true },
 
-                // app
-                { "name": "app:dev",     "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
-                { "name": "app:build",   "icon": { "id": "package", "color": "terminal.ansiGreen" } },
-                { "name": "app:preview", "icon": { "id": "browser" } },
+                    // hidden
+                    { "name": "stale-task", "hidden": true },
 
-                // e2e
-                { "name": "e2e:cypress:run" },
-                { "name": "e2e:cypress:open", "isBackground": true },
+                    // blank icon
+                    { "name": "secret-experiment", "icon": { "id": "blank" } }
+                ],
+                "pinned": [
+                    "ui:components:Button:test"
+                ]
+            },
+            "shared":   {
+                "tasksFile": "shared/.vscode/tasks.json",
+                "tasks": [
+                    // proto — task-as-group: "codegen" и задача, и группа
+                    { "name": "proto:codegen",        "icon": { "id": "zap", "color": "terminal.ansiYellow" } },
+                    { "name": "proto:codegen:go" },
+                    { "name": "proto:codegen:ts" },
+                    { "name": "proto:codegen:python" },
+                    { "name": "proto:lint", "icon": { "id": "search" } },
 
-                // hidden
-                { "name": "stale-task", "hidden": true },
+                    // ci pipeline
+                    { "name": "ci:pipeline:validate" },
+                    { "name": "ci:pipeline:build-all", "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "ci:pipeline:notify",    "isBackground": true, "icon": { "id": "bell", "color": "terminal.ansiBlue" } },
 
-                // blank icon
-                { "name": "secret-experiment", "icon": { "id": "blank" } }
-            ],
+                    // docs
+                    { "name": "docs:generate", "icon": { "id": "notebook" } },
 
-            // ── SHARED ───────────────────────────────────────────────
-            "shared": [
-                // proto — task-as-group: "codegen" и задача, и группа
-                { "name": "proto:codegen",        "icon": { "id": "zap", "color": "terminal.ansiYellow" } },
-                { "name": "proto:codegen:go" },
-                { "name": "proto:codegen:ts" },
-                { "name": "proto:codegen:python" },
-                { "name": "proto:lint", "icon": { "id": "search" } },
-
-                // ci pipeline
-                { "name": "ci:pipeline:validate" },
-                { "name": "ci:pipeline:build-all", "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
-                { "name": "ci:pipeline:notify",    "isBackground": true, "icon": { "id": "bell", "color": "terminal.ansiBlue" } },
-
-                // docs
-                { "name": "docs:generate", "icon": { "id": "notebook" } },
-
-                // hidden task-as-group (задача скрыта, дети видимы)
-                { "name": "internal:legacy", "hidden": true },
-                { "name": "internal:legacy:compat-shim" },
-                { "name": "internal:legacy:polyfill" }
-            ]
+                    // hidden task-as-group (задача скрыта, дети видимы)
+                    { "name": "internal:legacy", "hidden": true },
+                    { "name": "internal:legacy:compat-shim" },
+                    { "name": "internal:legacy:polyfill" }
+                ],
+                "pinned": [
+                    "proto:codegen",                  // task-as-group
+                    "internal:legacy:compat-shim"     // child of hidden group
+                ]
+            }
         },
 
         "treeConfig": {
@@ -119,14 +129,6 @@
         "pinned": {
             "visibility": "AUTO",
             "compressionBehavior": "SMART",
-            "refs": [
-                { "scope": "backend",  "label": "infra:k8s:deploy-prod" },         // hidden → visible in pinned
-                { "scope": "backend",  "label": "db:migrate:run" },
-                { "scope": "frontend", "label": "ui:components:Button:test" },
-                { "scope": "shared",   "label": "proto:codegen" },                  // task-as-group
-                { "scope": "backend",  "label": "lint" },
-                { "scope": "shared",   "label": "internal:legacy:compat-shim" }     // child of hidden group
-            ],
             "stales": [
                 { "scopeName": "DEAD_FOLDER", "label": "ghost:task" }               // scope не существует
             ]

@@ -70,7 +70,9 @@ fi
 
 
 while IFS= read -r entry || [ -n "$entry" ]; do
-    [ -z "$entry" ] && continue
+
+    [ -z "$entry" ] && continue         # пропуск пустых
+    [[ "$entry" == \#* ]] && continue   # и закомментированных строк
 
     source_path="$SOURCE_BASE/$entry"
 
@@ -129,7 +131,8 @@ if [ -n "$GIT_DIR" ]; then
 
     if [ -f "$LIST_FILE" ]; then
         while IFS= read -r line || [ -n "$line" ]; do
-            [ -z "$line" ] && continue
+            [ -z "$line" ] && continue          # пропуск пустых
+            [[ "$line" == \#* ]] && continue    # и закомментированных строк
             generated+=("${REPO_PREFIX}src/$line")
         done < "$LIST_FILE"
     fi

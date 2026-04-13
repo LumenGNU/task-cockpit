@@ -14,17 +14,18 @@
     "title": "Hierarchy · segmentSeparator + useGroupKind combined",
     "sketch": {
         "scopes": {
-            "project": "project/.vscode/tasks.json"
+            "project": {
+                "tasksFile": "project/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "Build:child-task-1", "group": { "kind": "Build" } },
+                    { "name": "Build:child-task-2", "group": { "kind": "Build" } },
+                    { "name": "deploy:child-task-1", "group": { "kind": "Test" } },
+                    { "name": "deploy:child-task-2", "group": { "kind": "Test" } },
+                    { "name": "AAA:child-task-1" }
+                ]
+            }
         },
-        "tasks": {
-            "project": [
-                { "name": "Build:child-task-1", "group": { "kind": "Build" } },
-                { "name": "Build:child-task-2", "group": { "kind": "Build" } },
-                { "name": "deploy:child-task-1", "group": { "kind": "Test" } },
-                { "name": "deploy:child-task-2", "group": { "kind": "Test" } },
-                { "name": "AAA:child-task-1" }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":", "useGroupKind": true },
         "nodeConfig": { "useFolderIcon": true }
     },

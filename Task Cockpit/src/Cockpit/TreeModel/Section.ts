@@ -5,9 +5,6 @@ import * as TC from '../../types';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
 
-// #region DEBUG
-import helpers from '../../helpers';
-// #endregion DEBUG
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
@@ -19,35 +16,33 @@ const { log, assert } = Logger.get(module.filename);
 /** Детализация количества задач в scope. */
 interface TaskCounts {
     /** Общее количество задач. */
-    total: number;
+    totalCount: number;
     /** Количество скрытых задач (с `hide: true`). */
-    hidden: number;
+    hiddenCount: number;
 }
 
 
-/** Результат построения спецификаций для файловых секций. */
-interface SpecsResult {
-    /** Массив спецификаций, готовых к передаче в {@linkcode Hierarchy.build}. */
-    specs: ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition, TC.File>>;
-    /** Детализация по каждому файлу задач. */
-    taskCountsByFile: ReadonlyMap<TC.File, TaskCounts>;
-}
+interface FolderCounts {
 
+    totalCount: number;
+
+    hiddenCount: number;
+}
 
 
 declare namespace Section {
 
     /** Элемент дерева секции — запускаемая задача, и/или группирующий узел. */
     // export type Item = Readonly<Item.Runnable | Item.Group>;
-    export type Item = Readonly<Hierarchy.Data<TC.TaskDefinition, TC.File> | Hierarchy.Branch<TC.TaskDefinition, TC.File>>;
+    export type Item = Readonly<Hierarchy.Data<TC.TaskDefinition> | Hierarchy.Branch<TC.TaskDefinition>>;
 
 
     /** Секция избранных задач. (Всегда первая в массиве секций) */
-    type FavoriteBase = {
+    type PinnedBase = {
         /** Фиксированное имя секции. */
         name: 'Pinned';
 
-        kind: TC.EntityKind.PinnedSingle | TC.EntityKind.PinnedMulti;
+        kind: TC.EntityKind.PinnedSingle | TC.EntityKind.PinnedMulti | TC.EntityKind.PinnedStaleOnly;
         /** Ссылки на избранные задачи, определения которых не найдены
          * в текущем {@linkcode TC.DefinitionsByFile | definitionMap}.
          * Отображаются в начале секции как "сломанные". */
@@ -57,23 +52,31 @@ declare namespace Section {
         tasksFile?: TC.File;
         /** Дочерние элементы.
          * - Single-root ({@linkcode PinnedSingle}): {@linkcode Item Item[]} — узлы иерархии.
-         * - Multi-root ({@linkcode PinnedMulti}): {@linkcode PinnedFolder FolderF[]} — обёртки по workspace folders. */
-        children: ReadonlyArray<Item | PinnedFolder>;
+         * - Multi-root ({@linkcode PinnedMulti}): {@linkcode PinnedFolder FolderF[]} — обёртки по workspace folders.
+         * - undefined — специальный случай: есть только битые задачи */
+        children?: ReadonlyArray<Item | PinnedFolder>;
     };
 
-    export interface PinnedSingle extends FavoriteBase {
+    export interface PinnedSingle extends PinnedBase {
         kind: TC.EntityKind.PinnedSingle;
         tasksFile: TC.File;
         children: ReadonlyArray<Item>;
+        nodeConfig: TC.NodeConfig;
     }
 
-    export interface PinnedMulti extends FavoriteBase {
+    export interface PinnedMulti extends PinnedBase {
         kind: TC.EntityKind.PinnedMulti;
         tasksFile?: undefined;
         children: ReadonlyArray<PinnedFolder>;
     }
 
-    type Favorite = PinnedSingle | PinnedMulti;
+    export interface PinnedEmpty extends PinnedBase {
+        kind: TC.EntityKind.PinnedStaleOnly;
+        tasksFile?: undefined;
+        children?: undefined;
+    }
+
+    type Pinned = PinnedSingle | PinnedMulti | PinnedEmpty;
 
     /** Секция файла задач — задачи одного `.vscode/tasks.json` или `.code-workspace`. */
     export interface Source {
@@ -81,14 +84,15 @@ declare namespace Section {
          * `.json` → {@linkcode TC.EntityKind.Folder}, иначе → {@linkcode TC.EntityKind.Workspace}. */
         kind: TC.EntityKind.Workspace | TC.EntityKind.Folder;
         /** Имя workspace folder (display name). */
-        name: TC.FolderName;
+        folderName: TC.FolderName;
         /** Абсолютный путь к файлу задач (`fsPath`). */
         tasksFile: TC.File;
         /** Элементы дерева — результат построения иерархии для данного scope. */
         children: ReadonlyArray<Item>;
         /** Статистика задач в файле. Присутствует только у файловых секций
-         * (не у Favorite-обёрток в multi-root). */
+         * (не у Pinned-обёрток в multi-root). */
         taskCounts: TaskCounts;
+        nodeConfig: TC.NodeConfig;
     }
 
     /** Папка-обёртка внутри Pinned */
@@ -102,110 +106,137 @@ declare namespace Section {
 /** Модуль строит промежуточную модель дерева задач (Секции) из сырых определений.
  *
  * Два типа секций:
- * - **Favorite** — избранные задачи со всех scope, с сжиманием путей для компактности.
+ * - **Pinned** — избранные задачи со всех scope, с сжиманием путей для компактности.
  * - **File** — задачи одного файла (`.vscode/tasks.json` или `.code-workspace`).
- *
- * Цепочка обработки:
- * 1. Определения фильтруются (hidden) и трансформируются в {@link Hierarchy.Spec} —
- *    линейное преобразование label → path через {@link Splitter} и опциональный `group.kind`.
- * 1. Спецификации передаются в {@link Hierarchy.build}, который строит trie.
- * 1. Результат разворачивается в массив секций: `[Favorite, ...File[]]`.
+ * 
+ * @todo поведение, реакция на конфигурации...
  * 
  * Фильтрация по hidden происходит в модели, а не в представлении, поскольку
  * представление не должно показывать цепочку пустых сегментов. Но понять
  * что цепочка пуста оно сможет понять только достроив ветку до листа
  * и проверив его поле hidden.
+ * 
+ * Цепочка обработки:
+ * 1. Определения фильтруются (hidden) и трансформируются в {@link Hierarchy.Spec} —
+ *    линейное преобразование label → path через {@link Splitter} и опциональный `group.kind`.
+ * 1. Спецификации передаются в {@link Hierarchy.build}, который строит trie.
+ * 1. Результат разворачивается в массив секций: `[Pinned, ...File[]]`.
  *
  * Pinned проходят дополнительный этап: промежуточный trie строится для
  * path compression (склейка "пустых" участков через ` › `), после чего
  * сжатые спецификации передаются в финальный {@link Hierarchy.build}. */
 const Section = {
 
-    /** Строит полную модель дерева: секция Pinned + по одной File секции на scope.
+    /** Строит полную модель дерева задач в виде массива секций.
      *
-     * Алгоритм:
-     * 1. Строит секцию Pinned (см. {@linkcode buildPinnedSection}).
-     * 1. Собирает спецификации из определений задач (см. {@linkcode makeFileSpecs}):
-     *      - Фильтрация hidden-задач.
-     *      - Трансформация label → path (см. {@linkcode toPathSegments}).
-     *      - Подсчёт {@linkcode TaskCounts} по файлам.
-     * 1. Передаёт спецификации в {@linkcode Hierarchy.build} — единый trie для всех scope.
-     * 1. Извлекает дочерние узлы каждого scope из trie и оборачивает в {@linkcode Section.Source}.
+     * Два типа секций в результате:
+     * - **Pinned** — единственная секция избранных задач (всегда первая, если присутствует).
+     *   Тип зависит от workspace: {@linkcode Section.PinnedSingle} в single-root,
+     *   {@linkcode Section.PinnedMulti} в multi-root (задачи сгруппированы по папкам),
+     *   {@linkcode Section.PinnedEmpty} если есть только битые ссылки.
+     *   Отсутствует при `visibility === TC.PinnedVisibility.HIDE` или если нет
+     *   ни valid pinned-задач, ни stale-ссылок.
+     *   **Исключённые папки на Pinned не влияют** — закреплённые задачи из них
+     *   всё равно отображаются.
+     * - **Source** — по одной секции на каждый не-исключённый scope,
+     *   в порядке `treeInput.scopeIndex`.
      *
-     * @param scopes Список workspace-scope (порядок определяет порядок секций).
-     * @param favoritesConfig Конфигурация избранных: записи и устаревшие ссылки.
-     * @param definitionMap Определения задач, сгруппированные по файлу (`fsPath` → Map<label, def>).
-     * @param treeConfigMap Конфигурация отображения дерева по файлу (`fsPath` → config).
-     * @returns Кортеж `[Favorite, ...File[]]` — Pinned всегда первый элемент. */
-    buildEntities(
-        scopes: ReadonlyArray<TC.Scope>,
-        favoritesConfig: Readonly<TC.PinnedConfig>,
-        definitionMap: Readonly<TC.DefinitionsByFile>,
-        treeConfigMap: Readonly<TC.TreeConfigByFile>,
-    ): readonly [Section.Favorite, ...Section.Source[]] {
+     * @param treeInput Входные данные: scope-индекс, конфигурация Pinned, исключённые папки.
+     * @returns
+     *   - `sections` — `[Pinned?, ...Source[]]`.
+     *   - `folderCounts` — `totalCount`: количество всех папок workspace (включая исключённые);
+     *     `hiddenCount`: количество исключённых (`excludedFolders`). */
+    buildSections(
+        treeInput: TC.DeepReadonly<TC.TreeInput>
+    ): {
+        sections: Array<Section.Pinned | Section.Source>;
+        folderCounts: FolderCounts;
+    } {
 
-        const sections: [Section.Favorite, ...Section.Source[]] = [
-            buildPinnedSection(scopes, favoritesConfig, definitionMap, treeConfigMap)
-        ];
+        const folderCounts = { totalCount: 0, hiddenCount: 0 };
 
-        const { specs, taskCountsByFile } = makeFileSpecs(
-            scopes,
-            definitionMap,
-            treeConfigMap
-        );
-
-        const hierarchy = Hierarchy.build(specs);
-
-        for (const scope of scopes) {
-
-            const file = scope.uri.fsPath;
-
-            const hierarchyScope = Hierarchy.getScope(hierarchy, file);
-            sections.push(
-                makeSource(
-                    scope.name,
-                    file,
-                    hierarchyScope ? Hierarchy.Scope.getChildren(hierarchyScope) : [],
-                    taskCountsByFile.get(file)!
-                )
-            );
+        if (treeInput.scopeIndex.size < 1) {
+            return { sections: [], folderCounts };
         }
 
-        return sections;
+        const pinnedSpecs = new Map<TC.File, TC.DeepReadonly<{
+            folderName: TC.FolderName;
+            nodeConfig: TC.NodeConfig;
+            specs: ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>>;
+        }>>();
+
+
+        const fileSpecs = new Map<TC.File, TC.DeepReadonly<{
+            folderName: TC.FolderName;
+            specs: Array<Hierarchy.Spec<TC.TaskDefinition>>;
+            taskCounts: TaskCounts;
+            nodeConfig: TC.NodeConfig;
+        }>>();
+
+        // обход всех областей
+        for (const [scopeFile, scopeRecord] of treeInput.scopeIndex) {
+
+            folderCounts.totalCount++;
+
+            // если папка не скрыта
+            if (!treeInput.excludedFolders.has(scopeRecord.folderName)) {
+                // получение спецификаций области
+                fileSpecs.set(
+                    scopeFile,
+                    {
+                        folderName: scopeRecord.folderName,
+                        nodeConfig: scopeRecord.nodeConfig,
+                        ...makeFileSpecs(scopeRecord)
+                    }
+                );
+            }
+            else {
+                folderCounts.hiddenCount++;
+            }
+
+            // если секция "закрепленные" не скрыта...
+            if (treeInput.pinnedConfig.visibility !== TC.PinnedVisibility.HIDE) {
+                // если область имеет закрепленные задачи...
+                // получение спецификаций закрепленных для области
+                if (scopeRecord.pinned.size > 0) {
+                    pinnedSpecs.set(scopeFile,
+                        {
+                            folderName: scopeRecord.folderName,
+                            nodeConfig: scopeRecord.nodeConfig,
+                            specs: makePinnedSpecs(scopeRecord, treeInput.pinnedConfig.compressionBehavior)
+                        }
+                    );
+                }
+            }
+
+        }
+
+        const sections: (Section.Pinned | Section.Source)[] = [];
+
+        const pinnedSection = buildPinnedSection(
+            pinnedSpecs,
+            treeInput.pinnedConfig.staleRecords,
+            treeInput.scopeIndex.size > 1
+        );
+
+        if (pinnedSection) {
+            sections.push(pinnedSection);
+        }
+
+        for (const [tasksFile, { folderName, specs, taskCounts, nodeConfig }] of fileSpecs) {
+
+            sections.push({
+                kind: tasksFile.endsWith('.json') ? TC.EntityKind.Folder : TC.EntityKind.Workspace,
+                folderName,
+                tasksFile,
+                children: Hierarchy.getRoots(Hierarchy.build(specs)),
+                taskCounts,
+                nodeConfig
+            });
+        }
+
+        return { sections, folderCounts };
     },
-
-    // // #region DEBUG
-
-    // /** ASCII представление дерева секции (отладка). */
-    // printTree(section: Section.Favorite | Section.Source | Section.PinnedFolder, basePrefix?: string, formatter: (def: TC.TaskDefinition) => string = () => '(*)'): string {
-
-
-    //     const lines: string[] = [`─ [${section.name}]`];
-
-    //     if (section.kind === TC.EntityKind.PinnedSingle || section.kind === TC.EntityKind.PinnedMulti) {
-
-    //         for (const stale of section.stales) {
-    //             lines.push(`  ✗ ${stale.label} (${stale.scopeName})`);
-    //         }
-
-    //         if (section.kind === TC.EntityKind.PinnedMulti) {
-    //             // Multi-root Pinned: children — FolderF[], рекурсия в каждую обёртку.
-    //             for (const folder of section.children) {
-    //                 lines.push(`  ${Section.printTree(folder, `    ${basePrefix ?? ''}`)}`);
-    //             }
-    //             return lines.join('\n');
-    //         }
-    //     }
-
-    //     const tree = Hierarchy.Scope.printTree(section.children as ReadonlyArray<Section.Item>, formatter, basePrefix);
-    //     if (tree) {
-    //         lines.push(tree);
-    //     }
-
-    //     return lines.join('\n');
-    // },
-
-    // // #endregion DEBUG
 
 
     /** Type guards для элементов дерева секции. */
@@ -227,231 +258,187 @@ const Section = {
 
 
 
-/** Строит секцию Pinned.
+/** Собирает секцию Pinned из готовых спецификаций по всем scope.
  *
- * Поведение зависит от количества scope:
+ * Четыре возможных результата в зависимости от входов:
  *
- * **Single-root** (`scopes.length === 1`):
- * Плоская секция — `children` содержит узлы иерархии напрямую.
- * `tasksFile` указывает на единственный файл задач.
+ * - `null` — нет ни одной valid pinned-задачи и нет `stales`.
+ *   Секция Pinned в дереве отсутствует.
+ * - {@linkcode Section.PinnedEmpty} (`kind: PinnedStaleOnly`) — valid pinned нет,
+ *   но есть `stales`. Секция отображается только сломанными ссылками.
+ * - {@linkcode Section.PinnedSingle} — `isMultiRoot === false`, ровно один scope.
+ *   Плоская секция: `children` — узлы иерархии напрямую, `tasksFile` указывает
+ *   на единственный файл задач.
+ * - {@linkcode Section.PinnedMulti} — `isMultiRoot === true`. Каждый scope
+ *   оборачивается в {@linkcode Section.PinnedFolder}; порядок обёрток совпадает
+ *   с порядком итерации `pinnedSpecs` (= порядок workspace folders).
  *
- * **Multi-root** (`scopes.length > 1`):
- * Каждый scope оборачивается в {@linkcode Section.PinnedFolder} (FavoriteFolder-обёртка).
- * Порядок обёрток — по `scopes` (= порядок workspace folders).
+ * Поле `stales` прокидывается в результат во **всех** не-`null` ветках,
+ * не только в `PinnedStaleOnly` — сломанные ссылки показываются и при наличии
+ * valid задач.
  *
- * Алгоритм:
- * 1. Строит спецификации через {@linkcode makeFavoriteSpecs} (с path compression).
- * 1. Передаёт их в {@linkcode Hierarchy.build} — trie со scope = `folderName`.
- * 1. Извлекает дочерние узлы каждого scope и оборачивает в итоговую структуру. */
+ * Алгоритм построения иерархии (per-scope, для `PinnedSingle` и каждой обёртки
+ * в `PinnedMulti`):
+ * 1. Готовые спецификации передаются в {@linkcode Hierarchy.build} —
+ *    строится trie со scope = `folderName`.
+ * 1. {@linkcode Hierarchy.getRoots} извлекает дочерние узлы scope-корня —
+ *    они и становятся `children`.
+ *
+ * Спецификации со сжатыми путями строятся вызывающей стороной через
+ * {@linkcode makePinnedSpecs}; здесь они уже готовы к финальному build.
+ *
+ * @param pinnedSpecs Карта `tasksFile → { folderName, specs }` — по одной записи
+ *   на каждый scope, где есть хотя бы одна valid pinned-задача.
+ * @param stales Сломанные pinned-ссылки (определения не найдены в `definitionMap`).
+ *   Прокидываются в результат как есть.
+ * @param isMultiRoot Флаг multi-root workspace. Определяет форму результата
+ *   (`PinnedMulti` vs `PinnedSingle`); должен быть согласован с `pinnedSpecs.size`.
+ * @returns Секция Pinned одного из четырёх вариантов выше, либо `null`. */
 function buildPinnedSection(
-    scopes: ReadonlyArray<TC.Scope>,
-    favoritesConfig: Readonly<TC.PinnedConfig>,
-    definitionMap: Readonly<TC.DefinitionsByFile>,
-    treeConfigMap: Readonly<TC.TreeConfigByFile>,
-): Section.Favorite {
+    pinnedSpecs: TC.DeepReadonly<
+        Map<TC.File, {
+            folderName: TC.FolderName,
+            specs: ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>>;
+            nodeConfig: TC.NodeConfig;
+        }>
+    >,
+    stales: TC.DeepReadonly<
+        Array<TC.PinnedStale>
+    >,
+    isMultiRoot: boolean
+): Section.Pinned | null {
 
-    // Pinned hierarchy
-    const { pinnedRecords: favoriteRecords, staleRecords, compressionBehavior } = favoritesConfig;
-
-    const favoritesHierarchy = Hierarchy.build(
-        makeFavoriteSpecs(favoriteRecords, compressionBehavior, definitionMap, treeConfigMap)
-    );
-
-    // Pinned section
-    if (scopes.length > 1) {
-
-        // Multi-root: каждый scope → FavoriteFolder-обёртка.
-        // Порядок — по первому вхождению scope в favoriteRecords.
-
-        const scopeByName = new Map(scopes.map(s => [s.name, s]));
-
-        const seen = new Set<TC.FolderName>();
-        const orderedNames: TC.FolderName[] = [];
-        for (const ref of favoriteRecords) {
-            if (!seen.has(ref.scope.name)) {
-                seen.add(ref.scope.name);
-                orderedNames.push(ref.scope.name);
-            }
+    if (pinnedSpecs.size < 1) {
+        if (stales.length > 0) {
+            // stale-only: нет ни одного valid pinned ни в одном scope
+            return {
+                kind: TC.EntityKind.PinnedStaleOnly,
+                name: 'Pinned',
+                stales,
+            };
         }
-
-        const fileChildren: Section.PinnedFolder[] = [];
-
-        for (const name of orderedNames) {
-            const scope = scopeByName.get(name)!;
-            const folderScope = Hierarchy.getScope(favoritesHierarchy, name)!;
-            // #region DEBUG
-            assert(folderScope, `Pinned hierarchy: scope '${name}' not found`);
-            // #endregion DEBUG
-            fileChildren.push(
-                makeFolderF(
-                    name,
-                    scope.uri.fsPath,
-                    Hierarchy.Scope.getChildren(folderScope)
-                )
-            );
-        }
-
-        return makePinnedMulti(staleRecords, fileChildren);
-    } else {
-
-        // Single-root
-
-        const favScopes = Hierarchy.getScopes(favoritesHierarchy);
-        // #region DEBUG
-        assert(favScopes.length <= 1, `Pinned hierarchy: expected ≤1 scope in single-root, got ${favScopes.length}`);
-        // #endregion DEBUG
-
-        return makePinnedSingle(
-            staleRecords,
-            favScopes.length > 0 ? Hierarchy.Scope.getChildren(favScopes[0]) : [],
-            scopes[0].uri.fsPath);
+        // вообще ничего нет
+        return null;
     }
-}
 
+    if (isMultiRoot) {
 
-/** Фабрика объекта {@linkcode Section.PinnedSingle}.
- *
- * @param stales Ссылки на задачи, определения которых не найдены (stale/broken).
- * @param children Дочерние элементы секции.
- * @param tasksFile Файл задач (только для single-root). */
-function makePinnedSingle(
-    stales: ReadonlyArray<Readonly<TC.PinnedStale>>,
-    children: ReadonlyArray<Section.Item>,
-    tasksFile: TC.File
-): Section.PinnedSingle {
+        const children: Section.PinnedFolder[] = [];
+
+        for (const [tasksFile, { folderName, specs, nodeConfig }] of pinnedSpecs) {
+            children.push({
+                kind: TC.EntityKind.PinnedFolder,
+                folderName,
+                tasksFile,
+                nodeConfig,
+                children: Hierarchy.getRoots(Hierarchy.build(specs))
+            });
+        }
+
+        return {
+            kind: TC.EntityKind.PinnedMulti,
+            name: 'Pinned',
+            stales,
+            children,
+        };
+
+    }
+
+    if (pinnedSpecs.size !== 1) {
+        // single-root: ожидается ровно один scope
+        throw new Error(`Internal error: expected pinnedSpecs.size === 1 for single-root, got ${pinnedSpecs.size}`);
+    }
+
+    const [tasksFile, { specs, nodeConfig }] = pinnedSpecs.entries().next().value!;
     return {
         kind: TC.EntityKind.PinnedSingle,
         name: 'Pinned',
         stales,
-        children,
-        tasksFile
-    };
-}
-
-
-function makePinnedMulti(
-    stales: ReadonlyArray<Readonly<TC.PinnedStale>>,
-    children: ReadonlyArray<Section.PinnedFolder>,
-): Section.PinnedMulti {
-    return {
-        kind: TC.EntityKind.PinnedMulti,
-        name: 'Pinned',
-        stales,
-        children,
-    };
-}
-
-
-/** Фабрика объекта {@linkcode Section.Source}.
- *
- * Тип секции (`kind`) определяется эвристикой по расширению `tasksFile`:
- * - `.json` → {@linkcode TC.EntityKind.Folder} (`.vscode/tasks.json`).
- * - Иначе → {@linkcode TC.EntityKind.Workspace}.
- *
- * @param name Display name папки workspace.
- * @param tasksFile Абсолютный путь к файлу задач.
- * @param children Узлы иерархии данного scope.
- * @param taskCounts Статистика задач в файле. */
-function makeSource(
-    name: TC.FolderName,
-    tasksFile: TC.File,
-    children: ReadonlyArray<Section.Item>,
-    taskCounts: TaskCounts
-): Section.Source {
-    return {
-        kind: tasksFile.endsWith('.json') ? TC.EntityKind.Folder : TC.EntityKind.Workspace,
-        name,
+        children: Hierarchy.getRoots(Hierarchy.build(specs)),
         tasksFile,
-        children,
-        taskCounts
+        nodeConfig
     };
-}
 
-function makeFolderF(
-    name: TC.FolderName,
-    tasksFile: TC.File,
-    children: ReadonlyArray<Section.Item>,
-): Section.PinnedFolder {
-    return {
-        kind: TC.EntityKind.PinnedFolder,
-        name,
-        tasksFile,
-        children
-    };
 }
 
 
-/** Строит массив спецификаций для файловых (не Pinned) секций.
+/** Строит массив спецификаций для одной файловой (не Pinned) секции.
  *
- * Для каждого scope:
+ * Принимает файловый scope и соответствующую ему запись с конфигурацией
+ * дерева и картой определений задач.
+ *
  * 1. Извлекает конфигурацию дерева (`useGroupKind`, `segmentSeparator`, `showHidden`).
  * 1. Создаёт {@linkcode Splitter} для разбиения label по сепаратору.
- * 1. Итерирует определения задач:
- *      - Скрытые задачи (`hidden: true`) пропускаются при `showHidden === false`.
+ * 1. Итерирует {@linkcode TC.ScopeIndex.definitionMap}:
+ *      - Скрытые задачи (`hidden: true`) пропускаются при `showHidden === false`;
+ *        при этом `hiddenCount` увеличивается.
  *      - Для остальных строится `path` через {@linkcode toPathSegments}.
- * 1. Ведёт подсчёт {@linkcode TaskCounts} (total / hidden) по каждому файлу.
  *
  * Scope спецификации — `fsPath` файла (в отличие от Pinned, где scope = folderName).
  *
- * @returns Спецификации для {@linkcode Hierarchy.build} и статистику по файлам. */
+ * @returns Спецификации для {@linkcode Hierarchy.build} и счётчики задач scope'а. */
 function makeFileSpecs(
-    scopes: ReadonlyArray<Readonly<TC.Scope>>,
-    definitionMap: Readonly<TC.DefinitionsByFile>,
-    treeConfigMap: Readonly<TC.TreeConfigByFile>,
-): Readonly<SpecsResult> {
+    scopeRecord: TC.DeepReadonly<TC.ScopeRecord>
+): {
+    specs: Array<
+        Hierarchy.Spec<TC.TaskDefinition>
+    >;
+    taskCounts: TaskCounts;
+} {
 
-    const specs: Hierarchy.Spec<TC.TaskDefinition, TC.File>[] = [];
-
-    const taskCountsByFile = new Map<TC.File, TaskCounts>();
-
-
-    for (const scope of scopes) {
-
-        // Линейная трансформация: для каждого определения строится path —
-        // опционально group.kind первым сегментом, затем splitter.split(name).
-        // Конфиг (segmentSeparator, useGroupKind) берётся из configMap по файлу.
-
-        const file = scope.uri.fsPath;
-
-        const { useGroupKind, segmentSeparator, showHidden } = treeConfigMap.get(file)!;
-
-        const splitter = new Splitter(segmentSeparator);
-
-        const definitions = definitionMap.get(file)!;
-
-        // счетчики TaskCounts
-        let total = 0;
-        let hiddenCount = 0;
-
-        for (const [name, taskDefinition] of definitions) {
-
-            total++;
-
-            // Если taskDefinition помечена как hidden — ее ветку полностью исключаем
-            // из структуры. Это приходится делать здесь поскольку вювер не должен
-            // показывать пустые папки
-            if (!showHidden && taskDefinition.hidden) {
-                // Собирать информацию только о реально скрываемых задачах
-                hiddenCount++;
-                continue;
+    if (scopeRecord.definitionMap.size < 1) {
+        return {
+            // name: scopeRecord.name,
+            specs: [],
+            taskCounts: {
+                totalCount: 0,
+                hiddenCount: 0
             }
-
-            specs.push({
-                scope: file,
-                // Если `useGroupKind === true`, и у задачи есть группа, то
-                // то первым сегментом будет название группы. Это поведение не зависит от
-                // значения `segmentSeparator`.
-                // Остальные сегменты получаются разбиванием `name` по `segmentSeparator`.
-                // See: {@linkcode Splitter}
-                path: toPathSegments(name, taskDefinition.group?.kind, useGroupKind, splitter),
-                data: taskDefinition
-            });
-        }
-
-        taskCountsByFile.set(file, { total, hidden: hiddenCount });
+        };
     }
 
-    return { specs, taskCountsByFile };
+    const { useGroupKind, segmentSeparator, showHidden } = scopeRecord.treeConfig;
+
+    const splitter = new Splitter(segmentSeparator);
+
+    // счетчики TaskCounts
+    let totalCount = 0;
+    let hiddenCount = 0;
+
+    const specs: Hierarchy.Spec<TC.TaskDefinition>[] = [];
+
+    for (const [name, taskDefinition] of scopeRecord.definitionMap) {
+
+        totalCount++;
+
+        // Если taskDefinition помечена как hidden — ее ветку полностью исключаем
+        // из структуры. Это приходится делать здесь поскольку вювер не должен
+        // показывать пустые папки, но понять что папка пуста не сможет
+        // не проверив ее на всю глубину.
+        if (!showHidden && taskDefinition.hidden) {
+            // Собирать информацию только о реально скрываемых задачах
+            hiddenCount++;
+            continue;
+        }
+
+        specs.push({
+            // Если `useGroupKind === true`, и у задачи есть группа, то
+            // то первым сегментом будет название группы. Это поведение не зависит от
+            // значения `segmentSeparator`.
+            // Остальные сегменты получаются разбиванием `name` по `segmentSeparator`.
+            // See: {@linkcode Splitter}.
+            // Линейная трансформация: для каждого определения строится path —
+            // опционально group.kind первым сегментом, затем splitter.split(name).
+            path: toPathSegments(name, taskDefinition.group?.kind, useGroupKind, splitter),
+            data: taskDefinition
+        });
+    }
+
+    return {
+        // name: scopeRecord.name,
+        specs,
+        taskCounts: { totalCount, hiddenCount }
+    };
 }
 
 
@@ -474,44 +461,41 @@ function toPathSegments(
     groupKind: TC.Group | undefined,
     useGroupKind: boolean,
     splitter: Splitter,
-): Array<string> {
+): ReadonlyArray<string> {
     return (useGroupKind && groupKind)
         ? [groupKind, ...splitter.split(label)]
         : splitter.split(label);
 }
 
 
-/** Строит спецификации для секции Pinned с *path compression*.
+/** Строит спецификации для секции Pinned одного scope'а с *path compression*.
  *
  * Алгоритм в три этапа:
  *
- * ### 1. Построение pre-trie спецификаций
- * Для каждой записи `favoriteRecords` находится определение задачи в `definitionMap`
- * и строится path через {@linkcode toPathSegments} (с учётом конфигурации scope).
- * Scope спецификации — `folderName` (не `fsPath`), т.к. в Pinned группировка по папкам.
- * {@linkcode Splitter} кешируется по `segmentSeparator` для повторного использования между scope.
+ * 1. Построение pre-trie спецификаций:  
+ *      Для каждого label из {@linkcode TC.ScopeRecord.pinned} находится определение задачи
+ *      в {@linkcode TC.ScopeRecord.definitionMap} и строится path через {@linkcode toPathSegments}
+ *      (с учётом конфигурации scope). Scope спецификации — `folderName` (не `fsPath`),
+ *      т.к. в Pinned группировка по папкам.
+ * 1. Промежуточный trie:  
+ *      Спецификации передаются в {@linkcode Hierarchy.build} — строится *временное* дерево.
+ *      Это дерево не используется напрямую; его единственное назначение —
+ *      предоставить структуру для path compression на следующем этапе.
+ * 1. Path compression через обход trie:  
+ *      {@linkcode Hierarchy.walk} обходит все data-узлы временного trie.
+ *      Для каждого data-узла {@linkcode buildCompressedPath} поднимается от листа к scope-корню:
+ *      - **Линейные участки** (узлы с одним потомком) склеиваются через ` › `.
+ *      - **Branch point** (узел с >1 потомком) — точка разреза: накопленные сегменты
+ *        фиксируются как один сжатый сегмент.
  *
- * ### 2. Промежуточный trie
- * Спецификации передаются в {@linkcode Hierarchy.build} — строится *временное* дерево.
- * Это дерево не используется напрямую; его единственное назначение —
- * предоставить структуру для path compression на следующем этапе.
- *
- * ### 3. Path compression через обход trie
- * {@linkcode Hierarchy.walk} обходит все data-узлы временного trie.
- * Для каждого data-узла {@linkcode buildCompressedPath} поднимается от листа к scope-корню:
- * - **Линейные участки** (узлы с одним потомком) склеиваются через ` › `.
- * - **Branch point** (узел с >1 потомком) — точка разреза: накопленные сегменты
- *   фиксируются как один сжатый сегмент.
- *
- * Результат — финальные спецификации с объединенными путями, готовые для
+ * Результат — финальные спецификации с объединёнными путями, готовые для
  * повторного {@linkcode Hierarchy.build}.
  *
  * **Замечание:** Pinned игнорируют поле `hidden` — скрытые задачи
  * не фильтруются (в отличие от {@linkcode makeFileSpecs}).
  *
- * @param favoritesRefs Записи избранных из конфигурации.
- * @param definitionMap Определения задач по файлам.
- * @param treeConfigMap Конфигурация дерева по файлам.
+ * @param scopeRecord Запись scope'а с pinned-метками, картой определений и конфигурацией дерева.
+ * @param compressionBehavior Параметры алгоритма сжатия путей.
  * @returns Сжатые спецификации для финального {@linkcode Hierarchy.build}. */
 // @todo: (оптимизация "на потом"): path compression для Pinned за один проход.
 //
@@ -524,76 +508,73 @@ function toPathSegments(
 // При построении иерархии сразу склеивать линейные single-child цепочки через ' › '.
 //
 // Нюанс (важный!):
-//   Поскольку спецификации поступают в произвольном порядке (из favoritesConfig),
+//   Поскольку спецификации поступают в произвольном порядке (из pinned),
 //   при онлайн-вставке будет возникать edge splitting: уже сжатое ребро может
 //   потребовать разбиения, когда позже появится branch point или data-узел посередине.
 //
 //   Это не полный backtracking дерева, а локальные split'ы рёбер, поэтому выигрыш
-//   всё равно остаётся (особенно при 50+ pinned-задачах), но код становится сложнее.
+//   всё равно остаётся, но код становится сложнее.
 //
 // Альтернативы:
 //   - Сортировка путей + LCP (longest common prefix) между соседними — проще в реализации.
 //   - Полноценный radix с поддержкой splitting.
 //
-// Преимущества:
-//   - Полностью убираем временный trie и отдельный `walk`.
-//   - Сложность падает с O(favorites × depth) → O(favorites × log(favorites) + Σ длины путей).
-//   - Код `makeFavoriteSpecs` становится заметно короче и понятнее.
-//   - Особенно выгодно при большом количестве pinned-задач (50–200+) с глубокой иерархией.
+// Практическая ценность:
+//   Функция работает per-scope, т.е. обрабатывает pinned одной папки за раз.
+//   Реалистичный размер датасета — единицы-десятки задач. При таком объёме
+//   двухпроходная схема оправдана простотой. Оптимизация интересна алгоритмически,
+//   но измеримого эффекта скорее всего не будет.
 //
-// Минусы / нюансы:
-//   - Нужно аккуратно обрабатывать момент «разрыва» линейной цепочки.
-//   - `printTree` и `resolvePath` придётся немного адаптировать под сжатые рёбра.
-//   - Требует тщательного тестирования edge-кейсов (пустые пути, data-узел на branch point и т.д.).
-// 
 // Пока оставляем двухпроходный вариант — он достаточно быстрый и понятный.
-function makeFavoriteSpecs(
-    favoritesRefs: ReadonlyArray<Readonly<TC.FavoriteRef>>,
-    compressionBehavior: TC.CompressionBehavior,
-    definitionMap: Readonly<TC.DefinitionsByFile>,
-    treeConfigMap: Readonly<TC.TreeConfigByFile>,
-): ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition, TC.FolderName>> {
+function makePinnedSpecs(
+    scopeRecord: TC.DeepReadonly<TC.ScopeRecord>,
+    compressionBehavior: TC.CompressionBehavior
+): ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>> {
 
-    const splitterCache = new Map<string | false, Splitter>();
-
-    const preTrieSpecs = [];
-
-    for (const ref of favoritesRefs) {
-
-        const definition =
-            definitionMap
-                .get(ref.scope.uri.fsPath)!
-                .get(ref.label)!;
-
-        const { useGroupKind, segmentSeparator } = treeConfigMap.get(ref.scope.uri.fsPath)!;
-
-        let splitter = splitterCache.get(segmentSeparator);
-        if (!splitter) {
-            splitter = new Splitter(segmentSeparator);
-            splitterCache.set(segmentSeparator, splitter);
-        }
-
-        preTrieSpecs.push({
-            scope: ref.scope.name,
-            path: toPathSegments(ref.label, definition.group?.kind, useGroupKind, splitter),
-            data: definition
-        });
+    if (scopeRecord.pinned.size < 1) {
+        return [];
     }
+
+    // `showHidden` игнорируется для pinned
+    const { useGroupKind, segmentSeparator } = scopeRecord.treeConfig;
+
+    const splitter = new Splitter(segmentSeparator);
 
     // --- Временный trie ---
     // Промежуточное дерево используется исключительно для path compression.
     // Тот же Hierarchy, что и для финального дерева, но со своим идентификатором 
     // области и назначением.
+    const preTrieSpecs: Array<{
+        scope: TC.FolderName;
+        path: ReadonlyArray<string>;
+        data: Readonly<TC.TaskDefinition>;
+    }> = [];
 
+    for (const label of scopeRecord.pinned) {
+
+        const definition = scopeRecord.definitionMap.get(label);
+
+        if (!definition) {
+            throw new Error(`Precondition violated: pinned label "${label}" not found in definitionMap (scope: "${scopeRecord.folderName}")`);
+        }
+
+        preTrieSpecs.push({
+            scope: scopeRecord.folderName,
+            path: toPathSegments(label, definition.group?.kind, useGroupKind, splitter),
+            data: definition
+        });
+    }
+    // Временный trie
     const tmpTrie = Hierarchy.build(preTrieSpecs);
 
     // --- Walk + path compression ---
-    // Обход снизу вверх (от data-узла к scope-корню).
+    // Обход снизу вверх (от data-узла к scope-корню) по временному trie.
     // Линейные участки пути склеиваются.
     // Branch point (узел с >1 ребёнком) — точка разреза: накопленный chain
     // сбрасывается в compressed.
+    // В итоге получаем спецификации с "ужатыми" путями.
 
-    const favoriteSpecs: Hierarchy.Spec<TC.TaskDefinition, TC.FolderName>[] = [];
+    const pinnedSpecs: Hierarchy.Spec<TC.TaskDefinition>[] = [];
 
     Hierarchy.walk(tmpTrie, (node) => {
 
@@ -601,56 +582,54 @@ function makeFavoriteSpecs(
             return;
         }
 
-        const { originFolder, compressed } = buildCompressedPath(node, compressionBehavior);
-
-        // (Pinned Scope игнорирует поле hidden).
-
-        favoriteSpecs.push({
-            scope: originFolder,// Область — синтетический идентификатор, имя каталога
-            path: compressed,
+        pinnedSpecs.push({
+            path: buildCompressedPath(node, compressionBehavior),
             data: Hierarchy.Node.getData(node) // "извлечение"! 
             //> Если передавать напрямую (`data: node`) — BUG: {@linkcode Hierarchy.build}
             //> не затрет уже установленные структурные поля
         });
     });
 
-    return favoriteSpecs;
+    return pinnedSpecs;
 }
 
 
-/** Строит сжатый путь от data-узла к scope-корню (path compression для Pinned).
+/** Строит сжатый путь от листа (data-узла) к scope-корню для одной pinned-задачи.
  *
- * Обход снизу вверх — от родителя `dataNode` до scope-корня.
- * Накапливает сегменты в `chain`. При встрече *branch point* (узел с >1 ребёнком):
- * - `chain` разворачивается (leaf→root → root→leaf) и склеивается через ` › `.
- * - Результат добавляется в `compressed` как один сегмент.
- * - `chain` очищается.
+ * Обход снизу вверх по `parent`-цепочке. Линейные участки (узлы с одним ребёнком)
+ * накапливаются в `chain` и склеиваются через ` › ` при встрече *branch point* —
+ * сбрасываются в `compressed` как один сегмент, после чего `chain` очищается.
+ * По завершении обхода — финальный flush остатка `chain`,
+ * затем `compressed` разворачивается (заполнялся от листа к корню).
  *
- * По завершении обхода выполняется flush для `chain`,
- * а `compressed` разворачивается (т.к. заполнялся от листа к корню).
+ * **Различие режимов** ({@linkcode TC.CompressionBehavior}):
+ * - **NORMAL** — сегмент самого листа в сжатие не входит, добавляется
+ *   отдельным несжатым сегментом в конец результата.
+ * - **SMART** — сегмент листа участвует в `chain` с самого начала;
+ *   дополнительно: runnable-узел (data) с ≥1 ребёнком трактуется как
+ *   forced branch point наравне с обычными узлами с >1 ребёнком.
  *
- * **Пример:**
- * Путь `a → b → c → d → [leaf]`, где `b` — branch point (>1 ребёнок):
- * - Подъём от leaf: chain = `[d, c]` → flush при `b` → compressed = `["c › d"]`
- * - Продолжение: chain = `[b, a]` → финальный flush → compressed = `["c › d", "a › b"]`
- * - Reverse compressed → `["a › b", "c › d"]`
+ * **Пример (NORMAL).** Путь `root → a → b → c → d → leaf`, `b` — branch point:
+ * - подъём от `d`: chain = `[d, c]` → flush при `b` → compressed = `["c › d"]`
+ * - продолжение: chain = `[b, a]` → финальный flush → compressed = `["c › d", "a › b"]`
+ * - reverse → `["a › b", "c › d"]`
+ * - push листа → `["a › b", "c › d", "leaf"]`
  *
  * @resolved Пустой `chain` при flush: если data-узел — непосредственный потомок
- * branch point, `chain` пуст на момент flush. Ранее это порождало фантомный
- * пустой сегмент (`[].join(...)` === `''`). Исправлено проверкой `chain.length > 0`.
+ * branch point, `chain` пуст в момент flush. Раньше это давало фантомный пустой
+ * сегмент (`[].join(...)` === `''`). Исправлено проверкой `chain.length > 0`.
  *
- * @param dataNode Лист — data-узел иерархии.
- * @returns `originFolder` — имя папки (scope id) и `compressed` — массив сжатых сегментов
- *   от корня к листу (без самого листа — он добавляется вызывающим кодом). */
+ * @param dataNode Лист — data-узел иерархии, для которого строится путь.
+ * @param compressionBehavior Режим сжатия — `NORMAL` или `SMART`.
+ *   См. {@linkcode TC.CompressionBehavior}.
+ * @returns Массив сжатых сегментов от корня к листу. В `NORMAL` последним элементом
+ *   идёт несжатый сегмент листа; в `SMART` лист уже включён в сжатие. */
 function buildCompressedPath(
-    dataNode: Readonly<Hierarchy.Data<TC.TaskDefinition, TC.FolderName>>,
+    dataNode: Readonly<Hierarchy.Data<TC.TaskDefinition>>,
     compressionBehavior: TC.CompressionBehavior
-): {
-    originFolder: TC.FolderName,
-    compressed: string[];
-} {
+): ReadonlyArray<string> {
 
-    // @note Смотри sketches/10.02-favorites-smart-subsegment.jsonc
+    // @note Смотри sketches/10.02-pinned-smart-subsegment.jsonc
     // Для проверки поведения в SMART режиме.
 
     const chain: string[] = [];
@@ -670,8 +649,8 @@ function buildCompressedPath(
         compressed.push(chain.join('\u2009›\u2009'));
     };
 
-    // подъем к scope по цепочке parent
-    while (!Hierarchy.Node.isScope(parent)) {
+    // подъем к root`у по цепочке parent
+    while (parent) {
 
         const childrenCount = Hierarchy.Node.getBranchChildren(parent).length;
 
@@ -717,7 +696,7 @@ function buildCompressedPath(
         compressed.push(Hierarchy.Node.getSegment(dataNode));
     }
 
-    return { originFolder: Hierarchy.Scope.getScopeId(parent), compressed };
+    return compressed;
 }
 
 export default Section;

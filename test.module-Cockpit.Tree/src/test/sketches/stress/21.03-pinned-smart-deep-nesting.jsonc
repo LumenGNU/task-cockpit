@@ -9,27 +9,28 @@
     "title": "Pinned · SMART compression on absurdly deep nesting",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2" },
+                    { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3" },
+                    { "name": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1" },
+                    { "name": "a:b:c:d:e:g:h:task-4" },
+                    { "name": "x:y:z:task-5" }
+                ],
+                "pinned": [
+                    "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2",
+                    "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3",
+                    "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1",
+                    "a:b:c:d:e:g:h:task-4",
+                    "x:y:z:task-5"
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2" },
-                { "name": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3" },
-                { "name": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1" },
-                { "name": "a:b:c:d:e:g:h:task-4" },
-                { "name": "x:y:z:task-5" }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
-            "compressionBehavior": "SMART",
-            "refs": [
-                { "scope": "scope", "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2" },
-                { "scope": "scope", "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3" },
-                { "scope": "scope", "label": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1" },
-                { "scope": "scope", "label": "a:b:c:d:e:g:h:task-4" },
-                { "scope": "scope", "label": "x:y:z:task-5" }
-            ]
+            "compressionBehavior": "SMART"
         }
     },
     "asciiTree": [

@@ -9,22 +9,29 @@
     "title": "empty states · no tasks/all hidden",
     "sketch": {
         "scopes": {
-            "project (ws)": "empty.code-workspace",
-            "empty": "empty/.vscode/tasks.json",
-            "one-task": "one-task/.vscode/tasks.json",
-            "all-hidden": "all-hidden/.vscode/tasks.json"
-        },
-        "tasks": {
-            "project (ws)": [],
-            "empty": [],
-            "one-task": [
-                { "name": "the-only-task" }
-            ],
-            "all-hidden": [
-                { "name": "ghost-1", "hidden": true },
-                { "name": "ghost-2", "hidden": true }
-            ]
+            "project (ws)": {
+                "tasksFile": "empty.code-workspace",
+                "tasks": []
+            },
+            "empty": {
+                "tasksFile": "empty/.vscode/tasks.json",
+                "tasks": []
+            },
+            "one-task": {
+                "tasksFile": "one-task/.vscode/tasks.json",
+                "tasks": [
+                    {"name": "the-only-task" }
+                ]
+            },
+            "all-hidden": {
+                "tasksFile": "all-hidden/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "ghost-1", "hidden": true },
+                    { "name": "ghost-2", "hidden": true }
+                ]
+            }
         }
+
     },
     "asciiTree": [
         "[W[ project (ws) ]]                         ",

@@ -8,27 +8,28 @@
     "title": "Pinned · deep paths · SMART compression",
     "sketch": {
         "scopes": {
-            "app": "app/.vscode/tasks.json"
+            "app": {
+                "tasksFile": "app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1" },
+                    { "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2" },
+                    { "name": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3" },
+                    { "name": "AAA:BBB:CCC:side-DDD:task4" },
+                    { "name": "AAA:side-BBB:task5" }
+                ],
+                "pinned": [
+                    "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1",
+                    "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2",
+                    "AAA:BBB:CCC:DDD:EEE:side-FFF:task3",
+                    "AAA:BBB:CCC:side-DDD:task4",
+                    "AAA:side-BBB:task5"
+                ]
+            }
         },
-        "tasks": {
-            "app": [
-                { "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1" },
-                { "name": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2" },
-                { "name": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3" },
-                { "name": "AAA:BBB:CCC:side-DDD:task4" },
-                { "name": "AAA:side-BBB:task5" }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
-            "compressionBehavior": "SMART",
-            "refs": [
-                { "scope": "app", "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1" },
-                { "scope": "app", "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2" },
-                { "scope": "app", "label": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3" },
-                { "scope": "app", "label": "AAA:BBB:CCC:side-DDD:task4" },
-                { "scope": "app", "label": "AAA:side-BBB:task5" }
-            ]
+            "compressionBehavior": "SMART"
         }
     },
     "asciiTree": [

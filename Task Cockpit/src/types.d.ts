@@ -247,10 +247,11 @@ export declare const enum EntityKind {
     Workspace = 1 << 2,
     PinnedSingle = 1 << 3,
     PinnedMulti = 1 << 4,
-    BrokenPinned = 1 << 5,
-    Empty = 1 << 6,
-    Runnable = 1 << 7,
-    Group = 1 << 8,
+    PinnedStaleOnly = 1 << 5,
+    BrokenPinned = 1 << 6,
+    Empty = 1 << 7,
+    Runnable = 1 << 8,
+    Group = 1 << 9,
     RunnableGroup = Runnable | Group,
 }
 
@@ -281,10 +282,68 @@ export declare const enum CompressionBehavior {
     SMART = 1
 }
 
+
+
+/** Данные одного scope для построения дерева:
+ * определения задач, конфигурация отображения и набор закреплённых имён. */
+export interface ScopeRecord {
+    /** {@linkcode FolderName} — Отображаемое имя папки workspace. */
+    folderName: FolderName;
+    /** Определения задач scope, индексированные по имени. */
+    definitionMap: ScopedDefinitions;
+    /** {@linkcode TreeConfig} — Конфигурация структуры ветки дерева для этого scope. */
+    treeConfig: TreeConfig;
+    /** {@linkcode NodeConfig} — Конфигурация визуального отображения узлов для этого scope. */
+    nodeConfig: NodeConfig;
+    /** Имена закреплённых задач этого scope. */
+    pinned: Set<Name>;
+}
+
 /** Конфигурация раздела закреплённых задач. */
 export interface PinnedConfig {
+    /** {@linkcode PinnedVisibility} — Режим видимости раздела. */
     visibility: PinnedVisibility;
+    /** {@linkcode CompressionBehavior} — Поведение сжатия узлов в разделе. */
     compressionBehavior: CompressionBehavior;
-    pinnedRecords: Array<Readonly<FavoriteRef>>;
-    staleRecords: Array<Readonly<PinnedStale>>;
+    /** {@linkcode PinnedStale}`[]` — Записи, scope которых больше не существует в workspace. */
+    staleRecords: Array<PinnedStale>;
 }
+
+
+/** Входные данные для построения дерева задач. 
+ * 
+ * Ограничения на данные:
+ * 
+ * **Замечания:**:
+ * - Порядок scopeIndex семантически значим — он определяет 
+ *   порядок File-секций в выводе, и порядок PinnedFolder-обёрток внутри PinnedMulti.
+ * 
+ * **Предусловия**:
+ * - Все `ScopeRecord.folderName` уникальны среди всех ScopeRecord.
+ * - Каждое имя из `ScopeRecord.pinned` присутствует как ключ
+ *   в том же `ScopeRecord.definitionMap`.
+ * */
+export interface TreeInput {
+    /** `Map<`{@linkcode File}`, `{@linkcode ScopeRecord}`>` — 
+     * Данные всех scope, индексированные по файлу задач. */
+    scopeIndex: Map<File, ScopeRecord>;
+    /** {@linkcode PinnedConfig} — Конфигурация раздела закреплённых задач. */
+    pinnedConfig: PinnedConfig;
+    /** `Set<`{@linkcode FolderName}`>` — Имена папок workspace, исключённых из отображения. */
+    excludedFolders: Set<FolderName>;
+}
+
+// -- Утилитарные типы -------------------------------------
+
+/** Рекурсивно применяет `Readonly` ко всей структуре:
+ * `Map` → `ReadonlyMap`, `Set` → `ReadonlySet`, массивы → `ReadonlyArray`,
+ * объекты — все поля помечаются `readonly`. Примитивы возвращаются без изменений. */
+export type DeepReadonly<T> =
+    T extends string ? T :
+    T extends number ? T :
+    T extends boolean ? T :
+    T extends Map<infer K, infer V> ? ReadonlyMap<K, DeepReadonly<V>> :
+    T extends Set<infer U> ? ReadonlySet<DeepReadonly<U>> :
+    T extends (infer U)[] ? ReadonlyArray<DeepReadonly<U>> :
+    T extends object ? { readonly [P in keyof T]: DeepReadonly<T[P]> } :
+    T;

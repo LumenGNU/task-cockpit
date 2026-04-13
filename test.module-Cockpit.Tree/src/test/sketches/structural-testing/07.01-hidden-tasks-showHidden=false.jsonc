@@ -9,20 +9,21 @@
     "title": "hidden tasks · excluded",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:visible" },
+                    { "name": "AAA:HIDDEN", "hidden": true },
+                    { "name": "BBB:CCC:visible" },
+                    { "name": "BBB:b:bb:bbb:HIDDEN", "hidden": true }, // пути b:bb:bbb не будет построено
+                    { "name": "HIDDEN-tool", "hidden": true },
+                    { "name": "FFF:segment&task", "hidden": true }, // segment&task как задача - скрыта
+                    { "name": "FFF:segment&task:visible" },         // segment&task как группирующий сегмент - видим
+                    { "name": "HIDDEN:tool", "hidden": true }
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "AAA:visible" },
-                { "name": "AAA:HIDDEN", "hidden": true },
-                { "name": "BBB:CCC:visible" },
-                { "name": "BBB:b:bb:bbb:HIDDEN", "hidden": true }, // пути b:bb:bbb не будет построено
-                { "name": "HIDDEN-tool", "hidden": true },
-                { "name": "FFF:segment&task", "hidden": true }, // segment&task как задача - скрыта
-                { "name": "FFF:segment&task:visible" },         // segment&task как группирующий сегмент - видим
-                { "name": "HIDDEN:tool", "hidden": true }
-            ]
-        },
+
         "treeConfig": { "showHidden": false, "segmentSeparator": ":"}
     },
     "asciiTree": [

@@ -7,30 +7,30 @@
     "title": "Pinned · hidden RunnableGroup renders as group in Pinned",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:BBB:Task & Group", "hidden": true },
+                    { "name": "AAA:BBB:Task & Group:Sub Task" }
+                ],
+                "pinned": [
+                    "AAA:BBB:Task & Group"
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "AAA:BBB:Task & Group", "hidden": true },
-                { "name": "AAA:BBB:Task & Group:Sub Task" }
-            ]
-        },
-        "treeConfig": { "segmentSeparator": ":", "showHidden": false },
-        "pinned": {
-            "refs": [
-                { "scope": "scope", "label": "AAA:BBB:Task & Group" }
-            ]
-        }
+
+        "treeConfig": { "segmentSeparator": ":", "showHidden": false }
+
     },
     "asciiTree": [
-        "[★[ Pinned ]]           ",
-        " └─ AAA › BBB           ",
-        "    └─ ▶ Task & Group   ", // если закреплена -- отображается как задача
-        "                        ", // Sub Task не закреплена -- ее нет, артефактов нет
-        "[F[ scope ]]            ",
-        " └─ AAA                 ",
-        "    └─ BBB              ",
-        "       └─ Task & Group  ", // здесь просто группа, задача скрыта
-        "          └─ ▶ Sub Task "
+        "[★[ Pinned ]]            ",
+        " └─ AAA › BBB             ",
+        "    └─ ▶ Task & Group    ", // если закреплена -- отображается как задача
+        "                         ", // Sub Task не закреплена -- ее нет, артефактов нет
+        "[F[ scope ]]             ",
+        " └─ AAA                  ",
+        "    └─ BBB               ",
+        "       └─ Task & Group   ", // здесь просто группа, задача скрыта
+        "          └─ ▶ Sub Task  "
     ]
 }

@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import TreeModel from './Cockpit/TreeModel';
-import type * as TC from './types';
+
 
 
 /**

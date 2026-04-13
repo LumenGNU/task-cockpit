@@ -6,14 +6,14 @@
     "title": "basic · flat",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
-        },
-        "tasks": {
-            "scope": [
-                { "name": "AAA" },
-                { "name": "BBB" },
-                { "name": "CCC" }
-            ]
+            "scope": {
+                "tasksFile":"scope/.vscode/tasks.json",
+                "tasks":  [
+                    { "name": "AAA" },
+                    { "name": "BBB" },
+                    { "name": "CCC" }
+                ]
+            }
         }
     },
     "asciiTree": [

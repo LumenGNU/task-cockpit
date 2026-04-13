@@ -6,14 +6,15 @@
     "title": "Description · hidden flag visible",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "normal"                  },
+                    { "name": "hidden-task", "hidden": true }
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "normal"                  },
-                { "name": "hidden-task", "hidden": true }
-            ]
-        },
+
         "treeConfig": { "showHidden": true }
     },
     "asciiTree": [

@@ -21,21 +21,20 @@ interface Icon {
 // Узлы, которых нет в Section — создаются TreeModel
 
 
-type FolderRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Folder; nodeConfig: TC.NodeConfig; };
-type WorkspaceRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Workspace; nodeConfig: TC.NodeConfig; };
+type FolderRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Folder; };
+type WorkspaceRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Workspace; };
 
-type PinnedFolder = Section.PinnedFolder & {
-    nodeConfig: TC.NodeConfig;
-};
+type PinnedFolder = Section.PinnedFolder;
 
-type PinnedSingle = Section.PinnedSingle & { nodeConfig: TC.NodeConfig; };
-type PinnedMulti = Section.PinnedMulti & { nodeConfig: TC.NodeConfigByFile; };
+type PinnedSingle = Section.PinnedSingle;
+type PinnedMulti = Section.PinnedMulti;
+type PinnedStaleOnly = Section.PinnedEmpty;
 
 
 interface BrokenPinned {
     readonly kind: TC.EntityKind.BrokenPinned;
     readonly ref: TC.PinnedStale;
-    readonly parentNode: PinnedSingle | PinnedMulti;
+    readonly parentNode: PinnedSingle | PinnedMulti | PinnedStaleOnly;
 }
 
 interface Empty {
@@ -45,19 +44,19 @@ interface Empty {
 
 interface Runnable {
     readonly kind: TC.EntityKind.Runnable;
-    readonly entity: Hierarchy.Data<TC.TaskDefinition, TC.File>;
+    readonly entity: Hierarchy.Data<TC.TaskDefinition>;
     readonly parentNode: ParentNode;
 }
 
 interface Group {
     readonly kind: TC.EntityKind.Group;
-    readonly entity: Hierarchy.Branch<TC.TaskDefinition, TC.File>;
+    readonly entity: Hierarchy.Branch<TC.TaskDefinition>;
     readonly parentNode: ParentNode;
 }
 
 interface RunnableGroup {
     readonly kind: TC.EntityKind.RunnableGroup;
-    readonly entity: Hierarchy.Data<TC.TaskDefinition, TC.File> & Hierarchy.Branch<TC.TaskDefinition, TC.File>;
+    readonly entity: Hierarchy.Data<TC.TaskDefinition> & Hierarchy.Branch<TC.TaskDefinition>;
     readonly parentNode: ParentNode;
 }
 
@@ -65,10 +64,10 @@ interface RunnableGroup {
 type ParentNode =
     | PinnedFolder
     | PinnedSingle
+    | WorkspaceRoot
     | FolderRoot
     | Group
     | RunnableGroup
-    | WorkspaceRoot
     ;
 
 /** Результат childFrom() — узлы иерархии задач. */
@@ -93,6 +92,7 @@ declare namespace TreeModel {
         | PinnedSingle
         | FolderRoot
         | WorkspaceRoot
+        | PinnedStaleOnly
         ;
 }
 
@@ -100,7 +100,7 @@ interface Props {
     id: string;
     label: string;
     iconPath: vscode.IconPath | undefined;
-    description: string | undefined;
+    description: string;
     collapsibleState: vscode.TreeItemCollapsibleState;
 }
 
@@ -110,54 +110,15 @@ const TreeModel = {
     /** Собирает корневые узлы.
      * запрашиваются TreeDataProvider через {@linkcode getChildren}. */
     build(
-        data: {
-            scopes: ReadonlyArray<TC.Scope>,
-            definitionMap: Readonly<TC.DefinitionsByFile>,
-            treeConfigMap: Readonly<TC.TreeConfigByFile>,
-            nodeConfigMap: Readonly<TC.NodeConfigByFile>,
-            pinnedConfig: Readonly<TC.PinnedConfig>,
-            excludeFolders: ReadonlySet<TC.FolderName>;
-        }
-    ): Array<TreeModel.TopRoot> {
-
-        const entities = Section.buildEntities(
-            data.scopes,
-            data.pinnedConfig,
-            data.definitionMap,
-            data.treeConfigMap
-        );
-
-        const roots: Array<TreeModel.TopRoot> = [];
-
-        for (const entity of entities) {
-
-            if (entity.kind === TC.EntityKind.PinnedSingle || entity.kind === TC.EntityKind.PinnedMulti) {
-
-                if (data.pinnedConfig.visibility === TC.PinnedVisibility.HIDE) {
-                    continue;
-                }
-
-                if (entity.children.length === 0 && entity.stales.length === 0) {
-                    continue;
-                }
-
-                if (entity.kind === TC.EntityKind.PinnedSingle) {
-                    roots.push({ ...entity, nodeConfig: data.nodeConfigMap.get(entity.tasksFile)! });
-                }
-                else {
-                    roots.push({ ...entity, nodeConfig: data.nodeConfigMap });
-                }
-
-            }
-            else {
-                if (data.excludeFolders.has(entity.name)) {
-                    continue;
-                }
-                roots.push({ ...entity, nodeConfig: data.nodeConfigMap.get(entity.tasksFile)! });
-            }
-        }
-
-        return roots;
+        treeInput: TC.DeepReadonly<TC.TreeInput>
+    ): {
+        sections: Array<TreeModel.TopRoot>;
+        folderCounts: {
+            totalCount: number;
+            hiddenCount: number;
+        };
+    } {
+        return Section.buildSections(treeInput);
     },
 
     /** Children для TreeDataProvider.getChildren.
@@ -174,17 +135,21 @@ const TreeModel = {
                     : [{ kind: TC.EntityKind.Empty, parentNode: node }];
             }
 
+            case TC.EntityKind.PinnedStaleOnly: {
+                return node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned as const, ref, parentNode: node }));
+            }
+
             case TC.EntityKind.PinnedSingle: {
                 return [
-                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned, ref, parentNode: node }) as const),
+                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned as const, ref, parentNode: node })),
                     ...node.children.map((sectionItem) => childFrom(sectionItem, node))
                 ];
             };
 
             case TC.EntityKind.PinnedMulti: {
                 return [
-                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned, ref, parentNode: node }) as const),
-                    ...node.children.map((pinnedFolder) => ({ ...pinnedFolder, nodeConfig: node.nodeConfig.get(pinnedFolder.tasksFile)! }))
+                    ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned as const, ref, parentNode: node })),
+                    ...node.children
                 ];
             }
 
@@ -210,7 +175,6 @@ const TreeModel = {
             // #region DEBUG
             default: {
                 const _node: never = node;
-                assert(false, `${_node}`); // @todo
                 return undefined;
             };
             // #endregion DEBUG
@@ -226,20 +190,21 @@ const TreeModel = {
             (node) => {
                 switch (node.kind) {
                     case TC.EntityKind.Folder: {
-                        return `[F[ ${node.name} ]]`;
+                        return `[F[ ${node.folderName} ]]`;
                     }
 
                     case TC.EntityKind.Workspace: {
-                        return `[W[ ${node.name} ]]`;
+                        return `[W[ ${node.folderName} ]]`;
                     }
 
+                    case TC.EntityKind.PinnedStaleOnly:
                     case TC.EntityKind.PinnedSingle:
                     case TC.EntityKind.PinnedMulti: {
                         return `[★[ ${node.name} ]]`;
                     }
 
                     case TC.EntityKind.PinnedFolder: {
-                        return `[ ${node.name} ]`;
+                        return `[ ${node.folderName} ]`;
                     }
 
                     case TC.EntityKind.BrokenPinned: {
@@ -280,13 +245,13 @@ const TreeModel = {
             const childPrefix = isRoot ? ' ' : prefix + (isLast ? '   ' : '│  ');
 
             for (let i = 0; i < children.length; i++) {
-                walk(children[i], childPrefix, i === children.length - 1, false);
+                walk(children[i]!, childPrefix, i === children.length - 1, false);
             }
         };
 
         for (let i = 0; i < roots.length; i++) {
             if (i > 0) lines.push('');
-            walk(roots[i], '', true, true);
+            walk(roots[i]!, '', true, true);
         }
 
         return lines.join('\n');
@@ -303,26 +268,32 @@ const TreeModel = {
             case TC.EntityKind.Workspace:
             case TC.EntityKind.Folder: {
                 props.id = node.tasksFile;
-                props.label = node.name;
+                props.label = node.folderName;
                 props.iconPath =
                     node.kind === TC.EntityKind.Folder
                         ? new vscode.ThemeIcon('root-folder', undefined)
                         : new vscode.ThemeIcon('layers', undefined);
-                props.description = undefined;
+                props.description = '';
                 props.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 break;
             }
 
-            case TC.EntityKind.PinnedFolder:
+            case TC.EntityKind.PinnedFolder: {
+                props.id = rootPrefix(node);
+                props.label = node.folderName;
+                props.iconPath = new vscode.ThemeIcon('symbol-folder', undefined);
+                props.description = '';
+                props.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+                break;
+            }
+
+            case TC.EntityKind.PinnedStaleOnly:
             case TC.EntityKind.PinnedSingle:
             case TC.EntityKind.PinnedMulti: {
                 props.id = rootPrefix(node);
                 props.label = node.name;
-                props.iconPath =
-                    node.kind === TC.EntityKind.PinnedFolder
-                        ? new vscode.ThemeIcon('symbol-folder', undefined)
-                        : new vscode.ThemeIcon('pinned', new vscode.ThemeColor('list.highlightForeground')); // @todo может без цвета?
-                props.description = undefined;
+                props.iconPath = new vscode.ThemeIcon('pinned', new vscode.ThemeColor('list.highlightForeground')); // @todo может без цвета?
+                props.description = '';
                 props.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
                 break;
             }
@@ -331,7 +302,7 @@ const TreeModel = {
                 props.id = `${rootPrefix(node.parentNode)}\0\0EMPTY-MARKER\0`;
                 props.label = 'No tasks to display in this scope';
                 props.iconPath = new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.deemphasizedForeground'));
-                props.description = undefined;
+                props.description = '';
                 props.collapsibleState = vscode.TreeItemCollapsibleState.None;
                 break;
             }
@@ -340,7 +311,7 @@ const TreeModel = {
                 props.id = `${rootPrefix(node.parentNode)}\0\0BROKEN-MARKER\0${node.ref.scopeName}\0${node.ref.label}`;
                 props.label = node.ref.label;
                 props.iconPath = new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.warningForeground'));
-                props.description = undefined;
+                props.description = '';
                 props.collapsibleState = vscode.TreeItemCollapsibleState.None;
                 break;
             }
@@ -350,7 +321,7 @@ const TreeModel = {
                 props.id = segments.join('\0');
                 props.label = Hierarchy.Node.getSegment(node.entity);
                 props.iconPath = root.nodeConfig.useFolderIcon ? new vscode.ThemeIcon('symbol-folder', undefined) : undefined;
-                props.description = undefined;
+                props.description = '';
                 props.collapsibleState = (root.kind === TC.EntityKind.PinnedSingle || root.kind === TC.EntityKind.PinnedFolder)
                     ? vscode.TreeItemCollapsibleState.Expanded
                     : vscode.TreeItemCollapsibleState.Collapsed;
@@ -370,7 +341,7 @@ const TreeModel = {
                 if (node.entity.hidden) flags.push('Hidden');
                 if (node.entity.group?.isDefault) flags.push('Default');
                 if (node.entity.isBackground) flags.push('Background');
-                props.description = (flags.length > 0) ? `( ${flags.join(', ')} )` : undefined;
+                props.description = (flags.length > 0) ? `( ${flags.join(', ')} )` : '';
                 props.collapsibleState
                     = (node.kind === TC.EntityKind.Runnable)
                         ? vscode.TreeItemCollapsibleState.None
@@ -380,13 +351,11 @@ const TreeModel = {
                 break;
             }
 
-            // #region DEBUG
             default: {
                 const _node: never = node;
-                assert(false, `${_node}`); // @todo
                 props.id = '(ERROR)';
             }
-            // #endregion DEBUG
+
         }
 
         return props;
@@ -657,12 +626,9 @@ function getRootGroup(node: HierarchyChild): PinnedFolder | PinnedSingle | Folde
                 return parent;
             }
 
-            // #region DEBUG
             default: {
                 const _parent: never = parent;
-                assert(false, `${_parent}`); // @todo
             }
-            // #endregion DEBUG
         }
     }
 }
@@ -689,19 +655,18 @@ function walkToRoot(node: HierarchyChild): {
                 return { root: parent, segments: segments.reverse() };
             }
 
-            // #region DEBUG
             default: {
                 const _parent: never = parent;
-                assert(false, `${_parent}`);
             }
-            // #endregion DEBUG
         }
     }
 }
 
 
-function rootPrefix(root: PinnedFolder | PinnedSingle | PinnedMulti | FolderRoot | WorkspaceRoot): string {
+function rootPrefix(root: PinnedFolder | PinnedStaleOnly | PinnedSingle | PinnedMulti | FolderRoot | WorkspaceRoot): string {
     switch (root.kind) {
+
+        case TC.EntityKind.PinnedStaleOnly:
         case TC.EntityKind.PinnedMulti:
         case TC.EntityKind.PinnedSingle: {
             return '\0\0favorites://';
@@ -716,13 +681,10 @@ function rootPrefix(root: PinnedFolder | PinnedSingle | PinnedMulti | FolderRoot
             return `\0\0${root.tasksFile}//`;
         }
 
-        // #region DEBUG
         default: {
             const _root: never = root;
-            assert(false, `${_root}`);
             return 'ERROR';
         }
-        // #endregion DEBUG
     }
 }
 

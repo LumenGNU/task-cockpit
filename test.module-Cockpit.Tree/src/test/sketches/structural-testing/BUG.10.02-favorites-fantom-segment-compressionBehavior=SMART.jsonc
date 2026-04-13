@@ -2,45 +2,39 @@
     "title": "BUG phantom segment in pinned · SMART compression",
     "sketch": {
         "scopes": {
-            "scope1": "scope1/.vscode/tasks.json",
-            "scope2": "scope1/.vscode/tasks.json"
+            "scope1": {
+               "tasksFile": "scope1/.vscode/tasks.json",
+               "tasks": [
+                    { "name": "aaa:bbb:ccc:task-in-ccc" },
+                    { "name": "aaa:bbb:ccc:ddd:task-in-ddd" }
+               ],
+               "pinned": [
+                    // BUG: (решено) Section::buildCompressedPath
+                    // Без guard'а reverseAndJoin() породит фантомный пустой сегмент.
+                    "aaa:bbb:ccc:ddd:task-in-ddd",
+                    "aaa:bbb:ccc:task-in-ccc"
+                ]
+            },
+            "scope2": {
+                "tasksFile": "scope2/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "aaa:bbb:ccc:task-in-ccc" },
+                    { "name": "aaa:bbb:ccc:ddd:task-in-ddd" }
+                ],
+                "pinned": [
+                    // --- разный порядок, для проверки ---
+                    "aaa:bbb:ccc:task-in-ccc",
+                    "aaa:bbb:ccc:ddd:task-in-ddd"
+                ]
+            }
         },
-        "tasks": {
-            "scope1": [
-                { "name": "aaa:bbb:ccc:ddd:task-in-ddd" },
-                { "name": "aaa:bbb:ccc:task-in-ccc" }
-            ],
-            "scope2": [
-                { "name": "aaa:bbb:ccc:task-in-ccc" },
-                { "name": "aaa:bbb:ccc:ddd:task-in-ddd" }
-            ]
-        },
+
         "treeConfig": {
             "segmentSeparator": ":"
         },
+
         "pinned": {
-            "compressionBehavior": "SMART",
-            "refs": [
-                // BUG: (решено) Section::buildCompressedPath
-                // Без guard'а reverseAndJoin() породит фантомный пустой сегмент.
-                {
-                    "scope": "scope1",
-                    "label": "aaa:bbb:ccc:ddd:task-in-ddd"
-                },
-                {
-                    "scope": "scope1",
-                    "label": "aaa:bbb:ccc:task-in-ccc"
-                },
-                // --- разный порядок, для проверки ---
-                {
-                    "scope": "scope2",
-                    "label": "aaa:bbb:ccc:task-in-ccc"
-                },
-                {
-                    "scope": "scope2",
-                    "label": "aaa:bbb:ccc:ddd:task-in-ddd"
-                }
-            ]
+            "compressionBehavior": "SMART"
         }
     },
     "asciiTree": [

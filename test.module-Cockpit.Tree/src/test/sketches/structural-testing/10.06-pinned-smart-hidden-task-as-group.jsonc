@@ -16,25 +16,26 @@
     "title": "Pinned · SMART + hidden task-as-group pinned directly",
     "sketch": {
         "scopes": {
-            "app": "app/.vscode/tasks.json"
+            "app": {
+                "tasksFile": "app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "parent-task:child-task-1" },
+                    { "name": "parent-task:child-task-2" },
+                    { "name": "parent-task", "hidden": true, "icon": { "id": "package" } },
+                    { "name": "a:b:Task & Group:Sub Task" },
+                    { "name": "a:b:Task & Group", "hidden": true },
+                    { "name": "standalone-task" }
+                ],
+                "pinned": [
+                    "parent-task",
+                    "a:b:Task & Group"
+                ]
+            }
         },
-        "tasks": {
-            "app": [
-                { "name": "parent-task:child-task-1" },
-                { "name": "parent-task:child-task-2" },
-                { "name": "parent-task", "hidden": true, "icon": { "id": "package" } },
-                { "name": "a:b:Task & Group:Sub Task" },
-                { "name": "a:b:Task & Group", "hidden": true },
-                { "name": "standalone-task" }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
-            "compressionBehavior": "SMART",
-            "refs": [
-                { "scope": "app", "label": "parent-task" },
-                { "scope": "app", "label": "a:b:Task & Group" }
-            ]
+            "compressionBehavior": "SMART"
         }
     },
     "asciiTree": [

@@ -1,19 +1,9 @@
 
-// Pinned в multi-root: закреплённые из разных scope + битая ссылка.
-// Проверяет:
-// - закреплённые из разных scope отображаются под своими folder-узлами
-// - битая ссылка рендерится как « ✗ ... »
-// - порядок следует порядку в refs
-//
-// refs (порядок):
-//   1. scope1 / AAA:child-task-1  ← валидный
-//   2. scope2 / BBB               ← валидный
-//   3. scope1 / missing-task      ← БИТАЯ ССЫЛКА (в stales)
-//   4. scope2 / CCC               ← валидный
+// 
 //
 // Задействованные настройки: segmentSeparator=":".
 {
-    "title": "Pinned · multi-root with stale ref",
+    "title": "Pinned · ",
     "sketch": {
         "scopes": {
             "scope1": {
@@ -21,9 +11,6 @@
                 "tasks": [
                     { "name": "AAA:child-task-1" },
                     { "name": "AAA:child-task-2" }
-                ],
-                "pinned": [
-                    "AAA:child-task-1"
                 ]
             },
             "scope2": {
@@ -31,10 +18,6 @@
                 "tasks": [
                     { "name": "BBB" },
                     { "name": "CCC" }
-                ],
-                "pinned": [
-                    "BBB",
-                    "CCC"
                 ]
             }
         },
@@ -42,7 +25,8 @@
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
             "stales": [
-                { "scopeName": "_scope1", "label": "missing-task" }
+                { "scopeName": "_scope1", "label": "missing-task-1" },
+                { "scopeName": "_scope2", "label": "missing-task-2" }
             ]
         }
     },

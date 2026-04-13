@@ -9,28 +9,33 @@
     "title": "Pinned · display order follows refs, not tree structure",
     "sketch": {
         "scopes": {
-            "app1": "app1/.vscode/tasks.json",
-            "app2": "app2/.vscode/tasks.json"
+            "app1": {
+                "tasksFile": "app1/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "parent:child-task-A" },
+                    { "name": "parent:child-task-B" }
+                ],
+                "pinned": [
+                    "parent:child-task-B",
+                    "parent:child-task-A"
+                ]
+            },
+            "app2": {
+                "tasksFile": "app2/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "parent:child-task-B" },
+                    { "name": "parent:child-task-A" }
+                ],
+                "pinned": [
+                    "parent:child-task-A",
+                    "parent:child-task-B"
+                ]
+            }
         },
-        "tasks": {
-            "app1": [
-                { "name": "parent:child-task-A" },
-                { "name": "parent:child-task-B" }
-            ],
-            "app2": [
-                { "name": "parent:child-task-B" },
-                { "name": "parent:child-task-A" }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
-            "compressionBehavior": "SMART",
-            "refs": [
-                { "scope": "app1", "label": "parent:child-task-B" },
-                { "scope": "app1", "label": "parent:child-task-A" },
-                { "scope": "app2", "label": "parent:child-task-A" },
-                { "scope": "app2", "label": "parent:child-task-B" }
-            ]
+            "compressionBehavior": "SMART"
         }
     },
     "asciiTree": [

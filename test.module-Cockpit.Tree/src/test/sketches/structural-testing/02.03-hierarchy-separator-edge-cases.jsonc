@@ -4,19 +4,20 @@
     "title": "hierarchy · separator edge cases",
     "sketch": {
         "scopes": {
-            "scope": ".vscode/tasks.json"
+            "scope": {
+                "tasksFile": ".vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA/in-aaa" },
+                    { "name": "AAA//flat"  },
+                    { "name": "AAA /flat"  },
+                    { "name": "AAA flat/"  },
+                    { "name": "/FLAT"      },
+                    { "name": "FLAT/"      },
+                    { "name": "/FLAT/"     }
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "AAA/in-aaa" },
-                { "name": "AAA//flat"  },
-                { "name": "AAA /flat"  },
-                { "name": "AAA flat/"  },
-                { "name": "/FLAT"      },
-                { "name": "FLAT/"      },
-                { "name": "/FLAT/"     }
-            ]
-        },
+
         "treeConfig": {
             "segmentSeparator": "/"
         }

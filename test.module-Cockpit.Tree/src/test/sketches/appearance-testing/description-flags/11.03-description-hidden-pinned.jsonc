@@ -8,20 +8,19 @@
     "title": "Description · hidden flag on pinned task",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
-        },
-        "tasks": {
-            "scope": [
-                { "name": "normal-task" },
-                { "name": "hidden-task", "hidden": true }
-            ]
-        },
-        "pinned": {
-            "refs": [
-                { "scope": "scope", "label": "normal-task" },
-                { "scope": "scope", "label": "hidden-task" }
-            ]
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "normal-task" },
+                    { "name": "hidden-task", "hidden": true }
+                ],
+                "pinned": [
+                    "normal-task",
+                    "hidden-task"
+                ]
+            }
         }
+
     },
     "asciiTree": [
         "[★[ Pinned ]]                   ",

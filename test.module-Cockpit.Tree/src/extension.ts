@@ -89,45 +89,48 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
-			log(LogLevel.Debug, `sketch: "${vscode.workspace.asRelativePath(uris[0])}":\n`);
+			log(LogLevel.Debug, `sketch: "${vscode.workspace.asRelativePath(uris[0]!)}":\n`);
 
-			const doc = await vscode.workspace.openTextDocument(uris[0]);
+			const doc = await vscode.workspace.openTextDocument(uris[0]!);
 			await vscode.window.showTextDocument(doc, { preview: true });
 			// await vscode.commands.executeCommand('workbench.action.files.setActiveEditorReadonlyInSession');
 
 			try {
-				const raw = await vscode.workspace.fs.readFile(uris[0]);
+				const raw = await vscode.workspace.fs.readFile(uris[0]!);
 				const json = parseJSONC(Buffer.from(raw).toString('utf-8'), undefined, {
 					allowEmptyContent: true,
 					allowTrailingComma: true,
 					disallowComments: false
 				});
 
-				const { title, data, asciiTree } = Sketch.load(json);
+				const { title, treeInput, asciiTree } = Sketch.load(json);
 
 				console.log(`Loaded sketch "${title}"\n`);
 
-				const topRoots = TreeModel.build(data);
+				const { sections, folderCounts } = TreeModel.build(treeInput);
 
-				const actualAsciiTree = TreeModel.printTree(topRoots);
+				const actualAsciiTree = TreeModel.printTree(sections);
 
 				if (asciiTree.length > 0) {
 					if (actualAsciiTree === asciiTree) {
 						console.log(actualAsciiTree);
 					}
 					else {
+						vscode.window.showErrorMessage('Sketch: asciiTree no match');
 						console.error(actualAsciiTree);
 					}
 				}
 				else {
+					vscode.window.showErrorMessage('Sketch: asciiTree empty');
 					console.log(actualAsciiTree);
 				}
 				console.log('\n');
 
-				viewer.setData(topRoots);
+				viewer.setData(sections);
 			}
 			catch (err) {
-				await vscode.window.showErrorMessage('Sketch error');
+				console.error((err as any).message);
+				vscode.window.showErrorMessage('Sketch error');
 			}
 
 		}),

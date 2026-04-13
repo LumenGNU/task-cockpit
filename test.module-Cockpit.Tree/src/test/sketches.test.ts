@@ -62,11 +62,11 @@ suite('Sketches', () => {
                     assert.fail(`${sketchFile}:\n${(error as Error).message}`);
                 }
 
-                const { title, data, asciiTree } = sketch;
+                const { title, treeInput, asciiTree } = sketch;
 
                 test(`${title}: (${sketchFile})`, () => {
-                    const topRoots = TreeModel.build(data);
-                    const actualAsciiTree = TreeModel.printTree(topRoots, formatter);
+                    const { sections } = TreeModel.build(treeInput);
+                    const actualAsciiTree = TreeModel.printTree(sections, formatter);
                     assert.strictEqual(asciiTree, actualAsciiTree);
                 });
             }
@@ -98,6 +98,7 @@ function simpleLabelFormatter(node: TreeModel.Node) {
             return `[W[ ${label} ]]`;
         }
 
+        case TC.EntityKind.PinnedStaleOnly:
         case TC.EntityKind.PinnedSingle:
         case TC.EntityKind.PinnedMulti: {
             return `[★[ ${label} ]]`;
@@ -148,6 +149,7 @@ function descriptionFormatter(node: TreeModel.Node) {
             return `[W[ ${label} ]]`;
         }
 
+        case TC.EntityKind.PinnedStaleOnly:
         case TC.EntityKind.PinnedSingle:
         case TC.EntityKind.PinnedMulti: {
             return `[★[ ${label} ]]`;
@@ -204,6 +206,7 @@ function iconFormatter(node: TreeModel.Node) {
             return `[W[ ${label} ]]`;
         }
 
+        case TC.EntityKind.PinnedStaleOnly:
         case TC.EntityKind.PinnedSingle:
         case TC.EntityKind.PinnedMulti: {
             return `[★[ ${label} ]]`;

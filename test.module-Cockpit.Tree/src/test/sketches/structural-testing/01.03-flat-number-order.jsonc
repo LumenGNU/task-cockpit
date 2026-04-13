@@ -4,19 +4,18 @@
     "title": "flat · numeric labels preserve insertion order",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
-        },
-        "tasks": {
-            "scope": [
-                { "name": "100" },
-                { "name": "BBB" },
-                { "name": "AAA" },
-                { "name": "3" },
-                { "name": "1" },
-                { "name": "0" },
-                { "name": "00" }
-                
-            ]
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "100" },
+                    { "name": "BBB" },
+                    { "name": "AAA" },
+                    { "name": "3" },
+                    { "name": "1" },
+                    { "name": "0" },
+                    { "name": "00" }
+                ]
+            }
         }
     },
     // было (bug: integer index sorting in plain object)

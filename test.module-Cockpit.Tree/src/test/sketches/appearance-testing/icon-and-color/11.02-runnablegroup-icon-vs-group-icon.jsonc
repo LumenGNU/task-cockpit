@@ -9,22 +9,21 @@
     "title": "Icon and color · RunnableGroup icon vs Group folder icon",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "build:task-1" },
+                    { "name": "build:task-2", "icon": { "id": "play"} },
+                    { "name": "build", "icon": { "id": "package", "color": ".red" } }
+                ],
+                "pinned": [
+                    "build:task-1"
+                ]
+            }
         },
-        "tasks": {
-            "scope": [
-                { "name": "build:task-1" },
-                { "name": "build:task-2", "icon": { "id": "play"} },
-                { "name": "build", "icon": { "id": "package", "color": ".red" } }
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" },
-        "nodeConfig": { "useFolderIcon": true },
-        "pinned": {
-            "refs": [
-                { "scope": "scope", "label": "build:task-1" }
-            ]
-        }
+        "nodeConfig": { "useFolderIcon": true }
     },
     "asciiTree": [
         "[★[ Pinned ]]                 ",

@@ -4,14 +4,14 @@
     "title": "basic · flat (B-C-A order)",
     "sketch": {
         "scopes": {
-            "scope": "scope/.vscode/tasks.json"
-        },
-        "tasks": {
-            "scope": [
-                { "name": "BBB" },
-                { "name": "CCC" },
-                { "name": "AAA" }
-            ]
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "BBB" },
+                    { "name": "CCC" },
+                    { "name": "AAA" }
+                ]
+            }
         }
     },
     "asciiTree": [

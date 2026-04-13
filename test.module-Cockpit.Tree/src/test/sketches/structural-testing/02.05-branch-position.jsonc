@@ -18,22 +18,23 @@
     "title": "Hierarchy · branch position follows first occurrence",
     "sketch": {
         "scopes": {
-            "app": "app/.vscode/tasks.json"
+            "app": {
+                "tasksFile": "app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:child-task-1" },
+                    { "name": "BBB:child-task-1" },
+                    { "name": "CCC:child-task-1" },
+                    { "name": "BBB:child-task-2" },
+                    { "name": "AAA:child-task-2" },
+                    { "name": "CCC:child-task-2" },
+                    { "name": "BBB:child-task-3" },
+                    { "name": "BBB" }, // < "корни", но позиции уже определены
+                    { "name": "CCC" }, // < 
+                    { "name": "AAA" }  // < 
+                ]
+            }
         },
-        "tasks": {
-            "app": [
-                { "name": "AAA:child-task-1" },
-                { "name": "BBB:child-task-1" },
-                { "name": "CCC:child-task-1" },
-                { "name": "BBB:child-task-2" },
-                { "name": "AAA:child-task-2" },
-                { "name": "CCC:child-task-2" },
-                { "name": "BBB:child-task-3" },
-                { "name": "BBB" }, // < "корни", но позиции уже определены
-                { "name": "CCC" }, // < 
-                { "name": "AAA" }  // < 
-            ]
-        },
+
         "treeConfig": { "segmentSeparator": ":" }
     },
     "asciiTree": [

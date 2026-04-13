@@ -10,44 +10,44 @@
     "title": "Pinned · single-folder AUTO visibility",
     "sketch": {
         "scopes": {
-            "app": "app/.vscode/tasks.json"
-        },
-        "tasks": {
-            "app": [
-                { "name": "build:dev" },
-                { "name": "build:prod" },
-                { "name": "test:unit" },
-                { "name": "test:e2e" },
-                { "name": "lint" }
-            ]
+            "app": {
+                "tasksFile": "app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "build:dev" },
+                    { "name": "build:prod" },
+                    { "name": "test:unit" },
+                    { "name": "test:e2e" },
+                    { "name": "lint" }
+                ],
+                "pinned": [
+                    "lint", 
+                    "test:e2e", 
+                    "build:prod", 
+                    "build:dev"
+                ]
+            }
         },
         "treeConfig": { "segmentSeparator": ":" },
         "pinned": {
-            "visibility": "AUTO",
-            "refs": [
-                { "scope": "app", "label": "lint" },
-                { "scope": "app", "label": "test:e2e" },
-                { "scope": "app", "label": "build:prod" },
-                { "scope": "app", "label": "build:dev" }
-            ]
+            "visibility": "AUTO"
         }
     },
     "asciiTree": [
-        "[★[ Pinned ]]  ",
-        " ├─ ▶ lint     ",
-        " ├─ test       ",
-        " │  └─ ▶ e2e   ",
-        " └─ build      ",
+        "[★[ Pinned ]]   ",
+        " ├─ ▶ lint      ",
+        " ├─ test        ",
+        " │  └─ ▶ e2e    ",
+        " └─ build       ",
         "    ├─ ▶ prod   ",
         "    └─ ▶ dev    ",
         "                ",
-        "[F[ app ]]     ",
-        " ├─ build      ",
-        " │  ├─ ▶ dev   ",
-        " │  └─ ▶ prod  ",
-        " ├─ test       ",
-        " │  ├─ ▶ unit  ",
-        " │  └─ ▶ e2e   ",
-        " └─ ▶ lint     "
+        "[F[ app ]]      ",
+        " ├─ build       ",
+        " │  ├─ ▶ dev    ",
+        " │  └─ ▶ prod   ",
+        " ├─ test        ",
+        " │  ├─ ▶ unit   ",
+        " │  └─ ▶ e2e    ",
+        " └─ ▶ lint      "
     ]
 }
