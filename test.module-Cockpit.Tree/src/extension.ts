@@ -109,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				const { sections, folderCounts } = TreeModel.build(treeInput);
 
-				const actualSnapshot = TreeModel.printTree(sections, Sketch.formatter[expectedRender.formatter]);
+				const actualSnapshot = Sketch.printTree(sections, Sketch.formatter[expectedRender.formatter]);
 
 				if (expectedRender.snapshot.length > 0) {
 					if (actualSnapshot === expectedRender.snapshot) {

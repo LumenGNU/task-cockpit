@@ -1,0 +1,43 @@
+
+// Задача-группа в двух контекстах: основное дерево vs Pinned.
+// В основном дереве "build" — RunnableGroup, иконка задачи (package).
+// В Pinned "build" — промежуточный Group-сегмент (подзадача запинована, сама нет),
+// useFolderIcon=true даёт ей иконку папки, цвет не наследуется.
+// Задействованные настройки: segmentSeparator=":", useFolderIcon=true,
+//                            defaultIconName="tools".
+{
+    "title": "Icon and color · RunnableGroup icon vs Group folder icon (SMART)",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "build:task-1", "icon": { "id": "play", "color": ".red"} },
+                    { "name": "build:task-2" },
+                    { "name": "build", "icon": { "id": "package" } }
+                ],
+                "pinned": [
+                    "build:task-1"
+                ]
+            }
+        },
+
+        "treeConfig": { "segmentSeparator": ":" },
+        "nodeConfig": { "useFolderIcon": true },
+        "pinned": {
+            "compressionBehavior": "SMART"
+        }
+    },
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "━[★[ Pinned ]]",
+            "  └─ ▶ build › task-1 · $(play~.red) ", // иконка от task-1
+            "                                   ",
+            "━[F[ scope ]]                       ",
+            "  └─ ▶ build · $(package)           ",
+            "     ├─ ▶ task-1 · $(play~.red)     ",
+            "     └─ ▶ task-2 · $(tools)         "
+        ]
+    }
+}

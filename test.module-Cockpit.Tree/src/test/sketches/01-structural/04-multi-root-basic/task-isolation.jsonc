@@ -1,0 +1,58 @@
+
+// Multi-root workspace: несколько папок.
+// Проверяет:
+// - отображение заголовков папок (Workspace-узлы в multi-root)
+// - изоляцию задач по scope
+// - одноимённые ветки в разных scope не конфликтуют
+//
+// Задействованные настройки: segmentSeparator=":".
+{
+    "title": "Multi-root · task isolation across scopes",
+    "sketch": {
+        "scopes": {
+            "scope1": {
+                "tasksFile": "scope1/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:child-task-s1.1" },
+                    { "name": "AAA:child-task-s1.2" },
+                    { "name": "BBB" }
+                ]
+            },
+            "scope2": {
+                "tasksFile": "scope2/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:child-task-s2.1" },
+                    { "name": "AAA:child-task-s2.2" },
+                    { "name": "BBB" }
+                ]
+            },
+            "scope3": {
+                "tasksFile": "scope3/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "CCC" }
+                ]
+            }
+        },
+
+        "treeConfig": { "segmentSeparator": ":" }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[F[ scope1 ]]             ",
+            "  ├─ AAA                   ",
+            "  │  ├─ ▶ child-task-s1.1  ",
+            "  │  └─ ▶ child-task-s1.2  ",
+            "  └─ ▶ BBB                 ",
+            "                           ",
+            "━[F[ scope2 ]]             ",
+            "  ├─ AAA                   ",
+            "  │  ├─ ▶ child-task-s2.1  ",
+            "  │  └─ ▶ child-task-s2.2  ",
+            "  └─ ▶ BBB                 ",
+            "                           ",
+            "━[F[ scope3 ]]             ",
+            "  └─ ▶ CCC                 "
+        ]
+    }
+}

@@ -1,0 +1,50 @@
+
+// 
+//
+// Задействованные настройки: segmentSeparator=":".
+{
+    "title": "Pinned · only all stale",
+    "sketch": {
+        "scopes": {
+            "scope1": {
+                "tasksFile": "scope1/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:child-task-1" },
+                    { "name": "AAA:child-task-2" }
+                ]
+            },
+            "scope2": {
+                "tasksFile": "scope2/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "BBB" },
+                    { "name": "CCC" }
+                ]
+            }
+        },
+
+        "treeConfig": { "segmentSeparator": ":" },
+        "pinned": {
+            "stales": [
+                { "scopeName": "_scope1", "label": "missing-task-1" },
+                { "scopeName": "_scope2", "label": "missing-task-2" }
+            ]
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[★[ Pinned ]]                              ",
+            "  ├─ « ✗ missing-task-1 »                   ",
+            "  └─ « ✗ missing-task-2 »                   ",
+            "                                            ",
+            "━[F[ scope1 ]]                              ",
+            "  └─ AAA                                    ",
+            "     ├─ ▶ child-task-1                      ",
+            "     └─ ▶ child-task-2                      ",
+            "                                            ",
+            "━[F[ scope2 ]]                              ",
+            "  ├─ ▶ BBB                                  ",
+            "  └─ ▶ CCC                                  "
+        ]
+    }
+}

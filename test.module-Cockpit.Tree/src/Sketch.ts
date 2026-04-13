@@ -229,6 +229,37 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
 }
 
 
+// Формирует ASCII дерево. Вызывает formatter на каждом узле.
+export function printTree(
+    roots: ReadonlyArray<Readonly<TreeModel.TopRoot>>,
+    formatter: (node: TreeModel.Node) => string
+): string {
+
+    const lines: string[] = [];
+
+    const walk = (node: TreeModel.Node, prefix: string, isLast: boolean, isRoot: boolean): void => {
+
+        const connector = isRoot ? '━' : isLast ? '└─ ' : '├─ ';
+        lines.push(prefix + connector + formatter(node));
+
+        const children = TreeModel.getChildren(node);
+        if (!children) return;
+
+        const childPrefix = isRoot ? '  ' : prefix + (isLast ? '   ' : '│  ');
+
+        for (let i = 0; i < children.length; i++) {
+            walk(children[i]!, childPrefix, i === children.length - 1, false);
+        }
+    };
+
+    for (let i = 0; i < roots.length; i++) {
+        if (i > 0) lines.push('');
+        walk(roots[i]!, '', true, true);
+    }
+
+    return lines.join('\n');
+}
+
 type NodeFormatter = (node: TreeModel.Node) => string;
 
 type FormatterNameType = typeof formatterNames[number];

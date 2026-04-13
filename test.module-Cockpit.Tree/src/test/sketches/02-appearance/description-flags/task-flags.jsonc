@@ -1,0 +1,32 @@
+
+// Флаги задач отображаются в description: isBackground, isDefault (group).
+// Проверяет: каждый флаг по отдельности, комбинацию, и отсутствие флагов.
+// Задействованные настройки: showHidden=true (чтобы hidden-задача была видна).
+{
+    "title": "Description · task flags",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "plain"                                                                           },
+                    { "name": "bg",       "isBackground": true                                                  },
+                    { "name": "default",  "group": { "kind": "Build", "isDefault": true }                       },
+                    { "name": "bg_&_default",  "isBackground": true, "group": { "kind": "Build", "isDefault": true } }                    
+                ]
+            }
+        },
+
+        "treeConfig": { "showHidden": true }
+    },
+    "expectedRender": {
+        "formatter": "description",
+        "snapshot": [
+            "━[F[ scope ]]                                      ",
+            "  ├─ ▶ plain                                       ",
+            "  ├─ ▶ bg · ( Background )                        ",
+            "  ├─ ▶ default · ( Default )                      ",
+            "  └─ ▶ bg_&_default · ( Default, Background )     "
+        ]
+    }
+}

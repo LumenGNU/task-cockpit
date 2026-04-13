@@ -1,12 +1,13 @@
 import * as assert from 'assert/strict';
-import * as vscode from 'vscode';
 import { readdirSync, readFileSync } from 'fs';
 import { parse as parseJSONC, ParseError } from 'jsonc-parser';
 import * as Sketch from '../Sketch';
 import TreeModel from '../Cockpit/TreeModel';
-import * as TC from '../types';
+
 
 const SKETCHES_DIR = 'src/test/sketches';
+
+type SuiteNode = Map<string, SuiteNode>;
 
 function resolveSketches(dir: string): { sketchDir: string, sketchFile: string; }[] {
     const sketchDir = `${SKETCHES_DIR}/${dir}`;
@@ -21,66 +22,97 @@ function resolveSketches(dir: string): { sketchDir: string, sketchFile: string; 
         ;
 }
 
-suite('Sketches', () => {
 
-    [
-        ['Structural Testing', 'structural-testing'] as const,
-        ['Appearance Testing (description flags)', 'appearance-testing/description-flags'] as const,
-        ['Appearance Testing (icon and color)', 'appearance-testing/icon-and-color'] as const,
-        ['Stress Tests', 'stress'] as const,
+function collectSketchDirs(baseDir: string): string[] {
+    const results: string[] = [];
 
-    ].forEach(([suiteTitle, folder]) => {
-
-        suite(suiteTitle, () => {
-
-            for (const { sketchDir, sketchFile } of resolveSketches(folder)) {
-
-                const errors: ParseError[] = [];
-
-                const raw = readFileSync(`${sketchDir}/${sketchFile}`, 'utf-8');
-
-                const jsonc = parseJSONC(
-                    Buffer.from(raw)
-                        .toString('utf-8'),
-                    errors,
-                    {
-                        allowEmptyContent: true,
-                        allowTrailingComma: true,
-                        disallowComments: false
-                    }
+    function walk(dir: string, relativePath: string): void {
+        const entries = readdirSync(dir, { withFileTypes: true });
+        const hasJsonc = entries.some(e => e.isFile() && e.name.endsWith('.jsonc') && !e.name.startsWith('~'));
+        if (hasJsonc) results.push(relativePath);
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                walk(
+                    `${dir}/${entry.name}`,
+                    relativePath ? `${relativePath}/${entry.name}` : entry.name
                 );
-
-                if (errors.length > 0) {
-                    throw new Error(`JSONC Parse Error:\n${errors.join('\n')}`);
-                }
-
-                let sketch;
-                try {
-                    sketch = Sketch.load(jsonc);
-                }
-                catch (error) {
-                    assert.fail(`${sketchFile}:\n${(error as Error).message}`);
-                }
-
-                const { title, treeInput, expectedRender } = sketch;
-
-                test(`${title}: (${sketchFile})`, () => {
-                    const { sections } = TreeModel.build(treeInput);
-                    const actualSnapshot = TreeModel.printTree(sections, Sketch.formatter[expectedRender.formatter]);
-                    assert.strictEqual(expectedRender.snapshot, actualSnapshot);
-                });
             }
+        }
+    }
 
+    walk(baseDir, '');
+    return results;
+}
+
+
+function toTitle(segment: string): string {
+    return segment.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+
+function registerSuiteTree(node: SuiteNode, basePath: string): void {
+    for (const [segment, children] of node) {
+        const fullPath = basePath ? `${basePath}/${segment}` : segment;
+        suite(toTitle(segment), () => {
+            resolveSketches(fullPath).forEach(makeTest);  // всегда
+            if (children.size > 0) {
+                registerSuiteTree(children, fullPath);    // + рекурсия если нужно
+            }
         });
+    }
+}
 
-    });
 
+function insertPath(root: SuiteNode, parts: string[]): void {
+    let node = root;
+    for (const part of parts) {
+        if (!node.has(part)) node.set(part, new Map());
+        node = node.get(part)!;
+    }
+}
+
+
+suite('Sketches', () => {
+    const root: SuiteNode = new Map();
+    for (const dir of collectSketchDirs(SKETCHES_DIR)) {
+        insertPath(root, dir.split('/'));
+    }
+    registerSuiteTree(root, '');
 });
 
+export function makeTest({ sketchDir, sketchFile }: { sketchDir: string, sketchFile: string; }) {
 
+    const errors: ParseError[] = [];
+    const raw = readFileSync(`${sketchDir}/${sketchFile}`, 'utf-8');
 
+    const jsonc = parseJSONC(
+        Buffer.from(raw)
+            .toString('utf-8'),
+        errors,
+        {
+            allowEmptyContent: true,
+            allowTrailingComma: true,
+            disallowComments: false
+        }
+    );
 
+    if (errors.length > 0) {
+        throw new Error(`JSONC Parse Error:\n${errors.join('\n')}`);
+    }
 
+    let sketch;
+    try {
+        sketch = Sketch.load(jsonc);
+    }
+    catch (error) {
+        assert.fail(`${sketchFile}:\n${(error as Error).message}`);
+    }
 
+    const { title, treeInput, expectedRender } = sketch;
 
-
+    test(`${title}: (${sketchFile})`, function () {
+        const { sections } = TreeModel.build(treeInput);
+        const actualSnapshot = Sketch.printTree(sections, Sketch.formatter[expectedRender.formatter]);
+        assert.strictEqual(expectedRender.snapshot, actualSnapshot);
+    });
+}

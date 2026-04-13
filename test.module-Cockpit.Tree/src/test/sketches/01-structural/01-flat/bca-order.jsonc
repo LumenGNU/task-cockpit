@@ -1,0 +1,26 @@
+
+// 
+{
+    "title": "flat · basic (B-C-A order)",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "BBB" },
+                    { "name": "CCC" },
+                    { "name": "AAA" }
+                ]
+            }
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[F[ scope ]] ",
+            "  ├─ ▶ BBB    ",
+            "  ├─ ▶ CCC    ",
+            "  └─ ▶ AAA    "
+        ]
+    }
+}

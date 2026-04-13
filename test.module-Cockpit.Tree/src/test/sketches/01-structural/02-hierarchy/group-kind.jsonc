@@ -1,0 +1,40 @@
+
+// Группировка по свойству group (useGroupKind=true, segmentSeparator отключён).
+// Проверяет: создание group-папок, имени группы,
+// задачи без group остаются на верхнем уровне,
+// порядок не ломается.
+{
+    "title": "Group kind · basic grouping",
+    "sketch": {
+        "scopes": {
+            "app": {
+                "tasksFile": "/workspace/app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "task-1" },
+                    { "name": "task-in-Build-group-1", "group": { "kind": "Build" } },
+                    { "name": "task-in-Build-group-2", "group": { "kind": "Build" }  },
+                    { "name": "task-in-Test-group-1", "group": { "kind": "Test" } },
+                    { "name": "task-in-Test-group-2", "group": { "kind": "Test" } },
+                    { "name": "task-2" }
+                ]
+            }
+        },
+
+        "treeConfig": { "useGroupKind": true },
+        "nodeConfig": { "useFolderIcon": true }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[F[ app ]]                      ",
+            "  ├─ ▶ task-1                    ",
+            "  ├─ Build                       ",
+            "  │  ├─ ▶ task-in-Build-group-1  ",
+            "  │  └─ ▶ task-in-Build-group-2  ",
+            "  ├─ Test                        ",
+            "  │  ├─ ▶ task-in-Test-group-1   ",
+            "  │  └─ ▶ task-in-Test-group-2   ",
+            "  └─ ▶ task-2                    "
+        ]
+    }
+}

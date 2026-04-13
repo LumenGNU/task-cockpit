@@ -1,0 +1,34 @@
+
+// Базовая иерархия через separator.
+{
+    "title": "hierarchy · separator disabled",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile":".vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:in-aaa-1" },
+                    { "name": "AAA:in-aaa-2" },
+                    { "name": "BBB:in-bbb-1" },
+                    { "name": "BBB:in-bbb-2" },
+                    { "name": "ccc"    }
+                ]
+            }
+        },
+
+        "treeConfig": {
+            "segmentSeparator": false // сепаратор отключен
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[F[ scope ]]       ",
+            "  ├─ ▶ AAA:in-aaa-1 ",
+            "  ├─ ▶ AAA:in-aaa-2 ",
+            "  ├─ ▶ BBB:in-bbb-1 ",
+            "  ├─ ▶ BBB:in-bbb-2 ",        
+            "  └─ ▶ ccc          "
+        ]
+    }
+}

@@ -1,0 +1,224 @@
+
+// ══════════════════════════════════════════════════════════════════════
+// STRESS SKETCH: "The Full Monty"
+// ══════════════════════════════════════════════════════════════════════
+//
+// Нагружает одновременно:
+//  • Multi-root workspace (3 scope'а)
+//  • Глубокая иерархия (до 7 уровней)
+//  • Все комбинации флагов (hidden, isBackground, group.isDefault)
+//  • useGroupKind: true — задачи с group.kind группируются по kind
+//  • Кастомные иконки, цвета, tintLabel, blank
+//  • Pinned cross-scope — ссылки на задачи из разных scope
+//  • Task-as-group (задача является и группой для детей)
+//  • Hidden group + видимые дети
+//  • Path compression SMART — однодетные узлы схлопываются
+//  • Одинаковые имена задач в разных scope
+//  • Pinned на hidden задачу → видна в Pinned
+//  • Pinned на несуществующий scope → dead ref
+//
+// Задействованные настройки: segmentSeparator=":", useGroupKind=true,
+//                            compressionBehavior="SMART", tintLabel=true.
+{
+    "title": "Stress · The Full Monty — 3 scopes, deep hierarchy, all flags, SMART",
+    "sketch": {
+        "scopes": {
+            "backend":  {
+                "tasksFile": "backend/.vscode/tasks.json",
+                "tasks": [
+                    // Build
+                    { "name": "core:compile",       "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "core:compile:watch",  "group": { "kind": "Build", "isDefault": true }, "isBackground": true, "icon": { "id": "eye", "color": "terminal.ansiGreen" } },
+
+                    // Test
+                    { "name": "unit",            "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "integration:api", "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "integration:db",  "group": { "kind": "Test" }, "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "e2e:smoke",       "group": { "kind": "Test" }, "isBackground": true, "icon": { "id": "flame", "color": "terminal.ansiRed" } },
+
+                    // deploy (ungrouped — kind "deploy" невалиден)
+                    { "name": "infra:k8s:deploy-staging", "icon": { "id": "cloud-upload", "color": "terminal.ansiBlue" } },
+                    { "name": "infra:k8s:deploy-prod", "hidden": true, "icon": { "id": "cloud-upload", "color": "terminal.ansiRed" } },
+
+                    // ungrouped
+                    { "name": "db:migrate:run",      "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+                    { "name": "db:migrate:rollback",  "icon": { "id": "database", "color": "terminal.ansiCyan" } },
+                    { "name": "db:migrate:seed",      "icon": { "id": "database", "color": "terminal.ansiMagenta" } },
+                    { "name": "lint", "icon": { "id": "search" } },
+                    // невозможная комбинация флагов
+                    { "name": "all-flags", "hidden": true, "isBackground": true, "group": { "kind": "Build", "isDefault": true } }
+
+                ],
+                "pinned": [
+                    "infra:k8s:deploy-prod",         // hidden → visible in pinned
+                    "db:migrate:run",
+                    "lint"
+                ]
+            },
+            "frontend": {
+                "tasksFile": "frontend/.vscode/tasks.json",
+                "tasks": [
+                    // ui components — глубокая вложенность, одинаковые leaf-имена
+                    { "name": "ui:components:Button:build" },
+                    { "name": "ui:components:Button:test",      "icon": { "id": "beaker", "color": "terminal.ansiYellow" } },
+                    { "name": "ui:components:Button:storybook", "isBackground": true, "icon": { "id": "book", "color": "terminal.ansiMagenta" } },
+                    { "name": "ui:components:Modal:build" },
+                    { "name": "ui:components:Table:build" },
+                    { "name": "ui:components:Table:test" },
+
+                    // styles
+                    { "name": "styles:build-tokens", "icon": { "id": "paintcan", "color": "terminal.ansiMagenta" } },
+
+                    // app
+                    { "name": "app:dev",     "isBackground": true, "icon": { "id": "play", "color": "terminal.ansiGreen" } },
+                    { "name": "app:build",   "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "app:preview", "icon": { "id": "browser" } },
+
+                    // e2e
+                    { "name": "e2e:cypress:run" },
+                    { "name": "e2e:cypress:open", "isBackground": true },
+
+                    // hidden
+                    { "name": "stale-task", "hidden": true },
+
+                    // blank icon
+                    { "name": "secret-experiment", "icon": { "id": "blank" } }
+                ],
+                "pinned": [
+                    "ui:components:Button:test"
+                ]
+            },
+            "shared":   {
+                "tasksFile": "shared/.vscode/tasks.json",
+                "tasks": [
+                    // proto — task-as-group: "codegen" и задача, и группа
+                    { "name": "proto:codegen",        "icon": { "id": "zap", "color": "terminal.ansiYellow" } },
+                    { "name": "proto:codegen:go" },
+                    { "name": "proto:codegen:ts" },
+                    { "name": "proto:codegen:python" },
+                    { "name": "proto:lint", "icon": { "id": "search" } },
+
+                    // ci pipeline
+                    { "name": "ci:pipeline:validate" },
+                    { "name": "ci:pipeline:build-all", "group": { "kind": "Build", "isDefault": true }, "icon": { "id": "package", "color": "terminal.ansiGreen" } },
+                    { "name": "ci:pipeline:notify",    "isBackground": true, "icon": { "id": "bell", "color": "terminal.ansiBlue" } },
+
+                    // docs
+                    { "name": "docs:generate", "icon": { "id": "notebook" } },
+
+                    // hidden task-as-group (задача скрыта, дети видимы)
+                    { "name": "internal:legacy", "hidden": true },
+                    { "name": "internal:legacy:compat-shim" },
+                    { "name": "internal:legacy:polyfill" }
+                ],
+                "pinned": [
+                    "proto:codegen",                  // task-as-group
+                    "internal:legacy:compat-shim"     // child of hidden group
+                ]
+            }
+        },
+
+        "treeConfig": {
+            "segmentSeparator": ":",
+            "useGroupKind": true
+        },
+        "nodeConfig": {
+            "tintLabel": true
+        },
+
+        "pinned": {
+            "visibility": "AUTO",
+            "compressionBehavior": "SMART",
+            "stales": [
+                { "scopeName": "DEAD_FOLDER", "label": "ghost:task" }               // scope не существует
+            ]
+        }
+    },
+
+    // 
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot":     [
+            "━[★[ Pinned ]]                                 ",
+            "  ├─ « ✗ ghost:task »                          ",
+            "  ├─ [ backend ]                               ",
+            "  │  ├─ ▶ infra › k8s › deploy-prod            ",
+            "  │  ├─ ▶ db › migrate › run                   ",
+            "  │  └─ ▶ lint                                 ",
+            "  ├─ [ frontend ]                              ",
+            "  │  └─ ▶ ui › components › Button › test      ",
+            "  └─ [ shared ]                                ",
+            "     ├─ ▶ proto › codegen                      ",
+            "     └─ ▶ internal › legacy › compat-shim      ",
+            "                                              ",
+            "━[F[ backend ]]                                ",
+            "  ├─ Build                                     ",
+            "  │  └─ core                                   ",
+            "  │     └─ ▶ compile                           ",
+            "  │        └─ ▶ watch                          ",
+            "  ├─ Test                                      ",
+            "  │  ├─ ▶ unit                                 ",
+            "  │  ├─ integration                            ",
+            "  │  │  ├─ ▶ api                               ",
+            "  │  │  └─ ▶ db                                ",
+            "  │  └─ e2e                                    ",
+            "  │     └─ ▶ smoke                             ",
+            "  ├─ infra                                     ",
+            "  │  └─ k8s                                    ",
+            "  │     └─ ▶ deploy-staging                    ",
+            "  ├─ db                                        ",
+            "  │  └─ migrate                                ",
+            "  │     ├─ ▶ run                               ",
+            "  │     ├─ ▶ rollback                          ",
+            "  │     └─ ▶ seed                              ",
+            "  └─ ▶ lint                                    ",
+            "                                              ",
+            "━[F[ frontend ]]                               ",
+            "  ├─ ui                                        ",
+            "  │  └─ components                             ",
+            "  │     ├─ Button                              ",
+            "  │     │  ├─ ▶ build                          ",
+            "  │     │  ├─ ▶ test                           ",
+            "  │     │  └─ ▶ storybook                      ",
+            "  │     ├─ Modal                               ",
+            "  │     │  └─ ▶ build                          ",
+            "  │     └─ Table                               ",
+            "  │        ├─ ▶ build                          ",
+            "  │        └─ ▶ test                           ",
+            "  ├─ styles                                    ",
+            "  │  └─ ▶ build-tokens                         ",
+            "  ├─ app                                       ",
+            "  │  ├─ ▶ dev                                  ",
+            "  │  ├─ ▶ build                                ",
+            "  │  └─ ▶ preview                              ",
+            "  ├─ e2e                                       ",
+            "  │  └─ cypress                                ",
+            "  │     ├─ ▶ run                               ",
+            "  │     └─ ▶ open                              ",
+            "  └─ ▶ secret-experiment                       ",
+            "                                              ",
+            "━[F[ shared ]]                                 ",
+            "  ├─ proto                                     ",
+            "  │  ├─ ▶ codegen                              ",
+            "  │  │  ├─ ▶ go                                ",
+            "  │  │  ├─ ▶ ts                                ",
+            "  │  │  └─ ▶ python                            ",
+            "  │  └─ ▶ lint                                 ",
+            "  ├─ ci                                        ",
+            "  │  └─ pipeline                               ",
+            "  │     ├─ ▶ validate                          ",
+            "  │     └─ ▶ notify                            ",
+            "  ├─ Build                                     ",
+            "  │  └─ ci                                     ",
+            "  │     └─ pipeline                            ",
+            "  │        └─ ▶ build-all                      ",
+            "  ├─ docs                                      ",
+            "  │  └─ ▶ generate                             ",
+            "  └─ internal                                  ",
+            "     └─ legacy                                 ",
+            "        ├─ ▶ compat-shim                       ",
+            "        └─ ▶ polyfill                          "
+        ]
+    }
+
+}    
