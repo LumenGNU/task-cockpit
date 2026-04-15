@@ -554,7 +554,10 @@ function makePinnedSpecs(
         const definition = scopeRecord.definitionMap.get(label);
 
         if (!definition) {
+            // #region DEBUG
             throw new Error(`Precondition violated: pinned label "${label}" not found in definitionMap (scope: "${scopeRecord.folderName}")`);
+            // #endregion DEBUG
+            continue;
         }
 
         preTrieSpecs.push({
