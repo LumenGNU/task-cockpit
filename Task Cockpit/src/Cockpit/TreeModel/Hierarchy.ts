@@ -4,6 +4,7 @@
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
+import { object } from 'zod';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
@@ -430,6 +431,18 @@ const Hierarchy = {
             node: Hierarchy.Branch<D>
         ): Array<Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>> {
             return Object.values(node[CHILDREN]);
+        },
+
+
+        childCount<D extends object>(node: Hierarchy.Data<D> | Hierarchy.Branch<D>): number {
+            const children = node[CHILDREN];
+            if (!children) {
+                return 0;
+            }
+            var count: number = 0;
+            var _;
+            for (_ in children) count++;
+            return count;
         },
 
 
