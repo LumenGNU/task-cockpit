@@ -289,6 +289,8 @@ export declare const enum CompressionBehavior {
 export interface ScopeRecord {
     /** {@linkcode FolderName} — Отображаемое имя папки workspace. */
     folderName: FolderName;
+    /** Папка workspace, исключена из отображения */
+    excluded: boolean;
     /** Определения задач scope, индексированные по имени. */
     definitionMap: ScopedDefinitions;
     /** {@linkcode TreeConfig} — Конфигурация структуры ветки дерева для этого scope. */
@@ -329,8 +331,6 @@ export interface TreeInput {
     scopeIndex: Map<File, ScopeRecord>;
     /** {@linkcode PinnedConfig} — Конфигурация раздела закреплённых задач. */
     pinnedConfig: PinnedConfig;
-    /** `Set<`{@linkcode FolderName}`>` — Имена папок workspace, исключённых из отображения. */
-    excludedFolders: Set<FolderName>;
 }
 
 // -- Утилитарные типы -------------------------------------

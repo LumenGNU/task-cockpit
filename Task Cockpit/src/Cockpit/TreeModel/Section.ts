@@ -179,7 +179,7 @@ const Section = {
             folderCounts.totalCount++;
 
             // если папка не скрыта
-            if (!treeInput.excludedFolders.has(scopeRecord.folderName)) {
+            if (!scopeRecord.excluded) {
                 // получение спецификаций области
                 fileSpecs.set(
                     scopeFile,
@@ -435,7 +435,6 @@ function makeFileSpecs(
     }
 
     return {
-        // name: scopeRecord.name,
         specs,
         taskCounts: { totalCount, hiddenCount }
     };

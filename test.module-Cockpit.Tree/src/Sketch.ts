@@ -214,6 +214,7 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
             treeConfig,
             nodeConfig,
             pinned: new Set(entry.pinned),
+            excluded: sketch.excludeFolders.includes(folderName)
         });
     }
 
@@ -224,7 +225,6 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
             compressionBehavior: sketch.pinned.compressionBehavior,
             staleRecords: sketch.pinned.stales,
         },
-        excludedFolders: new Set(sketch.excludeFolders),
     };
 }
 
