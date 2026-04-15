@@ -1,0 +1,42 @@
+
+//  задача внутри group-kind ветки попадает в Pinned — Group-kind ветка участвует в компрессии,
+// если "useGroupKind": true. (как и любой другой сегмент)
+// 
+{
+    "title": "Pinned · Pinned + useGroupKind=true",
+    "sketch": {
+        "scopes": {
+            "app": {
+                "tasksFile": "app/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "ci:lint", "group": {"kind": "Clean"} },
+                    { "name": "task" }
+                ],
+                "pinned": [
+                    "ci:lint"
+                ]
+            }
+        },
+        "treeConfig": { 
+            "segmentSeparator": ":",
+            "useGroupKind": true
+        },
+        "pinned": {
+            "visibility": "AUTO"
+        }
+    },
+    "expectedRender": {
+        "formatter": "simple",
+        "snapshot": [
+            "━[★[ Pinned ]]    ",
+            " └─ Clean › ci     ",
+            "    └─ ▶ lint     ",
+            "                  ",
+            "━[F[ app ]]       ",
+            " ├─ Clean         ",
+            " │  └─ ci         ",
+            " │     └─ ▶ lint  ",
+            " └─ ▶ task        "
+        ]
+    }
+}
