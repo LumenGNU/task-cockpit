@@ -1,3 +1,4 @@
+// @todo каждая скопа со своими настройками
 import { z } from 'zod';
 import * as TC from './types';
 import helpers from './helpers';

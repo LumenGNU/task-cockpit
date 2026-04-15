@@ -23,7 +23,7 @@
             "━[F[ scope ]]                                          ",
             "  ├─ ▶ task-default-icon · $(gear)                     ",
             "  ├─ ▶ task-custom-icon · $(package)                   ",
-            "  └─ ▶ task-custom-icon-color · $(rocket~.red)   "
+            "  └─ ▶ task-custom-icon-color · $(rocket~.red)         "
         ]
     }
 }

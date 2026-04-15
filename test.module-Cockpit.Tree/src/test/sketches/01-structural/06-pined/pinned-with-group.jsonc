@@ -28,15 +28,15 @@
     "expectedRender": {
         "formatter": "simple",
         "snapshot": [
-            "━[★[ Pinned ]]    ",
-            " └─ Clean › ci     ",
-            "    └─ ▶ lint     ",
-            "                  ",
-            "━[F[ app ]]       ",
-            " ├─ Clean         ",
-            " │  └─ ci         ",
-            " │     └─ ▶ lint  ",
-            " └─ ▶ task        "
+            "━[★[ Pinned ]]     ",
+            "  └─ Clean › ci      ",
+            "     └─ ▶ lint     ",
+            "                   ",
+            "━[F[ app ]]        ",
+            "  ├─ Clean         ",
+            "  │  └─ ci         ",
+            "  │     └─ ▶ lint  ",
+            "  └─ ▶ task        "
         ]
     }
 }
