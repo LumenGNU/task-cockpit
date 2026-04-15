@@ -173,6 +173,8 @@ const Section = {
             nodeConfig: TC.NodeConfig;
         }>>();
 
+        const pinnedVisible = treeInput.pinnedConfig.visibility !== TC.PinnedVisibility.HIDE;
+
         // обход всех областей
         for (const [scopeFile, scopeRecord] of treeInput.scopeIndex) {
 
@@ -195,7 +197,7 @@ const Section = {
             }
 
             // если секция "закрепленные" не скрыта...
-            if (treeInput.pinnedConfig.visibility !== TC.PinnedVisibility.HIDE) {
+            if (pinnedVisible) {
                 // если область имеет закрепленные задачи...
                 // получение спецификаций закрепленных для области
                 if (scopeRecord.pinned.size > 0) {
