@@ -31,13 +31,13 @@
     "expectedRender": {
         "formatter": "icon",
         "snapshot": [
-            "━[★[ Pinned ]]",
-            "  └─ ▶ build › task-1 · $(play~.red) ", // иконка от task-1
-            "                                   ",
-            "━[F[ scope ]]                       ",
-            "  └─ ▶ build · $(package)           ",
-            "     ├─ ▶ task-1 · $(play~.red)     ",
-            "     └─ ▶ task-2 · $(tools)         "
+            "━[★[ Pinned ]] · $(pinned~list.highlightForeground) ",
+            "  └─ ▶ build › task-1 · $(play~.red)                 ", // иконка от task-1
+            "                                                    ",
+            "━[F[ scope ]] · $(root-folder)                       ",
+            "  └─ ▶ build · $(package)                           ",
+            "     ├─ ▶ task-1 · $(play~.red)                     ",
+            "     └─ ▶ task-2 · $(tools)                         "
         ]
     }
 }

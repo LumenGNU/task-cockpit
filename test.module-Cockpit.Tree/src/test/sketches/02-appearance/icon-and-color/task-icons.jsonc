@@ -20,7 +20,7 @@
     "expectedRender": {
         "formatter": "icon",
         "snapshot": [
-            "━[F[ scope ]]                                          ",
+            "━[F[ scope ]] · $(root-folder)                         ",
             "  ├─ ▶ task-default-icon · $(gear)                     ",
             "  ├─ ▶ task-custom-icon · $(package)                   ",
             "  └─ ▶ task-custom-icon-color · $(rocket~.red)         "

@@ -1,0 +1,34 @@
+
+// 
+{
+    "title": "Icon and color · useFolderIcon=true",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "AAA:BBB:CCC:task" }                    
+                ],
+                "pinned": [
+                    "AAA:BBB:CCC:task"
+                ]
+            }
+        },
+        "treeConfig": {"segmentSeparator": ":"},
+        "nodeConfig": { "useFolderIcon": true }
+    },
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "━[★[ Pinned ]] · $(pinned~list.highlightForeground)   ",
+            "  └─ AAA › BBB › CCC · $(symbol-folder)                 ", // промежуточное сегменты имеют иконку "symbol-folder"
+            "     └─ ▶ task · $(tools)                            ",
+            "                                                     ",
+            "━[F[ scope ]] · $(root-folder)                        ",
+            "  └─ AAA · $(symbol-folder)                          ", // промежуточное сегменты имеют иконку "symbol-folder"
+            "     └─ BBB · $(symbol-folder)                       ",
+            "        └─ CCC · $(symbol-folder)                    ",
+            "           └─ ▶ task · $(tools)                      "
+        ]
+    }
+}

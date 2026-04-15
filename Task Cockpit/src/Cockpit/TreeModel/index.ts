@@ -256,7 +256,7 @@ const TreeModel = {
             case TC.EntityKind.BrokenPinned: {
                 props.id = `${rootPrefix(node.parentNode)}\0\0BROKEN-MARKER\0${node.ref.scopeName}\0${node.ref.label}`;
                 props.label = node.ref.label;
-                props.iconPath = new vscode.ThemeIcon('dash', new vscode.ThemeColor('list.warningForeground'));
+                props.iconPath = new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('list.warningForeground'));
                 props.description = '';
                 props.collapsibleState = vscode.TreeItemCollapsibleState.None;
                 break;

@@ -328,35 +328,35 @@ export const formatter: Record<FormatterNameType, NodeFormatter> = {
                 const color = icon.color ? `~${icon.color.id}` : '';
                 return `$(${icon.id}${color})`;
             }
-            return '';
+            return '$(-no-icon-)';
         }
 
 
         switch (node.kind) {
             case TC.EntityKind.Folder: {
-                return `[F[ ${label} ]]`;
+                return `[F[ ${label} ]] · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.Workspace: {
-                return `[W[ ${label} ]]`;
+                return `[W[ ${label} ]] · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.PinnedStaleOnly:
             case TC.EntityKind.PinnedSingle:
             case TC.EntityKind.PinnedMulti: {
-                return `[★[ ${label} ]]`;
+                return `[★[ ${label} ]] · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.PinnedFolder: {
-                return `[ ${label} ]`;
+                return `[ ${label} ] · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.BrokenPinned: {
-                return `« ✗ ${label} »`;
+                return `« ✗ ${label} » · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.Empty: {
-                return `« ${label} »`;
+                return `« ${label} » · ${fmtIcon(iconPath)}`;
             }
 
             case TC.EntityKind.Group: {

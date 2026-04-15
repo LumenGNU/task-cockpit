@@ -28,14 +28,14 @@
     "expectedRender": {
         "formatter": "icon",
         "snapshot": [
-            "━[★[ Pinned ]]                 ",
-            "  └─ build · $(symbol-folder)  ", // папка без цвета
-            "     └─ ▶ task-1 · $(zap)      ",
-            "                               ",
-            "━[F[ scope ]]                  ",
-            "  └─ ▶ build · $(package~.red) ", // своя иконка с цветом
-            "     ├─ ▶ task-1 · $(zap)      ",
-            "     └─ ▶ task-2 · $(play)     "
+            "━[★[ Pinned ]] · $(pinned~list.highlightForeground)  ",
+            "  └─ build · $(symbol-folder)                       ", // папка без цвета
+            "     └─ ▶ task-1 · $(zap)                           ",
+            "                                                    ",
+            "━[F[ scope ]] · $(root-folder)                       ",
+            "  └─ ▶ build · $(package~.red)                      ", // своя иконка с цветом
+            "     ├─ ▶ task-1 · $(zap)                           ",
+            "     └─ ▶ task-2 · $(play)                          "
         ]
     }
 }

@@ -1,0 +1,27 @@
+
+// 
+{
+    "title": "Icon and color · Workspace, folder and empty-marker icon",
+    "sketch": {
+        "scopes": {
+            "prj": {
+                "tasksFile": "prj.code-workspace",
+                "tasks": []
+            },
+            "folder": {
+                "tasksFile": "folder/.vscode/tasks.json",
+                "tasks": []
+            }
+        }
+    },
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "━[W[ prj ]] · $(layers)                                                            ",
+            "  └─ « No tasks to display in this scope » · $(dash~list.deemphasizedForeground)   ",
+            "                                                                                   ",
+            "━[F[ folder ]] · $(root-folder)                                                    ",
+            "  └─ « No tasks to display in this scope » · $(dash~list.deemphasizedForeground)   "
+        ]
+    }
+}

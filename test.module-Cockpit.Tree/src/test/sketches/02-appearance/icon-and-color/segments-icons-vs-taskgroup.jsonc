@@ -23,16 +23,16 @@
     "expectedRender": {
         "formatter": "icon",
         "snapshot": [
-            "━[★[ Pinned ]]                          ",
-            "  └─ AAA › BBB · $(symbol-folder)        ",
-            "     └─ ▶ Runnable Parent · $(zap)      ", // иконка zap, не папка
-            "        └─ ▶ task · $(tools)            ",
-            "                                        ",
-            "━[F[ scope ]]                           ",
-            "  └─ AAA · $(symbol-folder)             ",
-            "     └─ BBB · $(symbol-folder)          ",
-            "        └─ ▶ Runnable Parent · $(zap)   ",
-            "           └─ ▶ task · $(tools)         "
+            "━[★[ Pinned ]] · $(pinned~list.highlightForeground)    ",
+            "  └─ AAA › BBB · $(symbol-folder)                      ",
+            "     └─ ▶ Runnable Parent · $(zap)                    ", // иконка zap, не папка
+            "        └─ ▶ task · $(tools)                          ",
+            "                                                      ",
+            "━[F[ scope ]] · $(root-folder)                        ",
+            "  └─ AAA · $(symbol-folder)                           ",
+            "     └─ BBB · $(symbol-folder)                        ",
+            "        └─ ▶ Runnable Parent · $(zap)                 ",
+            "           └─ ▶ task · $(tools)                       "
         ]
     }
 }

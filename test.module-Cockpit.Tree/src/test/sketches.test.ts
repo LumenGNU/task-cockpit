@@ -110,9 +110,9 @@ export function makeTest({ sketchDir, sketchFile }: { sketchDir: string, sketchF
 
     const { title, treeInput, expectedRender } = sketch;
 
-    test(`${title}: (${sketchFile})`, function () {
+    test(`${title})`, function () {
         const { sections } = TreeModel.build(treeInput);
         const actualSnapshot = Sketch.printTree(sections, Sketch.formatter[expectedRender.formatter]);
-        assert.strictEqual(actualSnapshot, expectedRender.snapshot, 'Snapshots don\'t match');
+        assert.strictEqual(actualSnapshot, expectedRender.snapshot, `\n[FAIL]:${sketchDir}/${sketchFile}: Snapshots don't match`);
     });
 }

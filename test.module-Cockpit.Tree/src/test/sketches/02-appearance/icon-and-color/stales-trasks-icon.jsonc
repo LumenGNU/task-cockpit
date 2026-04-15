@@ -1,0 +1,28 @@
+
+// 
+{
+    "title": "Icon and color · stales tasks icon",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": []
+            }
+        },
+        "pinned": {
+            "stales": [
+                {"scopeName": "_scope", "label": "Stale Task"}
+            ]
+        },
+        "excludeFolders": [
+            "scope"
+        ]
+    },
+    "expectedRender": {
+        "formatter": "icon",
+        "snapshot": [
+            "━[★[ Pinned ]] · $(pinned~list.highlightForeground)               ",
+            "  └─ « ✗ Stale Task » · $(circle-slash~list.warningForeground)    "
+        ]
+    }
+}

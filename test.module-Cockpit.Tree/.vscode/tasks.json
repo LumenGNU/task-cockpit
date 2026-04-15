@@ -382,6 +382,17 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
+        "problemMatcher": {
+        "owner": "Sketches Tests",
+        "applyTo": "allDocuments",
+        "source": "sketches.test",
+        "pattern": {
+          "kind": "file",
+          "regexp": "^\\[FAIL\\]:(.+): (.*)",
+          "file": 1,
+          "message": 2
+        }
+      },
       "presentation": {
         "clear": false,
         "echo": false,
@@ -389,7 +400,7 @@
         "focus": true,
         "panel": "shared",
         "showReuseMessage": false,
-        "revealProblems": "onProblem",
+        "revealProblems": "never",
         "group": "test"
       }
     },
