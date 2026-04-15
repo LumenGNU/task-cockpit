@@ -652,21 +652,30 @@ function buildCompressedPath(
     // подъем к root`у по цепочке parent
     while (parent) {
 
-        // В SMART-режиме:
-        // если узел имеет хотя бы одного ребёнка в pinned-дереве (всегда)
-        //  и runnable → считаем его forced branch point.
-        // childrenCount у Hierarchy.Branch всегда 0 < C ≥ 1
+        const isDataParent = Hierarchy.Node.isData(parent);
+
+        // SMART: data-родитель — forced branch (flush + уходит в chain к предкам)
         const isForcedBranch =
-            (compressionBehavior === TC.CompressionBehavior.SMART && Hierarchy.Node.isData(parent))
+            (compressionBehavior === TC.CompressionBehavior.SMART && isDataParent)
             || Hierarchy.Node.childCount(parent) > 1;
 
-        if (isForcedBranch) {
-            // flush только при непустом chain. Иначе bug :фантомный сегмент в итоговом path
+        // NORMAL: data-родитель — разрыв цепочки (flush + идёт в compressed как отдельный сегмент)
+        const isNormalDataBreak =
+            compressionBehavior === TC.CompressionBehavior.NORMAL && isDataParent;
+
+        if (isForcedBranch || isNormalDataBreak) {
             if (chain.length > 0) {
                 chain.reverse();
                 compressed.push(chain.join(SEP_LITERAL));
                 chain.length = 0;
             }
+        }
+
+        if (isNormalDataBreak) {
+            // data-родитель становится законченным сегментом — не сжимается с предками
+            compressed.push(Hierarchy.Node.getSegment(parent));
+            parent = Hierarchy.Node.getParent(parent);
+            continue;
         }
 
         chain.push(Hierarchy.Node.getSegment(parent));

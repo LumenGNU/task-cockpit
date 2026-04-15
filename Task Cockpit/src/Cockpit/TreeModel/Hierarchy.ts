@@ -434,7 +434,8 @@ const Hierarchy = {
         },
 
 
-        childCount<D extends object>(node: Hierarchy.Data<D> | Hierarchy.Branch<D>): number {
+        // @todo: на самом деле мне нужно просто знать childCount>1 или нет
+        childCount<D extends object>(node: Hierarchy.Branch<D>): number {
             const children = node[CHILDREN];
             if (!children) {
                 return 0;
