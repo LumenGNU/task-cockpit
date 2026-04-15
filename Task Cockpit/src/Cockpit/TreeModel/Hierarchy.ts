@@ -433,8 +433,7 @@ const Hierarchy = {
             return Object.values(node[CHILDREN]);
         },
 
-
-        // @todo: на самом деле мне нужно просто знать childCount>1 или нет
+        /** Возвращает количество дочерних узлов */
         childCount<D extends object>(node: Hierarchy.Branch<D>): number {
             const children = node[CHILDREN];
             if (!children) {
@@ -444,6 +443,20 @@ const Hierarchy = {
             var _;
             for (_ in children) count++;
             return count;
+        },
+
+        /** True — если количество дочерних узлов больше одного */
+        hasMultipleChildren<D extends object>(node: Hierarchy.Branch<D>): boolean {
+            const children = node[CHILDREN];
+            if (!children) {
+                return false;
+            }
+            var found = false;
+            for (const _ in children) {
+                if (found) return true;
+                found = true;
+            }
+            return false;
         },
 
 

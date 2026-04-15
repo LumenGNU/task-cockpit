@@ -657,7 +657,7 @@ function buildCompressedPath(
         // SMART: data-родитель — forced branch (flush + уходит в chain к предкам)
         const isForcedBranch =
             (compressionBehavior === TC.CompressionBehavior.SMART && isDataParent)
-            || Hierarchy.Node.childCount(parent) > 1;
+            || Hierarchy.Node.hasMultipleChildren(parent); // имеет больше одного дочернего узла
 
         // NORMAL: data-родитель — разрыв цепочки (flush + идёт в compressed как отдельный сегмент)
         const isNormalDataBreak =
