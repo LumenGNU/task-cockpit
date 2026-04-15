@@ -6,7 +6,7 @@
 // 3) Папка "all-hidden" — все задачи скрыты при showHidden: false.
 //    По сути пустая, но технически задачи есть.
 {
-    "title": "empty states · no tasks/all hidden",
+    "title": "Empty states · no tasks/all hidden",
     "sketch": {
         "scopes": {
             "project (ws)": {

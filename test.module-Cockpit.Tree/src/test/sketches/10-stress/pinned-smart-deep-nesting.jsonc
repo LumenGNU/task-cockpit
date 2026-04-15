@@ -6,7 +6,7 @@
 //
 // Задействованные настройки: segmentSeparator=":", compressionBehavior="SMART".
 {
-    "title": "Pinned · SMART compression on absurdly deep nesting",
+    "title": "Stress · Pinned · SMART compression on absurdly deep nesting",
     "sketch": {
         "scopes": {
             "scope": {

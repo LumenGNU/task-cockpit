@@ -6,7 +6,7 @@
 // 3) плоский hidden — просто отсутствует
 //
 {
-    "title": "hidden tasks · excluded",
+    "title": "Hidden tasks · excluded",
     "sketch": {
         "scopes": {
             "scope": {

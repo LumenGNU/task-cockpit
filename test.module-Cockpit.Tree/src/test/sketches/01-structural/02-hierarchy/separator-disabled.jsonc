@@ -1,7 +1,7 @@
 
 // Базовая иерархия через separator.
 {
-    "title": "hierarchy · separator disabled",
+    "title": "Hierarchy · separator disabled",
     "sketch": {
         "scopes": {
             "scope": {

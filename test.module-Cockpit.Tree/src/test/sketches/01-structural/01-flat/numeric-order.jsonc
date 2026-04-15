@@ -1,7 +1,7 @@
 
 // Цифры НЕ всплывают и НЕ сортируются.
 {
-    "title": "flat · numeric labels preserve insertion order",
+    "title": "Flat · numeric labels preserve insertion order",
     "sketch": {
         "scopes": {
             "scope": {

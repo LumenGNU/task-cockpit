@@ -1,7 +1,7 @@
 
 // Пограничные случаи
 {
-    "title": "void states · all scopes excluded",
+    "title": "Void states · all scopes excluded",
     "sketch": {
         "scopes": {
             "project": {
