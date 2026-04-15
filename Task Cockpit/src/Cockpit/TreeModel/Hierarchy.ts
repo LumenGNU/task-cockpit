@@ -434,7 +434,7 @@ const Hierarchy = {
 
 
         /** Дочерние узлы сегмента. */
-        gethChildren<D extends object>(
+        getChildren<D extends object>(
             node: Hierarchy.Data<D> | Hierarchy.Branch<D>
         ): Array<Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>> {
             const children = node[CHILDREN];
