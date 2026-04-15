@@ -1,12 +1,12 @@
 
-// Pinned · порядок отображения определяется порядком в refs, а не структурой дерева.
-// app1: сначала в refs идёт child-task-B, потом child-task-A →
+// Pinned · порядок отображения определяется порядком в pinned, а не структурой дерева.
+// app1: сначала в pinned идёт child-task-B, потом child-task-A →
 //   в Pinned они должны отображаться в том же порядке.
 // app2: обратный порядок relative to app1 — для симметричной проверки.
 //
 // Задействованные настройки: segmentSeparator=":", compressionBehavior="SMART".
 {
-    "title": "Pinned · display order follows refs, not tree structure",
+    "title": "Pinned · display order follows pinned, not tree structure",
     "sketch": {
         "scopes": {
             "app1": {
@@ -44,11 +44,11 @@
             "━[★[ Pinned ]]                        ",
             "  ├─ [ app1 ]                         ",
             "  │  └─ parent                        ",
-            "  │     ├─ ▶ child-task-B             ", // порядок из refs
+            "  │     ├─ ▶ child-task-B             ", // порядок из pinned
             "  │     └─ ▶ child-task-A             ",
             "  └─ [ app2 ]                         ",
             "     └─ parent                        ",
-            "        ├─ ▶ child-task-A             ", // порядок из refs
+            "        ├─ ▶ child-task-A             ", // порядок из pinned
             "        └─ ▶ child-task-B             ",
             "                                      ",
             "━[F[ app1 ]]                          ",
