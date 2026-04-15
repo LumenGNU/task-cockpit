@@ -264,7 +264,7 @@ const TreeModel = {
                 if (node.entity.hidden) flags.push('Hidden');
                 if (node.entity.group?.isDefault) flags.push('Default');
                 if (node.entity.isBackground) flags.push('Background');
-                props.description = (flags.length > 0) ? `( ${flags.join(', ')} )` : '';
+                props.description = (flags.length > 0) ? flags.join(', ') : '';
                 props.collapsibleState
                     = (node.kind === TC.EntityKind.Runnable)
                         ? vscode.TreeItemCollapsibleState.None

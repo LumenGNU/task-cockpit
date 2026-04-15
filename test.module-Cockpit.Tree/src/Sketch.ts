@@ -379,7 +379,7 @@ export const formatter: Record<FormatterNameType, NodeFormatter> = {
         const { label, description } = TreeModel.describe(node);
 
         const withDesc = (text: string) =>
-            description ? `${text} · ${description}` : text;
+            description ? `${text} · ( ${description} )` : text;
 
         switch (node.kind) {
             case TC.EntityKind.Folder: {
