@@ -597,6 +597,7 @@ function makePinnedSpecs(
     return pinnedSpecs;
 }
 
+const SEP_LITERAL = '\u2009›\u2009';
 
 /** Строит сжатый путь от листа (data-узла) к scope-корню для одной pinned-задачи.
  *
@@ -648,37 +649,22 @@ function buildCompressedPath(
 
     let parent = Hierarchy.Node.getParent(dataNode);
 
-    const reverseAndJoin = () => {
-        chain.reverse();
-        compressed.push(chain.join('\u2009›\u2009'));
-    };
-
     // подъем к root`у по цепочке parent
     while (parent) {
 
-        const childrenCount = Hierarchy.Node.getBranchChildren(parent).length;
-
-        let isForcedBranch = childrenCount > 1;
-
         // В SMART-режиме:
-        // если узел runnable И имеет хотя бы одного ребёнка в pinned-дереве → считаем 
-        // его forced branch point.
-        if (compressionBehavior === TC.CompressionBehavior.SMART) {
-            if (Hierarchy.Node.isData(parent) && (childrenCount > 0)) {
-                isForcedBranch = true;
-            }
-        }
+        // если узел имеет хотя бы одного ребёнка в pinned-дереве (всегда)
+        //  и runnable → считаем его forced branch point.
+        // childrenCount у Hierarchy.Branch всегда 0 < C ≥ 1
+        const isForcedBranch =
+            (compressionBehavior === TC.CompressionBehavior.SMART && Hierarchy.Node.isData(parent))
+            || Hierarchy.Node.childCount(parent) > 1;
 
         if (isForcedBranch) {
-            // @bug: `reverseAndJoin()` на пустом `chain` порождает
-            // пустую строку в `compressed` (`[].join(...)` === `''`), которая
-            // становится фантомным сегментом в итоговом path.
-            // Воспроизводится(воспроизводилось) когда data-узел — непосредственный ребёнок
-            // branch point (chain ещё пуст, т.к. обход стартует от листа
-            // и branch point — первый же родитель).
-            // @resolved: flush только при непустом chain.
+            // flush только при непустом chain. Иначе bug :фантомный сегмент в итоговом path
             if (chain.length > 0) {
-                reverseAndJoin();
+                chain.reverse();
+                compressed.push(chain.join(SEP_LITERAL));
                 chain.length = 0;
             }
         }
@@ -689,7 +675,8 @@ function buildCompressedPath(
 
     // Финальный flush — оставшиеся сегменты у корня
     if (chain.length > 0) {
-        reverseAndJoin();
+        chain.reverse();
+        compressed.push(chain.join(SEP_LITERAL));
         // compressed заполняется от листа к корню (flush при подъёме),
         // reverse приводит к порядку от корня к листу.
         compressed.reverse();
