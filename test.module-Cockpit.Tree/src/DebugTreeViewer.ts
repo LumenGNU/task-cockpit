@@ -15,7 +15,7 @@ export default class DebugTreeViewer implements vscode.TreeDataProvider<TreeMode
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private topRoots?: Array<TreeModel.TopRoot>;
+    private topRoots: Array<TreeModel.TopRoot> | null = null;
 
 
 
@@ -36,7 +36,7 @@ export default class DebugTreeViewer implements vscode.TreeDataProvider<TreeMode
 
 
 
-    getChildren(element?: TreeModel.Node): TreeModel.Node[] | undefined {
+    getChildren(element?: TreeModel.Node): TreeModel.Node[] | null {
 
         if (!element) {
             return this.topRoots;
@@ -44,5 +44,9 @@ export default class DebugTreeViewer implements vscode.TreeDataProvider<TreeMode
 
         return TreeModel.getChildren(element);
 
+    }
+
+    getParent(element: TreeModel.Node): TreeModel.Node | null {
+        return TreeModel.getParent(element);
     }
 }

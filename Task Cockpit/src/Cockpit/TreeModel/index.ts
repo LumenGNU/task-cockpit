@@ -24,7 +24,9 @@ interface Icon {
 type FolderRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Folder; };
 type WorkspaceRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Workspace; };
 
-type PinnedFolder = Section.PinnedFolder;
+type PinnedFolder = Section.PinnedFolder & {
+    readonly parentNode: PinnedSingle | PinnedMulti;
+};
 
 type PinnedSingle = Section.PinnedSingle;
 type PinnedMulti = Section.PinnedMulti;
@@ -96,6 +98,7 @@ declare namespace TreeModel {
         ;
 }
 
+
 interface Props {
     id: string;
     label: string;
@@ -123,7 +126,7 @@ const TreeModel = {
 
     /** Children для TreeDataProvider.getChildren.
      * Ленивый маппинг — Section.Child передаётся как есть. */
-    getChildren(node: TreeModel.Node): Array<BrokenPinned | Empty | PinnedFolder | HierarchyChild> | undefined {
+    getChildren(node: TreeModel.Node): Array<BrokenPinned | Empty | PinnedFolder | HierarchyChild> | null {
 
         switch (node.kind) {
 
@@ -149,7 +152,7 @@ const TreeModel = {
             case TC.EntityKind.PinnedMulti: {
                 return [
                     ...node.stales.map(ref => ({ kind: TC.EntityKind.BrokenPinned as const, ref, parentNode: node })),
-                    ...node.children
+                    ...node.children.map(f => ({ ...f, parentNode: node }))
                 ];
             }
 
@@ -169,16 +172,36 @@ const TreeModel = {
             case TC.EntityKind.BrokenPinned:
             case TC.EntityKind.Empty:
             case TC.EntityKind.Runnable: {
-                return undefined;
+                return null;
             };
 
             // #region DEBUG
             default: {
                 const _node: never = node;
-                return undefined;
+                return null;
             };
             // #endregion DEBUG
         }
+    },
+
+
+    getParent(node: TreeModel.Node): TreeModel.Node | null {
+
+        switch (node.kind) {
+
+            case TC.EntityKind.Folder:
+            case TC.EntityKind.Workspace:
+            case TC.EntityKind.PinnedMulti:
+            case TC.EntityKind.PinnedSingle:
+            case TC.EntityKind.PinnedStaleOnly: {
+                return null;
+            }
+
+            default: {
+                return node.parentNode;
+            }
+        }
+
     },
 
 
