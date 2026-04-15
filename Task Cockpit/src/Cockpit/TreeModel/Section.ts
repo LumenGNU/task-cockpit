@@ -532,9 +532,9 @@ function makePinnedSpecs(
     compressionBehavior: TC.CompressionBehavior
 ): ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>> {
 
-    if (scopeRecord.pinned.size < 1) {
-        return [];
-    }
+    // #region DEBUG
+    assert(scopeRecord.pinned.size > 0, 'Precondition: pinned is not empty');
+    // #endregion DEBUG
 
     // `showHidden` игнорируется для pinned
     const { useGroupKind, segmentSeparator } = scopeRecord.treeConfig;
