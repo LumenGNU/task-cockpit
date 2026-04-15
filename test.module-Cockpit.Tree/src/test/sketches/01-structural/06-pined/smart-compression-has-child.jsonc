@@ -1,5 +1,5 @@
 
-// BUG: Pinned · SMART compression — узел с детьми в pinned-дереве не должен сжиматься.
+// SMART compression — узел с детьми в pinned-дереве не должен сжиматься.
 //
 // app1, app3: build-all + build-all:prepare закреплены →
 //   build-all имеет ребёнка в pinned-дереве → не сжимается → RunnableGroup.
@@ -9,7 +9,7 @@
 //
 // Задействованные настройки: segmentSeparator=":", compressionBehavior="SMART".
 {
-    "title": "BUG Pinned · SMART: node with pinned children is not compressed",
+    "title": "Pinned · SMART: node with pinned children is not compressed",
     "sketch": {
         "scopes": {
             "app1": {
