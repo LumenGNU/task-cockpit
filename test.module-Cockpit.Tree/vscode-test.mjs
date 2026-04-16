@@ -26,7 +26,7 @@ const defaults = {
 export default defineConfig({
 	tests: [
 		{
-			label: 'Basic Tests',
+			label: 'Core Tests',
 			workspaceFolder: 'test-fixtures/empty-folder',
 			files: resolveTestFiles('~out/test/**/*-basic.test.js'),
 			...defaults

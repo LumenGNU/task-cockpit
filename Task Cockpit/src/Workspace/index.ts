@@ -14,17 +14,7 @@ const { log, table } = Logger.get(module.filename);
 // #endregion DEBUG
 
 
-interface ScanResult {
-    /** Список scope-записей (workspace file + folder_entries).
-    * Workspace_file всегда первый, если есть */
-    scopes: ReadonlyArray<TC.Scope>;
-    /** Window-настройки (общие для всего workspace). */
-    windowSettings: Readonly<TC.WindowSettings>;
-    /** Resource-настройки, проиндексированные по fsPath файла задач. */
-    resourceSettings: Readonly<TC.SettingsByFile>;
-    /** Результат загрузки задач: карта задач по файлам и отчёт об отклонённых. */
-    tasksFetchResult: Readonly<TC.FetchResult>;
-}
+interface ScanResult { tasksByFile: TC.TasksByFile, treeInput: TC.TreeInput; }
 
 
 const CONFIG_SECTION = "taskCockpit";
@@ -34,8 +24,10 @@ const CONFIG_SECTION = "taskCockpit";
  *
  * Отслеживает структуру workspace (папки, файлы задач), настройки расширения
  * и определения задач.
- * При изменении конфигурации (в т.ч. задач) или состава папок перестраивает внутреннее состояние
- * и уведомляет подписчиков через {@linkcode onDidChange}.
+ *
+ * При изменении конфигурации (в т.ч. задач) или состава папок **уведомляет** подписчиков
+ * через {@linkcode onDidChange}. Само перестроение состояния происходит только при
+ * явном вызове {@linkcode reScan}.
  *
  * */
 export default class Workspace implements vscode.Disposable {
@@ -49,13 +41,13 @@ export default class Workspace implements vscode.Disposable {
     public readonly onDidChange = this.onDidChangeEmitter.event;
 
     /** CTS текущего активного скана. Отменяется при запуске нового скана или при dispose. */
-    private cts?: vscode.CancellationTokenSource;
+    private cts: vscode.CancellationTokenSource | null = null;
 
     /** Составной Disposable для единого освобождения ресурсов экземпляра. */
     private readonly disposable: vscode.Disposable;
 
-    /** Текущее состояние workspace. `undefined` — экземпляр не готов или disposed. */
-    private scanResult?: ScanResult;
+    /** Текущее состояние workspace. `null` — экземпляр не готов или disposed. */
+    private scanResult: ScanResult | null = null;
 
 
     /** Инициализирует новый экземпляр класса {@linkcode Workspace}.
@@ -64,10 +56,10 @@ export default class Workspace implements vscode.Disposable {
      * - {@linkcode vscode.workspace.onDidChangeConfiguration}
      * - {@linkcode vscode.workspace.onDidChangeWorkspaceFolders}
      *
-     * При возникновении любого из вышеописанных событий экземпляр класса {@linkcode Workspace}
-     * перестраивает свое внутреннее состояние и уведомляет всех подписчиков
-     * через событие {@linkcode onDidChange}. */
-    public constructor() {
+     * При возникновении событий **не перестраивает** состояние самостоятельно —
+     * только уведомляет подписчиков через {@linkcode onDidChange}.
+     * Перестройка происходит при вызове {@linkcode reScan}. */
+    private constructor() {
 
         this.disposable = vscode.Disposable.from(
             vscode.workspace.onDidChangeConfiguration(this.configurationChange_Handler, this),
@@ -75,6 +67,25 @@ export default class Workspace implements vscode.Disposable {
 
             this.onDidChangeEmitter
         );
+
+    }
+
+
+    public static async init(): Workspace {
+
+        const workspace = new Workspace();
+
+        let dirty = false;
+
+        const listener = workspace.onDidChange(() => { dirty = true; });
+
+        do {
+            dirty = false;
+            await workspace.reScan();
+        } while (dirty);
+
+
+        listener.dispose();
 
     }
 
@@ -87,10 +98,10 @@ export default class Workspace implements vscode.Disposable {
         if (this.cts) {
             this.cts.cancel();
             this.cts.dispose();
-            this.cts = undefined;
+            this.cts = null;
         }
 
-        this.scanResult = undefined;
+        this.scanResult = null;
 
         // #region DEBUG
         log(LogLevel.Debug, 'Disposed', 'dispose');
@@ -126,7 +137,7 @@ export default class Workspace implements vscode.Disposable {
         }
         finally {
             if (this.cts === cts) {
-                this.cts = undefined;
+                this.cts = null;
             }
         }
 
@@ -138,61 +149,10 @@ export default class Workspace implements vscode.Disposable {
     // #region Public
 
 
-    /** Возвращает список scope-записей текущего workspace.
-     *
-     * Первым элементом (если есть) идёт workspace file,
-     * за ним — записи для каждой папки workspace. */
-    public getScopes(): ReadonlyArray<TC.Scope> {
-        if (!this.scanResult) {
-            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
-        }
-        return this.scanResult.scopes;
-    }
 
-
-    /** Возвращает resource-настройки, проиндексированные по fsPath файла задач. */
-    public getResourceSettings(): Readonly<TC.SettingsByFile> {
-        if (!this.scanResult) {
-            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
-        }
-        return this.scanResult.resourceSettings;
-    }
-
-
-    /** Возвращает window-настройки (общие для всего workspace). */
-    public getWindowSettings(): Readonly<TC.WindowSettings> {
-        if (!this.scanResult) {
-            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
-        }
-        return this.scanResult.windowSettings;
-    }
-
-
-    /** Возвращает карту задач, проиндексированную по fsPath файла задач. */
-    public getTasks(): Readonly<TC.TasksByFile> {
-        if (!this.scanResult) {
-            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
-        }
-        return this.scanResult.tasksFetchResult.tasksByFile;
-    }
-
-
-    public getTask(taskId: TC.TaskID): vscode.Task | undefined {
-        const { taskFile, taskName } = helpers.parseId(taskId);
-        return this.getTasks().get(taskFile)?.get(taskName);
-    }
-
-
-    public getDefinitions(): Readonly<TC.DefinitionsByFile> {
-        if (!this.scanResult) {
-            throw new Error('Internal error: "Workspace" is not ready: not initialized or already disposed');
-        }
-        return this.scanResult.tasksFetchResult.definitionsByFile;
-    }
-
-    public getDefinition(taskId: TC.TaskID): TC.TaskDefinition | undefined {
-        const { taskFile, taskName } = helpers.parseId(taskId);
-        return this.getDefinitions().get(taskFile)?.get(taskName);
+    /** Возвращает карту задач, проиндексированную по ScopeFile файла задач. */
+    public getScanResult(): Readonly<ScanResult> | null {
+        return this.scanResult;
     }
 
 
@@ -211,9 +171,6 @@ export default class Workspace implements vscode.Disposable {
 
         // #region DEBUG
         log(LogLevel.Debug, 'Handler invoked', 'onDidChangeWorkspaceFolders');
-        // #endregion DEBUG
-
-        // #region DEBUG
         log(LogLevel.Debug, 'Firing onDidChange', 'onDidChangeWorkspaceFolders');
         // #endregion DEBUG
 
@@ -261,88 +218,143 @@ export default class Workspace implements vscode.Disposable {
      * Вызывается при инициализации и при любом релевантном изменении.
      *
      * @throws {vscode.CancellationError} */
-    private static async reScan(token: vscode.CancellationToken): Promise<ScanResult> {
+    public static async reScan(token: vscode.CancellationToken): Promise<ScanResult> {
 
         const scopes = Workspace.resolveScopes();
-        const windowSettings = Workspace.resolveWindowSettings();
-        const resourceSettings = Workspace.buildResourceSettingsMap(scopes);
-        const tasksFetchResult = await Workspace.fetchTasks(scopes, token);
 
-        return { scopes, windowSettings, resourceSettings, tasksFetchResult };
+        const { excludeFolders, pinnedRecord, pinnedConfig } = Workspace.resolveWindowSettings();
+
+        const pinnedByFolder: Map</*scope*/string, Set<string>> = new Map();
+        for (const { label, scope } of pinnedRecord) {
+            let labels = pinnedByFolder.get(scope);
+            if (!labels) {
+                labels = new Set();
+                pinnedByFolder.set(scope, labels);
+            }
+            labels.add(label);
+        }
+
+
+        const { definitionsByFile, tasksByFile } = await Tasks.fetch(scopes, token);
+
+
+        return {
+            tasksByFile,
+            treeInput: {
+                ...Workspace.buildScopeIndex(
+                    scopes,
+                    definitionsByFile,
+                    excludeFolders,
+                    pinnedByFolder
+                ),
+                pinnedConfig
+            }
+        };
     }
 
 
     /** Формирует список scope-записей из текущего workspace.
      *
-     * Workspace file (если есть) всегда первым, затем — папки.
+     * Workspace scope (если есть) всегда первым, затем — Folder scopes.
      *
-     * Для каждой папки URI указывает на `.vscode/tasks.json`, и не обязательно
-     * существуют физически на диске. */
-    private static resolveScopes(): ReadonlyArray<TC.Scope> {
+     * Для каждой папки URI указывает на файл задач (*\/tasks.json или *.code-workspace).
+     * Работает как идентификатор scope — файл не обязан физически существовать на диске. */
+    private static resolveScopes(): Array<TC.Scope> {
 
-        const scopes = [
-            // если есть всегда первым
-            vscode.workspace.workspaceFile ? { name: vscode.workspace.name ?? '<unnamed>', uri: vscode.workspace.workspaceFile } : undefined,
-            ...(
-                vscode.workspace.workspaceFolders
-                    ?.map(folder => ({ name: folder.name, uri: vscode.Uri.joinPath(folder.uri, ".vscode", "tasks.json") })) ?? []
-            )]
-            .filter((scope): scope is TC.Scope => scope !== undefined);
+        const scopes: Array<TC.Scope> = [];
+
+        // если есть — всегда первым
+        if (vscode.workspace.workspaceFile) {
+            scopes.push({
+                folderName: (vscode.workspace.name ?? '<unnamed>') as TC.FolderName,
+                scopeURI: vscode.workspace.workspaceFile as TC.ScopeUri
+            });
+        }
+
+        if (vscode.workspace.workspaceFolders) {
+            for (const folder of vscode.workspace.workspaceFolders) {
+                scopes.push({
+                    folderName: folder.name as TC.FolderName,
+                    scopeURI: vscode.Uri.joinPath(folder.uri, ".vscode", "tasks.json") as TC.ScopeUri
+                });
+            }
+        }
 
         // #region DEBUG
         log(LogLevel.Debug, 'Workspace scopes:');
-        table(LogLevel.Debug, scopes.map(e => ({ Name: e.name, FsPath: e.uri.fsPath })));
+        table(LogLevel.Debug, scopes.map(e => ({ Name: e.folderName, FsPath: e.scopeURI.fsPath })));
         // #endregion DEBUG
 
         return scopes;
-    }
+    };
 
 
-    /** Строит `Map<File, ResourceSettings>` для всех scope-записей. */
-    private static buildResourceSettingsMap(scopes: ReadonlyArray<TC.Scope>): Readonly<TC.SettingsByFile> {
 
-        const resourceSettings = new Map(scopes.map(scope => [scope.uri.fsPath, Workspace.readResourceSettings(scope)]));
+    private static buildScopeIndex(
+        scopes: Array<TC.Scope>,
+        definitionsByFile: TC.DefinitionsByFile,
+        excluded: ReadonlySet</*FolderName*/string>,
+        pinnedByFolder: Map</*scope*/string, Set<string>>
+    ): {
+        scopeIndex: Map<TC.ScopeFile, TC.ScopeRecord>;
+        pinnedStales: Array<TC.PinnedStale>;
+    } {
 
-        // #region DEBUG
+        const scopeIndex = new Map<TC.ScopeFile, TC.ScopeRecord>();
+        const pinnedStales: Array<TC.PinnedStale> = [];
 
-        log(LogLevel.Debug, 'Resource settings:');
-        const flatByScope = scopes
-            // .filter(e => resourceSettings.has(e.uri.fsPath))
-            .map(e => {
-                const rs = resourceSettings.get(e.uri.fsPath)!;
-                return [e.name, {
-                    segmentSeparator: rs.branchConfig.segmentSeparator,
-                    useGroupKind: rs.branchConfig.useGroupKind,
-                    showHidden: rs.branchConfig.showHidden,
-                    useFolderIcon: rs.nodeConfig.useFolderIcon,
-                    defaultIconName: rs.nodeConfig.defaultIconName,
-                    tintLabel: rs.nodeConfig.tintLabel
-                }] as const;
-            });
-        if (flatByScope.length > 0) {
-            const keys = Object.keys(flatByScope[0][1]) as Array<keyof typeof flatByScope[0][1]>;
-            table(LogLevel.Debug, keys.map(key => {
-                const row: Record<string, unknown> = { Setting: key };
-                for (const [name, flat] of flatByScope) {
-                    row[name] = flat[key];
+        for (const { folderName, scopeURI } of scopes) {
+
+            const scopeFile = scopeURI.fsPath;
+
+            const definitionMap = definitionsByFile.get(scopeFile);
+
+            const pinnedSet = pinnedByFolder.get(folderName);
+            const pinned: Set<TC.TaskName> = new Set();
+
+            if (definitionMap && pinnedSet) {
+                for (const pin of pinnedSet) {
+                    if (definitionMap.has(pin as TC.TaskName)) {
+                        pinned.add(pin as TC.TaskName);
+                        pinnedSet.delete(pin);
+                    }
                 }
-                return row;
-            }));
+            }
+
+            scopeIndex.set(scopeFile, {
+                folderName,
+                definitionMap: definitionMap ?? new Map(),
+                excluded: excluded.has(folderName),
+                ...Workspace.getConfig(scopeURI),
+                pinned
+            });
+
         }
-        // #endregion DEBUG
 
-        return resourceSettings;
-    }
-
-
-    /** Читает настройки `taskCockpit.display.*` и `taskCockpit.filtering.*`
-     * для указанного scope */
-    private static readResourceSettings(scope: TC.Scope): Readonly<TC.ScopedSettings> {
-
-        const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, scope.uri);
+        // Все что осталось в pinnedByFolder — сломано
+        for (const [scopeName, staledLabels] of pinnedByFolder) {
+            for (const label of staledLabels) {
+                pinnedStales.push({
+                    scopeName,
+                    label
+                });
+            }
+        }
 
         return {
-            branchConfig: {
+            scopeIndex,
+            pinnedStales
+        };
+
+    }
+
+
+    private static getConfig(scopeUri: TC.ScopeUri): { treeConfig: TC.TreeConfig, nodeConfig: TC.NodeConfig; } {
+
+        const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, scopeUri);
+
+        return {
+            treeConfig: {
                 segmentSeparator: configuration.get<string>('display.segmentSeparator') || false as const,
                 showHidden: configuration.get<boolean>('filtering.showHidden', false),
                 useGroupKind: configuration.get<boolean>('display.useGroupKind', false)
@@ -353,24 +365,37 @@ export default class Workspace implements vscode.Disposable {
                 useFolderIcon: configuration.get<boolean>('display.useFolderIcon', false)
             }
         };
+
     }
 
 
-    /** Читает настройки `taskCockpit.filtering.*` и `taskCockpit.validation.*`
-     * уровня окна (без привязки к scope). */
-    private static resolveWindowSettings(): Readonly<TC.WindowSettings> {
+
+    /** Читает настройки уровня окна (без привязки к scope). */
+    private static resolveWindowSettings(): Readonly<{
+        readonly excludeFolders: Set<string>;
+        readonly pinnedRecord: Array<{
+            label: string;
+            scope: string;
+        }>;
+        pinnedConfig: {
+            visibility: boolean;
+            smartPathCompression: boolean;
+        };
+    }> {
+
 
         const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
 
         const windowSettings = {
-            excludeFolders: configuration.get<string[]>('filtering.excludeFolders', []),
-            // @fixme: package.json, change log, etc
-            // @reject excludeWorkspaceTasks: configuration.get<boolean>('filtering.excludeWorkspaceTasks', false),
-            // @reject validationSettings: { // @fixme: это не должно быть тут, это не относится к условию
-            //     // "безусловной перестройки дерева"
-            //     dependencies: configuration.get<boolean>('validation.dependencies', false),
-            //     duplicateLabels: configuration.get<boolean>('validation.duplicateLabels', false)
-            // }
+            excludeFolders: new Set(configuration.get<string[]>('filtering.excludeFolders', [])),
+            pinnedRecord: configuration.get<{
+                label: string;
+                scope: string;
+            }[]>('pinnedTasks.tasks', []),
+            pinnedConfig: {
+                visibility: configuration.get<boolean>('pinnedTasks.visibility', true),
+                smartPathCompression: configuration.get<boolean>('pinnedTasks.smartPathCompression', true)
+            }
         };
 
         // #region DEBUG
@@ -384,28 +409,6 @@ export default class Workspace implements vscode.Disposable {
     }
 
 
-    /** Загружает задачи для всех scope-записей.
-     *
-     * @throws {vscode.CancellationError} */
-    private static async fetchTasks(scopes: ReadonlyArray<TC.Scope>, token: vscode.CancellationToken): Promise<Readonly<TC.FetchResult>> {
 
-        const fetchResult = await Tasks.fetch(scopes, token);
-
-        // #region DEBUG
-        // @fixme
-        // log(LogLevel.Debug, 'Tasks fetched summary:');
-        // const { tasksByFile, definitionsByFile } = fetchResult;
-        // table(LogLevel.Debug,
-        //     [...tasksByFile.entries()].map(([f, m]) => ({
-        //         File: f,
-        //         ['UserTask(s)']: m.size,
-        //         Rejected: rejectReport.get(f) || undefined
-        //     })),
-        //     { undefinedAsEmpty: true }
-        // );
-        // #endregion DEBUG
-
-        return fetchResult;
-    }
 
 }

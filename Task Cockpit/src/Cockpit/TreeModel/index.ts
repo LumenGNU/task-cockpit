@@ -25,7 +25,7 @@ type FolderRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Folder; }
 type WorkspaceRoot = Omit<Section.Source, 'kind'> & { kind: TC.EntityKind.Workspace; };
 
 type PinnedFolder = Section.PinnedFolder & {
-    readonly parentNode: PinnedSingle | PinnedMulti;
+    readonly parentNode: PinnedMulti;
 };
 
 type PinnedSingle = Section.PinnedSingle;
@@ -124,8 +124,7 @@ const TreeModel = {
         return Section.buildSections(treeInput);
     },
 
-    /** Children для TreeDataProvider.getChildren.
-     * Ленивый маппинг — Section.Child передаётся как есть. */
+    /** Children для TreeDataProvider.getChildren. */
     getChildren(node: TreeModel.Node): Array<BrokenPinned | Empty | PinnedFolder | HierarchyChild> | null {
 
         switch (node.kind) {

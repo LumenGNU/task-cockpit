@@ -14,7 +14,8 @@ const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
 
-/** Возвращает {@linkcode TC.Task | user-Task'и} ("обогащённые" vscode.Task'и), сгруппированные
+/** @todo Актуализировать
+ * Возвращает {@linkcode TC.Task | user-Task'и} ("обогащённые" vscode.Task'и), сгруппированные
  * в карты в соответствии со структурой исходных файлов задач.
  *
  * Порядок задач внутри каждой карты соответствует их порядку в исходном файле.
@@ -66,7 +67,7 @@ async function fetch(
     }
 
     const definitionsByFile = new Map(
-        await Promise.all(scopes.map(scope => fetchDefinitions(scope.uri, ctsToken)))
+        await Promise.all(scopes.map(scope => fetchDefinitions(scope.scopeURI, ctsToken)))
     );
 
     if (ctsToken.isCancellationRequested) {
@@ -90,13 +91,11 @@ async function fetch(
 
             const vTask = vTasksMap.get(definition.id);
 
-            // Строим tasksByFile и заполняем rejectReport
-
             if (vTask) {
                 scopedTasks.set(name, vTask);
             }
             else {
-                // rejectReport.set(file, (rejectReport.get(file) ?? 0) + 1);
+
                 definition.rejectFlag = true;
                 // #region DEBUG
                 log(LogLevel.Warning, `No vscode.Task for definition — VS Code rejected or not yet loaded. Name: ${name}; File: ${file}.`);
@@ -109,7 +108,6 @@ async function fetch(
 
     return {
         tasksByFile,
-        // rejectReport,
         definitionsByFile
     };
 }
@@ -129,7 +127,7 @@ interface Raw {
 
 
 /** Кортеж из источника задач и карты определений. */
-type Definitions = readonly [TC.File, Map<TC.Name, TC.TaskDefinition>];
+type Definitions = readonly [TC.ScopeFile, Map<TC.TaskName, TC.TaskDefinition>];
 
 
 /** Загрузка определений задач напрямую из файла задач.
@@ -146,7 +144,7 @@ type Definitions = readonly [TC.File, Map<TC.Name, TC.TaskDefinition>];
  *
  * @throws {vscode.CancellationError} При отмене через CancellationToken.
  *   Остальные ошибки не выбрасываются — всегда возвращается "пустой" результат.  */
-async function fetchDefinitions(uri: TC.Uri, ctsToken: vscode.CancellationToken): Promise<Definitions> {
+async function fetchDefinitions(uri: TC.ScopeUri, ctsToken: vscode.CancellationToken): Promise<Definitions> {
 
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
@@ -228,9 +226,9 @@ function extract(jsoncContent: string, jsonPath: JSONC.JSONPath): Raw[] {
  * второй — карта, где каждый ключ является меткой задачи из файла,
  *   а каждое значение — объектом {@linkcode TC.TaskDefinition}
  */
-function remapRaw(file: TC.File, rawArr: Raw[]): Definitions {
+function remapRaw(file: TC.ScopeFile, rawArr: Raw[]): Definitions {
 
-    const map: Map<TC.Name, TC.TaskDefinition> = new Map();
+    const map: Map<TC.TaskName, TC.TaskDefinition> = new Map();
 
     for (const raw of rawArr) {
         if (raw && typeof raw === 'object') {

@@ -13,13 +13,13 @@ const C0_GS: TC.CG_Separator = '\x1D' as const;
  * @param file путь к файлу задач
  * @param name метка задачи
  * @returns составной идентификатор задачи */
-function buildId(file: TC.File, name: TC.Name): TC.TaskID {
+function buildId(file: TC.ScopeFile, name: TC.TaskName): TC.TaskID {
     return `${file}${C0_GS}${name}` as TC.TaskID;
 }
 
 
-function parseId(taskId: TC.TaskID): { taskFile: TC.File, taskName: TC.Name; } {
-    const [taskFile, taskName] = taskId.split(C0_GS) as [TC.File, TC.Name];
+function parseId(taskId: TC.TaskID): { taskFile: TC.ScopeFile, taskName: TC.TaskName; } {
+    const [taskFile, taskName] = taskId.split(C0_GS) as [TC.ScopeFile, TC.TaskName];
     return {
         taskFile,
         taskName
@@ -36,7 +36,7 @@ function parseId(taskId: TC.TaskID): { taskFile: TC.File, taskName: TC.Name; } {
  *
  * Возвращается "условно ассоциированный" URI, т.е. не
  * гарантируется, что он существует физически. */
-function resolveScopeUri(task: vscode.Task): TC.Uri | undefined {
+function resolveScopeUri(task: vscode.Task): TC.ScopeUri | undefined {
 
     const scope = task.scope;
 
@@ -46,10 +46,10 @@ function resolveScopeUri(task: vscode.Task): TC.Uri | undefined {
     }
 
     if (scope === vscode.TaskScope.Workspace) {
-        return vscode.workspace.workspaceFile as TC.Uri | undefined;
+        return vscode.workspace.workspaceFile as TC.ScopeUri | undefined;
     }
 
-    return vscode.Uri.joinPath(scope.uri, '.vscode', 'tasks.json') as TC.Uri;
+    return vscode.Uri.joinPath(scope.uri, '.vscode', 'tasks.json') as TC.ScopeUri;
 }
 
 
@@ -63,13 +63,13 @@ function resolveId(task: vscode.Task): TC.TaskID | undefined {
 
     return buildId(
         file,
-        task.name as TC.Name
+        task.name as TC.TaskName
     );
 }
 
 
-function resolveUri(file: TC.File): TC.Uri {
-    return vscode.Uri.file(file) as TC.Uri;
+function resolveUri(file: TC.ScopeFile): TC.ScopeUri {
+    return vscode.Uri.file(file) as TC.ScopeUri;
 }
 
 
@@ -87,7 +87,7 @@ function printTaskId(taskId: TC.TaskID): string {
  *
  * @param fileUri URI файла задач
  * @returns JSON-путь к массиву задач */
-function resolveJsonPath(fileUri: TC.Uri): string[] {
+function resolveJsonPath(fileUri: TC.ScopeUri): string[] {
     if (fileUri.fsPath.endsWith('.json')) {
         return ['tasks'];
     }
@@ -138,7 +138,7 @@ function resolveMetadata(uri: vscode.Uri, ...authorities: Authority[]) {
 
 
 
-function isName(label: any): label is TC.Name {
+function isName(label: any): label is TC.TaskName {
     return typeof label === 'string' && label.length > 0;
 }
 

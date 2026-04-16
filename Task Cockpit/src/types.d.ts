@@ -37,31 +37,31 @@ type QueryComponent = string & { readonly [___QueryComponent]: never; };
  *
  * Используется для type safety при работе с коллекциями.
  *  */
-export type File = string & { readonly [___TasksFile]: never; };
+export type ScopeFile = string & { readonly [___TasksFile]: never; };
 
 /** Брендированный URI файла задач.
  *
- * Гарантирует, что `fsPath` возвращает {@linkcode File}. */
-export type Uri = vscode.Uri & {
+ * Гарантирует, что `fsPath` возвращает {@linkcode ScopeFile}. */
+export type ScopeUri = vscode.Uri & {
     readonly [___TasksFileUri]: never;
-    fsPath: File;
+    fsPath: ScopeFile;
 };
 
 /** Номинальный тип для имени задачи.
  *
  * Используется для type safety при работе с коллекциями. */
-export type Name = string & { readonly [___TaskLabel]: never; };
+export type TaskName = string & { readonly [___TaskLabel]: never; };
 
 /** Номинальный тип для группы задачи (Build | Test | Clean). */
 export type Group = ('Build' | 'Test' | 'Clean') & { readonly [___TasksGroup]: never; };
 
-/** Строковой идентификатор задачи, в терминах расширения {@linkcode File} + {@linkcode Name}.
+/** Строковой идентификатор задачи, в терминах расширения {@linkcode ScopeFile} + {@linkcode TaskName}.
  *
  * Номинальный тип для идентификатора задачи.
  *
  * Используется для type safety при работе с коллекциями;
  * для однозначного определения задачи; */
-export type TaskID = `${File}${CG_Separator}${Name}` & { readonly [___Identity]: never; };
+export type TaskID = `${ScopeFile}${CG_Separator}${TaskName}` & { readonly [___Identity]: never; };
 
 /** Номинальный тип для имени папки workspace. */
 export type FolderName = string & { readonly [___FolderName]: never; };
@@ -72,15 +72,25 @@ export type ProcessId = number & { readonly [___ProcessId]: never; };
 
 // -- Настройки -------------------------------------------
 
-/** Настройки уровня окна — общие для всего workspace, не зависят от scope. */
+/** Настройки уровня окна — общие для всего workspace, не зависят от scope. 
+ * НЕ связанные с валидацией
+*/
 export interface WindowSettings { // @todo имя не подходит
     /** Имена папок workspace, исключённых из отображения. */
-    readonly excludeFolders: string[];
+    readonly excludeFolders: Set<string>;
+    readonly pinnedRecord: Array<{
+        label: string;
+        scope: string;
+    }>;
+    pinnedConfig: PinnedConfig;
     // /** Скрывать ли задачи, определённые на уровне workspace (`.code-workspace`). */
     // readonly excludeWorkspaceTasks: boolean;
     // /** Настройки валидации задач. */
     // readonly validationSettings: ValidationSettings; // @todo не должно быть тут
 }
+
+
+
 
 /** Параметры, определяющие структуру ветки дерева для scope. */
 export interface TreeConfig {
@@ -94,7 +104,7 @@ export interface TreeConfig {
 }
 
 /** @todo */
-export type TreeConfigByFile = Map<File, TreeConfig>;
+export type TreeConfigByFile = Map<ScopeFile, TreeConfig>;
 
 /** Параметры, определяющие визуальное отображение элементов дерева. */
 export interface NodeConfig {
@@ -107,7 +117,7 @@ export interface NodeConfig {
 }
 
 /** @todo */
-export type NodeConfigByFile = Map<File, NodeConfig>;
+export type NodeConfigByFile = Map<ScopeFile, NodeConfig>;
 
 /** Настройки диагностики задач. */
 export interface ValidationSettings {
@@ -131,8 +141,8 @@ export interface RuntimeSettings {
  * Resource settings читаются для scope, а не наоборот:
  * scope — первичная сущность, настройки вторичны. */
 export interface Scope {
-    readonly name: FolderName;
-    readonly uri: Readonly<Uri>;
+    readonly folderName: FolderName;
+    readonly scopeURI: Readonly<ScopeUri>;
 }
 
 /** Пользовательская иконка для задачи. */
@@ -167,16 +177,16 @@ export interface TaskDefinition {
 }
 
 /** Задачи в рамках одного scope, индексированные по имени. */
-export type ScopedTasks = Map<Name, vscode.Task>;
+export type ScopedTasks = Map<TaskName, vscode.Task>;
 
 /** Задачи всех scopes, индексированные по файлу. */
-export type TasksByFile = Map<File, ScopedTasks>;
+export type TasksByFile = Map<ScopeFile, ScopedTasks>;
 
 /** Определения задач в рамках одного scope, индексированные по имени. */
-export type ScopedDefinitions = Map<Name, TaskDefinition>;
+export type ScopedDefinitions = Map<TaskName, TaskDefinition>;
 
 /** Определения задач всех scopes, индексированные по файлу. */
-export type DefinitionsByFile = Map<File, ScopedDefinitions>;
+export type DefinitionsByFile = Map<ScopeFile, ScopedDefinitions>;
 
 // export type SettingsByFile = Map<File, ScopedSettings>;
 
@@ -261,7 +271,7 @@ export declare const enum EntityKind {
 /** Ссылка на закреплённую задачу: scope + имя задачи. */
 export interface FavoriteRef {
     scope: Scope;
-    label: Name;
+    label: TaskName;
 }
 
 /** Устаревшая запись закреплённой задачи, scope которой больше не существует. */
@@ -269,19 +279,6 @@ export interface PinnedStale {
     scopeName: string;
     label: string;
 }
-
-/** Режим видимости раздела закреплённых задач. */
-export declare const enum PinnedVisibility {
-    AUTO = 1,
-    HIDE = 0
-}
-
-/** Поведение сжатия (компрессии) узлов в разделе закреплённых задач. */
-export declare const enum CompressionBehavior {
-    NORMAL = 0,
-    SMART = 1
-}
-
 
 
 /** Данные одного scope для построения дерева:
@@ -298,17 +295,15 @@ export interface ScopeRecord {
     /** {@linkcode NodeConfig} — Конфигурация визуального отображения узлов для этого scope. */
     nodeConfig: NodeConfig;
     /** Имена закреплённых задач этого scope. */
-    pinned: Set<Name>;
+    pinned: Set<TaskName>;
 }
 
 /** Конфигурация раздела закреплённых задач. */
 export interface PinnedConfig {
-    /** {@linkcode PinnedVisibility} — Режим видимости раздела. */
-    visibility: PinnedVisibility;
-    /** {@linkcode CompressionBehavior} — Поведение сжатия узлов в разделе. */
-    compressionBehavior: CompressionBehavior;
-    /** {@linkcode PinnedStale}`[]` — Записи, scope которых больше не существует в workspace. */
-    staleRecords: Array<PinnedStale>;
+    /** Режим видимости раздела. False — безусловно скрыт. */
+    visibility: boolean;
+    /** Поведение сжатия узлов в разделе. */
+    smartPathCompression: boolean;
 }
 
 
@@ -326,12 +321,17 @@ export interface PinnedConfig {
  *   в том же `ScopeRecord.definitionMap`.
  * */
 export interface TreeInput {
-    /** `Map<`{@linkcode File}`, `{@linkcode ScopeRecord}`>` — 
+    /** `Map<`{@linkcode ScopeFile}`, `{@linkcode ScopeRecord}`>` — 
      * Данные всех scope, индексированные по файлу задач. */
-    scopeIndex: Map<File, ScopeRecord>;
+    scopeIndex: Map<ScopeFile, ScopeRecord>;
     /** {@linkcode PinnedConfig} — Конфигурация раздела закреплённых задач. */
     pinnedConfig: PinnedConfig;
+    /** {@linkcode PinnedStale}`[]` — Записи, scope которых больше не существует в workspace. */
+    pinnedStales: Array<PinnedStale>;
 }
+
+// type PinnedByFolder = Map<FolderName, Set<TaskName>>;
+
 
 // -- Утилитарные типы -------------------------------------
 

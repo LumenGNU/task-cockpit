@@ -22,7 +22,7 @@ const groupSchema = z.object({
 }).strict();
 
 const taskSchema = z.object({
-    name: z.string().min(1, 'name обязателен').transform(v => v as TC.Name),
+    name: z.string().min(1, 'name обязателен').transform(v => v as TC.TaskName),
     hidden: z.boolean().prefault(false),
     icon: iconSchema.prefault({}),
     rejectFlag: z.boolean().prefault(false),
@@ -38,7 +38,7 @@ const scopeEntrySchema = z.object({
             'путь должен заканчиваться на .vscode/tasks.json или .code-workspace',
         ),
     tasks: z.array(taskSchema),
-    pinned: z.array(z.string().min(1).transform(v => v as TC.Name)).prefault([]),
+    pinned: z.array(z.string().min(1).transform(v => v as TC.TaskName)).prefault([]),
 }).strict();
 
 const pinnedStaleSchema = z.object({
@@ -48,9 +48,9 @@ const pinnedStaleSchema = z.object({
 
 const pinnedConfigSchema = z.object({
     visibility: z.enum(['AUTO', 'HIDE']).prefault('AUTO')
-        .transform(v => v === 'AUTO' ? TC.PinnedVisibility.AUTO : TC.PinnedVisibility.HIDE),
+        .transform(v => v === 'AUTO' ? true : false),
     compressionBehavior: z.enum(['NORMAL', 'SMART']).prefault('NORMAL')
-        .transform(v => v === 'NORMAL' ? TC.CompressionBehavior.NORMAL : TC.CompressionBehavior.SMART),
+        .transform(v => v === 'NORMAL' ? false : true),
     stales: z.array(pinnedStaleSchema).prefault([]),
 }).strict();
 
@@ -194,11 +194,11 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
     const treeConfig: TC.TreeConfig = Object.freeze({ ...sketch.treeConfig });
     const nodeConfig: TC.NodeConfig = Object.freeze({ ...sketch.nodeConfig });
 
-    const scopeIndex = new Map<TC.File, TC.ScopeRecord>();
+    const scopeIndex = new Map<TC.ScopeFile, TC.ScopeRecord>();
 
     for (const [folderNameRaw, entry] of Object.entries(sketch.scopes)) {
         const folderName = folderNameRaw as TC.FolderName;
-        const file = entry.tasksFile as TC.File;
+        const file = entry.tasksFile as TC.ScopeFile;
 
         const definitionMap: TC.ScopedDefinitions = new Map();
         for (const def of entry.tasks) {
@@ -223,9 +223,9 @@ function buildTreeInput(sketch: Body): TC.TreeInput {
         scopeIndex,
         pinnedConfig: {
             visibility: sketch.pinned.visibility,
-            compressionBehavior: sketch.pinned.compressionBehavior,
-            staleRecords: sketch.pinned.stales,
+            smartPathCompression: sketch.pinned.compressionBehavior,
         },
+        pinnedStales: sketch.pinned.stales,
     };
 }
 

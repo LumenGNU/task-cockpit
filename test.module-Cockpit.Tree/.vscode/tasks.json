@@ -262,7 +262,7 @@
       "dependsOn": [
         "_cleanTerminal_test",
         // "Run tests|Multi-root Tests",
-        "Run tests|Basic Tests",
+        "Run tests|Core Tests",
         "Run tests|Sketches Tests",
       ],
       "dependsOrder": "sequence",
@@ -330,7 +330,7 @@
     //   }
     // },
     {
-      "label": "Run tests|Basic Tests",
+      "label": "Run tests|Core Tests",
       "icon": {
         "id": "beaker"
       },
@@ -344,7 +344,7 @@
         "--coverage-output '~coverage-reports/Basic' ",
         "--coverage-reporter json ",
         "--config './vscode-test.mjs' ",
-        "--label 'Basic Tests'"
+        "--label 'Core Tests'"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

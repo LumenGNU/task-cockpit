@@ -49,7 +49,7 @@ declare namespace Section {
         stales: ReadonlyArray<Readonly<TC.PinnedStale>>;
         /** Файл задач — присутствует только в single-root workspace.
          * В multi-root дочерние {@linkcode Source} содержат свои `tasksFile`. */
-        tasksFile?: TC.File;
+        tasksFile?: TC.ScopeFile;
         /** Дочерние элементы.
          * - Single-root ({@linkcode PinnedSingle}): {@linkcode Item Item[]} — узлы иерархии.
          * - Multi-root ({@linkcode PinnedMulti}): {@linkcode PinnedFolder FolderF[]} — обёртки по workspace folders.
@@ -59,7 +59,7 @@ declare namespace Section {
 
     export interface PinnedSingle extends PinnedBase {
         kind: TC.EntityKind.PinnedSingle;
-        tasksFile: TC.File;
+        tasksFile: TC.ScopeFile;
         children: ReadonlyArray<Item>;
         nodeConfig: TC.NodeConfig;
     }
@@ -86,7 +86,7 @@ declare namespace Section {
         /** Имя workspace folder (display name). */
         folderName: TC.FolderName;
         /** Абсолютный путь к файлу задач (`fsPath`). */
-        tasksFile: TC.File;
+        tasksFile: TC.ScopeFile;
         /** Элементы дерева — результат построения иерархии для данного scope. */
         children: ReadonlyArray<Item>;
         /** Статистика задач в файле. Присутствует только у файловых секций
@@ -159,21 +159,21 @@ const Section = {
             return { sections: [], folderCounts };
         }
 
-        const pinnedSpecs = new Map<TC.File, TC.DeepReadonly<{
+        const pinnedSpecs = new Map<TC.ScopeFile, TC.DeepReadonly<{
             folderName: TC.FolderName;
             nodeConfig: TC.NodeConfig;
             specs: ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>>;
         }>>();
 
 
-        const fileSpecs = new Map<TC.File, TC.DeepReadonly<{
+        const fileSpecs = new Map<TC.ScopeFile, TC.DeepReadonly<{
             folderName: TC.FolderName;
             specs: Array<Hierarchy.Spec<TC.TaskDefinition>>;
             taskCounts: TaskCounts;
             nodeConfig: TC.NodeConfig;
         }>>();
 
-        const pinnedVisible = treeInput.pinnedConfig.visibility !== TC.PinnedVisibility.HIDE;
+        const pinnedVisible = treeInput.pinnedConfig.visibility;
 
         // обход всех областей
         for (const [scopeFile, scopeRecord] of treeInput.scopeIndex) {
@@ -205,7 +205,7 @@ const Section = {
                         {
                             folderName: scopeRecord.folderName,
                             nodeConfig: scopeRecord.nodeConfig,
-                            specs: makePinnedSpecs(scopeRecord, treeInput.pinnedConfig.compressionBehavior)
+                            specs: makePinnedSpecs(scopeRecord, treeInput.pinnedConfig.smartPathCompression)
                         }
                     );
                 }
@@ -217,7 +217,7 @@ const Section = {
 
         const pinnedSection = buildPinnedSection(
             pinnedSpecs,
-            treeInput.pinnedConfig.staleRecords,
+            treeInput.pinnedStales,
             treeInput.scopeIndex.size > 1
         );
 
@@ -298,7 +298,7 @@ const Section = {
  * @returns Секция Pinned одного из четырёх вариантов выше, либо `null`. */
 function buildPinnedSection(
     pinnedSpecs: TC.DeepReadonly<
-        Map<TC.File, {
+        Map<TC.ScopeFile, {
             folderName: TC.FolderName,
             specs: ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>>;
             nodeConfig: TC.NodeConfig;
@@ -529,7 +529,7 @@ function toPathSegments(
 // Пока оставляем двухпроходный вариант — он достаточно быстрый и понятный.
 function makePinnedSpecs(
     scopeRecord: TC.DeepReadonly<TC.ScopeRecord>,
-    compressionBehavior: TC.CompressionBehavior
+    smartPathCompression: boolean
 ): ReadonlyArray<Hierarchy.Spec<TC.TaskDefinition>> {
 
     // #region DEBUG
@@ -587,7 +587,7 @@ function makePinnedSpecs(
         }
 
         pinnedSpecs.push({
-            path: buildCompressedPath(node, compressionBehavior),
+            path: buildCompressedPath(node, smartPathCompression),
             data: Hierarchy.Node.getData(node) // "извлечение"! 
             //> Если передавать напрямую (`data: node`) — BUG: {@linkcode Hierarchy.build}
             //> не затрет уже установленные структурные поля
@@ -631,7 +631,7 @@ const SEP_LITERAL = '\u2009›\u2009';
  *   идёт несжатый сегмент листа; в `SMART` лист уже включён в сжатие. */
 function buildCompressedPath(
     dataNode: Readonly<Hierarchy.Data<TC.TaskDefinition>>,
-    compressionBehavior: TC.CompressionBehavior
+    smartPathCompression: boolean
 ): ReadonlyArray<string> {
 
     // @note Смотри sketches/10.02-pinned-smart-subsegment.jsonc
@@ -643,7 +643,7 @@ function buildCompressedPath(
     // Стартуем от листа, поднимаемся к scope
 
     // (switch) - SMART режим path compression
-    if (compressionBehavior === TC.CompressionBehavior.SMART) {
+    if (smartPathCompression) {
         chain.push(Hierarchy.Node.getSegment(dataNode));
     }
 
@@ -656,12 +656,12 @@ function buildCompressedPath(
 
         // SMART: data-родитель — forced branch (flush + уходит в chain к предкам)
         const isForcedBranch =
-            (compressionBehavior === TC.CompressionBehavior.SMART && isDataParent)
+            (smartPathCompression && isDataParent)
             || Hierarchy.Node.hasMultipleChildren(parent); // имеет больше одного дочернего узла
 
         // NORMAL: data-родитель — разрыв цепочки (flush + идёт в compressed как отдельный сегмент)
         const isNormalDataBreak =
-            compressionBehavior === TC.CompressionBehavior.NORMAL && isDataParent;
+            !smartPathCompression && isDataParent;
 
         if (isForcedBranch || isNormalDataBreak) {
             if (chain.length > 0) {
@@ -692,7 +692,7 @@ function buildCompressedPath(
     }
 
     // (switch) - Нормальный режим path compression
-    if (compressionBehavior === TC.CompressionBehavior.NORMAL) {
+    if (!smartPathCompression) {
         compressed.push(Hierarchy.Node.getSegment(dataNode));
     }
 

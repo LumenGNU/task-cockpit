@@ -4,6 +4,29 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Open as project",
+      "icon": {
+        "id": "vscode",
+        "color": "terminal.ansiBlue"
+      },
+      "detail": "",
+      "type": "shell",
+      "command": "setsid -f codium '${workspaceFolder}' && sleep 3",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "close": true,
+        "group": "run-external"
+      }
+    },
+    {
       "label": "Prepare Test Environvent",
       "icon": {
         "id": "symbol-event"
@@ -204,7 +227,8 @@
         "env": {
           "SOURCE_DIR": "src",
           "DEST_DIR": "~stripped",
-          "FIND_FILTERS": "-wholename 'src/*.ts'"
+          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts'",
+          "STRIP_MODE": "test"
         }
       },
       "presentation": {
