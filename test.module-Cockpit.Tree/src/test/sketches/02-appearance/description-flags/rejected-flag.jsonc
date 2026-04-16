@@ -1,0 +1,25 @@
+
+// 
+{
+    "title": "Description · rejected flag visible",
+    "sketch": {
+        "scopes": {
+            "scope": {
+                "tasksFile": "scope/.vscode/tasks.json",
+                "tasks": [
+                    { "name": "rejected", "rejectFlag": true}
+                ],
+                "pinned": [
+                    "rejected"
+                ]
+            }
+        }
+
+    },
+    "expectedRender": {
+        "formatter": "description",
+        "snapshot": [
+
+        ]
+    }
+}
