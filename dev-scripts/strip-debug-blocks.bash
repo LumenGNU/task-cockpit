@@ -28,28 +28,35 @@
 #
 # ПРИМЕР ЗАПУСКА:
 #   SOURCE_DIR="./src" DEST_DIR="./build" FIND_FILTERS="-name '*.ts'" STRIP_MODE=prod ./strip-debug-blocks.bash
+#
+# @note: список файлов вычисляется дважды — в фазе валидации и фазе фильтрации.
+# Изменения в файловой системе между фазами теоретически дадут расхождение.
 
 set -eu
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 
 # Проверка переменных среды
 [[ -n "${SOURCE_DIR:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable SOURCE_DIR not set or empty\e[0m" >&2 ; exit 1 ; }
 [[ -n "${DEST_DIR:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable DEST_DIR not set or empty\e[0m" >&2 ; exit 1 ; }
 [[ -n "${FIND_FILTERS:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable FIND_FILTERS not set or empty\e[0m" >&2 ; exit 1 ; }
 [[ -n "${STRIP_MODE:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable STRIP_MODE not set or empty\e[0m" >&2 ; exit 1 ; }
+readonly SOURCE_DIR
+readonly DEST_DIR
+readonly FIND_FILTERS
+readonly STRIP_MODE
 
 case "${STRIP_MODE}" in
     prod|test) ;;
     *) echo -e "\e[31m[ERROR] STRIP_MODE must be 'prod' or 'test', got '${STRIP_MODE}'\e[0m" >&2 ; exit 1 ;;
 esac
 
-START_DEBUG='// #region DEBUG'
-END_DEBUG='// #endregion DEBUG'
-START_TEST='// #region TEST'
-END_TEST='// #endregion TEST'
+START_DEBUG='// #region DEBUG' && readonly START_DEBUG
+END_DEBUG='// #endregion DEBUG' && readonly END_DEBUG
+START_TEST='// #region TEST' && readonly START_TEST
+END_TEST='// #endregion TEST' && readonly END_TEST
 
-echo -e "\e[1m[STRIP] Mode: ${STRIP_MODE} — Stripping debug blocks ...\e[0m"
+echo -e "\e[1m[STRIP] Mode: ${STRIP_MODE} — Stripping debug blocks ...\e[0m\n" >&2
 
 # Фаза 1: Валидация всех файлов (оба типа маркеров, стековая проверка)
 VALIDATION_FAILED=0
@@ -75,10 +82,10 @@ while IFS= read -r -d '' TS_FILE; do
         }
         index($0, ed) {
             if (depth == 0) {
-                printf "[fail] %s:%d: closing marker \"%s\" without opening\n", file, NR, ed > "/dev/stderr"
+                printf "  \033[31mFAIL\033[0m  %s:%d: closing marker \"%s\" without opening\n", file, NR, ed
                 errors++
             } else if (stack_type[depth] != "DEBUG") {
-                printf "[fail] %s:%d: expected \"%s\" to close %s block (line %d), got \"%s\"\n", file, NR, et, stack_type[depth], stack_line[depth], ed > "/dev/stderr"
+                printf "  \033[31mFAIL\033[0m  %s:%d: expected \"%s\" to close %s block (line %d), got \"%s\"\n", file, NR, et, stack_type[depth], stack_line[depth], ed
                 errors++
             } else {
                 delete stack_type[depth]
@@ -89,10 +96,10 @@ while IFS= read -r -d '' TS_FILE; do
         }
         index($0, et) {
             if (depth == 0) {
-                printf "[fail] %s:%d: closing marker \"%s\" without opening\n", file, NR, et > "/dev/stderr"
+                printf "  \033[31mFAIL\033[0m  %s:%d: closing marker \"%s\" without opening\n", file, NR, et
                 errors++
             } else if (stack_type[depth] != "TEST") {
-                printf "[fail] %s:%d: expected \"%s\" to close %s block (line %d), got \"%s\"\n", file, NR, ed, stack_type[depth], stack_line[depth], et > "/dev/stderr"
+                printf "  \033[31mFAIL\033[0m  %s:%d: expected \"%s\" to close %s block (line %d), got \"%s\"\n", file, NR, ed, stack_type[depth], stack_line[depth], et
                 errors++
             } else {
                 delete stack_type[depth]
@@ -104,7 +111,7 @@ while IFS= read -r -d '' TS_FILE; do
         END {
             if (depth > 0) {
                 for (i = 1; i <= depth; i++) {
-                    printf "[fail] %s:%d: unclosed %s block\n", file, stack_line[i], stack_type[i] > "/dev/stderr"
+                    printf "  \033[31mFAIL\033[0m  %s:%d: unclosed %s block\n", file, stack_line[i], stack_type[i]
                 }
                 errors++
             }
@@ -150,7 +157,7 @@ while IFS= read -r -d '' TS_FILE; do
         ' "${TS_FILE}" > "${DEST_FILE}"
     fi
 
-    echo " - OK: ${REL_PATH}"
+    echo -e "  \e[32mOK\e[0m  ${REL_PATH}"
 done < <(eval "find -L \"${SOURCE_DIR}\" ${FIND_FILTERS} -type f -print0")
 
-echo -e "\n\e[32;1m[DONE] Files stripped and saved to \"${DEST_DIR}\"\e[0m\n"
+echo -e "\n\e[32;1m[DONE] Files stripped and saved to \"${DEST_DIR}\"\e[0m\n" >&2

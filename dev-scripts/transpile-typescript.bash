@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 
+# Транспилирует TypeScript-проект через tsc с указанным tsconfig.
+#
+# Переменные окружения:
+#   TSCONFIG — путь к tsconfig-файлу (обязательна)
+#   DEST_DIR — директория для выходных JS-файлов (обязательна)
+
 set -eu
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 
-# TSCONFIG
-# DEST_DIR
+[[ -n "${TSCONFIG:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable TSCONFIG not set or empty\e[0m" >&2 ; exit 1 ; }
+[[ -n "${DEST_DIR:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable DEST_DIR not set or empty\e[0m" >&2 ; exit 1 ; }
+readonly TSCONFIG
+readonly DEST_DIR
 
-[[ -n "${TSCONFIG:-}" ]] || { echo "[ERROR] Environment variable TSCONFIG not set or empty" ; exit 1 ; }
-[[ -n "${DEST_DIR:-}" ]] || { echo "[ERROR] Environment variable DEST_DIR not set or empty" ; exit 1 ; }
+echo -e "\e[1m[TSC] Building (${TSCONFIG}) ...\e[0m\n" >&2
 
+npx tsc -p "${TSCONFIG}" --outDir "${DEST_DIR}" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Build failed\e[0m\n' >&2 ; exit $rc ;}
 
-echo -e "\e[1m[DEV] Building (${TSCONFIG}) ...\e[0m\n"
-
-npx tsc -p "${TSCONFIG}" --outDir "${DEST_DIR}" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Build failed\e[0m\n' ; exit $rc ;}
-
-echo -e '\e[32;1m[DONE] Build complete\e[0m\n'
+echo -e '\n\e[32;1m[DONE] Build complete\e[0m\n' >&2

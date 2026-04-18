@@ -21,9 +21,9 @@
 
 set -eu
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2; exit 1' TERM INT
+trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 
-echo -e "\e[1m[START] Checking @file/@module headers ...\e[0m\n"
+echo -e "\e[1m[CHECK] Checking @file/@module headers ...\e[0m\n" >&2
 
 while IFS= read -r TS_FILE; do
 
@@ -46,12 +46,12 @@ while IFS= read -r TS_FILE; do
     LINE2=$(sed -n '2p' "$TS_FILE")
 
     if [[ "$LINE1" == "$EXPECTED_FILE" && "$LINE2" == "$EXPECTED_MODULE" ]]; then
-        echo -e "  \e[32mOK\e[0m     ${TS_FILE}"
+        echo -e "  \e[32m  OK\e[0m  ${TS_FILE}"
     else
-        [[ "$LINE1" != "$EXPECTED_FILE"   ]] && echo -e "  \e[31mFAIL\e[0m   ${TS_FILE}:1  expected: ${EXPECTED_FILE}"
-        [[ "$LINE2" != "$EXPECTED_MODULE" ]] && echo -e "  \e[31mFAIL\e[0m   ${TS_FILE}:2  expected: ${EXPECTED_MODULE}"
+        [[ "$LINE1" != "$EXPECTED_FILE"   ]] && echo -e "  \e[31mFAIL\e[0m  ${TS_FILE}:1  expected: ${EXPECTED_FILE}"
+        [[ "$LINE2" != "$EXPECTED_MODULE" ]] && echo -e "  \e[31mFAIL\e[0m  ${TS_FILE}:2  expected: ${EXPECTED_MODULE}"
     fi
 
 done < <(git ls-files --cached --others --exclude-standard src/ | grep -v '^src/extension\.ts$' | grep '\.ts$' | grep -v '\.d\.ts$' | sort)
 
-echo -e "\n\e[1m[DONE] Completed\e[0m\n"
+echo -e "\n\e[32;1m[DONE] Completed\e[0m\n" >&2

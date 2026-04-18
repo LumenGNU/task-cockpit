@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 
+# Запускает проверку типов TypeScript через tsc --noEmit.
+#
+# Переменные окружения:
+#   TSCONFIG — путь к tsconfig-файлу (обязательна)
+
 set -eu
 
-# TSCONFIG
+trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 
-[[ -n "${TSCONFIG:-}" ]] || { echo "[ERROR] Environment variable TSCONFIG not set or empty" ; exit 1 ; }
+[[ -n "${TSCONFIG:-}" ]] || { echo -e "\e[31m[ERROR] Environment variable TSCONFIG not set or empty\e[0m" >&2 ; exit 1 ; }
+readonly TSCONFIG
 
-trap 'echo -e "\n\e[31mProcess terminated\e[0m" >&2 ; exit 1' TERM INT
+echo -e "\e[1m[LINT] Typescript type check (\"./${TSCONFIG}\") ...\e[0m\n" >&2
 
-echo -e "\e[1m[LINT] Typescript type chek (\"./${TSCONFIG}\") ...\e[0m\n"
+npx tsc --noEmit -p "./${TSCONFIG}" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Type check failed\e[0m\n' >&2 ; exit $rc ;}
 
-npx tsc --noEmit -p "./${TSCONFIG}" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Type chek failed\e[0m\n' ; exit $rc ;}
-
-echo -e '\e[32;1m[DONE] No type errors\e[0m\n'
+echo -e '\n\e[32;1m[DONE] No type errors\e[0m\n' >&2
