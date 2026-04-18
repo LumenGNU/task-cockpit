@@ -114,50 +114,53 @@
           }
         }
       },
-{
-  "title": "Pinned Tasks",
-  "description": "TODO TODO TODO",
-  "order": 3,
-  "type": "object",
-  "properties": {
-    "taskCockpit.pinnedTasks.tasks": {
-      "type": "array",
-      "scope": "window",
-      "default": [],
-      "items": {
+      {
+        "title": "Pinned Tasks",
+        "description": "TODO TODO TODO",
+        "order": 3,
         "type": "object",
-        "required": ["label", "scopeName"],
-        "additionalProperties": false,
         "properties": {
-          "label": {
-            "type": "string",
-            "description": "Full task label."
+          "taskCockpit.pinnedTasks.tasks": {
+            "type": "array",
+            "scope": "window",
+            "default": [],
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "scopeName"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "description": "Full task label."
+                },
+                "scopeName": {
+                  "type": "string",
+                  "description": "TODO TODO TODO"
+                }
+              }
+            },
+            "markdownDescription": "TODO TODO TODO",
+            "order": 14
           },
-          "scopeName": {
-            "type": "string",
-            "description": "TODO TODO TODO"
+          "taskCockpit.pinnedTasks.visibility": {
+            "type": "boolean",
+            "scope": "window",
+            "default": true,
+            "description": "TODO TODO TODO",
+            "order": 15
+          },
+          "taskCockpit.pinnedTasks.smartPathCompression": {
+            "type": "boolean",
+            "scope": "window",
+            "default": true,
+            "description": "TODO TODO TODO",
+            "order": 16
           }
         }
       },
-      "markdownDescription": "TODO TODO TODO",
-      "order": 14
-    },
-    "taskCockpit.pinnedTasks.visibility": {
-      "type": "boolean",
-      "scope": "window",
-      "default": true,
-      "description": "TODO TODO TODO",
-      "order": 15
-    },
-    "taskCockpit.pinnedTasks.smartPathCompression": {
-      "type": "boolean",
-      "scope": "window",
-      "default": true,
-      "description": "TODO TODO TODO",
-      "order": 16
-    }
-  }
-},
       {
         "title": "Tasks Files Diagnostics",
         "markdownDescription": "Enable diagnostics to detect potential issues with task definitions. Changes require window reload.",
@@ -190,8 +193,8 @@
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.39.3",
-    "typescript": "^5.9.3",
-    "nyc": "^18.0.0"
+    "nyc": "^18.0.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

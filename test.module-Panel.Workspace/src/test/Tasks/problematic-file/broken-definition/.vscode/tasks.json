@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ghost",
+            "type": "nonexistent-type",
+            "command": "echo alive"
+        },
+        {
+            "label": "alive",
+            "type": "shell",
+            "command": "echo alive"
+        }
+    ]
+}

@@ -278,15 +278,20 @@ const TreeModel = {
                 const root = getRootGroup(node);
                 props.id = `${rootPrefix(root)}task://${node.entity.id}`;
                 props.label = Hierarchy.Node.getSegment(node.entity);
-                props.iconPath = new vscode.ThemeIcon(
-                    node.entity.icon.id ?? root.nodeConfig.defaultIconName,
-                    node.entity.icon.color ? new vscode.ThemeColor(node.entity.icon.color) : undefined
-                );
+                props.iconPath = (node.entity.rejectFlag) // у "отклоненных" задач своя иконка и цвет
+                    ? new vscode.ThemeIcon(
+                        'warning',
+                        new vscode.ThemeColor('list.warningForeground')
+                    )
+                    : new vscode.ThemeIcon(
+                        node.entity.icon.id ?? root.nodeConfig.defaultIconName,
+                        node.entity.icon.color ? new vscode.ThemeColor(node.entity.icon.color) : undefined
+                    );
                 const flags: string[] = [];
                 if (node.entity.hidden) flags.push('Hidden');
                 if (node.entity.group?.isDefault) flags.push('Default');
                 if (node.entity.isBackground) flags.push('Background');
-                props.description = (flags.length > 0) ? flags.join(', ') : '';
+                props.description = (flags.length > 0) ? `( ${flags.join(', ')} )` : '';
                 props.collapsibleState
                     = (node.kind === TC.EntityKind.Runnable)
                         ? vscode.TreeItemCollapsibleState.None

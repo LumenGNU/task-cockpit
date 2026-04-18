@@ -165,7 +165,7 @@ export interface TaskDefinition {
 
     id: TaskID;
 
-    rejectFlag?: boolean;
+    isBroken?: boolean;
 
     isBackground?: boolean;
 

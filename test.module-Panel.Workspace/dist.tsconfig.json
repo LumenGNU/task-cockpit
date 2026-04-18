@@ -9,8 +9,7 @@
 		"sourceMap": true,
 		"rootDir": "~stripped",
 		"strict": true,
-		"removeComments": false,
-		"resolveJsonModule": true
+		"removeComments": true
 	},
     "include": [
         "~stripped/**/*.ts"

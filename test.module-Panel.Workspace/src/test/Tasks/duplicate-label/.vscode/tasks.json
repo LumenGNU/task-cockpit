@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "dup",
+            "type": "shell",
+            "command": "echo first",
+            "icon": { "id": "play" },
+            "group": "build"
+        },
+        {
+            "label": "dup",
+            "type": "shell",
+            "command": "echo second",
+            "icon": { "id": "stop" },
+            "group": "test"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "path": "missing-file"
+        },
+        {
+            "path": "tasks.json-is-directory"
+        },
+        {
+            "path": "no-tasks-array"
+        },
+        {
+            "path": "invalid-jsonc"
+        },
+        {
+            "path": "unlabeled-task"
+        },
+        {
+            "path": "broken-definition"
+        }
+    ]
+}

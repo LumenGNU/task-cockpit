@@ -14,97 +14,111 @@ const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
 
-/** @todo Актуализировать
- * Возвращает {@linkcode TC.Task | user-Task'и} ("обогащённые" vscode.Task'и), сгруппированные
- * в карты в соответствии со структурой исходных файлов задач.
+/** Извлекает задачи из указанных областей.
  *
- * Порядок задач внутри каждой карты соответствует их порядку в исходном файле.
+ * Возвращает две карты, ключом в которых служит {@linkcode TC.ScopeFile}:
+ * - `tasksByFile` — объекты {@linkcode vscode.Task}, прошедшие два фильтра:
+ *     - "подходящие" — те, для которых удалось {@link helpers.buildId | построить ID};
+ *     - имеют *именованное* определение в файле-источнике задач.
+ * - `definitionsByFile` — {@link TC.TaskDefinition | определения задач}, прочитанные из файла-источника.
+ *   Определения, для которых VS Code не создал соответствующий
+ *   {@linkcode vscode.Task} (отклонил или ещё не загрузил), помечаются
+ *   флагом `isBroken`.
  *
- * Содержит только "валидные задачи": definitions без соответствующей vscode.Task
- * в результат не попадают — если VS Code отклонил definition
- * (синтаксическая ошибка, неизвестный тип, проблема провайдера),
- * такие записи — не задачи.
+ * **Порядок ключей** в обеих картах соответствует порядку `scopes` на входе,
+ * порядок записей внутри — порядку определений в файле-источнике.
  *
+ * Работает сразу со всем набором областей, а не с каждой по отдельности:
+ * {@linkcode vscode.tasks.fetchTasks} не умеет фильтровать по области и
+ * всегда возвращает полный список. Поэтому индекс задач строится один раз
+ * на вызов, а дальше разбирается по областям через определения из файлов.
+ * 
  * @param scopes Области действия извлекаемых задач.
+ * @param ctsToken Токен отмены.
  *
- * @throws {vscode.CancellationError} */
+ * @throws {vscode.CancellationError} при срабатывании токена отмены. */
 async function fetch(
     scopes: ReadonlyArray<TC.Scope>,
     ctsToken: vscode.CancellationToken
 ): Promise<Readonly<TC.FetchResult>> {
 
-
-    // Карта всех "подходящих" задач, полученных от VS Code
-    const vTasksMap = new Map<TC.TaskID, vscode.Task>();
-
-    // @note: {@linkcode vscode.fetchTasks} никогда не вернёт задачу с TaskScope.Global.
-    // {@linkcode vscode.TaskScope}: "Global tasks are currently not supported."
-    const fetchedTasks = await vscode.tasks.fetchTasks();
-
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
     }
 
-    // #region DEBUG
-    log(LogLevel.Debug,
-        `${vscode.env.appName} reports ${fetchedTasks.length} total task(s)`);
-    // #endregion DEBUG
-
-    for (const task of fetchedTasks) {
-
-        const taskId = helpers.resolveId(task);
-
-        if (!taskId) {
-
-            // #region DEBUG
-            log(LogLevel.Debug, `Task filtered out: name — "${task.name || '<unlabeled>'}", scope — "${task.scope ? typeof task.scope === 'number' ? 'Workspace' : task.scope.name : 'undefined'}"`);
-            // #endregion DEBUG
-
-            continue;
-        }
-
-        vTasksMap.set(taskId, task);
-    }
-
-    const definitionsByFile = new Map(
-        await Promise.all(scopes.map(scope => fetchDefinitions(scope.scopeURI, ctsToken)))
-    );
+    // индекс всех "подходящих" задач от VS Code
+    const tasksIndex = await fetchTaskIndex(ctsToken);
 
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
     }
-
-    // #region DEBUG
-    log(LogLevel.Debug,
-        `Parsed ${[...definitionsByFile.values()].reduce((count, definitions) => count + definitions.size, 0)} user task definition(s) for ${definitionsByFile.size} scope(s)`);
-    // #endregion DEBUG
 
     const tasksByFile: TC.TasksByFile = new Map();
-    // const rejectReport: TC.RejectReport = new Map();
+    const definitionsByFile: TC.DefinitionsByFile = new Map();
 
-    // Перебираем в порядке "из файла"
-    for (const [file, definitions] of definitionsByFile) {
+    // Перебираем в порядке "по папкам"
+    for (const scope of scopes) {
+
+        const uri = scope.scopeURI;
+
+        // резистентен к ошибкам, выбрасывает только `vscode.CancellationError`
+        const scopedDefinitions: TC.ScopedDefinitions = await readDefinitions(uri, ctsToken);
+
+        if (ctsToken.isCancellationRequested) {
+            throw new vscode.CancellationError();
+        }
 
         const scopedTasks: TC.ScopedTasks = new Map();
 
-        for (const [name, definition] of definitions) {
+        // Перебираем определения в порядке "из файла".
+        // Фильтруем tasksIndex в scopedTasks.
+        // Помечаем "сломанные" определения
+        for (const [name, definition] of scopedDefinitions) {
 
-            const vTask = vTasksMap.get(definition.id);
+            const vTask = tasksIndex[definition.id];
 
             if (vTask) {
                 scopedTasks.set(name, vTask);
             }
             else {
+                // У задачи есть определение в файле-задач, но
+                // VS Code не создала из него `vscode.Task` —
+                // такое определение считается сломанным.
+                definition.isBroken = true;
 
-                definition.rejectFlag = true;
                 // #region DEBUG
-                log(LogLevel.Warning, `No vscode.Task for definition — VS Code rejected or not yet loaded. Name: ${name}; File: ${file}.`);
+                log(LogLevel.Warning, `No vscode.Task for definition: Name=${name}; Scope=${scope.folderName}`);
                 // #endregion DEBUG
             }
         }
 
-        tasksByFile.set(file, scopedTasks);
+        const scopeFile = uri.fsPath;
+        tasksByFile.set(scopeFile, scopedTasks);
+        definitionsByFile.set(scopeFile, scopedDefinitions);
+
     }
+
+    if (ctsToken.isCancellationRequested) {
+        throw new vscode.CancellationError();
+    }
+
+    // #region DEBUG
+    let totalDefinitions = 0;
+    for (const definitions of definitionsByFile.values()) {
+        totalDefinitions += definitions.size;
+    }
+    let totalTasks = 0;
+    for (const tasks of tasksByFile.values()) {
+        totalTasks += tasks.size;
+    }
+
+    const scopeCount = definitionsByFile.size;
+    const summary = totalTasks === totalDefinitions
+        ? `Cockpit fetched ${totalTasks} task(s) across ${scopeCount} scope(s)`
+        : `Cockpit fetched ${totalTasks} task(s) from ${totalDefinitions} definition(s) across ${scopeCount} scope(s)`;
+    log(LogLevel.Debug, summary);
+    // #endregion DEBUG
+
 
     return {
         tasksByFile,
@@ -113,10 +127,81 @@ async function fetch(
 }
 
 
+/** Строит индекс "подходящих" задач из полного списка, полученного
+ * от VS Code.
+ *
+ * "Подходящими" считаются задачи, для которых {@link helpers.resolveId}
+ * смог построить ID (например, виртуальные или глобальные задачи
+ * отсеиваются). Критерий инкапсулирован в `resolveId` — этот модуль
+ * им только пользуется.
+ *
+ * @note Константа {@linkcode vscode.TaskScope.Global} в API присутствует,
+ *   но задач с такой областью не встречается — глобальные задачи
+ *   приходят с областью `Workspace` и от остальных отличаются
+ *   внутри {@link helpers.resolveId}.
+ *
+ * @param ctsToken Токен отмены.
+ * @returns Индекс подходящих задач по ID. Отсутствие конкретного ID —
+ *   нормальная ситуация, вызывающий не должен этого ожидать.
+ *
+ * @throws {vscode.CancellationError} при срабатывании токена отмены. */
+async function fetchTaskIndex(ctsToken: vscode.CancellationToken): Promise<Record<TC.TaskID, vscode.Task>> {
+
+    if (ctsToken.isCancellationRequested) {
+        throw new vscode.CancellationError();
+    }
+
+    // Индекс всех "подходящих" задач, полученных от VS Code
+    const index = Object.create(null) as Record<TC.TaskID, vscode.Task>;
+
+    const fetchedTasks = await vscode.tasks.fetchTasks();
+
+    if (ctsToken.isCancellationRequested) {
+        throw new vscode.CancellationError();
+    }
+
+    // Отобрать подходящие задачи и проиндексировать по ID,
+    // пропуская "не подходящие"
+    for (const task of fetchedTasks) {
+
+        const taskId = helpers.resolveId(task);
+        // id не создается для "не подходящих" задач
+        if (!taskId) {
+
+            // #region DEBUG
+            const scopeLabel = task.scope === undefined
+                ? 'undefined'
+                : typeof task.scope === 'number'
+                    ? 'Workspace'
+                    : task.scope.name;
+            log(LogLevel.Trace, `Task filtered out: Name="${task.name || '<unlabeled>'}"; Scope="${scopeLabel}"`);
+            // #endregion DEBUG
+
+            continue;
+        }
+
+        index[taskId] = task;
+    }
+
+    // #region DEBUG
+    const total = fetchedTasks.length;
+    log(LogLevel.Debug, `${vscode.env.appName} reports ${total} total task(s)`);
+    var indexed = 0;
+    var _;
+    for (_ in index) { ++indexed; }
+    const outOf = total - indexed;
+    log(LogLevel.Debug, `Cockpit indexed ${indexed} task(s)${outOf > 0 ? `; ${outOf} filtered out` : ''}`);
+    // #endregion DEBUG
+
+    return index;
+}
+
 // #region Definitions -- парсинг источника задач
 
 
-/** Минимальный набор полей для представления задачи пользователю */
+/** Сырой массив определений, извлечённый из файла-источника.
+ * 
+ * Минимальный набор полей, нужный для представления задачи */
 interface Raw {
     label?: string;
     hide?: boolean;
@@ -126,25 +211,25 @@ interface Raw {
 }
 
 
-/** Кортеж из источника задач и карты определений. */
-type Definitions = readonly [TC.ScopeFile, Map<TC.TaskName, TC.TaskDefinition>];
-
-
-/** Загрузка определений задач напрямую из файла задач.
+/** Загружает определения задач напрямую из файла-источника.
  *
- * Парсит файл самостоятельно.
- * Гарантирует порядок задач как в файле.
+ * - Парсит файл самостоятельно.
+ * - Гарантирует порядок задач как в файле.
  *
- * Не выбрасывает исключений. Отдаст кортеж с пустой картой при
- * любых ошибках чтения/парсинга.
+ * Не выбрасывает IO/Parsing/etc исключений — при любых ошибках чтения
+ * или парсинга возвращает пустую карту. Обслуживание файла-источника
+ * не наша ответственность, этим занимается VS Code.
  *
- * @param uri URI файла задач (не обязан существовать физически)
- * @returns кортеж из источника задач и карты определений
- *   (карта пуста при ошибках чтения/парсинга)
+ * @param uri URI файла-источника задач (не обязан существовать физически).
+ * @param ctsToken Токен отмены.
+ * @returns Карта определений задач; пуста при ошибках чтения/парсинга.
  *
- * @throws {vscode.CancellationError} При отмене через CancellationToken.
- *   Остальные ошибки не выбрасываются — всегда возвращается "пустой" результат.  */
-async function fetchDefinitions(uri: TC.ScopeUri, ctsToken: vscode.CancellationToken): Promise<Definitions> {
+ * @throws {vscode.CancellationError} при срабатывании токена отмены —
+ *   единственное исключение, которое пробрасывается наружу. */
+async function readDefinitions(
+    uri: TC.ScopeUri,
+    ctsToken: vscode.CancellationToken
+): Promise<Map<TC.TaskName, TC.TaskDefinition>> {
 
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
@@ -157,12 +242,15 @@ async function fetchDefinitions(uri: TC.ScopeUri, ctsToken: vscode.CancellationT
             throw new vscode.CancellationError();
         }
 
-        return remapRaw(uri.fsPath, extract(
-            new TextDecoder('utf-8').decode(uint8Array),
-            helpers.resolveJsonPath(uri),
-            // Никак не реагируем на ошибки, обслуживание файла-источника
-            // задач не наша ответственность
-        ));
+        // Чтение/валидация определений задач из содержимого файла.
+        // Никак не реагируем на ошибки, обслуживание файла-источника
+        // задач — не наша ответственность.
+        return remapRaw(uri.fsPath,
+            extract(
+                new TextDecoder('utf-8').decode(uint8Array),
+                helpers.resolveJsonPath(uri)
+            )
+        );
 
     }
     catch (error) {
@@ -172,22 +260,19 @@ async function fetchDefinitions(uri: TC.ScopeUri, ctsToken: vscode.CancellationT
             throw error;
         }
 
-        // Отсутствие файла - нормальная ситуация
         // #region DEBUG
+        // Отсутствие файла - нормальная ситуация
         if (error instanceof Error && 'code' in error && error.code === 'FileNotFound') {
-            log(LogLevel.Trace,
-                `Tasks file does not exist, skipping`,
-                uri.fsPath);
+            log(LogLevel.Trace, `Tasks file does not exist, skipping`, uri.fsPath);
         }
         else {
-            // Проблемы с файлом/чтением/парсингом — не наши проблемы, VS Code разберётся
-            log(LogLevel.Debug,
-                `Tasks file processing error: ${error instanceof Error ? error.message : JSON.stringify(error)}, skipping`,
-                uri.fsPath);
+            // Проблемы с файлом/чтением/парсингом (или, например, там каталог - не файл) — не наши проблемы, VS Code разберётся
+            const reason = error instanceof Error ? error.message : JSON.stringify(error);
+            log(LogLevel.Debug, `Tasks file processing error, skipping: ${reason}`, uri.fsPath);
         }
         // #endregion DEBUG
-        // Единственное, как реагируем: "в этой области задач нет (не нашли)"
-        return [uri.fsPath, new Map()];
+        // Единственное, как реагируем: "в этой области задач нет" (или "не нашли", или "не смогли"... нам все равно — "ИХ НЕТ". А за причинами обращайтесь к VS Code)
+        return new Map();
     }
 }
 
@@ -209,31 +294,48 @@ function extract(jsoncContent: string, jsonPath: JSONC.JSONPath): Raw[] {
         }
     );
 
-    // Извлекаем массив задач
+    // Извлекаем массив задач по пути `jsonPath`.
+    // (разный для .json и .code-workspace файлов)
     const raw = jsonPath.reduce((node, key) => {
         return node?.[key];
     }, parsed);
-    // Не массив — не наша проблема, VS Code разберётся
+    // Не массив — не наша проблема (VS Code разберётся), 
+    // а мы всегда возвращаем массив
     return Array.isArray(raw) ? raw : [];
 }
 
 
-/** Преобразует сырой json-массив в {@linkcode Definitions | кортеж определений}.
+/** Преобразует сырой массив определений задач в карту определений.
  *
- * @param file строковый URI к файлу-источнику задач
- * @param rawArr сырой массив задач
- * @returns кортеж {@linkcode Definitions}, где первый элемент — идентификатор файла,
- * второй — карта, где каждый ключ является меткой задачи из файла,
- *   а каждое значение — объектом {@linkcode TC.TaskDefinition}
- */
-function remapRaw(file: TC.ScopeFile, rawArr: Raw[]): Definitions {
+ * Выполняется минимальная валидация:
+ * - записи, не являющиеся объектами, пропускаются;
+ * - записи без `label` или с невалидным `label` пропускаются;
+ * - для принятых записей строится ID через {@link helpers.buildId}.
+ *
+ * Поле `group` нормализуется: строковая форма приводится к объектной,
+ * первая буква `kind` — к верхнему регистру. 
+ * 
+ * Поле `icon` всегда присутствует в результате как объект (возможно,
+ * с пустыми полями).
+ * 
+ * Остальные поля переносятся как есть; валидация их содержимого не
+ * наша ответственность.
+ *
+ * Дубликаты `label` молча перезаписываются — побеждает последняя запись.
+ * Это осознанно повторяет поведение VS Code.
+ *
+ * @param file Файл-источник задач.
+ * @param rawArr {@link Raw | Сырой массив определений}, извлечённый из файла-источника.
+ * @returns Карта определений, ключ — `label`. */
+function remapRaw(file: TC.ScopeFile, rawArr: Raw[]): Map<TC.TaskName, TC.TaskDefinition> {
 
-    const map: Map<TC.TaskName, TC.TaskDefinition> = new Map();
+    const resultMap: Map<TC.TaskName, TC.TaskDefinition> = new Map();
 
     for (const raw of rawArr) {
+        // Пропускаем если не объект
         if (raw && typeof raw === 'object') {
 
-            // Пропускаем задачи без или с невалидным названием
+            // Пропускаем задачи без- или с невалидным названием
             if (helpers.isName(raw.label)) {
 
                 const group = typeof raw.group === 'string'
@@ -246,8 +348,8 @@ function remapRaw(file: TC.ScopeFile, rawArr: Raw[]): Definitions {
                 const id = helpers.buildId(file, raw.label);
 
                 // дубликаты label'ов молча перезаписываются —
-                // повторяю поведение VS Code
-                map.set(raw.label, {
+                // повторяя поведение VS Code
+                resultMap.set(raw.label, {
                     hidden: raw.hide,
                     isBackground: raw.isBackground,
                     icon: {
@@ -261,7 +363,7 @@ function remapRaw(file: TC.ScopeFile, rawArr: Raw[]): Definitions {
         }
     }
 
-    return [file, map];
+    return resultMap;
 }
 
 

@@ -1,0 +1,15 @@
+{
+    "folders": [
+        { "path": "dummy" }
+    ],
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "ws-task",
+                "type": "shell",
+                "command": "echo workspace-level"
+            }
+        ]
+    }
+}

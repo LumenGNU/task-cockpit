@@ -47,7 +47,7 @@ export default class Workspace implements vscode.Disposable {
     private readonly disposable: vscode.Disposable;
 
     /** Текущее состояние workspace. `null` — экземпляр не готов или disposed. */
-    private scanResult: ScanResult | null = null;
+    private snapshot: ScanResult | null = null;
 
 
     /** Инициализирует новый экземпляр класса {@linkcode Workspace}.
@@ -59,35 +59,17 @@ export default class Workspace implements vscode.Disposable {
      * При возникновении событий **не перестраивает** состояние самостоятельно —
      * только уведомляет подписчиков через {@linkcode onDidChange}.
      * Перестройка происходит при вызове {@linkcode reScan}. */
-    private constructor() {
+    public constructor() {
 
         this.disposable = vscode.Disposable.from(
             vscode.workspace.onDidChangeConfiguration(this.configurationChange_Handler, this),
             vscode.workspace.onDidChangeWorkspaceFolders(this.workspaceFoldersChange_Handler, this),
-
             this.onDidChangeEmitter
         );
-
     }
 
 
-    public static async init(): Workspace {
 
-        const workspace = new Workspace();
-
-        let dirty = false;
-
-        const listener = workspace.onDidChange(() => { dirty = true; });
-
-        do {
-            dirty = false;
-            await workspace.reScan();
-        } while (dirty);
-
-
-        listener.dispose();
-
-    }
 
 
     /** Освобождает все ресурсы, зарегистрированные при инициализации {@linkcode Workspace}. */
@@ -101,13 +83,16 @@ export default class Workspace implements vscode.Disposable {
             this.cts = null;
         }
 
-        this.scanResult = null;
+        this.snapshot = null;
 
         // #region DEBUG
         log(LogLevel.Debug, 'Disposed', 'dispose');
         // #endregion DEBUG
     }
 
+    public getSnapshot() {
+
+    }
 
     /** @throws {vscode.CancellationError} */
     public async reScan(): Promise<void> {
@@ -122,7 +107,7 @@ export default class Workspace implements vscode.Disposable {
         this.cts = cts;
 
         try {
-            this.scanResult = await Workspace.reScan(this.cts.token);
+            this.snapshot = await Workspace.reScan(this.cts.token);
         }
         catch (error) {
             if (!(error instanceof vscode.CancellationError)) {
@@ -152,7 +137,7 @@ export default class Workspace implements vscode.Disposable {
 
     /** Возвращает карту задач, проиндексированную по ScopeFile файла задач. */
     public getScanResult(): Readonly<ScanResult> | null {
-        return this.scanResult;
+        return this.snapshot;
     }
 
 
