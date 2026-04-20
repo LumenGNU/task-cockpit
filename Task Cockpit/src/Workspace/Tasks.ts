@@ -112,10 +112,20 @@ async function fetch(
         totalTasks += tasks.size;
     }
 
+    let indexedCount = 0;
+    for (const _ in tasksIndex) { ++indexedCount; }
+
     const scopeCount = definitionsByFile.size;
+
+    const unmatchedInIndex = indexedCount - totalTasks;
+    const unmatchedSuffix = unmatchedInIndex > 0
+        ? `; ${unmatchedInIndex} indexed task(s) have no file definition`
+        : '';
+
     const summary = totalTasks === totalDefinitions
-        ? `Cockpit fetched ${totalTasks} task(s) across ${scopeCount} scope(s)`
-        : `Cockpit fetched ${totalTasks} task(s) from ${totalDefinitions} definition(s) across ${scopeCount} scope(s)`;
+        ? `Cockpit fetched ${totalTasks} task(s) across ${scopeCount} scope(s)${unmatchedSuffix}`
+        : `Cockpit fetched ${totalTasks} task(s) from ${totalDefinitions} definition(s) across ${scopeCount} scope(s)${unmatchedSuffix}`;
+
     log(LogLevel.Debug, summary);
     // #endregion DEBUG
 
@@ -145,14 +155,14 @@ async function fetch(
  *   нормальная ситуация, вызывающий не должен этого ожидать.
  *
  * @throws {vscode.CancellationError} при срабатывании токена отмены. */
-async function fetchTaskIndex(ctsToken: vscode.CancellationToken): Promise<Record<TC.TaskID, vscode.Task>> {
+async function fetchTaskIndex(ctsToken: vscode.CancellationToken): Promise<Record<TC.TaskId, vscode.Task>> {
 
     if (ctsToken.isCancellationRequested) {
         throw new vscode.CancellationError();
     }
 
     // Индекс всех "подходящих" задач, полученных от VS Code
-    const index = Object.create(null) as Record<TC.TaskID, vscode.Task>;
+    const index = Object.create(null) as Record<TC.TaskId, vscode.Task>;
 
     const fetchedTasks = await vscode.tasks.fetchTasks();
 
@@ -271,7 +281,9 @@ async function readDefinitions(
             log(LogLevel.Debug, `Tasks file processing error, skipping: ${reason}`, uri.fsPath);
         }
         // #endregion DEBUG
-        // Единственное, как реагируем: "в этой области задач нет" (или "не нашли", или "не смогли"... нам все равно — "ИХ НЕТ". А за причинами обращайтесь к VS Code)
+        // Единственное, как реагируем: "в этой области задач нет" 
+        // (или "не нашли", или "не смогли"... нам все равно — "ИХ НЕТ". 
+        // А за причинами обращайтесь к VS Code)
         return new Map();
     }
 }

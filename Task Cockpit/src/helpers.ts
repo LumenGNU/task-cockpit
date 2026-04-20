@@ -13,12 +13,12 @@ const C0_GS: TC.CG_Separator = '\x1D' as const;
  * @param file путь к файлу задач
  * @param name метка задачи
  * @returns составной идентификатор задачи */
-function buildId(file: TC.ScopeFile, name: TC.TaskName): TC.TaskID {
-    return `${file}${C0_GS}${name}` as TC.TaskID;
+function buildId(file: TC.ScopeFile, name: TC.TaskName): TC.TaskId {
+    return `${file}${C0_GS}${name}` as TC.TaskId;
 }
 
 
-function parseId(taskId: TC.TaskID): { taskFile: TC.ScopeFile, taskName: TC.TaskName; } {
+function parseId(taskId: TC.TaskId): { taskFile: TC.ScopeFile, taskName: TC.TaskName; } {
     const [taskFile, taskName] = taskId.split(C0_GS) as [TC.ScopeFile, TC.TaskName];
     return {
         taskFile,
@@ -53,7 +53,7 @@ function resolveScopeUri(task: vscode.Task): TC.ScopeUri | undefined {
 }
 
 
-function resolveId(task: vscode.Task): TC.TaskID | undefined {
+function resolveId(task: vscode.Task): TC.TaskId | undefined {
     const file = resolveScopeUri(task)?.fsPath;
 
     // "виртуальные" (без scope) и глобальные задачи будут пропущены
@@ -73,7 +73,7 @@ function resolveUri(file: TC.ScopeFile): TC.ScopeUri {
 }
 
 
-function printTaskId(taskId: TC.TaskID): string {
+function printTaskId(taskId: TC.TaskId): string {
     const { taskFile, taskName } = parseId(taskId);
     const relFile = vscode.workspace.asRelativePath(taskFile);
     return `${relFile} • ${taskName}`;

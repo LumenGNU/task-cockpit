@@ -61,7 +61,7 @@ export type Group = ('Build' | 'Test' | 'Clean') & { readonly [___TasksGroup]: n
  *
  * Используется для type safety при работе с коллекциями;
  * для однозначного определения задачи; */
-export type TaskID = `${ScopeFile}${CG_Separator}${TaskName}` & { readonly [___Identity]: never; };
+export type TaskId = `${ScopeFile}${CG_Separator}${TaskName}` & { readonly [___Identity]: never; };
 
 /** Номинальный тип для имени папки workspace. */
 export type FolderName = string & { readonly [___FolderName]: never; };
@@ -163,7 +163,7 @@ export interface TaskDefinition {
     /** Пользовательская иконка для задачи */
     icon: IconDefinition;
 
-    id: TaskID;
+    id: TaskId;
 
     isBroken?: boolean;
 
