@@ -1,10 +1,9 @@
-/** @file Cockpit/Tree/Hierarchy.ts */
+/** @file Cockpit/TreeModel/Hierarchy.ts */
 /** @module Hierarchy */
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../../Logger';
-import { object } from 'zod';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
@@ -53,7 +52,7 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *
  * Спецификации с пустым массивом сегментов (`path: []`) молча игнорируются —
  * не создают узлов и не влияют на остальную иерархию.
- * 
+ *
  * ### Builder — "тупой" и "**быстрый**"
  *
  * - {@linkcode Hierarchy.build} должен быть быстрый построитель.
@@ -61,26 +60,26 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *   в "правильном" вводе — ненужное замедление.
  * - Оптимизации дающие прирост в одном сценарии, но добавляющие overhead
  *   в других — не нужны.
- * 
+ *
  * ### API
- * 
- * 
+ *
+ *
  * #### `Hierarchy`
- * 
+ *
  * - Построить иерархию из плоского списка {@linkcode Hierarchy.Spec | спецификаций}
  *     ~~~
  *     build<D extends object>(
  *         specs: ReadonlyArray<Readonly<Hierarchy.Spec<D>>>
  *     ): Readonly<ChildrenDict<Readonly<D>>>
  *     ~~~
- * 
+ *
  * - Верхнеуровневые узлы иерархии
  *     ~~~
  *     getRoots<D extends object>(
  *         hierarchy: ChildrenDict<D>
  *     ): ReadonlyArray<Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>>
  *     ~~~
- * 
+ *
  * - Поиск узла по полному пути
  *     ~~~
  *     lookup<D extends object>(
@@ -88,7 +87,7 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *         path: ReadonlyArray<string>
  *     ): Hierarchy.Branch<D> | Hierarchy.Data<D> | null
  *     ~~~
- * 
+ *
  * - Обход всех узлов иерархии в глубину
  *     ~~~
  *     walk<D extends object>(
@@ -96,59 +95,59 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *         visitor: (node: Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>) => void
  *     ): void
  *     ~~~
- * 
- * 
+ *
+ *
  * #### `Hierarchy.Node`
- * 
+ *
  * - Type guard: узел является данными ( & D)
  *     ~~~
  *     isData<D extends object>(
  *         node: Hierarchy.Data<D> | Hierarchy.Branch<D>
  *     ): node is Hierarchy.Data<D>
  *     ~~~
- * 
+ *
  * - Type guard: узел имеет дочерние элементы
  *     ~~~
  *     isBranch<D extends object>(
  *         node: Hierarchy.Data<D> | Hierarchy.Branch<D>
  *     ): node is Hierarchy.Branch<D>
  *     ~~~
- * 
+ *
  * - Имя сегмента этого узла (последняя часть пути)
  *     ~~~
  *     getSegment<D extends object>(
  *         node: Hierarchy.Data<D> | Hierarchy.Branch<D>
  *     ): string
  *     ~~~
- * 
+ *
  * - Чистые данные узла, без структурных полей иерархии
  *     ~~~
  *     getData<D extends object>(
  *         node: Hierarchy.Data<D>
  *     ): D
  *     ~~~
- * 
+ *
  * - Родительский узел. Для корневых узлов возвращает `null`
  *     ~~~
  *     getParent<D extends object>(
  *         node: Hierarchy.Data<D> | Hierarchy.Branch<D>
  *     ): Hierarchy.Branch<D> | null
  *     ~~~
- * 
+ *
  * - Дочерние узлы ветки
  *     ~~~
  *     getBranchChildren<D extends object>(
  *         node: Hierarchy.Branch<D>
  *     ): Array<Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>>
  *     ~~~
- * 
+ *
  * - Восстановление полного пути от корня до узла (подъём по PARENT-цепочке)
  *     ~~~
  *     resolvePath<D extends object>(
  *         node: Hierarchy.Data<D> | Hierarchy.Branch<D>
  *     ): Array<string>
  *     ~~~
- * 
+ *
  * - Обход поддерева в глубину (pre-order), включая сам узел
  *     ~~~
  *     walk<D extends object>(
@@ -156,7 +155,7 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *         visitor: (child: Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>) => void
  *     ): void
  *     ~~~
- * 
+ *
  * @example
  * ~~~ts
  * type MenuData = { calories: number; note?: string };
@@ -176,9 +175,9 @@ type ChildrenDict<D extends object> = Record<string, Hierarchy.Data<D> | Hierarc
  *     { path: ['ramen', 'miso'], data: { calories: 380 } },
  * ]);
  * ~~~
- * 
+ *
  * построит такую структуру:
- * 
+ *
  * ~~~
  * ─ pizza ( calories: 0 )
  *   ├─ margherita ( calories: 250 )
@@ -405,7 +404,7 @@ const Hierarchy = {
          * эти свойства останутся на объекте и будут конфликтовать
          * с новой иерархией. `getData` возвращает только пользовательский payload,
          * безопасный для повторного использования. (Смотри реализацию `Section::makePinnedSpecs`).
-         * 
+         *
          * В большинстве остальных случаев не нужен — структурные поля узла хранятся
          * под символами и не пересекаются с пользовательскими данными,
          * поэтому обращаться к данным можно напрямую: `Hierarchy.Node.isData(node) && node.tag`. */

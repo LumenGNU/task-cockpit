@@ -2,14 +2,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "dup",
+            "label": "twin",
+            "detail": "twin - first",
             "type": "shell",
             "command": "echo first",
             "icon": { "id": "play" },
             "group": "build"
         },
         {
-            "label": "dup",
+            "label": "twin",
+            "detail": "twin - second",
             "type": "shell",
             "command": "echo second",
             "icon": { "id": "stop" },

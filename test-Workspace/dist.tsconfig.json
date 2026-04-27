@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"lib": [
+			"ES2022"
+		],
+		"incremental": false,
+		"sourceMap": true,
+		"rootDir": "~stripped",
+		"strict": true,
+		"removeComments": true
+	},
+    "include": [
+        "~stripped/**/*.ts"
+    ],
+	"exclude": [
+		"**/~*.*"
+	]
+}

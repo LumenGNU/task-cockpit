@@ -1,4 +1,4 @@
-/** @file Cockpit/Tree/Section.ts */
+/** @file Cockpit/TreeModel/Section.ts */
 /** @module Section */
 
 import * as TC from '../../types';
@@ -108,14 +108,14 @@ declare namespace Section {
  * Два типа секций:
  * - **Pinned** — избранные задачи со всех scope, с сжиманием путей для компактности.
  * - **File** — задачи одного файла (`.vscode/tasks.json` или `.code-workspace`).
- * 
+ *
  * @todo поведение, реакция на конфигурации...
- * 
+ *
  * Фильтрация по hidden происходит в модели, а не в представлении, поскольку
  * представление не должно показывать цепочку пустых сегментов. Но понять
  * что цепочка пуста оно сможет понять только достроив ветку до листа
  * и проверив его поле hidden.
- * 
+ *
  * Цепочка обработки:
  * 1. Определения фильтруются (hidden) и трансформируются в {@link Hierarchy.Spec} —
  *    линейное преобразование label → path через {@link Splitter} и опциональный `group.kind`.
@@ -473,16 +473,16 @@ function toPathSegments(
  *
  * Алгоритм в три этапа:
  *
- * 1. Построение pre-trie спецификаций:  
+ * 1. Построение pre-trie спецификаций:
  *      Для каждого label из {@linkcode TC.ScopeRecord.pinned} находится определение задачи
  *      в {@linkcode TC.ScopeRecord.definitionMap} и строится path через {@linkcode toPathSegments}
  *      (с учётом конфигурации scope). Scope спецификации — `folderName` (не `fsPath`),
  *      т.к. в Pinned группировка по папкам.
- * 1. Промежуточный trie:  
+ * 1. Промежуточный trie:
  *      Спецификации передаются в {@linkcode Hierarchy.build} — строится *временное* дерево.
  *      Это дерево не используется напрямую; его единственное назначение —
  *      предоставить структуру для path compression на следующем этапе.
- * 1. Path compression через обход trie:  
+ * 1. Path compression через обход trie:
  *      {@linkcode Hierarchy.walk} обходит все data-узлы временного trie.
  *      Для каждого data-узла {@linkcode buildCompressedPath} поднимается от листа к scope-корню:
  *      - **Линейные участки** (узлы с одним потомком) склеиваются через ` › `.
@@ -543,7 +543,7 @@ function makePinnedSpecs(
 
     // --- Временный trie ---
     // Промежуточное дерево используется исключительно для path compression.
-    // Тот же Hierarchy, что и для финального дерева, но со своим идентификатором 
+    // Тот же Hierarchy, что и для финального дерева, но со своим идентификатором
     // области и назначением.
     const preTrieSpecs: Array<{
         scope: TC.FolderName;
@@ -588,7 +588,7 @@ function makePinnedSpecs(
 
         pinnedSpecs.push({
             path: buildCompressedPath(node, smartPathCompression),
-            data: Hierarchy.Node.getData(node) // "извлечение"! 
+            data: Hierarchy.Node.getData(node) // "извлечение"!
             //> Если передавать напрямую (`data: node`) — BUG: {@linkcode Hierarchy.build}
             //> не затрет уже установленные структурные поля
         });
@@ -700,5 +700,3 @@ function buildCompressedPath(
 }
 
 export default Section;
-
-

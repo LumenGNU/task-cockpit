@@ -5,6 +5,7 @@
   "tasks": [
     {
       "label": "Open as project",
+      "hide": true,
       "icon": {
         "id": "vscode",
         "color": "terminal.ansiBlue"
@@ -27,50 +28,41 @@
       }
     },
     {
-      "label": "Prepare Test Environvent",
+      "label": "Clear",
       "icon": {
-        "id": "symbol-event"
+        "id": "eraser"
       },
-      "type": "shell",
-      "command": "dev-scripts/prepare-test-env.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "SOURCE_BASE": "../Task Cockpit/src"
-        }
-      },
+      "dependsOn":[
+        "Clear|Clean/create '~coverage-reports/'",
+        "Clear|Clean/create '~coverage-summary/'",
+        "Clear|Clean/create '~out/'",
+        "Clear|Clean/create '~stripped/'",
+        "Clear|Clean/create '~test-results/'",
+      ],
+      "dependsOrder": "sequence",
       "presentation": {
-        "panel": "shared",
-        "group": "environment",
-        "focus": true,
-        "clear": true,
+        "clear": false,
         "echo": false,
-        "showReuseMessage": true
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "Clear"
       }
     },
     {
-      "label": "Build test extension",
+      "label": "Clear|Clean/create '~coverage-reports/'",
       "icon": {
-        "id": "debug"
+        "id": "new-folder"
       },
-      "detail": "Compile TypeScript sources into `~out/` for test runner",
-      "dependsOn": [
-        "Prepare Test Environvent",
-        "Build test extension|create '~out/'",
-      ],
-      "dependsOrder": "sequence",
       "type": "shell",
-      "command": "dev-scripts/transpile-typescript.bash",
+      "command": "dev-scripts/create-empty-directory.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "DEST_DIR": "~out",
-          "TSCONFIG": "tsconfig.json"
+          "DEST_DIR": "~coverage-reports"
         }
-      },
-      "problemMatcher": {
-        "applyTo": "allDocuments",
-        "base": "$tsc"
       },
       "presentation": {
         "clear": false,
@@ -78,17 +70,40 @@
         "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "showReuseMessage": true,
+        "showReuseMessage": false,
         "revealProblems": "onProblem",
-        "group": "build"
+        "group": "Clear"
       }
     },
     {
-      "label": "Build test extension|create '~out/'",
+      "label": "Clear|Clean/create '~coverage-summary/'",
       "icon": {
         "id": "new-folder"
       },
-      "detail": "Ensure clean `~out/` directory exists before compilation",
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~coverage-summary"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "Clear"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~out/'",
+      "icon": {
+        "id": "new-folder"
+      },
       "type": "shell",
       "command": "dev-scripts/create-empty-directory.bash",
       "options": {
@@ -105,69 +120,11 @@
         "panel": "shared",
         "showReuseMessage": false,
         "revealProblems": "onProblem",
-        "group": "build"
+        "group": "Clear"
       }
     },
     {
-      "label": "(Pre Test)",
-      "icon": {
-        "id": "package"
-      },
-      "detail": "Full preparation pipeline:\n - clean directories\n - strip debug blocks\n - compile with dist config",
-      "dependsOn": [
-        "Prepare Test Environvent",
-        "_cleanTerminal_pre-test",
-        "(Pre Test)|create '~stripped/'",
-        "(Pre Test)|create '~out/'",
-        "(Pre Test)|strip debug blocks"
-      ],
-      "dependsOrder": "sequence",
-      "type": "shell",
-      "command": "dev-scripts/transpile-typescript.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "TSCONFIG": "dist.tsconfig.json",
-          "DEST_DIR": "~out"
-        }
-      },
-      "problemMatcher": {
-        "applyTo": "allDocuments",
-        "base": "$tsc"
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "pre-test"
-      },
-      "runOptions": {
-        "instanceLimit": 1,
-        "instancePolicy": "warn"
-      }
-    },
-    {
-      "label": "_cleanTerminal_pre-test",
-      "type": "shell",
-      "command": "exit 0",
-      "hide": true,
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "pre-test",
-      }
-    },
-    {
-      "label": "(Pre Test)|create '~stripped/'",
+      "label": "Clear|Clean/create '~stripped/'",
       "icon": {
         "id": "new-folder"
       },
@@ -187,11 +144,11 @@
         "panel": "shared",
         "showReuseMessage": false,
         "revealProblems": "onProblem",
-        "group": "pre-test"
+        "group": "Clear"
       }
     },
     {
-      "label": "(Pre Test)|create '~out/'",
+      "label": "Clear|Clean/create '~test-results/'",
       "icon": {
         "id": "new-folder"
       },
@@ -200,7 +157,7 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "DEST_DIR": "~out"
+          "DEST_DIR": "~test-results"
         }
       },
       "presentation": {
@@ -211,11 +168,11 @@
         "panel": "shared",
         "showReuseMessage": false,
         "revealProblems": "onProblem",
-        "group": "pre-test"
+        "group": "Clear"
       }
     },
     {
-      "label": "(Pre Test)|strip debug blocks",
+      "label": "Utilites|strip debug blocks",
       "icon": {
         "id": "regex"
       },
@@ -243,16 +200,132 @@
       }
     },
     {
+      "label": "Prepare Test Environvent",
+      "icon": {
+        "id": "symbol-event"
+      },
+      "dependsOn": [
+        "Clear"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/prepare-test-env.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "SOURCE_BASE": "../Task Cockpit/src"
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "group": "environment",
+        "focus": true,
+        "clear": true,
+        "echo": false,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "Build test extension",
+      "icon": {
+        "id": "debug"
+      },
+      "detail": "Compile TypeScript sources into `~out/` for test runner",
+      "dependsOn": [
+        "Prepare Test Environvent",
+        "Clear|Clean/create '~out/'"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/transpile-typescript.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out",
+          "TSCONFIG": "tsconfig.json"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "base": "$tsc"
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "build"
+      }
+    },
+    // {
+    //   "label": "(Pre Test)",
+    //   "icon": {
+    //     "id": "package"
+    //   },
+    //   "detail": "Full preparation pipeline:\n - clean directories\n - strip debug blocks\n - compile with dist config",
+    //   "dependsOn": [
+    //     "Prepare Test Environvent",
+    //     "_cleanTerminal_pre-test",
+    //     "Clear|Clean/create '~stripped/'",
+    //     "Clear|Clean/create '~out/'",
+    //     "(Pre Test)|strip debug blocks"
+    //   ],
+    //   "dependsOrder": "sequence",
+    //   "type": "shell",
+    //   "command": "dev-scripts/transpile-typescript.bash",
+    //   "options": {
+    //     "cwd": "${workspaceFolder}",
+    //     "env": {
+    //       "TSCONFIG": "dist.tsconfig.json",
+    //       "DEST_DIR": "~out"
+    //     }
+    //   },
+    //   "problemMatcher": {
+    //     "applyTo": "allDocuments",
+    //     "base": "$tsc"
+    //   },
+    //   "presentation": {
+    //     "clear": false,
+    //     "echo": false,
+    //     "reveal": "always",
+    //     "focus": false,
+    //     "panel": "shared",
+    //     "showReuseMessage": true,
+    //     "revealProblems": "onProblem",
+    //     "group": "pre-test"
+    //   },
+    //   "runOptions": {
+    //     "instanceLimit": 1,
+    //     "instancePolicy": "warn"
+    //   }
+    // },
+    {
+      "label": "_cleanTerminal_pre-test",
+      "type": "shell",
+      "command": "exit 0",
+      "hide": true,
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "pre-test"
+      }
+    },
+    {
       "label": "Run tests",
       "icon": {
         "id": "run-all"
       },
       "detail": "Sequential test run across all workspace configurations",
       "dependsOn": [
-        "_cleanTerminal_test",
-        "Run tests|Multi-root Tests",
-        "Run tests|Single-empty-folder Tests",
-        "Run tests|Single-folder Tests",
+        "_cleanTerminal_test"
       ],
       "dependsOrder": "sequence",
       "type": "shell",
@@ -268,31 +341,7 @@
         "panel": "shared",
         "showReuseMessage": true,
         "revealProblems": "onProblem",
-        "group": "test",
-      }
-    },
-    {
-      "label": "(Pre Test)|create '~test-results'",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~test-results"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "pre-test"
+        "group": "test"
       }
     },
     {
@@ -308,68 +357,6 @@
         "panel": "shared",
         "showReuseMessage": false,
         "revealProblems": "onProblem",
-        "group": "test",
-      }
-    },
-    {
-      "label": "Run tests|Multi-root Tests",
-      "icon": {
-        "id": "beaker"
-      },
-      "detail": "Integration tests for multi-root workspace scenarios",
-      "dependsOn": "(Pre Test)",
-      "type": "shell",
-      "command": [
-        "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
-        "npx vscode-test ",
-        "--coverage ",
-        "--coverage-output '~coverage-reports/Multi-root' ",
-        "--coverage-reporter json ",
-        "--config './vscode-test.mjs' ",
-        "--label 'Multi-root Tests'"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "test",
-      }
-    },
-    {
-      "label": "Run tests|Single-empty-folder Tests",
-      "icon": {
-        "id": "beaker"
-      },
-      "detail": "Integration tests with an empty workspace folder",
-      "dependsOn": "(Pre Test)",
-      "type": "shell",
-      "command": [
-        "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
-        "npx vscode-test ",
-        "--coverage ",
-        "--coverage-output '~coverage-reports/Single-empty-folder' ",
-        "--coverage-reporter json ",
-        "--config './vscode-test.mjs' ",
-        "--label 'Single-empty-folder Tests'"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
         "group": "test"
       }
     },
@@ -379,7 +366,10 @@
         "id": "beaker"
       },
       "detail": "Integration tests for single-folder workspace",
-      "dependsOn": "(Pre Test)",
+      "dependsOn": [
+        // TODO
+      ],
+      "dependsOrder": "sequence",
       "type": "shell",
       "command": [
         "trap 'echo -e \"\\\\n\\\\e[31mProcess terminated\\\\e[0m\" ; exit 1' TERM INT; ",
@@ -405,47 +395,14 @@
       }
     },
     {
-      "label": "Run tests|Core|Tasks",
-      "icon": {
-        "id": "beaker"
-      },
-      "detail": "",
-      "dependsOn": [
-        "(Pre Test)",
-        "(Pre Test)|create '~test-results'"
-      ],
-      "type": "shell",
-      "command": [
-        "dev-scripts/run-test-fixtures.bash ; code=$? ; ",
-        "dev-scripts/mocha-report-in-terminal.bash ; exit $code"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "RESULTS_DIR": "~test-results",
-          "MOCHA_TEST_FILTER": "Core.Tasks"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "test"
-      }
-    },
-    {
       "label": "Generate summary coverage report",
       "icon": {
         "id": "run-all-coverage"
       },
       "detail": "Clean, run all tests with coverage, then merge reports into a single summary",
       "dependsOn": [
-        "Generate summary coverage report|create '~coverage-reports/'",
-        "Generate summary coverage report|create '~coverage-summary/'",
+        "Clear|Clean/create '~coverage-reports/'",
+        "Clear|Clean/create '~coverage-summary/'",
         "Generate summary coverage report|Run all tests",
         "Generate summary coverage report|Merge reports"
       ],
@@ -461,54 +418,7 @@
         "group": "coverage"
       }
     },
-    {
-      "label": "Generate summary coverage report|create '~coverage-reports/'",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~coverage-reports"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "coverage"
-      }
-    },
-    {
-      "label": "Generate summary coverage report|create '~coverage-summary/'",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~coverage-summary"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "coverage"
-      }
-    },
+
     {
       "label": "Generate summary coverage report|Run all tests",
       "icon": {

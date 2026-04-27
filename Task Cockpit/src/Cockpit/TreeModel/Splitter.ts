@@ -1,4 +1,4 @@
-/** @file Cockpit/Tree/Splitter.ts */
+/** @file Cockpit/TreeModel/Splitter.ts */
 /** @module Splitter */
 
 /** Разбиение строки на сегменты по заданному разделителю с учетом контекста.

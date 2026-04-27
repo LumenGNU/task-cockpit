@@ -3,8 +3,11 @@
 
 
 import * as vscode from 'vscode';
-import Tasks from './Tasks';
 import type * as TC from '../types';
+import Definitions from './Scopes/Definitions';
+import TaskIndexCache from './TaskIndexCache';
+
+
 
 
 // #region DEBUG
@@ -13,15 +16,103 @@ import Logger from '../Logger';
 const { log, table } = Logger.get(module.filename);
 // #endregion DEBUG
 
-// @todo
-interface WorkspaceState {
-    tasksRecord: Record<TC.TaskId, vscode.Task>;
+
+/** Ссылка на закреплённую задачу: scope + имя задачи. */
+export interface FavoriteRef {
+    scope: Scope;
+    label: TC.TaskName;
 }
 
-interface RevocablePromise<T> {
-    promise: Promise<T>;
-    revoke: () => void;
+
+/** Настройки уровня окна — общие для всего workspace, не зависят от scope.
+ * НЕ связанные с валидацией
+*/
+export interface WindowSettings { // @todo имя не подходит
+    /** Имена папок workspace, исключённых из отображения. */
+    readonly excludeFolders: Set<string>;
+    readonly pinnedRecord: Array<{
+        label: string;
+        scope: string;
+    }>;
+    pinnedConfig: PinnedConfig;
+    // /** Скрывать ли задачи, определённые на уровне workspace (`.code-workspace`). */
+    // readonly excludeWorkspaceTasks: boolean;
+    // /** Настройки валидации задач. */
+    // readonly validationSettings: ValidationSettings; // @todo не должно быть тут
 }
+
+
+
+
+
+/** Конфигурация раздела закреплённых задач. */
+export interface PinnedConfig {
+    /** Режим видимости раздела. False — безусловно скрыт. */
+    visibility: boolean;
+    /** Поведение сжатия узлов в разделе. */
+    smartPathCompression: boolean;
+}
+
+
+
+/** Устаревшая запись закреплённой задачи, scope которой больше не существует. */
+export interface PinnedStale {
+    scopeName: string;
+    label: string;
+}
+
+/** Входные данные для построения дерева задач.
+ *
+ * Ограничения на данные:
+ *
+ * **Замечания:**:
+ * - Порядок scopeIndex семантически значим — он определяет
+ *   порядок File-секций в выводе, и порядок PinnedFolder-обёрток внутри PinnedMulti.
+ *
+ * **Предусловия**:
+ * - Все `ScopeRecord.folderName` уникальны среди всех ScopeRecord.
+ * - Каждое имя из `ScopeRecord.pinned` присутствует как ключ
+ *   в том же `ScopeRecord.definitionMap`.
+ * */
+export interface TreeInput {
+    /** `Map<`{@linkcode ScopeFile}`, `{@linkcode ScopeRecord}`>` —
+     * Данные всех scope, индексированные по файлу задач. */
+    scopeIndex: Map<TC.ScopeFile, ScopeRecord>;
+    /** {@linkcode PinnedConfig} — Конфигурация раздела закреплённых задач. */
+    pinnedConfig: PinnedConfig;
+    /** {@linkcode PinnedStale}`[]` — Записи, scope которых больше не существует в workspace. */
+    pinnedStales: Array<PinnedStale>;
+}
+
+/** Данные одного scope для построения дерева:
+ * определения задач, конфигурация отображения и набор закреплённых имён. */
+export interface ScopeRecord {
+    /**  */
+    scope: Scope;
+    /** Папка workspace, исключена из отображения */
+    excluded: boolean;
+    /** Определения задач scope, индексированные по имени. */
+    definitions: Definitions;
+    /** {@linkcode TreeConfig} — Конфигурация структуры ветки дерева для этого scope. */
+    treeConfig: ScopedSettings.TreeConfig;
+    /** {@linkcode NodeConfig} — Конфигурация визуального отображения узлов для этого scope. */
+    nodeConfig: ScopedSettings.NodeConfig;
+    /** Имена закреплённых задач этого scope. */
+    pinned: Set<TC.TaskName>;
+}
+
+// @todo
+interface WorkspaceState {
+    scopeRecord: ScopeRecord;
+}
+
+
+
+// interface TaskIndexCache {
+//     rPromise: RevocablePromise<Readonly<TaskIndex.Index>> | null;
+//     idleTimer: NodeJS.Timeout | null;
+// }
+
 
 
 /** Производное представление рабочей области проекта.
@@ -32,21 +123,8 @@ interface RevocablePromise<T> {
  *
  * При изменении входных данных (конфигурация, в т.ч. задачи; состав папок)
  * **уведомляет** подписчиков через {@linkcode onDidChange} и инвалидирует
- * закэшированный результат. Пересчёт происходит лениво — при следующем
- * вызове {@linkcode getState}.
+ * закэшированный индекс задач.
  *
- * Валидный результат хранится между вызовами и **протухает по бездействию**:
- * если к нему не обращаются в течение idle-TTL, он освобождается и при
- * следующем запросе будет вычислен заново. Каждое обращение к действующему
- * состоянию перезапускает отсчёт.
- *
- * Мотивация: {@linkcode WorkspaceState} удерживает отфильтрованный набор
- * `vscode.Task`-объектов, собранных на момент вычисления. Сам VS Code их
- * постоянно не кэширует — фетчит через `vscode.tasks.fetchTasks` по запросу.
- * Расширение может простаивать длительное время между запусками задач;
- * idle-TTL нужен, чтобы в такие периоды выборка не удерживалась в памяти
- * без пользы. 
- * 
  * **Границы ответственности.** Код не обслуживает состояние — только отражает
  * его. Корректность содержимого рабочей области (валидность `tasks.json`,
  * консистентность конфигурации, наличие ожидаемых файлов и папок) остаётся
@@ -57,21 +135,23 @@ interface RevocablePromise<T> {
 export default class Workspace implements vscode.Disposable {
 
     private readonly onDidChangeEvent = new vscode.EventEmitter<void>();
-    readonly onDidChange = this.onDidChangeEvent.event;
+    public readonly onDidChange = this.onDidChangeEvent.event;
 
     // таймер протухания
-    private idleTimer: NodeJS.Timeout | null = null;
     private static readonly IDLE_TTL_MS = 666_000; // 11,1 минут
 
     private static readonly CONFIG_SECTION = 'taskCockpit';
 
-    private subscriptions: vscode.Disposable;
+    private readonly subscriptions: vscode.Disposable;
 
-    private revocablePromise: RevocablePromise<WorkspaceState> | null = null;
+
+    private readonly taskIndexCache: TaskIndexCache;
 
     private disposed = false;
 
     constructor() {
+
+        this.taskIndexCache = new TaskIndexCache(Workspace.IDLE_TTL_MS);
 
         this.subscriptions = vscode.Disposable.from(
 
@@ -82,277 +162,53 @@ export default class Workspace implements vscode.Disposable {
                 }
             }),
 
-            this.onDidChangeEvent
+            this.onDidChangeEvent,
+            this.taskIndexCache
         );
     }
 
-    private notify() {
-        // таймер существует только для текущего revocablePromise, 
-        // при смене состояния таймер гасится вместе с ним
-        if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-            this.idleTimer = null;
-        }
-        if (this.revocablePromise) {
-            this.revocablePromise.revoke();
-            this.revocablePromise = null;
-        }
-        this.onDidChangeEvent.fire();
-    }
 
-    private scheduleIdleEviction(owner: Promise<WorkspaceState>): void {
-
-        // не трогаем чужое состояние
-        if (this.revocablePromise?.promise !== owner) {
-            return; // состояние успели заменить
-        }
-
-        // перезапуск таймера
-        if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-        }
-
-        this.idleTimer = setTimeout(() => {
-            // если таймер дотикал...
-            this.idleTimer = null;
-            if (this.revocablePromise?.promise === owner) {
-                this.revocablePromise = null; // ...состояние "протухло"
-            }
-        }, Workspace.IDLE_TTL_MS);
-    }
-
-
-    public getState(): Promise<WorkspaceState> {
-
-        if (this.disposed) {
-            throw new Error('Workspace disposed');
-        }
-
-        // "текущее состояние воркспейса", а не "кэш результата вычисления".
-        // Rejected-промис — это тоже валидное состояние: "воркспейс сейчас 
-        // нечитаем|не актуален". 
-        // Пока не пришло событие об изменении входных данных — состояние не 
-        // изменилось, rejected оно или fulfilled.
-        // Если состоянием никто не интересуется — {@link rescan | оно протухает}
-        const revocablePromise = this.revocablePromise;
-        if (!revocablePromise) {
-            return this.rescan();
-        }
-        // idleTimer !== null ⟺ promise уже settled (fulfilled) — можно продлить TTL.
-        // Pending: таймер взведётся сам, когда .then в rescan() дотикает до scheduleIdleEviction.
-        // Rejected: таймер не взводится вовсе — состояние живёт до notify().
-        // - Pending (compute ещё работает): TTL не продлеваем. "время бездействия" не идёт, 
-        //   пока идёт активная работа. Первое взведение таймера произойдёт в .then из rescan(),
-        //   когда compute закончится.
-        // - Fulfilled: каждый getState() перезапускает TTL → refresh-on-access.
-        // - Rejected: idleTimer === null, refresh не делаем, состояние живёт до notify() — 
-        //   потому что "Само оно не починится".
-        if (this.idleTimer) {
-            this.scheduleIdleEviction(revocablePromise.promise);
-        }
-        return revocablePromise.promise;
-    }
-
-    /** Находит задачу по идентификатору в валидном состоянии рабочей области.
-     *
-     * В отличие от {@linkcode getState}, метод не пробрасывает наружу промежуточные
-     * rejected-состояния: rejected ≡ состояние инвалидировано через {@linkcode notify}
-     * во время вычисления, и метод автоматически повторяет запрос следующего
-     * состояния. Возврат происходит только после проверки **валидного**
-     * (fulfilled) состояния — либо когда становится понятно, что валидного
-     * состояния больше не будет.
-     *
-     * Ответ `null` означает одно из двух:
-     * - задача с таким `id` отсутствует в проверенном валидном состоянии;
-     * - {@linkcode Workspace} диспоснут и валидного состояния уже не будет.
-     *
-     * С точки зрения вызывающего оба случая эквивалентны: ответа по задаче
-     * не будет.
-     *
-     * Метод не отменяется извне: ожидание валидного
-     * состояния ограничено только сроком жизни самого {@linkcode Workspace}.
-     * Количество итераций равно числу событий {@linkcode notify}, прилетевших
-     * подряд во время работы метода — busy-loop исключён, каждая итерация
-     * подвешивается на новый `compute()`.
-     *
-     * @affects Попадание в валидное состояние также продлевает его TTL через штатный
-     * механизм {@linkcode getState} (refresh-on-access).
-     *
-     * @param id Идентификатор задачи.
-     * @returns Найденная задача либо `null`. */
-    public async getTaskById(id: TC.TaskId): Promise<vscode.Task | null> {
-
-        // null: либо задачи нет в валидном состоянии, либо Workspace диспоснут
-        // (валидного состояния уже не будет)
-        while (!this.disposed) {
-            try {
-                const { tasksRecord } = await this.getState();
-                return tasksRecord[id] ?? null;
-            }
-            catch {
-                // rejected ≡ CancellationError по контракту runCancellable:
-                // revoke() вызывается только из notify(), который перед этим
-                // обнуляет revocablePromise. Следующий getState() пойдёт в
-                // rescan() за свежим состоянием — busy-loop исключён,
-                // каждая итерация ждёт новый compute().
-
-                // @note Ситуация "compute бросил TypeError → все повыснет"
-                // чинится не здесь, а в `compute`!
-                continue;
-            }
-        }
-
-        return null;
-    }
-
-    private rescan(): Promise<WorkspaceState> {
-
-        const { promise }
-            = this.revocablePromise
-            = runCancellable(compute);
-
-        promise.then(
-            () => this.scheduleIdleEviction(promise),
-            () => {
-                // rejected ≡ CancellationError по контракту runCancellable.
-                // Rejected-состояние не протухает по бездействию: единственный
-                // способ выйти из него — notify() от внешнего события.
-                // Само оно не починится, таймер не взводим.
-            }
-        );
-
-        return promise;
-    }
-
-
-    dispose(): void {
+    public dispose(): void {
 
         this.disposed = true;
 
         this.subscriptions.dispose();
 
-        if (this.idleTimer) {
-            clearTimeout(this.idleTimer);
-            this.idleTimer = null;
-        }
-
-        this.revocablePromise?.revoke();
-        this.revocablePromise = null;
     }
+
+    public async getTaskById(id: TC.TaskId): Promise<Readonly<vscode.Task> | null> {
+        return (await this.taskIndexCache.get())[id] ?? null;
+    }
+
+
+    private notify() {
+
+        this.taskIndexCache.update();
+
+        this.onDidChangeEvent.fire();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
-/** Вычисляет состояние рабочей области из наблюдаемого через VS Code API.
- *
- * Чистая функция от текущего снимка конфигурации и папок workspace.
- *
- * На любой невалидный или нечитаемый ввод (битый `tasks.json`, отсутствие
- * ожидаемых полей и т.п.) возвращает штатный результат с редуцированным
- * содержимым — вплоть до пустого {@linkcode WorkspaceState}. Исключения
- * не бросает (см. контракт {@linkcode runCancellable} и границы
- * ответственности в jsdoc {@linkcode Workspace}): чинить источник
- * не её ответственность. 
- * 
- * @note
- * Код, к которому нельзя подступиться через контракт, — это код, которого 
- * в контракте нет. А значит, его не должно быть и в реализации.
- * Весь rejected-контур в rescan/getState/getTaskById — ровно такой. 
- * Чтобы протестировать ветку «не-CancellationError», нужен compute, который 
- * бросает не-CancellationError, — то есть compute, нарушающий свой же контракт. 
- * Валидного сценария, в котором эта ветка срабатывает, не существует по построению.
- * 
- * */
-async function compute(token: vscode.CancellationToken): Promise<WorkspaceState> {
-    // TBD
-    // @todo
-    return {
-        tasksRecord: {}
-    };
-}
 
 
-/** Запускает {@linkcode worker} с возможностью отмены извне.
- *
- * Возвращает {@linkcode RevocablePromise}: промис с результатом {@linkcode worker}
- * и функцию `revoke()` для отмены. Вызов `revoke()` переводит промис
- * в rejected-состояние с {@linkcode vscode.CancellationError}, независимо от того,
- * успел ли `worker` отреагировать на отмену через переданный токен.
- *
- * @param worker Функция, выполняющая работу. Получает
- * {@linkcode vscode.CancellationToken} для кооперативной отмены.
- *
- * Ожидается поведение в стиле {@linkcode vscode.Thenable}-API самого VS Code:
- * - при отмене (`token.onCancellationRequested`) — прервать работу
- *   и отклонить промис через {@linkcode vscode.CancellationError};
- * - при "настоящей" ошибке (сбой в логике, недоступные данные и т.п.) —
- *   **не бросать исключение**, а завершиться штатно с "пустым" значением типа `T`
- *   (например, `undefined`, `null`, пустой массив/объект — в зависимости
- *   от контракта `T`). Бросать следует только `CancellationError`.
- * 
- * Сигнатура `(token) => Promise<T>` подразумевает возврат Promise.
- * Синхронный throw из `worker` (до возврата Promise) — нарушение сигнатуры,
- * утилита от него не страхуется: оборачивать вызов в
- * `Promise.resolve().then(() => worker(token))` означало бы защищаться
- * от бага в самом `worker`-е в рантайме потребителя. Такие вещи лечатся
- * в `worker`-е, их место — ревью и тесты.  Оборачивать такое в try/catch 
- * или в Promise.resolve().then(worker) — значит платить сложностью 
- * потребителя за баг поставщика и делать этот баг молчаливым. Контракт нарушен —
- * чинится нарушитель, а не потребитель.
- *
- * Соблюдение контракта со стороны `worker` делает rejected-состояние
- * возвращённого промиса однозначным индикатором отмены.
- *
- * Нарушение контракта (rejected не-`CancellationError`) — баг `worker`-а.
- * Утилита от этого не защищается: ошибка пролетает насквозь в reject
- * возвращённого промиса. Диагностика такого — ревью и тесты, не рантайм.
- *
- * @returns { RevocablePromise<T> } с результатом `worker` и функцией отмены. */
-function runCancellable<T>(
-    worker: (token: vscode.CancellationToken) => Promise<T>,
-): RevocablePromise<T> {
 
-    const cts = new vscode.CancellationTokenSource();
 
-    const promise = new Promise<T>((resolve, reject) => {
-
-        let cancelSub: vscode.Disposable | null = cts.token.onCancellationRequested(() => {
-            reject(new vscode.CancellationError());
-            if (cancelSub) {
-                cancelSub.dispose();
-                cancelSub = null;
-            }
-        });
-
-        // либо worker завершится, либо сработает cancelSub выше
-        worker(cts.token)
-            .then(resolve, (error) => {
-                if (error instanceof vscode.CancellationError) {
-                    reject(error);
-                    return;
-                }
-                // #region DEBUG
-                const workerName = worker.name || '<anonymous>';
-                const detail = error instanceof Error
-                    ? `${error.name}: ${error.message}\n${error.stack ?? '(no stack)'}`
-                    : `(non-Error) ${String(error)}`;
-                log(LogLevel.Error, `worker '${workerName}' rejected with non-CancellationError (contract violation): ${detail}`, 'runCancellable');
-                // #endregion DEBUG
-                reject(error);
-            })
-            .finally(() => {
-                if (cancelSub) {
-                    cancelSub.dispose();
-                    cancelSub = null;
-                }
-                cts.dispose();
-            });
-    });
-
-    return {
-        promise,
-        revoke: () => cts.cancel(),
-    };
-}
 
 
 
@@ -583,40 +439,7 @@ function runCancellable<T>(
 //     }
 
 
-//     /** Формирует список scope-записей из текущего workspace.
-//      *
-//      * Workspace scope (если есть) всегда первым, затем — Folder scopes.
-//      *
-//      * Для каждой папки URI указывает на файл задач (*\/tasks.json или *.code-workspace).
-//      * Работает как идентификатор scope — файл не обязан физически существовать на диске. */
-//     private static resolveScopes(): Array<TC.Scope> {
 
-//         const scopes: Array<TC.Scope> = [];
-
-//         // если есть — всегда первым
-//         if (vscode.workspace.workspaceFile) {
-//             scopes.push({
-//                 folderName: (vscode.workspace.name ?? '<unnamed>') as TC.FolderName,
-//                 scopeURI: vscode.workspace.workspaceFile as TC.ScopeUri
-//             });
-//         }
-
-//         if (vscode.workspace.workspaceFolders) {
-//             for (const folder of vscode.workspace.workspaceFolders) {
-//                 scopes.push({
-//                     folderName: folder.name as TC.FolderName,
-//                     scopeURI: vscode.Uri.joinPath(folder.uri, ".vscode", "tasks.json") as TC.ScopeUri
-//                 });
-//             }
-//         }
-
-//         // #region DEBUG
-//         log(LogLevel.Debug, 'Workspace scopes:');
-//         table(LogLevel.Debug, scopes.map(e => ({ Name: e.folderName, FsPath: e.scopeURI.fsPath })));
-//         // #endregion DEBUG
-
-//         return scopes;
-//     };
 
 
 
@@ -677,65 +500,3 @@ function runCancellable<T>(
 //         };
 
 //     }
-
-
-//     private static getConfig(scopeUri: TC.ScopeUri): { treeConfig: TC.TreeConfig, nodeConfig: TC.NodeConfig; } {
-
-//         const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION, scopeUri);
-
-//         return {
-//             treeConfig: {
-//                 segmentSeparator: configuration.get<string>('display.segmentSeparator') || false as const,
-//                 showHidden: configuration.get<boolean>('filtering.showHidden', false),
-//                 useGroupKind: configuration.get<boolean>('display.useGroupKind', false)
-//             },
-//             nodeConfig: {
-//                 defaultIconName: configuration.get<string>('display.defaultIconName', 'tools'),
-//                 tintLabel: configuration.get<boolean>('display.tintLabel', false),
-//                 useFolderIcon: configuration.get<boolean>('display.useFolderIcon', false)
-//             }
-//         };
-
-//     }
-
-
-
-//     /** Читает настройки уровня окна (без привязки к scope). */
-//     private static resolveWindowSettings(): Readonly<{
-//         readonly excludeFolders: Set<string>;
-//         readonly pinnedRecord: Array<{
-//             label: string;
-//             scope: string;
-//         }>;
-//         pinnedConfig: {
-//             visibility: boolean;
-//             smartPathCompression: boolean;
-//         };
-//     }> {
-
-
-//         const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
-
-//         const windowSettings = {
-//             excludeFolders: new Set(configuration.get<string[]>('filtering.excludeFolders', [])),
-//             pinnedRecord: configuration.get<{
-//                 label: string;
-//                 scope: string;
-//             }[]>('pinnedTasks.tasks', []),
-//             pinnedConfig: {
-//                 visibility: configuration.get<boolean>('pinnedTasks.visibility', true),
-//                 smartPathCompression: configuration.get<boolean>('pinnedTasks.smartPathCompression', true)
-//             }
-//         };
-
-//         // #region DEBUG
-
-//         log(LogLevel.Debug, 'Window settings:');
-//         table(LogLevel.Debug, windowSettings, { headers: ['Setting', 'Value'] });
-
-//         // #endregion DEBUG
-
-//         return windowSettings;
-//     }
-
-// }

@@ -43,5 +43,6 @@
 	"codeium.enableCodeLens": "hide_x",
 	"cSpell.words": [
 		"снапшоте"
-	]
+	],
+	"js/ts.format.semicolons": "insert"
 }

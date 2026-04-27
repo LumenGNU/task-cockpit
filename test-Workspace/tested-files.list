@@ -1,0 +1,14 @@
+helpers.ts
+Logger.ts
+types.d.ts
+
+Scope.ts
+EligibleTask.ts
+
+Workspace/index.ts
+Workspace/Definitions.ts
+Workspace/TaskIndex.ts
+Workspace/RevocablePromise.ts
+Workspace/TaskIndexCache.ts
+Workspace/WindowSettings.ts
+Workspace/ScopedSettings.ts

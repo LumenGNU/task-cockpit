@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "echo1",
+      "command": "echo 1",
+      "type": "shell"
+    },
+    {
+      "label": "echo2",
+      "command": "echo 2",
+      "type": "shell"
+    },
+    {
+      "label": "Test",
+      "type": "process",
+      "dependsOn": ["echo1", "echo2"]
+    }
+  ]
+}

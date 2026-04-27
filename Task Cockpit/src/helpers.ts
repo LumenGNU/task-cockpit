@@ -5,79 +5,40 @@ import * as vscode from 'vscode';
 import type * as TC from './types';
 
 
-const C0_GS: TC.CG_Separator = '\x1D' as const;
+// const C0_GS: TC.Group_Separator = '\x1D' as const;
 
 
-/** Создаёт строку TaskID из файла-источника и имени задачи.
- *
- * @param file путь к файлу задач
- * @param name метка задачи
- * @returns составной идентификатор задачи */
-function buildId(file: TC.ScopeFile, name: TC.TaskName): TC.TaskId {
-    return `${file}${C0_GS}${name}` as TC.TaskId;
+// /** Создаёт строку TaskID из файла-источника и имени задачи.
+//  *
+//  * @param file путь к файлу задач
+//  * @param name метка задачи
+//  * @returns составной идентификатор задачи */
+// function buildId(file: TC.ScopeFile, name: TC.TaskName): TC.TaskId {
+//     return `${file}${C0_GS}${name}` as TC.TaskId;
+// }
+
+
+// function parseId(taskId: TC.TaskId): { taskFile: TC.ScopeFile, taskName: TC.TaskName; } {
+//     const [taskFile, taskName] = taskId.split(C0_GS) as [TC.ScopeFile, TC.TaskName];
+//     return {
+//         taskFile,
+//         taskName
+//     };
+// }
+
+
+
+
+function resolveUri(file: TC.ScopeFile): TC.SourceUri {
+    return vscode.Uri.file(file) as TC.SourceUri;
 }
 
 
-function parseId(taskId: TC.TaskId): { taskFile: TC.ScopeFile, taskName: TC.TaskName; } {
-    const [taskFile, taskName] = taskId.split(C0_GS) as [TC.ScopeFile, TC.TaskName];
-    return {
-        taskFile,
-        taskName
-    };
-}
-
-/** Возвращает URI "валидного" файла-источника для задачи.
- *
- * На данный момент валидные источники:
- * - .vscode/tasks.json файлы
- * - .code-workspace файл, для multi-root-проектов
- *
- * Для остальных источников будет возвращаться undefined.
- *
- * Возвращается "условно ассоциированный" URI, т.е. не
- * гарантируется, что он существует физически. */
-function resolveScopeUri(task: vscode.Task): TC.ScopeUri | undefined {
-
-    const scope = task.scope;
-
-    // пропуск глобальных задач, и "виртуальных" задач
-    if (!scope || scope === vscode.TaskScope.Global) {
-        return undefined;
-    }
-
-    if (scope === vscode.TaskScope.Workspace) {
-        return vscode.workspace.workspaceFile as TC.ScopeUri | undefined;
-    }
-
-    return vscode.Uri.joinPath(scope.uri, '.vscode', 'tasks.json') as TC.ScopeUri;
-}
-
-
-function resolveId(task: vscode.Task): TC.TaskId | undefined {
-    const file = resolveScopeUri(task)?.fsPath;
-
-    // "виртуальные" (без scope) и глобальные задачи будут пропущены
-    if (!file) {
-        return undefined;
-    }
-
-    return buildId(
-        file,
-        task.name as TC.TaskName
-    );
-}
-
-
-function resolveUri(file: TC.ScopeFile): TC.ScopeUri {
-    return vscode.Uri.file(file) as TC.ScopeUri;
-}
-
-
-function printTaskId(taskId: TC.TaskId): string {
-    const { taskFile, taskName } = parseId(taskId);
-    const relFile = vscode.workspace.asRelativePath(taskFile);
-    return `${relFile} • ${taskName}`;
-}
+// function printTaskId(taskId: TC.TaskId): string {
+//     const { taskFile, taskName } = parseId(taskId);
+//     const relFile = vscode.workspace.asRelativePath(taskFile);
+//     return `${relFile} • ${taskName}`;
+// }
 
 
 /** Возвращает путь к массиву задач в JSONC-структуре файла.
@@ -87,7 +48,7 @@ function printTaskId(taskId: TC.TaskId): string {
  *
  * @param fileUri URI файла задач
  * @returns JSON-путь к массиву задач */
-function resolveJsonPath(fileUri: TC.ScopeUri): string[] {
+function resolveJsonPath(fileUri: TC.SourceUri): string[] {
     if (fileUri.fsPath.endsWith('.json')) {
         return ['tasks'];
     }
@@ -138,21 +99,64 @@ function resolveMetadata(uri: vscode.Uri, ...authorities: Authority[]) {
 
 
 
-function isName(label: any): label is TC.TaskName {
-    return typeof label === 'string' && label.length > 0;
-}
+
+
+
+
+
+
+
+// /** Сериализует {@link ScopeInfo} в ключ для {@link PinnedStorage}. */
+// function scopeIdOf(scopeInfo: TC.ScopeInfo): TC.ScopeIdentity {
+
+//     if (scopeInfo === vscode.TaskScope.Workspace) {
+//         return `${vscode.TaskScope.Workspace}`;
+//     }
+
+//     return `${scopeInfo.name}${UNIT_SEPARATOR}${scopeInfo.index}`;
+// }
+
+
+// /** Обратная операция к {@link scopeIdOf}.
+//  *
+//  * Тип `ScopeIdentity` гарантирует корректность формата на входе —
+//  * парсинг безошибочен по построению. */
+// function parseScopeId(scopeId: TC.ScopeIdentity): TC.ScopeInfo {
+
+//     if (scopeId === `${vscode.TaskScope.Workspace}`) {
+//         return vscode.TaskScope.Workspace;
+//     }
+
+//     const [name, indexStr] = scopeId.split(UNIT_SEPARATOR);
+//     return {
+//         name: name as TC.FolderName,
+//         // FolderIndex — это number (индекс папки в WorkspaceFolders).
+//         // Не забываем привести строку обратно к числу:
+//         index: Number(indexStr) as TC.FolderIndex
+//     };
+// }
+
+
+
+
+
+
+
+
+
 
 
 export default {
-    buildId,
+
     encodeQueryComponent,
-    isName,
+
     isValidPid,
-    parseId,
-    resolveId,
+
     resolveJsonPath,
     resolveMetadata,
-    resolveScopeUri,
+
     resolveUri,
-    printTaskId,
+
 };
+
+
