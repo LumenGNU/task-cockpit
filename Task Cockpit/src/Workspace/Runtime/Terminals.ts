@@ -2,13 +2,12 @@
 /** @module Terminals */
 
 import * as vscode from 'vscode';
-import type * as TC from '../types';
-import helpers from '../helpers';
+import type * as TC from '../../types';
 
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
-import Logger from '../Logger';
+import Logger from '../../Logger';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
@@ -252,7 +251,7 @@ export default class Terminals implements vscode.Disposable {
         };
     }
 
-    // Считаю этот метод завершенным. не стоит его изменять без явной выгоды
+    //
     public async getTerminalPid(
         terminal: vscode.Terminal,
         cancellationToken?: vscode.CancellationToken
@@ -274,7 +273,7 @@ export default class Terminals implements vscode.Disposable {
 
             const racers: PromiseLike<TC.ProcessId | undefined>[] = [
                 // Успешный исход
-                terminal.processId.then(pid => helpers.isValidPid(pid) ? pid : undefined)
+                terminal.processId.then(pid => pid ? pid as TC.ProcessId : undefined)
             ];
 
             racers.push(

@@ -15,8 +15,6 @@ declare const ___TaskName: unique symbol;
 
 declare const ___TaskId: unique symbol;
 
-
-declare const ___WorkspaceKey: unique symbol;
 declare const ___FolderKey: unique symbol;
 
 
@@ -38,7 +36,7 @@ declare const ___FolderUri: unique symbol;
 export type TaskName = string & { readonly [___TaskName]: never; };
 
 
-export type Unit_Separator = '\x1F;\x1F';
+// export type Unit_Separator = '\x1F;\x1F';
 
 /** @todo */
 type QueryComponent = string & { readonly [___QueryComponent]: never; };
@@ -111,7 +109,7 @@ export type FolderUri = Omit<vscode.Uri, 'toString'> & {
 };
 
 
-declare type _EligibleTask = import('./Workspace/TaskIndexCache/EligibleTask').default;
+declare type _EligibleTask = import('./Workspace/EligibleTask').default;
 declare type _Definition = import('./Workspace/Scopes/Definition').default;
 
 /** Строковый идентификатор задачи, уникальный в пределах
@@ -243,3 +241,5 @@ export interface TaskSource {
 
 
 export type GroupSeparator = '\u001D#\u001D';
+export type ConfigSectionName = 'taskCockpit';
+export type DisplaySeparator = ' • ';

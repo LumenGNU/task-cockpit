@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type * as TC from '../../types';
 import Scope from './Scope';
-import type IScopedSettings from './ScopedSettings';
+import type IScopedSettings from './Settings';
 import type IDefinition from './Definition';
 
 

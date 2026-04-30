@@ -2,14 +2,30 @@
 /** @module Monitor */
 
 import * as vscode from 'vscode';
-import type * as TC from '../types';
+import type * as TC from '../../types';
 
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
-import Logger from '../Logger';
+import Logger from '../../Logger';
 const { log } = Logger.get(module.filename);
 // #endregion DEBUG
+
+
+interface MonitorSettings {
+    readonly polling: {
+        /** Минимальный интервал опроса (в мс). */
+        readonly min: number;
+        /** Максимальный интервал опроса (в мс).
+         * Ожидается что будет как минимум cap > min * 1.7
+         * Не проверяется, проверка на стороне поставщика настроек.
+         * see: src/Workspace/Settings.ts */
+        readonly cap: number;
+        /** Коэффициент замедления опроса при росте очереди.
+         * Чем выше, тем быстрее мы достигаем `cap`. */
+        readonly acceleration: number;
+    };
+}
 
 
 /** Мониторинг процессов (адаптивный интервал опроса).
@@ -17,8 +33,8 @@ const { log } = Logger.get(module.filename);
  * Класс для отслеживания состояния запущенных процессов.
  * Автоматически определяет завершившиеся процессы и уведомляет подписчиков.
  *
- * Интервал проверки растёт по квадратичной формуле: POLL_MIN + 0.2×n² мс (cap {@linkcode pollCap} мс),
- * в зависимости от количества отслеживаемых процессов что обеспечивает
+ * Интервал проверки растёт по квадратичной формуле: `min + acceleration×n²` мс,
+ * в зависимости от количества отслеживаемых процессов, но не более `cap` мс — что обеспечивает
  * баланс между отзывчивостью UI и нагрузкой на систему.
  *
  * @remarks
@@ -27,22 +43,8 @@ const { log } = Logger.get(module.filename);
  * */
 export default class Monitor implements vscode.Disposable {
 
-    // #region Static
-
-    // Константы
-    // 322 - очень хорошее четное число из интервала 321..323
-    /** Минимальный интервал опроса */
-    private static readonly POLL_MIN = 322;
-    /** Коэффициент замедления опроса при росте очереди.
-     * Чем выше, тем быстрее мы достигаем {@linkcode pollCap}. */
-    private static readonly POLL_ACCELERATION = 0.2;
-
-    // #endregion Static
 
     private disposed: boolean;
-
-
-    // #region Instance fields
 
     /** Событие: процесс задачи завершился.
      * Вызывается при обнаружении мёртвых процессов через `process.kill(pid, 0)`.  */
@@ -51,32 +53,36 @@ export default class Monitor implements vscode.Disposable {
 
     private readonly processes: Set<TC.ProcessId>;
 
-    /** Максимальный интервал опроса (в мс). */
-    private readonly pollCap: number;
-
     /** Таймер периодической проверки процессов.
      *
      * Undefined когда мониторинг остановлен (нет активных процессов). */
     private checkInterval: NodeJS.Timeout | undefined;
 
-    // #endregion
+    #pollingCnf: MonitorSettings['polling'];
 
 
     // #region Lifecycle
 
     /** Создать экземпляр монитора.
-     * @param pollingCap - Максимальный интервал опроса (в мс). */
-    constructor(pollingCap: number = 550) {
+     *
+     *
+     * @param cfg.polling.min Минимальный интервал опроса (мс).
+     * @param cfg.polling.cap Максимальный интервал опроса (мс). Инвариант: `cap > min × 1.7`.
+     * @param cfg.polling.acceleration Коэффициент замедления при росте очереди.
+     *   Чем выше — тем быстрее достигается `cap`. */
+    constructor(
+        cfg: MonitorSettings = { polling: { min: 322, acceleration: 0.2, cap: 550 } }
+    ) {
 
         this.disposed = false;
+
+        this.#pollingCnf = cfg.polling;
 
         this.completedEmitter = new vscode.EventEmitter<ReadonlySet<TC.ProcessId>>();
         this.onProcessesCompleted = this.completedEmitter.event;
 
         this.processes = new Set();
 
-        // минимальный кап будет ~550 (поэтому и 1.7)
-        this.pollCap = Math.max(Monitor.POLL_MIN * 1.7, pollingCap);
     }
 
     /** Освободить ресурсы монитора.
@@ -101,10 +107,23 @@ export default class Monitor implements vscode.Disposable {
         this.processes.clear();
 
         // #region DEBUG
-        log(LogLevel.Debug,
-            'disposed');
+        log(LogLevel.Debug, 'disposed', 'Monitor');
         // #endregion DEBUG
 
+    }
+
+    /** Обновить конфигурацию опроса.
+     *
+     * Значения не валидируются — ответственность на вызывающей стороне.
+     *
+     * @param pollingCnf.min Минимальный интервал опроса (мс).
+     * @param pollingCnf.cap Максимальный интервал опроса (мс). Инвариант: `cap > min × 1.7`.
+     * @param pollingCnf.acceleration Коэффициент замедления при росте очереди.
+     *   Чем выше — тем быстрее достигается `cap`.
+     *
+     * see: {@linkcode MonitorSettings} */
+    public set polling(pollingCnf: Readonly<MonitorSettings['polling']>) {
+        this.#pollingCnf = pollingCnf;
     }
 
 
@@ -150,9 +169,7 @@ export default class Monitor implements vscode.Disposable {
         if (this.processes.has(processId)) {
 
             // #region DEBUG
-            log(LogLevel.Warning,
-                `Process is already tracked, skip it`,
-                processId.toString());
+            log(LogLevel.Warning, `Process is already tracked, skip it`, processId.toString());
             // #endregion DEBUG
 
             return;
@@ -170,14 +187,13 @@ export default class Monitor implements vscode.Disposable {
         // отдышаться
 
         // Не пересчитываем интервал если таймаут уже работает.
-        // Буст ui пры массовом добавлении процессов: если таймер уже тикает, и прилетает
+        // Буст ui при массовом добавлении процессов: если таймер уже тикает, и прилетает
         // ещё 100 процессов, то не нужно сразу же пересчитывать интервал, — ближайшая проверка
         // пройдёт быстро, а scheduleCheck пересчитает интервал уже с новым count.
         if (!this.checkInterval) {
 
             // #region DEBUG
-            log(LogLevel.Trace,
-                'Starting monitoring');
+            log(LogLevel.Trace, 'Starting monitoring');
             // #endregion DEBUG
 
             this.scheduleCheck();
@@ -193,7 +209,7 @@ export default class Monitor implements vscode.Disposable {
      *
      * Использует `process.kill(pid, 0)` для проверки доступности процесса.
      *
-     * @param processId - PID процесса
+     * @param processId PID процесса
      * @returns true если процесс жив и доступен для проверки
      *
      * @remarks
@@ -205,7 +221,7 @@ export default class Monitor implements vscode.Disposable {
      * EPERM теоретически означает "процесс жив, но нет прав на проверку".
      * В контексте *процесса задачи* VS Code этого не должно происходить —
      * мы проверяем только дочерние процессы терминалов, запущенных самим VS Code.
-     * Появление EPERM сигнализирует о нештатной ситуации (чужой PID в карте,
+     * Появление EPERM сигнализирует о нештатной ситуации (чужой PID,
      * изменение прав, race condition). Продолжать мониторинг невалидируемого
      * процесса бессмысленно. */
     private isAlive(processId: TC.ProcessId): boolean {
@@ -241,7 +257,7 @@ export default class Monitor implements vscode.Disposable {
     private scheduleCheck() {
 
         if (this.checkInterval) {
-            clearTimeout(this.checkInterval);
+            clearTimeout(this.checkInterval); // @todo: при вызове из callback — таймер уже сработал? защита от параллельного вызова?
             this.checkInterval = undefined;
         }
 
@@ -274,20 +290,20 @@ export default class Monitor implements vscode.Disposable {
     /** Вычислить интервал опроса на основе количества
      * отслеживаемых процессов.
      *
-     * Для значений по умолчанию:
-     * Формула: {@linkcode POLL_MIN} + {@linkcode POLL_ACCELERATION} × count² мс, но не более {@linkcode pollCap} мс.
+     * Формула: `polling.min + polling.acceleration × count²` мс, но не более `polling.cap` мс.
      *
      * @returns Интервал в миллисекундах, или `undefined` если нет процессов
-     *   (если `count < 1` что означает остановку мониторинга
-     *   до появления новых процессов) */
+     *   (если `count < 1`) — что остановит мониторинг до появления новых процессов */
     private pollingInterval(count: number): number | undefined {
 
         if (count < 1) {
             return undefined;
         }
 
-        // Медленный рост вначале, резкое ускорение, cap на pollCap
-        return Math.min(Monitor.POLL_MIN + Monitor.POLL_ACCELERATION * count * count, this.pollCap);
+        const { min, acceleration, cap } = this.#pollingCnf;
+
+        // Медленный рост вначале, резкое ускорение, cap
+        return Math.min(min + acceleration * count * count, cap);
     }
 
 

@@ -56,16 +56,7 @@ function resolveJsonPath(fileUri: TC.SourceUri): string[] {
 }
 
 
-/** Проверяет, является ли переданный PID валидным числом > 0.
- *
- * @remarks
- * VS Code не стесняется передавать как PID задачи — `undefined`
- *
- * @param pid - PID для проверки
- * @returns true если PID является валидным числом > 0, false иначе */
-function isValidPid(pid: number | undefined): pid is TC.ProcessId {
-    return (pid !== undefined && Number.isInteger(pid) && pid > 0);
-}
+
 
 
 function encodeQueryComponent(queryMetadata: TC.VisualMetadata): TC.QueryComponent {
@@ -150,7 +141,7 @@ export default {
 
     encodeQueryComponent,
 
-    isValidPid,
+    // isValidPid,
 
     resolveJsonPath,
     resolveMetadata,
@@ -158,5 +149,3 @@ export default {
     resolveUri,
 
 };
-
-

@@ -1,5 +1,13 @@
-import type * as TC from './types';
+import type {
+    WorkspaceKey,
+    GroupSeparator,
+    ConfigSectionName,
+    DisplaySeparator
+} from "./types";
 
-export const WORKSPACE_KEY: TC.WorkspaceKey = '\x00\x00$Workspace' as const;
 
-export const GROUP_SEPARATOR: TC.GroupSeparator = '\u001D#\u001D' as const;
+
+
+export const GROUP_SEPARATOR = '\u001D#\u001D' satisfies GroupSeparator;
+export const DISPLAY_SEPARATOR = ' • ' satisfies DisplaySeparator;
+export const WORKSPACE_KEY = '\x00\x00$Workspace' satisfies WorkspaceKey;

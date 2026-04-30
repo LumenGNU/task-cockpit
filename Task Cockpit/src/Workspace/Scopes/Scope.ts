@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import type * as TC from '../../types';
 import Definitions from './Definitions';
-import ScopedSettings from './ScopedSettings';
-import { WORKSPACE_KEY } from '../../constants';
+import ICnf from './Settings';
+import Constants from '../../constants';
 
 
 /** Scope — где определена задача. Это единица владения задачами.
@@ -23,7 +23,7 @@ class Scope {
     public get key(): TC.ScopeKey {
 
         if (this.#scope === vscode.TaskScope.Workspace) {
-            return WORKSPACE_KEY;
+            return Constants.Scopes.WORKSPACE_KEY;
         }
 
         return this.#scope.uri.toString() as TC.FolderKey;
@@ -99,19 +99,19 @@ class Scope {
     }
 
 
-    public get configuration(): Readonly<ScopedSettings> {
+    public get configuration(): Readonly<ICnf> {
 
         if (this.#scope === vscode.TaskScope.Workspace) {
         }
 
         const configuration = vscode.workspace.getConfiguration(
-            ScopedSettings.sectionName,
+            Constants.Configuration.SECTION_NAME,
             (this.#scope === vscode.TaskScope.Workspace)
                 ? undefined
                 : this.#scope.uri
         );
 
-        return ScopedSettings.get(configuration);
+        return ICnf.get(configuration);
     }
 
 }

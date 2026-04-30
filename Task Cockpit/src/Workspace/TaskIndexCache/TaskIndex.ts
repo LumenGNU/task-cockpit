@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import EligibleTask from './EligibleTask';
+import EligibleTask from '../EligibleTask';
 
 
 // #region DEBUG

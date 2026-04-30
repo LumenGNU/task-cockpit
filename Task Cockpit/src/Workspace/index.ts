@@ -4,7 +4,6 @@
 
 import * as vscode from 'vscode';
 import type * as TC from '../types';
-import Definitions from './Scopes/Definitions';
 import TaskIndexCache from './TaskIndexCache';
 
 

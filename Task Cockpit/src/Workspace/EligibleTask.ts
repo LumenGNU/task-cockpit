@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
-import type * as TC from '../../types';
-import {
-    WORKSPACE_KEY,
-    GROUP_SEPARATOR
-} from '../../constants';
+import type * as TC from '../types';
+import Constants from '../constants';
 
 
 /** Задача VS Code, прошедшая фильтр: имеет не глобальный и непустой scope,
@@ -41,8 +38,13 @@ const EligibleTask = {
         from(task: Readonly<EligibleTask>): TC.TaskId {
 
             return (task.scope === vscode.TaskScope.Workspace)
-                ? `${WORKSPACE_KEY}${GROUP_SEPARATOR}${task.name}`
-                : `${task.scope.uri.toString() as TC.FolderKey}${GROUP_SEPARATOR}${task.name}`;
+                ? `${Constants.Scopes.WORKSPACE_KEY}${Constants.Separator.GROUP_SEPARATOR}${task.name}`
+                : `${task.scope.uri.toString() as TC.FolderKey}${Constants.Separator.GROUP_SEPARATOR}${task.name}`;
+        },
+
+        print(taskId: TC.TaskId): string {
+            const [scope, name] = taskId.split(Constants.Separator.GROUP_SEPARATOR) as [string, string];
+            return `${vscode.workspace.asRelativePath(scope.replaceAll('\0', ''))}${Constants.Separator.DISPLAY_SEPARATOR}${name}`;
         },
 
     } as const,
