@@ -4,7 +4,35 @@
 // custom fixtures reporter for vscode test cli
 
 const Mocha = require('mocha');
+const { default: path } = require('node:path');
+const { default: fs } = require('node:fs');
 const Chalk = new (require('chalk').Instance)({ level: 3 });
+
+const REPORT_DIR = process.env.REPORT_DIR || false;
+
+if (REPORT_DIR) {
+
+    // скриптам позволено изменять только файлы|директории с префиксом "~" в имени
+    // и не позволено создавать
+    if (!path.basename(REPORT_DIR).startsWith('~')) {
+        console.error(Chalk.red('[Error]: ??????????????????????????'));
+        process.exit(1);
+    }
+
+    // проверяется|очищается
+    try {
+        if (!fs.statSync(REPORT_DIR).isDirectory) {
+            console.error(Chalk.red('[Error]: ??????????????????????????'));
+            process.exit(1);
+        }
+        fs.rmSync(REPORT_DIR, { recursive: true, force: true });
+        // @todo сообщить в консоль что очистили
+    }
+    catch (error) {
+        console.error(Chalk.red(`[Error]: Failed to initialize report directory "${REPORT_DIR}": ${/** @type {Error} */(error).message}`));
+        process.exit(1);
+    }
+}
 
 
 // ---------------------------------------------------------------------------
@@ -21,6 +49,7 @@ const {
     EVENT_SUITE_END,
     EVENT_RUN_END,
 } = Mocha.Runner.constants;
+
 
 const MARKER = {
     pass: '✓',
@@ -47,10 +76,17 @@ const HR = '~';
 // --
 // Узлы (POJO):
 // Глубина — не в узле, Walker передаёт depth в visit*. Узлы — чистые данные.
-/** @typedef {{ type: 'file',  children: (SuiteNode|TestNode)[], stats: Mocha.Stats }} FileNode */
+/** @typedef {{ type: 'body',  children: (SuiteNode|TestNode)[], stats: Mocha.Stats }} BodyNode */
 /** @typedef {{ type: 'suite', title: string, pending: boolean, children: (SuiteNode|TestNode)[] }} SuiteNode */
 /** @typedef {{ type: 'test',  title: string, isGhost?: boolean; state: 'passed'|'failed'|'pending'|'blocked', traces: TraceNode[] }} TestNode */
-/** @typedef {{ type: 'trace', error: unknown, children: TraceNode[] }} TraceNode */
+/** 
+ * @typedef {{ 
+ *     type: 'trace'|'cause',
+ *     file: string | undefined,
+ *     error: unknown, 
+ *     children: TraceNode[] 
+ * }} TraceNode 
+ * */
 
 
 // ---------------------------------------------------------------------------
@@ -58,8 +94,8 @@ const HR = '~';
 // ---------------------------------------------------------------------------
 /**
  * @typedef {{
- *   begin(node: FileNode, output: IOutput): void,
- *   end(node: FileNode, output: IOutput): void,
+ *   begin(node: BodyNode, output: IOutput): void,
+ *   end(node: BodyNode, output: IOutput): void,
  *   visitSuite(node: SuiteNode, depth: number, output: IOutput): void,
  *   visitTest(node: TestNode, depth: number, output: IOutput): void,
  *   visitTrace(node: TraceNode, depth: number, output: IOutput): void,
@@ -105,7 +141,7 @@ class BufferedOutput {
 class AnsiRenderer {
 
     /**
-     * @param {FileNode} node
+     * @param {BodyNode} node
      * @param {IOutput} output
      */
     begin(node, output) {
@@ -121,7 +157,7 @@ class AnsiRenderer {
     }
 
     /**
-     * @param {FileNode} node
+     * @param {BodyNode} node
      * @param {IOutput} output
      */
     end(node, output) {
@@ -132,6 +168,7 @@ class AnsiRenderer {
         const fPending = pending > 0 ? Chalk.bold.cyan(String(pending)) : '0';
         // blocked показываем даже ноль (декоративно), если были проблемные хуки
         // @todo тут нужна более продуманная логика
+        // @fixme сейчас это баг и бред
         const fBlocked = hasHookErrors ? `blocked: ${Chalk.bold.red(`${String(blocked || '*')} with hook error(s)`)}` : '';
 
         output.write();
@@ -196,8 +233,10 @@ class AnsiRenderer {
      */
     visitTrace(node, depth, output) {
         const indent = '    '.repeat(depth);
-        for (const line of this.#errorToLines(node.error)) output.write(Chalk.dim(`${indent}${Chalk.red('· ')}${line}`));
-        output.write(`${indent}${Chalk.dim.red('· '.repeat(42))}`);
+        for (const line of this.#errorToLines(node.error)) {
+            output.write(Chalk.dim.red(`${indent}${line}`));
+        }
+        output.write(` `); // пустая строка после стек-трейса
     }
 
     /**
@@ -223,7 +262,7 @@ class AnsiRenderer {
 class Walker {
 
     /**
-     * @param {FileNode} file
+     * @param {BodyNode} file
      * @param {IRenderer} renderer
      * @param {IOutput} output
      */
@@ -278,22 +317,22 @@ class Walker {
  */
 class ReporterController {
 
-    /** @type {FileNode | null} */
-    #file = null;
+    /** @type {BodyNode | null} */
+    #body = null;
 
-    /** @type {(FileNode | SuiteNode | TestNode)[]} */
+    /** @type {(BodyNode | SuiteNode | TestNode)[]} */
     #stack = [];
 
     /** Открывает run. Повторный вызов без закрытия — abort. */
     onRunBegin() {
 
-        console.log(`onRunBegin`);
+        // console.log(`onRunBegin`);
 
-        if (this.#file !== null) abort('onRunBegin — run already open');
+        if (this.#body !== null) abort('onRunBegin — run already open');
         // при создании — cast; к моменту возврата из onRunEnd поле всегда заполнено, 
         // контракт публичного FileNode не нарушен.
-        this.#file = { type: 'file', children: [], stats: /** @type {any} */ (null) };
-        this.#stack = [this.#file];
+        this.#body = { type: 'body', children: [], stats: /** @type {any} */ (null) };
+        this.#stack = [this.#body];
     }
 
     /**
@@ -302,10 +341,10 @@ class ReporterController {
     */
     onSuiteBegin(suite) {
 
-        console.log(`onSuiteBegin: suite: ${suite.title}, pending: ${suite.pending}`);
+        // console.log(`onSuiteBegin: suite: ${suite.title}, pending: ${suite.pending}`);
 
         if (suite.root) return;
-        const current = this.#peek('onSuiteBegin', ['file', 'suite']);
+        const current = this.#peek('onSuiteBegin', ['body', 'suite']);
         /** @type {SuiteNode} */
         const node = { type: 'suite', title: suite.title, pending: suite.pending, children: [] };
         current.children.push(node);
@@ -318,9 +357,9 @@ class ReporterController {
      * */
     onTestBegin(testOrHook) {
 
-        console.log(`onTestBegin: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
+        // console.log(`onTestBegin: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
 
-        const current = this.#peek('onTestBegin', ['file', 'suite']);
+        const current = this.#peek('onTestBegin', ['body', 'suite']);
         /** @type {TestNode} */
         const node = { type: 'test', title: testOrHook.title, state: /** @type {any} */ (null), traces: [] };
         current.children.push(node);
@@ -335,13 +374,13 @@ class ReporterController {
      * */
     onTestPending(testOrHook) {
 
-        console.log(`onTestPending: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
+        // console.log(`onTestPending: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
 
         const top = this.#stack[this.#stack.length - 1];
         if (top?.type === 'test') return; // this.skip() — блок уже открыт EVENT_TEST_BEGIN
 
         // it.skip / xit — EVENT_TEST_BEGIN не было
-        const current = this.#peek('onTestPending', ['file', 'suite']);
+        const current = this.#peek('onTestPending', ['body', 'suite']);
         /** @type {TestNode} */
         const node = { type: 'test', title: testOrHook.title, state: 'pending', traces: [] };
         current.children.push(node);
@@ -358,13 +397,13 @@ class ReporterController {
      */
     onTestFail(testOrHook, err) {
 
-        console.log(`onTestFail: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
+        // console.log(`onTestFail: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
 
         const top = this.#stack[this.#stack.length - 1];
 
         if (testOrHook.type === 'test') {
             if (top?.type !== 'test') abort(`onTestFail — expected test on stack, got ${top?.type}`);
-            top.traces.push(this.#buildTrace(err));
+            top.traces.push(this.#buildTrace(err, testOrHook.file));
             return;
         }
 
@@ -373,12 +412,12 @@ class ReporterController {
             // Ghost хука добавляем следом в тот же родительский узел.
             top.state = 'blocked';
             this.#stack.pop();
-            this.#createGhost(testOrHook, err, this.#peek('onTestFail(beforeEach)', ['file', 'suite']));
+            this.#createGhost(testOrHook, err, this.#peek('onTestFail(beforeEach)', ['body', 'suite']));
             return;
         }
 
         // before/after suite — TestNode на стеке не было.
-        this.#createGhost(testOrHook, err, this.#peek('onTestFail(hook)', ['file', 'suite']));
+        this.#createGhost(testOrHook, err, this.#peek('onTestFail(hook)', ['body', 'suite']));
 
     }
 
@@ -389,7 +428,7 @@ class ReporterController {
      * */
     onTestEnd(testOrHook) {
 
-        console.log(`onTestEnd: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
+        // console.log(`onTestEnd: runner: ${testOrHook.title}, type: ${testOrHook.type}, state: ${testOrHook.state ?? '<no-state>'}`);
 
         const top = this.#stack[this.#stack.length - 1];
 
@@ -424,7 +463,7 @@ class ReporterController {
     /** @param {Mocha.Suite} suite */
     onSuiteEnd(suite) {
 
-        console.log(`onSuiteEnd: suite: ${suite.title}`);
+        // console.log(`onSuiteEnd: suite: ${suite.title}`);
 
         if (suite.root) return;
         const top = this.#stack[this.#stack.length - 1];
@@ -435,23 +474,23 @@ class ReporterController {
     /**
      * Финализирует `FileNode`, сбрасывает состояние.
      * @param {Mocha.Stats} stats
-     * @returns {FileNode} готовый к рендерингу граф
+     * @returns {BodyNode} готовый к рендерингу граф
      */
     onRunEnd(stats) {
 
-        console.log(`onRunEnd`);
+        // console.log(`onRunEnd`);
 
-        if (this.#file === null) abort('onRunEnd — file is null');
+        if (this.#body === null) abort('onRunEnd — file is null');
 
-        if (this.#stack.length !== 1 || this.#stack[0] !== this.#file) {
+        if (this.#stack.length !== 1 || this.#stack[0] !== this.#body) {
             abort(`onRunEnd — stack not clean (length=${this.#stack.length}, top=${this.#stack[this.#stack.length - 1]?.type})`);
         }
 
-        this.#file.stats = stats;
-        const file = this.#file;
-        this.#file = null;
+        this.#body.stats = stats;
+        const body = this.#body;
+        this.#body = null;
         this.#stack = [];
-        return file;
+        return body;
     }
 
     /**
@@ -460,34 +499,36 @@ class ReporterController {
      * или до его запуска (beforeEach).
      * @param {Mocha.Test | Mocha.Hook} hook
      * @param {unknown} err
-     * @param {FileNode | SuiteNode} parent
+     * @param {BodyNode | SuiteNode} parent
      */
     #createGhost(hook, err, parent) {
         /** @type {TestNode} */
-        const ghost = { type: 'test', title: hook.title, isGhost: true, state: 'failed', traces: [this.#buildTrace(err)] };
+        const ghost = { type: 'test', title: hook.title, isGhost: true, state: 'failed', traces: [this.#buildTrace(err, hook.file)] };
         parent.children.push(ghost);
     }
 
     /**
      * @param {string} ctx
-     * @param {ReadonlyArray<'file'|'suite'|'test'>} allowed
-     * @returns {FileNode | SuiteNode}
+     * @param {ReadonlyArray<'body'|'suite'|'test'>} allowed
+     * @returns {BodyNode | SuiteNode}
      */
     #peek(ctx, allowed) {
         const top = this.#stack[this.#stack.length - 1];
         if (top == null) abort(`${ctx} — stack is empty`);
         if (!allowed.includes(/** @type {any} */(top.type))) abort(`${ctx} — unexpected top: ${top.type}`);
-        return /** @type {FileNode | SuiteNode} */ (top);
+        return /** @type {BodyNode | SuiteNode} */ (top);
     }
 
     /**
      * @param {unknown} error
+     * @param {string | undefined} file
+     * @param {'trace'|'cause'} type
      * @returns {TraceNode}
      */
-    #buildTrace(error) {
+    #buildTrace(error, file, type = 'trace') {
         /** @type {TraceNode} */
-        const node = { type: 'trace', error, children: [] };
-        if (error instanceof Error && error.cause != null) node.children.push(this.#buildTrace(error.cause));
+        const node = { type, file, error, children: [] };
+        if (error instanceof Error && error.cause != null) node.children.push(this.#buildTrace(error.cause, file, 'cause'));
         return node;
     }
 
@@ -506,10 +547,13 @@ class MochaAdapter {
     /**
      * @param {Mocha.Runner} runner
      * @param {ReporterController} controller
-     * @param {IRenderer} renderer
-     * @param {IOutput} output
+     * @param { { renderer:IRenderer; output: IOutput }[] } renderers
      */
-    constructor(runner, controller, renderer, output) {
+    constructor(runner, controller, renderers) {
+
+        if (renderers.length < 1) {
+            abort('MochaAdapter — No renderers are specified');
+        }
 
         /** @param {string} event @param {Function} fn */
         const on = (event, fn) => {
@@ -531,7 +575,13 @@ class MochaAdapter {
         on(EVENT_RUN_END, () => {
             const stats = runner.stats;
             if (stats == null) abort('EVENT_RUN_END — stats is null');
-            Walker.walk(controller.onRunEnd(stats), renderer, output);
+
+            renderers.forEach(
+                /** @this {BodyNode} */
+                function ({ renderer, output }) {
+                    Walker.walk(this, renderer, output);
+                }, controller.onRunEnd(stats)
+            );
         });
     }
 }
@@ -548,7 +598,15 @@ class AnsiReporter extends Mocha.reporters.Base {
      */
     constructor(runner, options) {
         super(runner, options);
-        new MochaAdapter(runner, new ReporterController(), new AnsiRenderer(), new ConsoleOutput());
+        new MochaAdapter(
+            runner,
+            new ReporterController(),
+            [
+                { renderer: new AnsiRenderer(), output: new ConsoleOutput() },
+                // @todo
+                ...(REPORT_DIR ? [] : [])
+            ]
+        );
     }
 }
 
@@ -561,7 +619,7 @@ class AnsiReporter extends Mocha.reporters.Base {
  */
 
 /**
- * @param {FileNode} file
+ * @param {BodyNode} file
  * @returns {ReportStats}
  */
 function collectStats(file) {

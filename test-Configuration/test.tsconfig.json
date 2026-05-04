@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "sourceMap": true,
+        "removeComments": false,
+        "rootDir": "."
+    },
+    "exclude": [
+        "test/**/~*",
+        "~stripped/**/~*",
+        "~stripped/Logger.ts"
+    ],
+    "include": [
+        "test/**/*.ts",
+        "~stripped/*.ts",
+        "~stripped/**/*.ts"
+    ]
+}
