@@ -1,0 +1,84 @@
+# ============================================================================
+
+
+BOX box-1
+
+author   ""
+designer ""
+revision ""
+revdate  ""
+created  ""
+tags     "simple, programming, box"
+sample
+     text
+    ::::::
+ends
+
+shapes {
+    sw ("  :") s (":") se (":   ")
+}
+
+padding { h 1 v 0}
+
+elastic (n,e,s,w)
+
+END box-1
+
+
+# ============================================================================
+
+
+BOX box-3
+
+author   ""
+designer ""
+revision ""
+revdate  ""
+created  ""
+tags     "simple, programming, box"
+sample
+     text
+    ~~~~~~
+ends
+
+shapes {
+    nw ("   ") n (" ") ne ("    ")
+    sw ("  ~") s ("~") se ("~   ")
+}
+
+padding { h 1 v 0}
+
+elastic (n,e,s,w)
+
+END box-3
+
+
+# ============================================================================
+
+
+BOX box-4
+
+author   ""
+designer ""
+revision ""
+revdate  ""
+created  ""
+tags     "simple, programming, box"
+sample
+    ~~~~~~
+     text
+ends
+
+shapes {
+    nw ("  ~") n ("~") ne ("~   ")
+    sw ("   ") s (" ") se ("    ")
+}
+
+padding { h 1 v 0}
+
+elastic (n,e,s,w)
+
+END box-4
+
+
+# ============================================================================

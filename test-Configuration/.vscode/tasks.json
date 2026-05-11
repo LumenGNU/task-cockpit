@@ -1,0 +1,671 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open as project",
+      "hide": true,
+      "icon": {
+        "id": "vscode",
+        "color": "terminal.ansiBlue"
+      },
+      "detail": "",
+      "type": "shell",
+      "command": "setsid -f codium '${workspaceFolder}' && sleep 3",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "close": true,
+        "group": "run-external"
+      }
+    },
+    {
+      "label": "Clear",
+      "icon": {
+        "id": "eraser"
+      },
+      "dependsOn": [
+        "Clear|Clean/create '~coverage-reports/'",
+        "Clear|Clean/create '~coverage-summary/'",
+        "Clear|Clean/create '~out/'",
+        "Clear|Clean/create '~out-test/'",
+        "Clear|Clean/create '~stripped/'",
+        "Clear|Clean/create '~test-reports/'"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "Clear"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~coverage-reports/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~coverage-reports"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~coverage-summary/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~coverage-summary"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~out/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~out-test/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out-test"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~stripped/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~stripped"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Clear|Clean/create '~test-reports/'",
+      "icon": {
+        "id": "new-folder"
+      },
+      "type": "shell",
+      "command": "dev-scripts/create-empty-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~test-reports"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      }
+    },
+    {
+      "label": "Utilites|Strip Debug Blocks",
+      "icon": {
+        "id": "regex"
+      },
+      "detail": "Remove debug-only code blocks from sources into `~stripped/`",
+      "type": "shell",
+      "command": "dev-scripts/strip-debug-blocks.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "SOURCE_DIR": "src",
+          "DEST_DIR": "~stripped",
+          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts' ! -wholename 'src/Logger.ts'",
+          "STRIP_MODE": "test"
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "pre-test"
+      }
+    },
+    {
+      "label": "Prepare Test Environvent",
+      "icon": {
+        "id": "symbol-event"
+      },
+      "dependsOn": [
+        "Clear"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/prepare-test-env.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "SOURCE_BASE": "../Task Cockpit/src"
+        }
+      },
+      "presentation": {
+        "panel": "shared",
+        "focus": true,
+        "clear": true,
+        "echo": false,
+        "close": true,
+        "showReuseMessage": true
+      }
+    },
+    {
+      "label": "Build DEBUG extension",
+      "icon": {
+        "id": "debug"
+      },
+      "detail": "Compile TypeScript sources into `~out/` for debug runner",
+      "dependsOn": [
+        "Prepare Test Environvent",
+        "Clear|Clean/create '~out/'"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/transpile-typescript.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out",
+          "TSCONFIG": "tsconfig.json"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "base": "$tsc"
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "build"
+      }
+    },
+    {
+      "label": "Pretest",
+      "dependsOn": [
+        "Pretest|Clear terminal before Pretest",
+        "Pretest|Compile TypeScript Files For the Test Runner",
+        "Pretest|Rename ~out-test/~stripped to ~out-test/src",
+        "Pretest|Prepare package.json For the Test Runner",
+        "Pretest|Clear terminal before tests"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false,
+        "group": "Pretest"
+      }
+    },
+    {
+      "hide": false,
+      "label": "Pretest|Clear terminal before Pretest",
+      "icon": {
+        "id": "redo"
+      },
+      "type": "shell",
+      "command": "dev-scripts/terminal-baner.bash",
+      "options": {
+        "env": {
+          "TYPE": "3",
+          "TAG": "Pretest",
+          "MESSAGE": "Prepare Test Runner",
+          "TIMESTAMP": "%Y-%m-%d %H:%M:%S"
+        }
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "Pretest"
+      }
+    },
+    {
+      "label": "Pretest|Compile TypeScript Files For the Test Runner",
+      "icon": {
+        "id": "debug"
+      },
+      "detail": "Compile TypeScript files from:  \n- `test/`  \n- `~striped/`  \n\ninto `~out-test/` to be used by the test runner.  \n\nDepends:  \n- Prepare Test Environvent  \n- Strip Debug Blocks",
+      "dependsOn": [
+        "Clear|Clean/create '~out-test/'",
+        "Utilites|Strip Debug Blocks"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/transpile-typescript.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out-test",
+          "TSCONFIG": "test.tsconfig.json"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "base": "$tsc"
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "Pretest"
+      }
+    },
+    {
+      "label": "Pretest|Rename ~out-test/~stripped to ~out-test/src",
+      "icon": {
+        "id": "rename"
+      },
+      "detail": "lllllllll",
+      "type": "shell",
+      "command": "dev-scripts/rename-directory.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "SRC_DIR": "~out-test/~stripped",
+          "NEW_NAME": "src"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "Pretest"
+      }
+    },
+    {
+      "label": "Pretest|Prepare package.json For the Test Runner",
+      "icon": {
+        "id": "json"
+      },
+      "detail": "lllllllll",
+      "type": "shell",
+      "command": "dev-scripts/prepare-package.json.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DEST_DIR": "~out-test/src"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "Pretest"
+      }
+    },
+    {
+      "hide": false,
+      "label": "Pretest|Clear terminal before tests",
+      "icon": {
+        "id": "redo"
+      },
+      "type": "shell",
+      "command": "dev-scripts/terminal-baner.bash",
+      "options": {
+        "env": {
+          "TYPE": "3",
+          "TAG": "TEST",
+          "MESSAGE": "Testing started",
+          "TIMESTAMP": "%Y-%m-%d %H:%M:%S"
+        }
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "Tests"
+      }
+    },
+    {
+      "label": "Run tests|Configuration",
+      "icon": {
+        "id": "run-all"
+      },
+      "detail": "Sequential test run across all workspace configurations",
+      "dependsOn": [
+        "Pretest"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/run-fixtures-test.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "TEST_CONFIG_FILE": "vscode-fixtures-test.mjs",
+          "TEST_REPORTER": "dot",
+          "FIXTURES_TESTS": "Configuration::*"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "Test Failes",
+        "source": "vscode-test",
+        "severity": "error",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+          "message": 0,
+          "file": 1,
+          "line": 2,
+          "column": 3
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "never",
+        "group": "Tests"
+      }
+    },
+        {
+      "label": "Run tests|Settings",
+      "icon": {
+        "id": "run-all"
+      },
+      "detail": "...",
+      "dependsOn": [
+        "Pretest"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/run-fixtures-test.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "TEST_CONFIG_FILE": "vscode-fixtures-test.mjs",
+          "TEST_REPORTER": "dot",
+          "FIXTURES_TESTS": "Settings::*"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "Test Failes",
+        "source": "vscode-test",
+        "severity": "error",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+          "message": 0,
+          "file": 1,
+          "line": 2,
+          "column": 3
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "never",
+        "group": "Tests"
+      }
+    },
+    {
+      "label": "Run tests|Clear test failes from panel",
+      "icon": {
+        "id": "clear-all"
+      },
+      "type": "shell",
+      "command": "true",
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "Test Failes",
+        "source": "vscode-test",
+        "severity": "error",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "",
+          "message": 0,
+          "file": 0
+        }
+      },
+      "presentation": {
+        "clear": true,
+        "close": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "Tests"
+      }
+    },
+    {
+      "label": "Generate summary coverage report",
+      "icon": {
+        "id": "run-all-coverage"
+      },
+      "detail": "Clean, run all tests with coverage, then merge reports into a single summary",
+      "dependsOn": [
+        "Clear|Clean/create '~coverage-reports/'",
+        "Clear|Clean/create '~coverage-summary/'",
+        "Generate summary coverage report|Run all tests",
+        "Generate summary coverage report|Merge reports"
+      ],
+      "dependsOrder": "sequence",
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "revealProblems": "onProblem",
+        "group": "coverage"
+      }
+    },
+    {
+      "label": "Generate summary coverage report|Run all tests",
+      "icon": {
+        "id": "run-all"
+      },
+      "detail": "Trigger the full test suite with coverage collection enabled",
+      "dependsOn": [
+        "Run tests"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Generate summary coverage report|Merge reports",
+      "icon": {
+        "id": "git-merge"
+      },
+      "detail": "Combine per-configuration coverage JSONs into an HTML summary",
+      "type": "shell",
+      "command": "dev-scripts/merge-coverage.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "IN_DIR": "~coverage-reports",
+          "OUT_DIR": "~coverage-summary"
+        }
+      },
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "onProblem",
+        "group": "coverage"
+      }
+    },
+    {
+      "label": "Open coverage report",
+      "icon": {
+        "id": "browser"
+      },
+      "detail": "Open the merged HTML coverage report in the default browser",
+      "type": "shell",
+      "command": "setsid -f x-www-browser '${workspaceFolder}/~coverage-summary/index.html' && sleep 3",
+      "presentation": {
+        "clear": true,
+        "echo": false,
+        "reveal": "never",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": false,
+        "close": true,
+        "group": "run"
+      }
+    },
+    {
+      "label": "CI|shfmt",
+      "type": "shell",
+      "command": "[[ -w 'dev-scripts/${fileBasename}' ]] && shfmt -i 4 -sr -ci --write 'dev-scripts/${fileBasename}'"
+    },
+    {
+      "label": "CI|Stamp markers in current file",
+      "type": "shell",
+      "command": "dev-scripts/number-markers.bash",
+      "options": {
+        "env": {
+          "FMT": "%03d",
+          "FILEPATH": "${file}"
+        }        
+      }
+    }
+  ],
+}

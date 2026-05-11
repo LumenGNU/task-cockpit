@@ -17,6 +17,11 @@ readonly DEST_DIR
 
 echo -e "\e[1m[TSC] Building (${TSCONFIG}) ...\e[0m\n" >&2
 
+if [[ -d "${DEST_DIR}" && -n "$(find "${DEST_DIR}" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+    echo -e "\e[31m[ERROR] DEST_DIR is not empty: ${DEST_DIR}\e[0m" >&2
+    exit 1
+fi
+
 npx tsc -p "${TSCONFIG}" --outDir "${DEST_DIR}" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Build failed\e[0m\n' >&2 ; exit $rc ;}
 
 echo -e '\n\e[32;1m[DONE] Build complete\e[0m\n' >&2

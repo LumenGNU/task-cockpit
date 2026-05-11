@@ -1,0 +1,6 @@
+Logger.ts
+types.d.ts
+
+Configuration.ts
+Workspace/Settings.ts
+Workspace/Scopes/Settings.ts

@@ -1,0 +1,18 @@
+{
+    "EMPTY_SETTINGS": {},
+    "CONFIGURED_SETTINGS": {
+
+        "filtering": {
+            "showHidden": true,
+        },
+
+        "display": {
+            "segmentSeparator": "/",
+            "tintLabel": true,
+            "useFolderIcon": true,
+            "useGroupKind": true,
+            "defaultIconName": "zap",
+        }
+        
+    }
+}

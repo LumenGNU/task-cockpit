@@ -109,9 +109,6 @@ export type FolderUri = Omit<vscode.Uri, 'toString'> & {
 };
 
 
-declare type _EligibleTask = import('./Workspace/EligibleTask').default;
-declare type _Definition = import('./Workspace/Scopes/Definition').default;
-
 /** Строковый идентификатор задачи, уникальный в пределах
  * текущего снимка рабочей области.
  *

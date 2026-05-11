@@ -1,36 +1,42 @@
+/** @file Configuration.ts */
+/** @module Configuration */
+/** Модуль для работы с конфигурацией VS Code.
+ * Обеспечивает строгую типизацию, валидацию и безопасное приведение типов (coercion).
+ */
+
 import * as vscode from 'vscode';
-import type TC from "./types";
+import * as assert from 'assert/strict';
 
 
+/** Базовый интерфейс дескриптора опции.
+ * @template Type Тип из перечисления {@link OptionType}.
+ * @template Spec Дополнительные параметры валидации (границы, паттерны и т.д.). */
 interface ConfigOption<Type extends OptionType, Spec> {
-    readonly path: string;
+    /** Ключ в package.json или путь к секции. Если указана точка '.', используется ключ объекта. */
+    readonly from: string;
     readonly type: Type;
     readonly spec: Spec;
 }
 
 
-/** Дескриптор булева поля конфигурации. */
+/** Дескриптор логического поля (boolean). */
 type BooleanOption = ConfigOption<OptionType.Boolean, {
-    /** Значение, возвращаемое когда настройка отсутствует или имеет неверный тип. */
+    /** Значение по умолчанию, если в настройках записан не-boolean или ключ отсутствует. */
     readonly fallback: boolean;
 }>;
 
 
-/** Дескриптор числового поля конфигурации.
+/** Дескриптор числового поля.
  *
- * Если сырое значение отсутствует или не является конечным числом, возвращается `fallback`.
- * Когда заданы границы `min`/`max`, значения вне диапазона **обрезаются** до ближайшей границы,
- * а не заменяются на `fallback`.
+ * Логика обработки:
+ * - Если значение не является числом (NaN, string, null) -> возвращается `fallback`.
+ * - Если значение число, но выходит за границы `min`/`max` -> значение **clamped** (прижимается к границе).
  *
  * @example
- * spec: { fallback: 10, min: 0, max: 100 }
- * // Значение из конфига   | Результат
- * // --------------------- | --------
- * // 42                    | 42
- * // -5                    | 0   (обрезано)
- * // 150                   | 100 (обрезано)
- * // "abc"                 | 10  (fallback)
- * // undefined             | 10  (fallback) */
+ * spec: { fallback: 10, min: 0 }
+ * // -5 -> 0 (clamped)
+ * // "abc" -> 10 (fallback)
+ * */
 type NumberOption = ConfigOption<OptionType.Number, {
     /** Значение, возвращаемое когда настройка отсутствует или не является конечным числом. */
     readonly fallback: number;
@@ -41,36 +47,24 @@ type NumberOption = ConfigOption<OptionType.Number, {
 }>;
 
 
-/** Дескриптор строкового поля конфигурации.
+/** Дескриптор строкового поля.
  *
- * pattern и fallback: для значения fallback **не происходит проверка** на pattern.
- * Если fallback сам не соответствует паттерну (ошибка разработчика),
- * то на выходе будет невалидная строка. */
+ * При проверке в рантайме (`get`), если значение не прошло `pattern`, будет возвращен `fallback`.
+ * При создании схемы (`createSchema`), сам `fallback` также проверяется на соответствие паттерну. */
 type StringOption = ConfigOption<OptionType.String, {
     /** Значение, возвращаемое когда настройка отсутствует, не является строкой или не прошла `pattern`. */
     readonly fallback: string;
-    /** Опциональный паттерн валидации. Сырое значение проверяется по нему;
-     * если проверка не прошла — используется `fallback`. */
+    /** Регулярное выражение для валидации. */
     readonly pattern?: RegExp;
 }>;
 
 
-/** Дескриптор поля конфигурации типа "множество строк".
+/** Дескриптор поля типа "множество строк".
  *
- * Сырое значение должно быть массивом; все элементы, не являющиеся строками, молча отбрасываются.
- *
- * **Пустой массив считается корректным значением** – он не приводит к использованию `fallback`.
- * В том числе когда пустой массив получается после фильтрации. (@todo норм поведение?)
- * `fallback` применяется только если сырое значение отсутствует или не является массивом.
- *
- * @example
- * spec: { fallback: ['a', 'b'] }
- * // Значение из конфига    | Результат
- * // ---------------------- | --------
- * // value: ['x', 123, 'y'] | Set { 'x', 'y' }
- * // value: []              | Set {}
- * // value: "not array"     | Set { 'a', 'b' }
- */
+ * Конвертирует массив строк из настроек VS Code в нативный JS `Set<string>`.
+ * Если в массиве встречаются не-строковые элементы, весь массив считается невалидным и заменяется на `fallback`.
+ * *Пустой массив является валидным значением.*
+ * */
 type StringSetOption = ConfigOption<OptionType.StringSet, {
     /** Значение, возвращаемое когда настройка отсутствует или не является массивом. */
     readonly fallback: readonly string[];
@@ -85,7 +79,8 @@ type AnyConfigOption =
     ;
 
 
-// Инверсия TypeSpecAlias: FieldDef → примитив
+/** Вспомогательный тип для извлечения результирующего типа из дескриптора.
+ * Используется для маппинга "Схема -> Интерфейс". */
 type ExtractFieldType<F> =
     F extends BooleanOption ? boolean :
     F extends NumberOption ? number :
@@ -94,7 +89,7 @@ type ExtractFieldType<F> =
     never;
 
 
-// Рекурсивный unwrap всего дерева
+/** Рекурсивно преобразует структуру схемы в структуру готовых данных. */
 type InferConfigType<S> = {
     [K in keyof S]:
     ExtractFieldType<S[K]> extends never
@@ -103,6 +98,7 @@ type InferConfigType<S> = {
 };
 
 
+/** Обратный маппинг: по типу значения подбирает нужный тип дескриптора для схемы. */
 type FieldDefFor<T> =
     T extends boolean ? BooleanOption :
     T extends string ? StringOption :
@@ -112,14 +108,14 @@ type FieldDefFor<T> =
 
 
 /** Тег-дискриминант для дескрипторов полей конфигурации.
-*
-* Используется как свойство `type` в дескрипторах, передаваемых в {@linkcode Configuration.ConfigSchema}. */
+ *
+ * Используется как свойство `type` в дескрипторах, передаваемых в {@linkcode Configuration.ConfigSchema}. */
 const enum OptionType {
-    /** Логическое значение (`boolean`) */
+    /** Логическое значение */
     Boolean,
-    /** Строка (`string`) */
+    /** Строка */
     String,
-    /** Число (`number`) */
+    /** Число */
     Number,
     /** Множество уникальных строк (`Set<string>`) */
     StringSet
@@ -129,17 +125,18 @@ const enum OptionType {
 declare namespace Configuration {
 
 
-    /** Отображает интерфейс конфигурации в схему дескрипторов полей.
+    /** Описывает структуру схемы на основе целевого интерфейса `I`.
+     * Используется для проверки корректности объявления схемы.
      *
-     * Каждый лист `T[K]` должен быть одним из {@link OptionType | известных типов}.
+     * Каждый лист `I[K]` должен быть одним из {@link OptionType | известных типов}.
      *
-     * Каждое свойство `T[K]` примитивного типа заменяется на соответствующий
+     * Каждое свойство `I[K]` примитивного типа заменяется на соответствующий
      * `*Option`-дескриптор; вложенные объекты обходятся рекурсивно.
      *
      * Используй с оператором `satisfies`, чтобы TypeScript проверил,
      * что схема действительно описывает целевой интерфейс.
      *
-     * @template T Интерфейс, описывающий итоговую типизированную конфигурацию.
+     * @template I Интерфейс, описывающий итоговую типизированную конфигурацию.
      *
      * @example
      * ```ts
@@ -149,86 +146,155 @@ declare namespace Configuration {
      *
      * const schema = {
      *     node: {
-     *         useIcon: { path: 'myExt.node', type: OptionType.Boolean, spec: { fallback: false } },
-     *         label:   { path: 'myExt.node', type: OptionType.String,  spec: { fallback: 'Task' } },
+     *         useIcon: { from: 'myExt.node', type: OptionType.Boolean, spec: { fallback: false } },
+     *         label:   { from: 'myExt.node', type: OptionType.String,  spec: { fallback: 'Task' } },
      *     }
      * } satisfies Configuration.ConfigSchema<ICfg>;
      * ``` */
-    export type ConfigSchema<T> = {
-        [K in keyof T]: FieldDefFor<T[K]> extends never
-        ? ConfigSchema<T[K]>           // объект — идём глубже
-        : FieldDefFor<T[K]>;  // примитив — оборачиваем
+    export type ConfigSchema<I> = {
+        [K in keyof I]: FieldDefFor<I[K]> extends never
+        ? ConfigSchema<I[K]>           // объект — идём глубже
+        : FieldDefFor<I[K]>;  // примитив — оборачиваем
     };
 
 }
 
 
-
 // минимальная валидация-типизация конфигурации
 const Configuration = {
 
-    COCKPIT_SECTION_NAME: 'taskCockpit' satisfies TC.ConfigSectionName,
+    /** Валидирует структуру самой схемы дескрипторов.
+     * Вызывает `assert`, если дескрипторы настроены противоречиво (например, fallback не входит в min/max).
+     *
+     * Рекомендуется вызывать один раз при инициализации расширения.
+     *
+     * @param schema Объект схемы.
+     * @throws {AssertionError} Если схема содержит логические ошибки. */
+    createSchema<SchemaInterface>(schema: Readonly<Configuration.ConfigSchema<SchemaInterface>>): typeof schema {
 
-    /** Читает и валидирует конфигурацию, полученную от VS Code по типизированной схеме.
+        function walkSchema(entry: object, path: string[] = []) {
+            // Проверка на null/undefined
+            assert.ok(entry != null,
+                `Schema entry at ${path.join('.')} is null or undefined`);
+
+            for (const [key, field] of Object.entries(entry)) {
+
+                const currentPath = [...path, key];
+
+                if (isFieldDef(field)) {
+                    // Базовые проверки структуры
+                    assert.ok(field.from.length,
+                        `Field path is empty at ${currentPath.join('.')}`);
+                    assert.ok(field.spec != null,
+                        `Field spec is missing at ${currentPath.join('.')}`);
+                    assert.ok(field.spec.fallback != null,
+                        `Missing mandatory 'fallback' value in field spec at ${currentPath.join('.')}`);
+
+                    switch (field.type) {
+
+                        case OptionType.Boolean: {
+
+                            assert.ok(typeof field.spec.fallback === 'boolean',
+                                `Invalid fallback type at ${currentPath.join('.')}: expected "boolean" got "${typeof field.spec.fallback}"`);
+
+                            break;
+                        }
+
+                        case OptionType.String: {
+
+                            assert.ok(typeof field.spec.fallback === 'string',
+                                `Invalid fallback type at ${currentPath.join('.')}: expected "string" got "${typeof field.spec.fallback}"`);
+
+                            const { fallback, pattern } = field.spec;
+                            if (pattern) {
+                                // если есть паттерн —
+                                // прогоняем fallback через проверку
+                                assert.ok(pattern.test(fallback),
+                                    `Default value "${fallback}" does not match pattern at ${currentPath.join('.')}`);
+                            }
+                            break;
+                        }
+
+                        case OptionType.Number: {
+
+                            assert.ok(typeof field.spec.fallback === 'number',
+                                `Invalid fallback type at ${currentPath.join('.')}: expected "number" got "${typeof field.spec.fallback}"`);
+
+                            const { min, fallback, max } = field.spec;
+
+                            if ((min != null) && (max != null)) {
+                                assert.ok(min <= max,
+                                    `Min (${min}) is greater than max (${max}) at ${currentPath.join('.')}`);
+                            }
+                            if (min != null) {
+                                assert.ok(Number.isFinite(min),
+                                    `Min is not a finite number at ${currentPath.join('.')}`);
+                                assert.ok(fallback >= min,
+                                    `Fallback (${fallback}) is less than min (${min}) at ${currentPath.join('.')}`);
+                            }
+                            if (max != null) {
+                                assert.ok(Number.isFinite(max),
+                                    `Max is not a finite number at ${currentPath.join('.')}`);
+                                assert.ok(fallback <= max,
+                                    `Fallback (${fallback}) is greater than max (${max}) at ${currentPath.join('.')}`);
+                            }
+                            break;
+                        }
+
+                        case OptionType.StringSet: {
+
+                            assert.ok(Array.isArray(field.spec.fallback),
+                                `Invalid fallback type at ${currentPath.join('.')}: expected "Array" got "${typeof field.spec.fallback}"`);
+
+                            const badIdx = field.spec.fallback.findIndex(item => typeof item !== 'string');
+
+                            assert.ok(badIdx === -1,
+                                `Invalid fallback item at ${currentPath.join('.')}[${badIdx}]: expected "string" got "${typeof field.spec.fallback[badIdx]}"`);
+
+                            break;
+                        }
+
+                        default:
+                            const _: never = field;
+                            assert.fail(`Unhandled option type at ${currentPath.join('.')}`);
+                    }
+
+                }
+                else if (field !== null && typeof field === 'object' && !Array.isArray(field)) {
+                    // Рекурсивный обход вложенных объектов
+                    walkSchema(field, currentPath);
+                    // @fixme
+                    // обект должен либо содержать спеки, либо объекты
+                    // содержащие спеки - ничего левого
+                }
+                else {
+                    assert.fail(`Invalid schema structure at ${path.join('.')}: ` +
+                        `expected a nested object or FieldDefinition, but found ${currentPath.join('.')}: ${typeof field}.`);
+                }
+
+            }
+
+            return entry;
+        }
+
+        return walkSchema(schema) as typeof schema;
+    },
+
+    /** Читает настройки из VS Code и применяет правила валидации согласно схеме.
      *
-     * Используется для получения и *базовой* валидации, позволяя избежать
-     * проблем с отсутствием или сломанными настройками.
-     *
-     * Рекурсивно обходит переданную схему, для каждого дескриптора в схеме:
-     * извлекает сырое значение через `workspaceConfig.get(<path>.<key>)` и приводит его
-     * к ожидаемому типу, применяя правила, описанные в дескрипторе.
-     *
-     * Отсутствующие или невалидные значения заменяются на `fallback` поля.
-     * Числовые значения обрезаются до `[min, max]`, если границы заданы.
-     * Строки проверяются на соответствие паттерну.
-     *
-     * **Безопасность:** метод никогда не выбрасывает исключений; все некорректные
-     * или отсутствующие значения заменяются на `fallback`.
+     * **Контракт:**
+     * - Метод никогда не бросает исключений (при ошибках данных возвращается `fallback`).
+     * - Структура результата всегда соответствует структуре схемы.
+     * - Все числовые значения будут в рамках заданных границ (clamped).
      *
      * @template S Тип схемы.
      * @param {S} schema Объект, {@linkcode Configuration.ConfigSchema | описывающий структуру и правила валидации},
-     *   для проверки формы на этапе компиляции.
+     *   полученный через {@linkcode Configuration.createSchema}.
      * @param workspaceConfig Экземпляр `vscode.WorkspaceConfiguration`.
      * @returns Объект, зеркально повторяющий структуру схемы, с валидными значениями,
-     *   приведёнными к соответствующим типам.
+     *   приведёнными к соответствующим типам и границам.
      *
-     * @example
-     * ```ts
-     * interface ICfg {
-     *     node: {
-     *         readonly 'useIcon': boolean,
-     *         readonly 'iconName': string,
-     *         readonly 'showMax': number,
-     *     };
-     *     tree: {
-     *         readonly 'show': boolean,
-     *     };
-     * }
-     *
-     * const schema = {
-     *     node: {
-     *         useIcon: { path: 'cfg.node', type: OptionType.Boolean, spec: { fallback: false } },
-     *         iconName: { path: 'cfg.node', type: OptionType.String, spec: { fallback: '', pattern: /.*\\.png/ } },
-     *         showMax: { path: 'cfg.display', type: OptionType.Number, spec: { fallback: 15, max: 30 } }
-     *     },
-     *     tree: {
-     *         show: { path: 'cfg.showTree', type: OptionType.Boolean, spec: { fallback: true } }
-     *     }
-     * } satisfies Configuration.ConfigSchema<ICfg>;
-     *
-     * const cfgResult = Configuration.get(schema, {} as any);
-     * // TS say:
-     * // const cfgResult: {
-     * //     node: {
-     * //         useIcon: boolean;
-     * //         iconName: string;
-     * //         showMax: number;
-     * //     };
-     * //     tree: {
-     * //         show: boolean;
-     * //     };
-     * // }
-     * ``` */
+     *  */
     get<S extends object>(schema: S, workspaceConfig: Readonly<vscode.WorkspaceConfiguration>): InferConfigType<S> {
 
         // Обход в поисках спеки
@@ -258,24 +324,26 @@ const Configuration = {
 } as const;
 
 
-// проверка спеки валидатором
+/**  Извлекает значение из VS Code, учитывая путь префикса.
+ * Если `fieldDef.from` равно '.', поиск идет напрямую по имени ключа в объекте.
+ * */
 function resolveFieldValue(configKey: string, fieldDef: Readonly<AnyConfigOption>, workspaceConfig: vscode.WorkspaceConfiguration) {
 
-    const input = workspaceConfig.get(`${fieldDef.path}.${configKey}`);
+    const input = workspaceConfig.get(fieldDef.from === '.' ? configKey : `${fieldDef.from}.${configKey}`);
 
     switch (fieldDef.type) {
 
         case OptionType.Boolean: {
-            return coerceBoolean(input, fieldDef);
+            return coerceBoolean(input, fieldDef.spec);
         }
         case OptionType.Number: {
-            return coerceNumber(input, fieldDef);
+            return coerceNumber(input, fieldDef.spec);
         }
         case OptionType.String: {
-            return coerceString(input, fieldDef);
+            return coerceString(input, fieldDef.spec);
         }
         case OptionType.StringSet: {
-            return coerceStringSet(input, fieldDef);
+            return coerceStringSet(input, fieldDef.spec);
         }
 
         default:
@@ -285,11 +353,12 @@ function resolveFieldValue(configKey: string, fieldDef: Readonly<AnyConfigOption
 }
 
 
+/** Type guard для определения, является ли ветка схемы конечным дескриптором. */
 function isFieldDef(value: unknown): value is AnyConfigOption {
     return (
+        value != null &&
         typeof value === 'object' &&
-        value !== null &&
-        'path' in value &&
+        'from' in value &&
         'type' in value &&
         'spec' in value
     );
@@ -297,58 +366,87 @@ function isFieldDef(value: unknown): value is AnyConfigOption {
 
 
 // -----
-// #region Валидаторы
+// #region Валидаторы (Coercion Logic)
 
-function coerceNumber(value: unknown, fieldDef: NumberOption): number {
-
-    const { spec } = fieldDef;
+function coerceNumber(
+    value: unknown,
+    {
+        fallback,
+        min,
+        max
+    }: {
+        readonly fallback: number;
+        readonly min?: number | undefined;
+        readonly max?: number | undefined;
+    }
+): number {
 
     if (typeof value !== 'number' || !isFinite(value)) {
-        return spec.fallback;
+        return fallback;
     }
 
-    if (spec.min != null && value < spec.min) {
-        return spec.min;
+    if (min != null && value < min) {
+        return min;
     }
 
-    if (spec.max != null && value > spec.max) {
-        return spec.max;
+    if (max != null && value > max) {
+        return max;
     }
 
     return value;
 }
 
 
-function coerceBoolean(value: unknown, fieldDef: BooleanOption): boolean {
+function coerceBoolean(
+    value: unknown,
+    {
+        fallback
+    }: {
+        readonly fallback: boolean;
+    }
+): boolean {
 
-    const { spec } = fieldDef;
-
-    return typeof value === 'boolean' ? value : spec.fallback;
+    return typeof value === 'boolean' ? value : fallback;
 }
 
+// @todo строки от vscode приходят в дебильном виде (экранирование/спецсимволы)
+function coerceString(
+    value: unknown,
+    {
+        fallback,
+        pattern
+    }: {
+        readonly fallback: string;
+        readonly pattern?: RegExp;
+    }
+): string {
 
-function coerceString(value: unknown, fieldDef: StringOption): string {
-
-    const { spec } = fieldDef;
-    if (typeof value !== 'string') return spec.fallback;
-    if (spec.pattern != null && !spec.pattern.test(value)) return spec.fallback;
+    if (typeof value !== 'string') return fallback;
+    if (pattern != null && !pattern.test(value)) return fallback;
 
     return value;
 }
 
 
-function coerceStringSet(value: unknown, fieldDef: StringSetOption): Set<string> {
+function coerceStringSet(
+    value: unknown,
+    { fallback }: { readonly fallback: readonly string[]; }
+): Set<string> {
 
-    const { spec } = fieldDef;
-    if (!Array.isArray(value)) return new Set(spec.fallback);
+    if (!Array.isArray(value)) return new Set(fallback);
+    if (value.some(item => typeof item !== 'string')) return new Set(fallback);
 
-    // если пришёл массив, но все элементы не-строки, вернём [], а не fallback.
-    // пустой массив — валидное значение, семантически отличное от "конфиг сломан".
-    return new Set(value.filter((item): item is string => typeof item === 'string'));
+    return new Set(value);
 }
 
 // #endregion Валидаторы
 
 
 export default Configuration;
-export { OptionType };
+export {
+    OptionType,
+    NumberOption,
+    StringOption,
+    BooleanOption,
+    StringSetOption
+};

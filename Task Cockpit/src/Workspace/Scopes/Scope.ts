@@ -1,11 +1,32 @@
 import * as vscode from 'vscode';
 import type * as TC from '../../types';
 import Definitions from './Definitions';
-import ICnf from './Settings';
-import Constants from '../../constants';
+import ScopedSettings from './Settings';
+import {
+    WORKSPACE_KEY,
+    COCKPIT_CNF_SECTION_NAME
+} from '../../constants';
 
 
-/** Scope — где определена задача. Это единица владения задачами.
+declare namespace Scope {
+
+    interface Settings {
+        readonly treeConfig: {
+            segmentSeparator: string;
+            useGroupKind: boolean;
+            showHidden: boolean;
+        };
+
+        readonly nodeConfig: {
+            useFolderIcon: boolean;
+            defaultIconName: string;
+            tintLabel: boolean;
+        };
+    }
+}
+
+
+/** Scope — где определена задача и ее настройки. Это единица владения задачами.
  * У каждой задачи есть ровно один scope, задачи из разных scope не перемешиваются,
  * и всё, что работает с задачами, работает в контексте конкретного scope.
  */
@@ -23,7 +44,7 @@ class Scope {
     public get key(): TC.ScopeKey {
 
         if (this.#scope === vscode.TaskScope.Workspace) {
-            return Constants.Scopes.WORKSPACE_KEY;
+            return WORKSPACE_KEY;
         }
 
         return this.#scope.uri.toString() as TC.FolderKey;
@@ -98,20 +119,16 @@ class Scope {
 
     }
 
+    public get settings(): Readonly<Scope.Settings> {
 
-    public get configuration(): Readonly<ICnf> {
-
-        if (this.#scope === vscode.TaskScope.Workspace) {
-        }
-
-        const configuration = vscode.workspace.getConfiguration(
-            Constants.Configuration.SECTION_NAME,
+        const scopedConfiguration = vscode.workspace.getConfiguration(
+            COCKPIT_CNF_SECTION_NAME,
             (this.#scope === vscode.TaskScope.Workspace)
                 ? undefined
                 : this.#scope.uri
         );
 
-        return ICnf.get(configuration);
+        return ScopedSettings.get(scopedConfiguration);
     }
 
 }
