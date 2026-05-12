@@ -1,4 +1,3 @@
-.vscode-test/
 dev-docs/
 ~*
 node_modules
@@ -6,3 +5,8 @@ package-lock.json
 **/~*
 **/node_modules
 **/package-lock.json
+
+.vscode-test/*
+!.vscode-test/.gitignore
+!.vscode-test/package.json
+!.vscode-test/vscode-fixtures-test.mjs

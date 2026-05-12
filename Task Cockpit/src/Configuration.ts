@@ -19,11 +19,23 @@ interface ConfigOption<Type extends OptionType, Spec> {
 }
 
 
-/** Дескриптор логического поля (boolean). */
-type BooleanOption = ConfigOption<OptionType.Boolean, {
+interface BooleanSpec {
     /** Значение по умолчанию, если в настройках записан не-boolean или ключ отсутствует. */
     readonly fallback: boolean;
-}>;
+}
+
+/** Дескриптор логического поля (boolean). */
+type BooleanOption = ConfigOption<OptionType.Boolean, BooleanSpec>;
+
+
+interface NumberSpec {
+    /** Значение, возвращаемое когда настройка отсутствует или не является конечным числом. */
+    readonly fallback: number;
+    /** Включительная нижняя граница. Значения ниже неё обрезаются до `min`. */
+    readonly min?: number;
+    /** Включительная верхняя граница. Значения выше неё обрезаются до `max`. */
+    readonly max?: number;
+}
 
 
 /** Дескриптор числового поля.
@@ -37,27 +49,27 @@ type BooleanOption = ConfigOption<OptionType.Boolean, {
  * // -5 -> 0 (clamped)
  * // "abc" -> 10 (fallback)
  * */
-type NumberOption = ConfigOption<OptionType.Number, {
-    /** Значение, возвращаемое когда настройка отсутствует или не является конечным числом. */
-    readonly fallback: number;
-    /** Включительная нижняя граница. Значения ниже неё обрезаются до `min`. */
-    readonly min?: number;
-    /** Включительная верхняя граница. Значения выше неё обрезаются до `max`. */
-    readonly max?: number;
-}>;
+type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
 
+
+interface StringSpec {
+    /** Значение, возвращаемое когда настройка отсутствует, не является строкой или не прошла `pattern`. */
+    readonly fallback: string;
+    /** Регулярное выражение для валидации. */
+    readonly pattern?: RegExp;
+}
 
 /** Дескриптор строкового поля.
  *
  * При проверке в рантайме (`get`), если значение не прошло `pattern`, будет возвращен `fallback`.
  * При создании схемы (`createSchema`), сам `fallback` также проверяется на соответствие паттерну. */
-type StringOption = ConfigOption<OptionType.String, {
-    /** Значение, возвращаемое когда настройка отсутствует, не является строкой или не прошла `pattern`. */
-    readonly fallback: string;
-    /** Регулярное выражение для валидации. */
-    readonly pattern?: RegExp;
-}>;
+type StringOption = ConfigOption<OptionType.String, StringSpec>;
 
+
+interface StringSetSpec {
+    /** Значение, возвращаемое когда настройка отсутствует или не является массивом. */
+    readonly fallback: readonly string[];
+}
 
 /** Дескриптор поля типа "множество строк".
  *
@@ -65,22 +77,19 @@ type StringOption = ConfigOption<OptionType.String, {
  * Если в массиве встречаются не-строковые элементы, весь массив считается невалидным и заменяется на `fallback`.
  * *Пустой массив является валидным значением.*
  * */
-type StringSetOption = ConfigOption<OptionType.StringSet, {
-    /** Значение, возвращаемое когда настройка отсутствует или не является массивом. */
-    readonly fallback: readonly string[];
-}>;
+type StringSetOption = ConfigOption<OptionType.StringSet, StringSetSpec>;
 
 
-type AnyConfigOption =
-    | BooleanOption
-    | NumberOption
-    | StringOption
-    | StringSetOption
-    ;
+// type AnyConfigOption =
+//     | BooleanOption
+//     | NumberOption
+//     | StringOption
+//     | StringSetOption
+//     ;
 
 
 /** Вспомогательный тип для извлечения результирующего типа из дескриптора.
- * Используется для маппинга "Схема -> Интерфейс". */
+ * Служит для получения интерфейса на основе схемы. (Схема → Интерфейс) */
 type ExtractFieldType<F> =
     F extends BooleanOption ? boolean :
     F extends NumberOption ? number :
@@ -160,6 +169,27 @@ declare namespace Configuration {
 }
 
 
+function isKVObject(entry: unknown): entry is { [k: string]: unknown; } {
+    return (
+        entry != null &&
+        typeof entry === 'object' &&
+        !Array.isArray(entry)
+    );
+}
+
+/** Type guard для определения, является ли ветка схемы конечным дескриптором. */
+function isFieldDef(entry: { [k: string]: unknown; }): entry is { from: string; type: OptionType; spec: object; } {
+    return (
+        'from' in entry && typeof entry.from === 'string' &&
+        'type' in entry && typeof entry.type === 'number' &&
+        'spec' in entry && entry.spec !== null && typeof entry.spec === 'object' && !Array.isArray(entry.spec)
+    );
+}
+
+function isSpec(entry: object): entry is { [k: string]: unknown; fallback: unknown; } {
+    return 'fallback' in entry && entry.fallback != null;
+}
+
 // минимальная валидация-типизация конфигурации
 const Configuration = {
 
@@ -170,108 +200,111 @@ const Configuration = {
      *
      * @param schema Объект схемы.
      * @throws {AssertionError} Если схема содержит логические ошибки. */
-    createSchema<SchemaInterface>(schema: Readonly<Configuration.ConfigSchema<SchemaInterface>>): typeof schema {
+    createSchema<S extends object>(schema: Readonly<Configuration.ConfigSchema<S>>): typeof schema {
 
-        function walkSchema(entry: object, path: string[] = []) {
-            // Проверка на null/undefined
-            assert.ok(entry != null,
-                `Schema entry at ${path.join('.')} is null or undefined`);
+        function walkSchema(entry: unknown, path: string[] = []) {
 
-            for (const [key, field] of Object.entries(entry)) {
+            if (isKVObject(entry)) {
 
-                const currentPath = [...path, key];
+                if (isFieldDef(entry)) {
+                    assert.ok(entry.from.length,
+                        `Field path is empty at ${path.join('.')}`);
+                    assert.ok(isSpec(entry.spec),
+                        `Field spec is corrupted at ${path.join('.')}`);
 
-                if (isFieldDef(field)) {
-                    // Базовые проверки структуры
-                    assert.ok(field.from.length,
-                        `Field path is empty at ${currentPath.join('.')}`);
-                    assert.ok(field.spec != null,
-                        `Field spec is missing at ${currentPath.join('.')}`);
-                    assert.ok(field.spec.fallback != null,
-                        `Missing mandatory 'fallback' value in field spec at ${currentPath.join('.')}`);
+                    // ---
 
-                    switch (field.type) {
+                    switch (entry.type) {
 
                         case OptionType.Boolean: {
 
-                            assert.ok(typeof field.spec.fallback === 'boolean',
-                                `Invalid fallback type at ${currentPath.join('.')}: expected "boolean" got "${typeof field.spec.fallback}"`);
+                            assert.ok(typeof entry.spec.fallback === 'boolean',
+                                `Invalid fallback type at ${path.join('.')}: expected "boolean" got "${typeof entry.spec.fallback}"`);
 
                             break;
                         }
 
                         case OptionType.String: {
 
-                            assert.ok(typeof field.spec.fallback === 'string',
-                                `Invalid fallback type at ${currentPath.join('.')}: expected "string" got "${typeof field.spec.fallback}"`);
+                            assert.ok(typeof entry.spec.fallback === 'string',
+                                `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.spec.fallback}"`);
 
-                            const { fallback, pattern } = field.spec;
+                            const { fallback, pattern } = entry.spec;
                             if (pattern) {
+                                assert.ok(pattern instanceof RegExp,
+                                    `Invalid pattern at ${path.join('.')}: expected "RegExp" got "${typeof pattern}"`);
                                 // если есть паттерн —
                                 // прогоняем fallback через проверку
                                 assert.ok(pattern.test(fallback),
-                                    `Default value "${fallback}" does not match pattern at ${currentPath.join('.')}`);
+                                    `Default value "${fallback}" does not match pattern at ${path.join('.')}`);
                             }
                             break;
                         }
 
                         case OptionType.Number: {
 
-                            assert.ok(typeof field.spec.fallback === 'number',
-                                `Invalid fallback type at ${currentPath.join('.')}: expected "number" got "${typeof field.spec.fallback}"`);
+                            assert.ok(typeof entry.spec.fallback === 'number',
+                                `Invalid fallback type at ${path.join('.')}: expected "number" got "${typeof entry.spec.fallback}"`);
 
-                            const { min, fallback, max } = field.spec;
+                            const { min, fallback, max } = entry.spec;
+
+                            if (min != null) {
+                                assert.ok(typeof min === 'number',
+                                    `Min is not a number at ${path.join('.')}`);
+                                assert.ok(Number.isFinite(min),
+                                    `Min is not a finite number at ${path.join('.')}`);
+                            }
+
+                            if (max != null) {
+                                assert.ok(typeof max === 'number',
+                                    `Max is not a number at ${path.join('.')}`);
+                                assert.ok(Number.isFinite(max),
+                                    `Max is not a finite number at ${path.join('.')}`);
+                            }
 
                             if ((min != null) && (max != null)) {
                                 assert.ok(min <= max,
-                                    `Min (${min}) is greater than max (${max}) at ${currentPath.join('.')}`);
+                                    `Min (${min}) is greater than max (${max}) at ${path.join('.')}`);
                             }
                             if (min != null) {
-                                assert.ok(Number.isFinite(min),
-                                    `Min is not a finite number at ${currentPath.join('.')}`);
                                 assert.ok(fallback >= min,
-                                    `Fallback (${fallback}) is less than min (${min}) at ${currentPath.join('.')}`);
+                                    `Fallback (${fallback}) is less than min (${min}) at ${path.join('.')}`);
                             }
                             if (max != null) {
-                                assert.ok(Number.isFinite(max),
-                                    `Max is not a finite number at ${currentPath.join('.')}`);
                                 assert.ok(fallback <= max,
-                                    `Fallback (${fallback}) is greater than max (${max}) at ${currentPath.join('.')}`);
+                                    `Fallback (${fallback}) is greater than max (${max}) at ${path.join('.')}`);
                             }
                             break;
                         }
 
                         case OptionType.StringSet: {
 
-                            assert.ok(Array.isArray(field.spec.fallback),
-                                `Invalid fallback type at ${currentPath.join('.')}: expected "Array" got "${typeof field.spec.fallback}"`);
+                            assert.ok(Array.isArray(entry.spec.fallback),
+                                `Invalid fallback type at ${path.join('.')}: expected "Array" got "${typeof entry.spec.fallback}"`);
 
-                            const badIdx = field.spec.fallback.findIndex(item => typeof item !== 'string');
+                            const badIdx = entry.spec.fallback.findIndex(item => typeof item !== 'string');
 
                             assert.ok(badIdx === -1,
-                                `Invalid fallback item at ${currentPath.join('.')}[${badIdx}]: expected "string" got "${typeof field.spec.fallback[badIdx]}"`);
+                                `Invalid fallback item at ${path.join('.')}[${badIdx}]: expected "string" got "${typeof entry.spec.fallback[badIdx]}"`);
 
                             break;
                         }
 
-                        default:
-                            const _: never = field;
-                            assert.fail(`Unhandled option type at ${currentPath.join('.')}`);
+                        default: {
+                            const _: never = entry.type;
+                            assert.fail(`Unhandled option type at ${path.join('.')}`);
+                        }
                     }
 
                 }
-                else if (field !== null && typeof field === 'object' && !Array.isArray(field)) {
-                    // Рекурсивный обход вложенных объектов
-                    walkSchema(field, currentPath);
-                    // @fixme
-                    // обект должен либо содержать спеки, либо объекты
-                    // содержащие спеки - ничего левого
-                }
                 else {
-                    assert.fail(`Invalid schema structure at ${path.join('.')}: ` +
-                        `expected a nested object or FieldDefinition, but found ${currentPath.join('.')}: ${typeof field}.`);
+                    for (const key in entry) {
+                        walkSchema(entry[key], [...path, key]);
+                    }
                 }
-
+            }
+            else {
+                assert.fail(`Invalid schema structure at ${path.slice(0, -1).join('.')} expected ConfigOption object`);
             }
 
             return entry;
@@ -295,22 +328,27 @@ const Configuration = {
      *   приведёнными к соответствующим типам и границам.
      *
      *  */
-    get<S extends object>(schema: S, workspaceConfig: Readonly<vscode.WorkspaceConfiguration>): InferConfigType<S> {
+    get<Schema extends object>(
+        schema: Readonly<Schema>,
+        workspaceConfig: Readonly<vscode.WorkspaceConfiguration>
+    ): InferConfigType<Schema> {
 
         // Обход в поисках спеки
 
-        function walkSchema(entry: object) {
+        function walkSchema(entry: { [k: string]: unknown; }) {
 
-            const result = Object.create(null);
+            const result = Object.create(null) as { [k: string]: unknown; };
 
             for (const [key, field] of Object.entries(entry)) {
 
+                if (!isKVObject(field)) {
+                    continue;
+                }
+
                 if (isFieldDef(field)) {
-
                     result[key] = resolveFieldValue(key, field, workspaceConfig);
-
-                } else if (typeof field === 'object' && field !== null) {
-
+                }
+                else {
                     result[key] = walkSchema(field);
                 }
             }
@@ -318,8 +356,9 @@ const Configuration = {
             return result;
         }
 
-        return walkSchema(schema);
-    }
+        return walkSchema(schema) as InferConfigType<Schema>;
+
+    },
 
 } as const;
 
@@ -327,42 +366,40 @@ const Configuration = {
 /**  Извлекает значение из VS Code, учитывая путь префикса.
  * Если `fieldDef.from` равно '.', поиск идет напрямую по имени ключа в объекте.
  * */
-function resolveFieldValue(configKey: string, fieldDef: Readonly<AnyConfigOption>, workspaceConfig: vscode.WorkspaceConfiguration) {
+function resolveFieldValue(configKey: string, fieldDef: {
+    from: string;
+    type: OptionType;
+    spec: object;
+}, workspaceConfig: vscode.WorkspaceConfiguration) {
 
     const input = workspaceConfig.get(fieldDef.from === '.' ? configKey : `${fieldDef.from}.${configKey}`);
 
     switch (fieldDef.type) {
 
         case OptionType.Boolean: {
-            return coerceBoolean(input, fieldDef.spec);
+            return coerceBoolean(input, fieldDef.spec as BooleanSpec);
         }
         case OptionType.Number: {
-            return coerceNumber(input, fieldDef.spec);
+            return coerceNumber(input, fieldDef.spec as NumberSpec);
         }
         case OptionType.String: {
-            return coerceString(input, fieldDef.spec);
+            return coerceString(input, fieldDef.spec as StringSpec);
         }
         case OptionType.StringSet: {
-            return coerceStringSet(input, fieldDef.spec);
+            return coerceStringSet(input, fieldDef.spec as StringSetSpec);
         }
 
-        default:
-            const _spec: never = fieldDef;
-            throw _spec;
-    };
-}
+        default: {
+            const _spec: never = fieldDef.type;
+            throw new Error(_spec);
+        }
+    }
+};
 
 
-/** Type guard для определения, является ли ветка схемы конечным дескриптором. */
-function isFieldDef(value: unknown): value is AnyConfigOption {
-    return (
-        value != null &&
-        typeof value === 'object' &&
-        'from' in value &&
-        'type' in value &&
-        'spec' in value
-    );
-}
+
+
+
 
 
 // -----
@@ -370,27 +407,19 @@ function isFieldDef(value: unknown): value is AnyConfigOption {
 
 function coerceNumber(
     value: unknown,
-    {
-        fallback,
-        min,
-        max
-    }: {
-        readonly fallback: number;
-        readonly min?: number | undefined;
-        readonly max?: number | undefined;
-    }
+    spec: NumberSpec
 ): number {
 
     if (typeof value !== 'number' || !isFinite(value)) {
-        return fallback;
+        return spec.fallback;
     }
 
-    if (min != null && value < min) {
-        return min;
+    if (spec.min != null && value < spec.min) {
+        return spec.min;
     }
 
-    if (max != null && value > max) {
-        return max;
+    if (spec.max != null && value > spec.max) {
+        return spec.max;
     }
 
     return value;
@@ -399,30 +428,24 @@ function coerceNumber(
 
 function coerceBoolean(
     value: unknown,
-    {
-        fallback
-    }: {
-        readonly fallback: boolean;
-    }
+    boolSpec: BooleanSpec
 ): boolean {
 
-    return typeof value === 'boolean' ? value : fallback;
+    return typeof value === 'boolean' ? value : boolSpec.fallback;
 }
 
 // @todo строки от vscode приходят в дебильном виде (экранирование/спецсимволы)
 function coerceString(
     value: unknown,
-    {
-        fallback,
-        pattern
-    }: {
-        readonly fallback: string;
-        readonly pattern?: RegExp;
-    }
+    stringSpec: StringSpec
 ): string {
 
-    if (typeof value !== 'string') return fallback;
-    if (pattern != null && !pattern.test(value)) return fallback;
+    if (typeof value !== 'string') {
+        return stringSpec.fallback;
+    }
+    if (stringSpec.pattern != null && !stringSpec.pattern.test(value)) {
+        return stringSpec.fallback;
+    }
 
     return value;
 }
@@ -430,13 +453,17 @@ function coerceString(
 
 function coerceStringSet(
     value: unknown,
-    { fallback }: { readonly fallback: readonly string[]; }
+    stringSetSpec: StringSetSpec
 ): Set<string> {
 
-    if (!Array.isArray(value)) return new Set(fallback);
-    if (value.some(item => typeof item !== 'string')) return new Set(fallback);
+    if (!Array.isArray(value)) {
+        return new Set(stringSetSpec.fallback);
+    }
+    if (value.some(item => typeof item !== 'string')) {
+        return new Set(stringSetSpec.fallback);
+    }
 
-    return new Set(value);
+    return new Set(value as string[]);
 }
 
 // #endregion Валидаторы

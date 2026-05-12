@@ -8,16 +8,16 @@ import { OptionType } from '../../../src/Configuration';
 // "stringConfig": {
 //     "stringKey": "string-value",
 //     "noStringKey": 42,
-//     "ipAdress": "196.167.0.100",
-//     "noIpAdress": "196.167.O.100"
+//     "ipAddress": "196.167.0.100",
+//     "noIpAddress": "196.167.O.100"
 // }
 
 interface StringConfigSchemaI {
     noExistKey?: string;
     stringKey?: string;
     noStringKey?: string;
-    ipAdress?: string;
-    noIpAdress?: string;
+    ipAddress?: string;
+    noIpAddress?: string;
 }
 
 // `${/*N=0*/'000'/**/}`
@@ -45,11 +45,11 @@ suite('Configuration', function () {
                 assert.equal(typeof workspaceConfiguration.get('noStringKey'), 'number',
                     'pre: stringConfig.noStringKey должен присутствовать и быть числом');
 
-                assert.equal(workspaceConfiguration.get('ipAdress'), '196.167.0.100',
-                    'pre: stringConfig.ipAdress должен присутствовать и быть валидным IP)');
+                assert.equal(workspaceConfiguration.get('ipAddress'), '196.167.0.100',
+                    'pre: stringConfig.ipAddress должен присутствовать и быть валидным IP)');
 
-                assert.equal(workspaceConfiguration.get('noIpAdress'), '196.167.O.100',
-                    'pre: stringConfig.noIpAdress должен присутствовать и не быть валидным IP (O вместо 0)');
+                assert.equal(workspaceConfiguration.get('noIpAddress'), '196.167.O.100',
+                    'pre: stringConfig.noIpAddress должен присутствовать и не быть валидным IP (O вместо 0)');
 
             });
 
@@ -111,26 +111,26 @@ suite('Configuration', function () {
             test(`${/*++N*/'005'/**/} строка проходит pattern — возвращает как есть`, function () {
 
                 const schema = Configuration.createSchema<StringConfigSchemaI>({
-                    ipAdress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
+                    ipAddress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
                 });
 
                 const result = Configuration.get(schema, workspaceConfiguration);
 
-                assert.equal(result.ipAdress, '196.167.0.100',
-                    'ipAdress: должен вернуть значение из конфигурации');
+                assert.equal(result.ipAddress, '196.167.0.100',
+                    'ipAddress: должен вернуть значение из конфигурации');
 
             });
 
             test(`${/*++N*/'006'/**/} строка не проходит pattern — возвращает фолбек`, function () {
 
                 const schema = Configuration.createSchema<StringConfigSchemaI>({
-                    noIpAdress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
+                    noIpAddress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
                 });
 
                 const result = Configuration.get(schema, workspaceConfiguration);
 
-                assert.equal(result.noIpAdress, '127.0.0.0',
-                    'noIpAdress: не прошёл pattern, должен вернуть фолбек');
+                assert.equal(result.noIpAddress, '127.0.0.0',
+                    'noIpAddress: не прошёл pattern, должен вернуть фолбек');
 
             });
 

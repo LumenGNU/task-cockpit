@@ -9,8 +9,8 @@
     "stringConfig": {
         "stringKey": "string-value",
         "noStringKey": 42,
-        "ipAdress": "196.167.0.100",
-        "noIpAdress": "196.167.O.100"
+        "ipAddress": "196.167.0.100",
+        "noIpAddress": "196.167.O.100"
     },
 
     "numberConfig": {

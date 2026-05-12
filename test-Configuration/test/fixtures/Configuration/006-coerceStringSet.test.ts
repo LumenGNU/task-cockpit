@@ -54,11 +54,11 @@ suite('Configuration', function () {
                 assert.deepEqual(workspaceConfiguration.get('emptyArrayKey'), [],
                     'pre: stringSetConfig.emptyArrayKey должен присутствовать и быть пустым массивом');
 
-                assert.deepEqual(workspaceConfiguration.get('mixedTypesKey'), ["40", "41", 42],
+                assert.deepEqual(workspaceConfiguration.get('mixedTypesKey'), ['40', '41', 42],
                     'pre: stringSetConfig.mixedTypesKey должен присутствовать и содержать смешанные типы');
 
                 assert.deepEqual(workspaceConfiguration.get('nonStringsOnlyKey'), [1, 2, 3],
-                    'pre: stringSetConfig.nonStringsOnlyKey должен присутствовать и содержать только нестроки');
+                    'pre: stringSetConfig.nonStringsOnlyKey должен присутствовать и содержать только не-строки');
 
                 assert.deepEqual(workspaceConfiguration.get('duplicatesKey'), ['a', 'b', 'a', 'c', 'b'],
                     'pre: stringSetConfig.duplicatesKey должен присутствовать и содержать дубликаты');
@@ -139,7 +139,7 @@ suite('Configuration', function () {
                 const result = Configuration.get(schema, workspaceConfiguration);
 
                 assert.deepEqual(result.mixedTypesKey, new Set(['fallback']),
-                    'mixedTypesKey: нестроки должны быть отброшены, возвращает фолбек');
+                    'mixedTypesKey: не-строки должны быть отброшены, возвращает фолбек');
 
             });
 
@@ -165,7 +165,7 @@ suite('Configuration', function () {
                 const result = Configuration.get(schema, workspaceConfiguration);
 
                 assert.deepEqual(result.duplicatesKey, new Set(['a', 'b', 'c']),
-                    'duplicatesKey: дубликаты должны быть схлопнуты Set-ом');
+                    'duplicatesKey: дубликаты должны отсутствовать Set-ом');
 
             });
 

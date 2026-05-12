@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 import WorkspaceSettings from '../../../src/Workspace/Settings';
 import ScopesSettings from '../../../src/Workspace/Scopes/Settings';
-import { deepPlain } from './deepPlaun';
+import { deepPlain } from './deepPlain';
 
 
 const EMPTY_SECTION = 'EMPTY_SETTINGS';
@@ -11,19 +11,23 @@ const EMPTY_SECTION = 'EMPTY_SETTINGS';
 let folderScope: vscode.WorkspaceFolder;
 
 
-// `${/*N=0*/'000'/**/}` 
+// `${/*N=0*/'000'/**/}`
 
 suite('Settings', function () {
 
     suiteSetup(function () {
 
         assert.equal(vscode.workspace.name, 'Settings (Workspace)',
-            `pre: неожиданное имя воркспейса: "${vscode.workspace.name}"`);
+            `pre: неожиданное имя рабочей области: "${vscode.workspace.name}"`);
 
-        folderScope = vscode.workspace.workspaceFolders?.at(0)!;
+        assert.ok(vscode.workspace.workspaceFolders);
+        const _folderScope = vscode.workspace.workspaceFolders.at(0);
+        assert.ok(_folderScope);
+
+        folderScope = _folderScope;
 
         assert.ok(folderScope,
-            `pre: workspaceFolders пуст или не определён`);
+            'pre: workspaceFolders пуст или не определён');
 
     });
 
@@ -64,7 +68,7 @@ suite('Settings', function () {
                             },
                         },
                         terminals: {
-                            timeout: 1300
+                            timeout: 1300,
                         },
                     },
                 }, 'значения по умолчанию не совпадают');
@@ -88,7 +92,7 @@ suite('Settings', function () {
                         segmentSeparator: '',
                         showHidden: false,
                         useGroupKind: false,
-                    }
+                    },
                 }, 'значения по умолчанию не совпадают');
 
             });
@@ -102,17 +106,15 @@ suite('Settings', function () {
                     nodeConfig: {
                         defaultIconName: 'tools',
                         tintLabel: false,
-                        useFolderIcon: false
+                        useFolderIcon: false,
                     },
                     treeConfig: {
                         segmentSeparator: '',
                         showHidden: false,
                         useGroupKind: false,
-                    }
+                    },
                 }, 'значения по умолчанию не совпадают');
-
             });
         });
     });
-
 });

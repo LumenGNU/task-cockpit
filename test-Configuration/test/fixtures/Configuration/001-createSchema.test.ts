@@ -1,5 +1,4 @@
 import * as assert from 'assert/strict';
-import * as vscode from 'vscode';
 
 import Configuration, { BooleanOption } from '../../../src/Configuration';
 import {
@@ -29,7 +28,7 @@ suite('Configuration', function () {
         test(`${/*++N*/'003'/**/} значение undefined — ошибка при создании схемы`, function () {
             assert.throws(() => {
                 Configuration.createSchema({
-                    // @ts-expect-error
+                    // @ts-expect-error /* специально так сделано */
                     anyKey: undefined
                 });
             }, /Invalid schema structure/);
@@ -65,11 +64,11 @@ suite('Configuration', function () {
                 Configuration.createSchema({
                     anyKey: {
                         from: 'anyPath', type: OptionType.String,
-                        // @ts-expect-error
+                        // @ts-expect-error /* специально подавляет ошибку */
                         spec: null
                     }
                 });
-            }, /Field spec is missing/);
+            }, /Invalid schema structure at anyKey/);
         });
 
         test(`${/*++N*/'008'/**/} spec без fallback — ошибка при создании схемы`, function () {
@@ -77,12 +76,11 @@ suite('Configuration', function () {
                 Configuration.createSchema({
                     anyKey: { from: 'anyPath', type: OptionType.String, spec: {} }
                 });
-            }, /mandatory 'fallback' value in field spec/);
+            }, /Field spec is corrupted at anyKey/);
         });
 
 
-        // Тест существует только как компиляционная проверка
-        // skip: нет рантайм-утверждений, запускать нечего
+        // Тест валидирует типы на этапе компиляции, рантайм не нужен → skip
         test.skip(`${/*++N*/'009'/**/} тест должен компилироваться (типизация корректна)`, function () {
 
             interface CnfI {
@@ -139,17 +137,17 @@ suite('Configuration', function () {
 
             // ts помогает
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
-            const anyKeyStr: StringOption = schema.anyKeyNum;
-            const anyKeyStr_ok: StringOption = schema.anyKeyStr;
+            const _anyKeyStr: StringOption = schema.anyKeyNumb;
+            const _anyKeyStr_ok: StringOption = schema.anyKeyStr;
 
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
-            const anyKeyNum: NumberOption = schema.anyKeyStr;
-            const anyKeyNum_ok: NumberOption = schema.anyKeyNumb;
+            const _anyKeyNum: NumberOption = schema.anyKeyStr;
+            const _anyKeyNum_ok: NumberOption = schema.anyKeyNumb;
 
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
-            const p: BooleanOption = schema.d.e.e.p;
+            const _p: BooleanOption = schema.d.e.e.p;
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
-            const z: StringOption = schema.d.z;
+            const _z: StringOption = schema.d.z;
 
         });
 

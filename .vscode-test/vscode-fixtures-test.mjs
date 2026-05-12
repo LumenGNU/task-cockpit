@@ -11,7 +11,7 @@
 // 
 // Структура директорий
 // 
-// project-root/
+// project-root (CWD) /
 // ├─ src/       ← структура с исходными файлами расширения
 // │  ├─ **/*.ts
 // │  └─ *
@@ -106,6 +106,11 @@ import path from 'node:path';
 import chalk from 'chalk';
 
 
+const OUT_DIR = path.join(process.cwd(), process.env.OUT_DIR || '~out-test');
+const SRC_TEST_DIR_REL = process.env.SRC_TEST_DIR || 'test';
+const SRC_TEST_DIR = path.join(process.cwd(), SRC_TEST_DIR_REL);
+
+
 const TEST_FILE_SUFFIX = 'test.js';
 
 
@@ -128,13 +133,6 @@ const [FIXTURE_NAME, TEST_PREFIX] = (() => {
 })();
 
 const VSC_VERSION = process.env.VSC_VERSION || '1.86.2';
-
-// const TEST_REPORT_TO_FILE = ['true', 'y', 'yes'].includes(process.env.TEST_REPORT_TO_FILE?.toLowerCase() || 'no');
-const REPORT_DIR = process.env.REPORT_DIR;
-
-
-const OUT_DIR = process.env.OUT_DIR || '~out-test';
-const SRC_TEST_DIR = process.env.SRC_TEST_DIR || 'test';
 
 
 const SUT_OUT = path.join(OUT_DIR, 'src');
@@ -161,7 +159,7 @@ const defaults = {
         reporter: TEST_REPORTER,
         diff: true,
         color: true,
-        "full-trace": false,
+        'full-trace': false,
         require: ['source-map-support/register']
     },
     launchArgs: [
@@ -174,9 +172,9 @@ const defaults = {
     env: {
         // "DRI_PRIME": "1",
         // "LIBVA_DRIVER_NAME": "radeonsi",
-        "VK_ICD_FILENAMES": "",
+        'VK_ICD_FILENAMES': '',
     },
-    extensionDevelopmentPath: SUT_OUT, // где находится скомпилированное расширени
+    extensionDevelopmentPath: SUT_OUT, // где находится скомпилированное расширение
 };
 // ----------
 
@@ -195,7 +193,7 @@ const FIXTURES_SRC = (() => {
 
 // .js тестов
 const TEST_FILES_OUT = (() => {
-    const testsOut = path.join(OUT_DIR, SRC_TEST_DIR, 'fixtures');
+    const testsOut = path.join(OUT_DIR, SRC_TEST_DIR_REL, 'fixtures');
     if (fs.existsSync(testsOut) && fs.statSync(testsOut).isDirectory()) {
         return testsOut;
     }
@@ -260,9 +258,9 @@ const tests = [
             ? allFiles
             : allFiles.filter(f => path.basename(f).startsWith(TEST_PREFIX));
 
-        const pending = TEST_PREFIX === '*'
-            ? []
-            : allFiles.filter(f => !path.basename(f).startsWith(TEST_PREFIX));
+        // const pending = TEST_PREFIX === '*'
+        //     ? []
+        //     : allFiles.filter(f => !path.basename(f).startsWith(TEST_PREFIX));
 
         if (includes.length < 1) {
             console.error(chalk.red(`[Error]: no test files ('*${TEST_FILE_SUFFIX}') found in '${out}'.`));
@@ -309,7 +307,7 @@ const tests = [
 
 
 if (tests.length < 1) {
-    console.error(chalk.red(`[FAIL]: No tests.`));
+    console.error(chalk.red('[FAIL]: No tests.'));
     process.exit(1);
 }
 
@@ -318,11 +316,15 @@ if (tests.length > 1) { // проверка на возможные коллиз
     const seen = new Set();
     const duplicates = new Set();
     for (const t of tests) {
-        if (seen.has(t.label)) duplicates.add(t.label);
-        else seen.add(t.label);
+        if (seen.has(t.label)) {
+            duplicates.add(t.label);
+        }
+        else {
+            seen.add(t.label);
+        }
     }
     if (duplicates.size > 0) {
-        console.error(chalk.red(`[FAIL]: Duplicate test labels:`));
+        console.error(chalk.red('[FAIL]: Duplicate test labels:'));
         for (const label of duplicates) {
             console.error(chalk.red(`    • "${label}"`));
         }

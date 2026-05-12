@@ -1,0 +1,19 @@
+{
+  "name": "task-cockpit",
+  "version": "0.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/papio-dev/task-cockpit.git"
+  },
+  "author": "lumen.gnu@gmail.com",
+  "bugs": {
+    "url": "https://github.com/papio-dev/task-cockpit/issues"
+  },
+  "homepage": "https://github.com/papio-dev/task-cockpit#readme",
+  "license": "MIT",
+  "devDependencies": {
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

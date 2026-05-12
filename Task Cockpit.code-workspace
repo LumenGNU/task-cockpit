@@ -21,7 +21,6 @@
         {
             "path": "test.semi-manual"
         }
-        
     ],
     "settings": {
         "taskCockpit.display.segmentSeparator": "|",
@@ -52,6 +51,322 @@
         "js/ts.preferences.quoteStyle": "single",
         "js/ts.workspaceSymbols.scope": "currentProject"
     },
-
-
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Utilities|Stamp markers in current file",
+                "type": "shell",
+                "command": "dev-scripts/number-markers.bash",
+                "options": {
+                    "env": {
+                        "FMT": "%03d",
+                        "FILEPATH": "${file}"
+                    }
+                }
+            },
+            {
+                "label": "CI|Dev-Scripts|shfmt",
+                "type": "shell",
+                "command": [
+                    "set -eu;",
+                    "SCRIPT_FILE_BASH='dev-scripts/${fileBasenameNoExtension}.bash' ;",
+                    "if [[ -w \"${SCRIPT_FILE_BASH}\" ]]; then",
+                    "shfmt -i 4 -sr -ci --write \"${SCRIPT_FILE_BASH}\";",
+                    "echo -e \"\\e[32m[done]\\e[0m shfmt: ${SCRIPT_FILE_BASH}\\n\";",
+                    "else",
+                    "echo -e \"\\e[31m[error]\\e[0m shfmt: ${SCRIPT_FILE_BASH} not found\\n\";",
+                    "exit 1;",
+                    "fi"
+                ],
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "presentation": {
+                    "echo": false,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared",
+                    "showReuseMessage": true,
+                    "clear": false,
+                    "group": "CI"
+                }
+            },
+            {
+                "label": "CI|Code Quality/Validation|Check Module Headers",
+                "detail": "Check module headers",
+                "icon": {
+                    "id": "tag"
+                },
+                "type": "shell",
+                "command": "dev-scripts/check-module-headers.bash",
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "presentation": {
+                    "panel": "shared",
+                    "group": "CI",
+                    "clear": false,
+                    "focus": true,
+                    "echo": false,
+                    "showReuseMessage": true,
+                    "reveal": "silent",
+                    "revealProblems": "onProblem"
+                },
+                "problemMatcher": {
+                    "applyTo": "allDocuments",
+                    "owner": "check-module-headers",
+                    "severity": "error",
+                    "pattern": {
+                        "regexp": "^\\s*FAIL\\s+(.+?):(\\d+)\\s+(.*)$",
+                        "file": 1,
+                        "line": 2,
+                        "message": 3
+                    }
+                }
+            },
+            {
+                "label": "CI|Code Quality/Validation|Check Module Headers|Clear Diagnostics",
+                "icon": {
+                    "id": "clear-all"
+                },
+                "type": "shell",
+                "command": "true",
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "problemMatcher": {
+                    "applyTo": "allDocuments",
+                    "owner": "check-module-headers",
+                    "pattern": {
+                        "regexp": ""
+                    }
+                },
+                "presentation": {
+                    "panel": "new",
+                    "close": true,
+                    "clear": false,
+                    "echo": false,
+                    "showReuseMessage": false
+                }
+            },
+            // Type Check
+            {
+                "label": "CI|Code Quality/Validation|Type Check|Run type check",
+                "detail": "Run TypeScript type check without emitting",
+                "icon": {
+                    "id": "checklist"
+                },
+                "type": "shell",
+                "command": "dev-scripts/typescript-type-check.bash",
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "env": {
+                        "TSCONFIG": "tsconfig.json"
+                    }
+                },
+                "problemMatcher": {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                "presentation": {
+                    "panel": "shared",
+                    "group": "Linters",
+                    "clear": true,
+                    "echo": false,
+                    "focus": true,
+                    "showReuseMessage": false,
+                    "reveal": "silent",
+                    "revealProblems": "onProblem"
+                },
+                "runOptions": {
+                    "instanceLimit": 1,
+                    "instancePolicy": "warn"
+                }
+            },
+            {
+                "label": "CI|Code Quality/Validation|Type Check|Clear TSC Diagnostics",
+                "detail": "Clear TypeScript diagnostics",
+                "icon": {
+                    "id": "clear-all"
+                },
+                "type": "shell",
+                "command": "true",
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "presentation": {
+                    "panel": "new",
+                    "close": true,
+                    "clear": false,
+                    "echo": false,
+                    "showReuseMessage": false
+                },
+                "problemMatcher": [
+                    "$tsc"
+                ]
+            },
+            // EsLint
+            {
+                "label": "CI|Code Quality/Validation|ESLint|Open ESLint Config",
+                "detail": "Open ESLint config",
+                "icon": {
+                    "id": "go-to-file"
+                },
+                "type": "shell",
+                "command": "codium ../eslint.config.mjs",
+                "options": {
+                    "cwd": "${cwd}",
+                },
+            },
+            {
+                "label": "CI|Code Quality/Validation|ESLint|Check Entire Project",
+                "detail": "Run ESLint on all source files",
+                "icon": {
+                    "id": "checklist"
+                },
+                "type": "shell",
+                "command": "dev-scripts/eslint-check.bash",
+                "options": {
+                    "cwd": "${cwd}",
+                    "env": {}
+                },
+                "presentation": {
+                    "panel": "shared",
+                    "group": "Linters",
+                    "clear": true,
+                    "echo": false,
+                    "focus": true,
+                    "showReuseMessage": false,
+                    "reveal": "silent",
+                    "revealProblems": "onProblem"
+                },
+                "problemMatcher": [
+                    "$eslint-compact",
+                    "$eslint-stylish"
+                ]
+            },
+            {
+                "label": "CI|Code Quality/Validation|ESLint|Check Current File",
+                "detail": "Run ESLint on current file",
+                "icon": {
+                    "id": "checklist"
+                },
+                "type": "shell",
+                "command": "npx eslint --max-warnings 0 -- '${relativeFile}'",
+                "options": {
+                    "cwd": "${cwd}",
+                    "env": {}
+                },
+                "presentation": {
+                    "panel": "shared",
+                    "group": "Linters",
+                    "clear": true,
+                    "echo": false,
+                    "focus": true,
+                    "showReuseMessage": false,
+                    "reveal": "silent",
+                    "revealProblems": "onProblem"
+                },
+                "problemMatcher": [
+                    "$eslint-compact",
+                    "$eslint-stylish"
+                ]
+            },
+            {
+                "label": "CI|Code Quality/Validation|ESLint|Clear ESLint Diagnostics",
+                "detail": "Clear ESLint diagnostics",
+                "icon": {
+                    "id": "clear-all"
+                },
+                "type": "shell",
+                "command": "true",
+                "options": {
+                    "cwd": "${workspaceFolder}"
+                },
+                "problemMatcher": [
+                    "$eslint-compact",
+                    "$eslint-stylish"
+                ],
+                "presentation": {
+                    "panel": "new",
+                    "close": true,
+                    "clear": false,
+                    "echo": false,
+                    "showReuseMessage": false
+                }
+            },
+            // Unicode
+            {
+                "label": "CI|Code Quality/Validation|Unicode|Find Hidden Characters in current file",
+                "detail": "Scan current file for hidden Unicode characters",
+                "icon": {
+                    "id": "bug"
+                },
+                "type": "shell",
+                "command": "dev-scripts/find-hidden-unicode.bash",
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "env": {
+                        "FILE_TO_CHECK": "${relativeFile}"
+                    }
+                },
+                "presentation": {
+                    "panel": "shared",
+                    "group": "Linters",
+                    "clear": true,
+                    "echo": false,
+                    "focus": true,
+                    "showReuseMessage": false,
+                    "reveal": "silent",
+                    "revealProblems": "onProblem"
+                },
+                "problemMatcher": [
+                    {
+                        "owner": "Unicode",
+                        "source": "Unicode Gremlin",
+                        "fileLocation": "relative",
+                        "pattern": [
+                            {
+                                "regexp": "^(.+):(\\d+)\\.(\\d+); (.*)$",
+                                "kind": "line",
+                                "file": 1,
+                                "line": 2,
+                                "code": 3,
+                                "message": 4
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "label": "CI|Code Quality/Validation|Unicode|Clear Diagnostics",
+                "detail": "Clear Unicode diagnostics",
+                "icon": {
+                    "id": "clear-all"
+                },
+                "type": "shell",
+                "command": "true",
+                "problemMatcher": {
+                    "owner": "Unicode",
+                    "pattern": [
+                        {
+                            "regexp": "",
+                            "kind": "file",
+                            "file": 0,
+                            "message": 0
+                        }
+                    ]
+                },
+                "presentation": {
+                    "panel": "new",
+                    "close": true,
+                    "clear": false,
+                    "echo": false,
+                    "showReuseMessage": false
+                }
+            },
+            // ---
+        ]
+    }
 }

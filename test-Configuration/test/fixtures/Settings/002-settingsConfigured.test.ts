@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 import WorkspaceSettings from '../../../src/Workspace/Settings';
 import ScopesSettings from '../../../src/Workspace/Scopes/Settings';
-import { deepPlain } from './deepPlaun';
+import { deepPlain } from './deepPlain';
 
 
 const CONFIGURED_SECTION = 'CONFIGURED_SETTINGS';
@@ -16,15 +16,18 @@ let folderScope: vscode.WorkspaceFolder;
 
 suite('Settings', function () {
 
+
     suiteSetup(function () {
 
         assert.equal(vscode.workspace.name, 'Settings (Workspace)',
-            `pre: неожиданное имя воркспейса: "${vscode.workspace.name}"`);
+            `pre: неожиданное имя рабочей области: "${vscode.workspace.name}"`);
 
-        folderScope = vscode.workspace.workspaceFolders?.at(0)!;
+        const _folderScope = vscode.workspace.workspaceFolders?.at(0);
 
-        assert.ok(folderScope,
-            `pre: workspaceFolders пуст или не определён`);
+        assert.ok(_folderScope,
+            'pre: workspaceFolders пуст или не определён');
+
+        folderScope = _folderScope;
 
     });
 
@@ -77,10 +80,28 @@ suite('Settings', function () {
 
                 suiteSetup(function () {
                     const workspaceConfiguration = vscode.workspace.getConfiguration(undefined);
-                    const raw = workspaceConfiguration.get(CONFIGURED_WRONG_SECTION) as any;
-                    assert.ok(Object.keys(raw).length !== 0, 'pre: workspaceConfiguration не содержит данные секции CONFIGURED_WRONG_SECTION');
+                    const raw = workspaceConfiguration.get<unknown>(CONFIGURED_WRONG_SECTION);
+                    assert.ok(raw);
+                    assert.ok(typeof raw === 'object');
 
+                    assert.ok('runtime' in raw);
+                    assert.ok(raw.runtime);
+                    assert.ok(typeof raw.runtime === 'object');
+
+                    assert.ok('monitor' in raw.runtime);
+                    assert.ok(raw.runtime.monitor);
+                    assert.ok(typeof raw.runtime.monitor === 'object');
+
+                    assert.ok('polling' in raw.runtime.monitor);
+                    assert.ok(raw.runtime.monitor.polling);
+                    assert.ok(typeof raw.runtime.monitor.polling === 'object');
+
+                    assert.ok('min' in raw.runtime.monitor.polling);
                     assert.ok(typeof raw.runtime.monitor.polling.min === 'number');
+
+                    assert.ok('cap' in raw.runtime.monitor.polling);
+                    assert.ok(typeof raw.runtime.monitor.polling.min === 'number');
+
                     assert.equal(raw.runtime.monitor.polling.min, raw.runtime.monitor.polling.cap, 'pre: runtime.monitor.polling.min и runtime.monitor.polling.cap не имеют одинаковое значение');
 
                 });

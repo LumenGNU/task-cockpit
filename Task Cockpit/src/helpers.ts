@@ -66,8 +66,8 @@ function encodeQueryComponent(queryMetadata: TC.VisualMetadata): TC.QueryCompone
 
 function decodeQueryComponent(queryComponent: TC.QueryComponent): TC.VisualMetadata | undefined {
 
-    const queryMetadata = JSON.parse(decodeURIComponent(queryComponent));
-    if (typeof queryMetadata !== 'object') {
+    const queryMetadata: unknown = JSON.parse(decodeURIComponent(queryComponent));
+    if (!queryMetadata || typeof queryMetadata !== 'object') {
         return undefined;
     }
     return queryMetadata;

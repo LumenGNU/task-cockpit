@@ -1,0 +1,21 @@
+{
+  "name": "task-cockpit",
+  "version": "0.0.0",
+  "description": "Tree view panel for browsing and running tasks. Displays tasks from workspace and task files in an organized, customizable tree structure.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/papio-dev/task-cockpit.git"
+  },
+  "author": "lumen.gnu@gmail.com",
+  "bugs": {
+    "url": "https://github.com/papio-dev/task-cockpit/issues"
+  },
+  "homepage": "https://github.com/papio-dev/task-cockpit#readme",
+  "license": "MIT",
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "eslint": "^9.39.4",
+    "typescript-eslint": "^8.46.3",
+    "@vscode/test-cli": "^0.0.11"
+  }
+}

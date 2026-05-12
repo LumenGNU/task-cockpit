@@ -14,12 +14,6 @@ import { OptionType } from '../../../src/Configuration';
 // }
 
 
-interface ConfigSchemaI {
-    existKey?: string;
-    rootKey?: string;
-    noExistKey?: string;
-}
-
 // `${/*N=0*/'000'/**/}` 
 
 suite('Configuration', function () {
@@ -50,7 +44,7 @@ suite('Configuration', function () {
         });
 
 
-        test(`${/*++N*/'002'/**/} присутствующая конфигурация возвращает значения по указаному пути`, function () {
+        test(`${/*++N*/'002'/**/} присутствующая конфигурация возвращает значения по указанному пути`, function () {
 
             const result = Configuration.get({
                 existKey: { from: 'existPath', type: OptionType.String, spec: { fallback: 'def-str' } }
@@ -82,8 +76,6 @@ suite('Configuration', function () {
             assert.equal(result.noExistKey, 'default-str', 'поле noExistKey должно иметь значение по умолчанию');
 
         });
-
-
 
     });
 

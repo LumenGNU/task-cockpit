@@ -2,3 +2,5 @@
 *
 # ...кроме самого этого файла
 !.gitignore
+!package.json
+!vscode-fixtures-test.mjs

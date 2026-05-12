@@ -282,11 +282,9 @@
     {
       "label": "Pretest",
       "dependsOn": [
-        "Pretest|Clear terminal before Pretest",
         "Pretest|Compile TypeScript Files For the Test Runner",
         "Pretest|Rename ~out-test/~stripped to ~out-test/src",
-        "Pretest|Prepare package.json For the Test Runner",
-        "Pretest|Clear terminal before tests"
+        "Pretest|Copy package.json For the Test Runner",
       ],
       "dependsOrder": "sequence",
       "presentation": {
@@ -296,33 +294,6 @@
         "panel": "shared",
         "showReuseMessage": true,
         "clear": false,
-        "group": "Pretest"
-      }
-    },
-    {
-      "hide": false,
-      "label": "Pretest|Clear terminal before Pretest",
-      "icon": {
-        "id": "redo"
-      },
-      "type": "shell",
-      "command": "dev-scripts/terminal-baner.bash",
-      "options": {
-        "env": {
-          "TYPE": "3",
-          "TAG": "Pretest",
-          "MESSAGE": "Prepare Test Runner",
-          "TIMESTAMP": "%Y-%m-%d %H:%M:%S"
-        }
-      },
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
         "group": "Pretest"
       }
     },
@@ -389,16 +360,18 @@
       }
     },
     {
-      "label": "Pretest|Prepare package.json For the Test Runner",
+      "label": "Pretest|Copy package.json For the Test Runner",
       "icon": {
         "id": "json"
       },
-      "detail": "lllllllll",
+      "detail": "",
       "type": "shell",
-      "command": "dev-scripts/prepare-package.json.bash",
+      "command": "dev-scripts/copy-files.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
+          "SOURCE_DIR": ".",
+          "INCLUDES": "package.json",
           "DEST_DIR": "~out-test/src"
         }
       },
@@ -412,33 +385,6 @@
         "showReuseMessage": true,
         "revealProblems": "onProblem",
         "group": "Pretest"
-      }
-    },
-    {
-      "hide": false,
-      "label": "Pretest|Clear terminal before tests",
-      "icon": {
-        "id": "redo"
-      },
-      "type": "shell",
-      "command": "dev-scripts/terminal-baner.bash",
-      "options": {
-        "env": {
-          "TYPE": "3",
-          "TAG": "TEST",
-          "MESSAGE": "Testing started",
-          "TIMESTAMP": "%Y-%m-%d %H:%M:%S"
-        }
-      },
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "Tests"
       }
     },
     {
@@ -456,9 +402,11 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TEST_CONFIG_FILE": "vscode-fixtures-test.mjs",
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
           "TEST_REPORTER": "dot",
-          "FIXTURES_TESTS": "Configuration::*"
+          "FIXTURES_TESTS": "Configuration::*",
+          "OUT_DIR": "~out-test",
+          "SRC_TEST_DIR": "test"
         }
       },
       "problemMatcher": {
@@ -504,7 +452,7 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TEST_CONFIG_FILE": "vscode-fixtures-test.mjs",
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
           "TEST_REPORTER": "dot",
           "FIXTURES_TESTS": "Settings::*"
         }
@@ -571,101 +519,86 @@
         "group": "Tests"
       }
     },
-    {
-      "label": "Generate summary coverage report",
-      "icon": {
-        "id": "run-all-coverage"
-      },
-      "detail": "Clean, run all tests with coverage, then merge reports into a single summary",
-      "dependsOn": [
-        "Clear|Clean/create '~coverage-reports/'",
-        "Clear|Clean/create '~coverage-summary/'",
-        "Generate summary coverage report|Run all tests",
-        "Generate summary coverage report|Merge reports"
-      ],
-      "dependsOrder": "sequence",
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem",
-        "group": "coverage"
-      }
-    },
-    {
-      "label": "Generate summary coverage report|Run all tests",
-      "icon": {
-        "id": "run-all"
-      },
-      "detail": "Trigger the full test suite with coverage collection enabled",
-      "dependsOn": [
-        "Run tests"
-      ],
-      "dependsOrder": "sequence"
-    },
-    {
-      "label": "Generate summary coverage report|Merge reports",
-      "icon": {
-        "id": "git-merge"
-      },
-      "detail": "Combine per-configuration coverage JSONs into an HTML summary",
-      "type": "shell",
-      "command": "dev-scripts/merge-coverage.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "IN_DIR": "~coverage-reports",
-          "OUT_DIR": "~coverage-summary"
-        }
-      },
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "coverage"
-      }
-    },
-    {
-      "label": "Open coverage report",
-      "icon": {
-        "id": "browser"
-      },
-      "detail": "Open the merged HTML coverage report in the default browser",
-      "type": "shell",
-      "command": "setsid -f x-www-browser '${workspaceFolder}/~coverage-summary/index.html' && sleep 3",
-      "presentation": {
-        "clear": true,
-        "echo": false,
-        "reveal": "never",
-        "focus": false,
-        "panel": "new",
-        "showReuseMessage": false,
-        "close": true,
-        "group": "run"
-      }
-    },
-    {
-      "label": "CI|shfmt",
-      "type": "shell",
-      "command": "[[ -w 'dev-scripts/${fileBasename}' ]] && shfmt -i 4 -sr -ci --write 'dev-scripts/${fileBasename}'"
-    },
-    {
-      "label": "CI|Stamp markers in current file",
-      "type": "shell",
-      "command": "dev-scripts/number-markers.bash",
-      "options": {
-        "env": {
-          "FMT": "%03d",
-          "FILEPATH": "${file}"
-        }        
-      }
-    }
+    // {
+    //   "label": "Generate summary coverage report",
+    //   "icon": {
+    //     "id": "run-all-coverage"
+    //   },
+    //   "detail": "Clean, run all tests with coverage, then merge reports into a single summary",
+    //   "dependsOn": [
+    //     "Clear|Clean/create '~coverage-reports/'",
+    //     "Clear|Clean/create '~coverage-summary/'",
+    //     "Generate summary coverage report|Run all tests",
+    //     "Generate summary coverage report|Merge reports"
+    //   ],
+    //   "dependsOrder": "sequence",
+    //   "presentation": {
+    //     "clear": true,
+    //     "echo": false,
+    //     "reveal": "always",
+    //     "focus": true,
+    //     "panel": "shared",
+    //     "showReuseMessage": false,
+    //     "revealProblems": "onProblem",
+    //     "group": "coverage"
+    //   }
+    // },
+    // {
+    //   "label": "Generate summary coverage report|Run all tests",
+    //   "icon": {
+    //     "id": "run-all"
+    //   },
+    //   "detail": "Trigger the full test suite with coverage collection enabled",
+    //   "dependsOn": [
+    //     "Run tests"
+    //   ],
+    //   "dependsOrder": "sequence"
+    // },
+    // {
+    //   "label": "Generate summary coverage report|Merge reports",
+    //   "icon": {
+    //     "id": "git-merge"
+    //   },
+    //   "detail": "Combine per-configuration coverage JSONs into an HTML summary",
+    //   "type": "shell",
+    //   "command": "dev-scripts/merge-coverage.bash",
+    //   "options": {
+    //     "cwd": "${workspaceFolder}",
+    //     "env": {
+    //       "IN_DIR": "~coverage-reports",
+    //       "OUT_DIR": "~coverage-summary"
+    //     }
+    //   },
+    //   "presentation": {
+    //     "clear": true,
+    //     "echo": false,
+    //     "reveal": "always",
+    //     "focus": true,
+    //     "panel": "shared",
+    //     "showReuseMessage": true,
+    //     "revealProblems": "onProblem",
+    //     "group": "coverage"
+    //   }
+    // },
+    // {
+    //   "label": "Open coverage report",
+    //   "icon": {
+    //     "id": "browser"
+    //   },
+    //   "detail": "Open the merged HTML coverage report in the default browser",
+    //   "type": "shell",
+    //   "command": "setsid -f x-www-browser '${workspaceFolder}/~coverage-summary/index.html' && sleep 3",
+    //   "presentation": {
+    //     "clear": true,
+    //     "echo": false,
+    //     "reveal": "never",
+    //     "focus": false,
+    //     "panel": "new",
+    //     "showReuseMessage": false,
+    //     "close": true,
+    //     "group": "run"
+    //   }
+    // },
+    
   ],
 }
