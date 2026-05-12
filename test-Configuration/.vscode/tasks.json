@@ -33,8 +33,8 @@
         "id": "eraser"
       },
       "dependsOn": [
-        "Clear|Clean/create '~coverage-reports/'",
-        "Clear|Clean/create '~coverage-summary/'",
+        // "Clear|Clean/create '~coverage-reports/'",
+        // "Clear|Clean/create '~coverage-summary/'",
         "Clear|Clean/create '~out/'",
         "Clear|Clean/create '~out-test/'",
         "Clear|Clean/create '~stripped/'",
@@ -52,52 +52,52 @@
         "group": "Clear"
       }
     },
-    {
-      "label": "Clear|Clean/create '~coverage-reports/'",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~coverage-reports"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem"
-      }
-    },
-    {
-      "label": "Clear|Clean/create '~coverage-summary/'",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~coverage-summary"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem"
-      }
-    },
+    // {
+    //   "label": "Clear|Clean/create '~coverage-reports/'",
+    //   "icon": {
+    //     "id": "new-folder"
+    //   },
+    //   "type": "shell",
+    //   "command": "dev-scripts/create-empty-directory.bash",
+    //   "options": {
+    //     "cwd": "${workspaceFolder}",
+    //     "env": {
+    //       "DEST_DIR": "~coverage-reports"
+    //     }
+    //   },
+    //   "presentation": {
+    //     "clear": false,
+    //     "echo": false,
+    //     "reveal": "always",
+    //     "focus": false,
+    //     "panel": "shared",
+    //     "showReuseMessage": false,
+    //     "revealProblems": "onProblem"
+    //   }
+    // },
+    // {
+    //   "label": "Clear|Clean/create '~coverage-summary/'",
+    //   "icon": {
+    //     "id": "new-folder"
+    //   },
+    //   "type": "shell",
+    //   "command": "dev-scripts/create-empty-directory.bash",
+    //   "options": {
+    //     "cwd": "${workspaceFolder}",
+    //     "env": {
+    //       "DEST_DIR": "~coverage-summary"
+    //     }
+    //   },
+    //   "presentation": {
+    //     "clear": false,
+    //     "echo": false,
+    //     "reveal": "always",
+    //     "focus": false,
+    //     "panel": "shared",
+    //     "showReuseMessage": false,
+    //     "revealProblems": "onProblem"
+    //   }
+    // },
     {
       "label": "Clear|Clean/create '~out/'",
       "icon": {
@@ -261,7 +261,7 @@
         "cwd": "${workspaceFolder}",
         "env": {
           "DEST_DIR": "~out",
-          "TSCONFIG": "tsconfig.json"
+          "TSCONFIG": "debug.tsconfig.json"
         }
       },
       "problemMatcher": {
