@@ -32,20 +32,14 @@ trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 }
 
 
-# [[ -n "${REPORT_DIR:-}" ]] || {
-#     echo -e "\e[31m[ERROR] Environment variable REPORT_DIR not set or empty\e[0m" >&2
-#     exit 1
-# }
-
 
 readonly FIXTURES_TESTS
-readonly TEST_REPORT_TO_FILE
 
 readonly TEST_CONFIG_FILE
 # readonly REPORT_DIR
 
 
-echo -e "\n\e[34;1m▶ \"${FIXTURES_TESTS}\" \e[0m" >&2
+echo -e "\n\e[34;1m▶ \"${FIXTURES_TESTS}\"\e[0m [$(date +'%Y-%m-%d %H:%M:%S')]" >&2
 printf '%*s\n' "$(($(tput cols) - 5))" '' | tr ' ' '~' >&2
 
 npx vscode-test --config "${TEST_CONFIG_FILE}" 2>&1 |

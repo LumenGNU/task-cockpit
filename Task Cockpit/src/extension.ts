@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import Cockpit from './Cockpit';
+import Project from './Project';
 import DecorationProviders from './DecorationProviders';
 import Runtime from './Runtime';
 import TasksFile from './TasksFile';
@@ -58,7 +58,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const runtime = new Runtime();
     const workspace = new Workspace();
 
-    const cockpit = await Cockpit.create(runtime, workspace);
+    const cockpit = await Project.create(runtime, workspace);
 
 
     context.subscriptions.push(
@@ -82,7 +82,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         }),
 
-        vscode.commands.registerCommand('task-cockpit.DEBUG.print-node', function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.DEBUG.print-node', function (node?: Project.Node) {
 
             // log(LogLevel.Debug,
             //     `NODE: ${JSON.stringify(node, null, 2)}`);
@@ -100,16 +100,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
         // - - - - -
 
-        vscode.commands.registerCommand('_task-cockpit.tasks-file.open-tasks-file', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('_task-cockpit.tasks-file.open-tasks-file', async function (node?: Project.Node) {
             await vscode.commands.executeCommand('task-cockpit.tasks-file.open-file', node);
         }),
 
-        vscode.commands.registerCommand('_task-cockpit.tasks-file.open-workspace-file', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('_task-cockpit.tasks-file.open-workspace-file', async function (node?: Project.Node) {
             await vscode.commands.executeCommand('task-cockpit.tasks-file.open-file', node);
         }),
 
 
-        vscode.commands.registerCommand('task-cockpit.tasks-file.open-file', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.tasks-file.open-file', async function (node?: Project.Node) {
 
             const taskFile = cockpit.resolveTaskFile(node);
 
@@ -126,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
 
 
-        vscode.commands.registerCommand('task-cockpit.tasks-file.open-task', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.tasks-file.open-task', async function (node?: Project.Node) {
 
             // #region DEBUG
             const commandId = 'tasks-file.open-task';
@@ -169,7 +169,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
         // Не доступно для шорт-ката
-        vscode.commands.registerCommand('_task-cockpit.task.execute', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('_task-cockpit.task.execute', async function (node?: Project.Node) {
 
             // #region DEBUG
             const commandId = 'tasks-file.task.execute';
@@ -230,12 +230,12 @@ export async function activate(context: vscode.ExtensionContext) {
         // в другом контексте.
         //
         // @todo: Доступно для шорт-ката
-        vscode.commands.registerCommand('task-cockpit.task.execute', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.task.execute', async function (node?: Project.Node) {
             await vscode.commands.executeCommand('_task-cockpit.task.execute', node);
         }),
 
 
-        vscode.commands.registerCommand('task-cockpit.task.abort-all', function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.task.abort-all', function (node?: Project.Node) {
 
             // #region DEBUG
             const commandId = 'tasks-file.task.abort-all';
@@ -259,7 +259,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
 
 
-        vscode.commands.registerCommand('task-cockpit.task.show-terminal', async function (node?: Cockpit.Node) {
+        vscode.commands.registerCommand('task-cockpit.task.show-terminal', async function (node?: Project.Node) {
             // #region DEBUG
             const commandId = 'tasks-file.task.show-terminal';
             log(LogLevel.Debug, 'Command invoked', commandId);

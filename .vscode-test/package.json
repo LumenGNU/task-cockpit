@@ -14,6 +14,7 @@
   "license": "MIT",
   "devDependencies": {
     "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "source-map-support": "^0.5.21"
   }
 }

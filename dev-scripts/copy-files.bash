@@ -48,9 +48,10 @@ if [[ -n "${EXCLUDES:-}" ]]; then
 fi
 
 # @todo: порядок exclude/include аргументов rsync 
-# не проверен — убедиться, что exclude не 
-# перекрывает include до его срабатывания.
-# Или аргументировать именно такой порядок аргументов.
+# Rsync применяет первое совпавшее правило. Если хочется исключить, 
+# например, node_modules/ — это исключение должно стоять до --include='*/', 
+# иначе директория сначала совпадёт с --include='*/' 
+# и никогда не дойдёт до своего exclude-правила.
 rsync -amL "${exclude_args[@]}" "${include_args[@]}" --exclude='*' "${SOURCE_DIR}/" "${DEST_DIR}/" || { rc=$? ; echo -e '\n\e[31;1m[FAIL] Copying failed\e[0m\n' >&2 ; exit $rc ;}
 
 echo -e '\n\e[32;1m[DONE] Copying complete\e[0m\n' >&2

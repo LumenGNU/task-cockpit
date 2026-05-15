@@ -4,10 +4,13 @@
             "path": "Task Cockpit"
         },
         {
+            "path": "test.Unit"
+        },
+        {
             "path": "test-Cockpit.Pins"
         },
         {
-            "path": "test-Configuration"
+            "path": "test-Workspace::Settings"
         },
         {
             "path": "test-Workspace"
@@ -16,7 +19,7 @@
             "path": "test-Cockpit.Tree"
         },
         {
-            "path": "test-Panel.Runtime"
+            "path": "test-Runtime"
         },
         {
             "path": "test.semi-manual"
@@ -54,19 +57,37 @@
     "tasks": {
         "version": "2.0.0",
         "tasks": [
+            
+            // -----
             {
-                "label": "Utilities|Stamp markers in current file",
+                "label": "Dev Tooling|Dev-Scripts|shellcheck",
                 "type": "shell",
-                "command": "dev-scripts/number-markers.bash",
+                "command": [
+                    "set -eu;",
+                    "SCRIPT_FILE_BASH='dev-scripts/${fileBasenameNoExtension}.bash' ;",
+                    "if [[ -w \"${SCRIPT_FILE_BASH}\" ]]; then",
+                    "shellcheck -s bash \"${SCRIPT_FILE_BASH}\";",
+                    "echo -e \"\\e[32m[done]\\e[0m shellcheck: ${SCRIPT_FILE_BASH}\\n\";",
+                    "else",
+                    "echo -e \"\\e[31m[error]\\e[0m shellcheck: ${SCRIPT_FILE_BASH} not found\\n\";",
+                    "exit 1;",
+                    "fi"
+                ],
                 "options": {
-                    "env": {
-                        "FMT": "%03d",
-                        "FILEPATH": "${file}"
-                    }
+                    "cwd": "${workspaceFolder}"
+                },
+                "presentation": {
+                    "echo": false,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared",
+                    "showReuseMessage": true,
+                    "clear": false,
+                    "group": "CI"
                 }
             },
             {
-                "label": "CI|Dev-Scripts|shfmt",
+                "label": "Dev Tooling|Dev-Scripts|shfmt",
                 "type": "shell",
                 "command": [
                     "set -eu;",
@@ -92,8 +113,9 @@
                     "group": "CI"
                 }
             },
+            // -----
             {
-                "label": "CI|Code Quality/Validation|Check Module Headers",
+                "label": "Dev Tooling|Code Quality/Validation|Check Module Headers",
                 "detail": "Check module headers",
                 "icon": {
                     "id": "tag"
@@ -126,7 +148,7 @@
                 }
             },
             {
-                "label": "CI|Code Quality/Validation|Check Module Headers|Clear Diagnostics",
+                "label": "Dev Tooling|Code Quality/Validation|Check Module Headers|Clear Diagnostics",
                 "icon": {
                     "id": "clear-all"
                 },
@@ -152,7 +174,7 @@
             },
             // Type Check
             {
-                "label": "CI|Code Quality/Validation|Type Check|Run type check",
+                "label": "Dev Tooling|Code Quality/Validation|Type Check|Run type check",
                 "detail": "Run TypeScript type check without emitting",
                 "icon": {
                     "id": "checklist"
@@ -185,7 +207,7 @@
                 }
             },
             {
-                "label": "CI|Code Quality/Validation|Type Check|Clear TSC Diagnostics",
+                "label": "Dev Tooling|Code Quality/Validation|Type Check|Clear TSC Diagnostics",
                 "detail": "Clear TypeScript diagnostics",
                 "icon": {
                     "id": "clear-all"
@@ -208,7 +230,7 @@
             },
             // EsLint
             {
-                "label": "CI|Code Quality/Validation|ESLint|Open ESLint Config",
+                "label": "Dev Tooling|Code Quality/Validation|ESLint|Open ESLint Config",
                 "detail": "Open ESLint config",
                 "icon": {
                     "id": "go-to-file"
@@ -220,7 +242,7 @@
                 },
             },
             {
-                "label": "CI|Code Quality/Validation|ESLint|Check Entire Project",
+                "label": "Dev Tooling|Code Quality/Validation|ESLint|Check Entire Project",
                 "detail": "Run ESLint on all source files",
                 "icon": {
                     "id": "checklist"
@@ -247,7 +269,7 @@
                 ]
             },
             {
-                "label": "CI|Code Quality/Validation|ESLint|Check Current File",
+                "label": "Dev Tooling|Code Quality/Validation|ESLint|Check Current File",
                 "detail": "Run ESLint on current file",
                 "icon": {
                     "id": "checklist"
@@ -264,7 +286,7 @@
                     "clear": true,
                     "echo": false,
                     "focus": true,
-                    "showReuseMessage": false,
+                    "showReuseMessage": true,
                     "reveal": "silent",
                     "revealProblems": "onProblem"
                 },
@@ -274,7 +296,7 @@
                 ]
             },
             {
-                "label": "CI|Code Quality/Validation|ESLint|Clear ESLint Diagnostics",
+                "label": "Dev Tooling|Code Quality/Validation|ESLint|Clear ESLint Diagnostics",
                 "detail": "Clear ESLint diagnostics",
                 "icon": {
                     "id": "clear-all"
@@ -298,7 +320,7 @@
             },
             // Unicode
             {
-                "label": "CI|Code Quality/Validation|Unicode|Find Hidden Characters in current file",
+                "label": "Dev Tooling|Unicode|Find Hidden Characters in current file",
                 "detail": "Scan current file for hidden Unicode characters",
                 "icon": {
                     "id": "bug"
@@ -340,7 +362,7 @@
                 ]
             },
             {
-                "label": "CI|Code Quality/Validation|Unicode|Clear Diagnostics",
+                "label": "Dev Tooling|Unicode|Clear Diagnostics",
                 "detail": "Clear Unicode diagnostics",
                 "icon": {
                     "id": "clear-all"
@@ -367,6 +389,17 @@
                 }
             },
             // ---
+            {
+                "label": "Dev Tooling|Tests|Stamp markers in current file",
+                "type": "shell",
+                "command": "dev-scripts/number-markers.bash",
+                "options": {
+                    "env": {
+                        "FMT": "%03d",
+                        "FILEPATH": "${file}"
+                    }
+                }
+            },
         ]
     }
 }
