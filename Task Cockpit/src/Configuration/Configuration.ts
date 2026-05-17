@@ -25,10 +25,6 @@ interface BooleanSpec {
 }
 
 
-/** Дескриптор логического поля (boolean). */
-type BooleanOption = ConfigOption<OptionType.Boolean, BooleanSpec>;
-
-
 interface NumberSpec {
     /** Значение, возвращаемое когда настройка отсутствует или не является конечным числом. */
     readonly fallback: number;
@@ -39,20 +35,6 @@ interface NumberSpec {
 }
 
 
-/** Дескриптор числового поля.
- *
- * Логика обработки:
- * - Если значение не является числом (NaN, string, null) -> возвращается `fallback`.
- * - Если значение число, но выходит за границы `min`/`max` -> значение **clamped** (прижимается к границе).
- *
- * @example
- * spec: { fallback: 10, min: 0 }
- * // -5 -> 0 (clamped)
- * // "abc" -> 10 (fallback)
- * */
-type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
-
-
 interface StringSpec {
     /** Значение, возвращаемое когда настройка отсутствует, не является строкой или не прошла `pattern`. */
     readonly fallback: string;
@@ -61,35 +43,26 @@ interface StringSpec {
 }
 
 
-/** Дескриптор строкового поля.
- *
- * При проверке в рантайме (`get`), если значение не прошло `pattern`, будет возвращен `fallback`.
- * При создании схемы (`createSchema`), сам `fallback` также проверяется на соответствие паттерну. */
-type StringOption = ConfigOption<OptionType.String, StringSpec>;
-
-
 interface StringSetSpec {
     /** Значение, возвращаемое когда настройка отсутствует или не является массивом. */
     readonly fallback: readonly string[];
 }
 
 
-/** Дескриптор поля типа "множество строк".
- *
- * Конвертирует массив строк из настроек VS Code в нативный JS `Set<string>`.
- * Если в массиве встречаются не-строковые элементы, весь массив считается невалидным и заменяется на `fallback`.
- * *Пустой массив является валидным значением.*
- * */
-type StringSetOption = ConfigOption<OptionType.StringSet, StringSetSpec>;
+interface StringLiteralSpec<T extends string> {
+    readonly fallback: T;
+    readonly values: readonly T[];  // для валидации в рантайме
+}
 
 
 /** Вспомогательный тип для извлечения результирующего типа из дескриптора.
  * Служит для получения интерфейса на основе схемы. (Схема → Интерфейс) */
 type ExtractFieldType<F> =
-    F extends BooleanOption ? boolean :
-    F extends NumberOption ? number :
-    F extends StringOption ? string :
-    F extends StringSetOption ? Set<string> :
+    F extends Configuration.BooleanOption ? boolean :
+    F extends Configuration.NumberOption ? number :
+    F extends Configuration.StringLiteralOption<infer T> ? T :  // до StringOption!
+    F extends Configuration.StringOption ? string :
+    F extends Configuration.StringSetOption ? Set<string> :
     never;
 
 
@@ -104,10 +77,11 @@ type InferConfigType<S> = {
 
 /** Обратный маппинг: по типу значения подбирает нужный тип дескриптора для схемы. */
 type FieldDefFor<T> =
-    T extends boolean ? BooleanOption :
-    T extends string ? StringOption :
-    T extends number ? NumberOption :
-    T extends Set<string> ? StringSetOption :
+    [T] extends [number] ? Configuration.NumberOption :
+    [T] extends [boolean] ? Configuration.BooleanOption :
+    [string] extends [T] ? Configuration.StringOption :      // T ровно string, не сужение
+    [T] extends [string] ? Configuration.StringLiteralOption<T> :  // литерал/union
+    [T] extends [Set<string>] ? Configuration.StringSetOption :
     never;
 
 
@@ -122,11 +96,49 @@ const enum OptionType {
     /** Число */
     Number,
     /** Множество уникальных строк (`Set<string>`) */
-    StringSet
+    StringSet,
+
+    StringLiteral
 }
 
 
 declare namespace Configuration {
+
+    /** Дескриптор логического поля (boolean). */
+    type BooleanOption = ConfigOption<OptionType.Boolean, BooleanSpec>;
+
+
+    /** Дескриптор числового поля.
+     *
+     * Логика обработки:
+     * - Если значение не является числом (NaN, string, null) -> возвращается `fallback`.
+     * - Если значение число, но выходит за границы `min`/`max` -> значение **clamped** (прижимается к границе).
+     *
+     * @example
+     * spec: { fallback: 10, min: 0 }
+     * // -5 -> 0 (clamped)
+     * // "abc" -> 10 (fallback)
+     * */
+    type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
+
+
+    /** Дескриптор строкового поля.
+     *
+     * При проверке в рантайме (`get`), если значение не прошло `pattern`, будет возвращен `fallback`.
+     * При создании схемы (`createSchema`), сам `fallback` также проверяется на соответствие паттерну. */
+    type StringOption = ConfigOption<OptionType.String, StringSpec>;
+
+
+    /** Дескриптор поля типа "множество строк".
+     *
+     * Конвертирует массив строк из настроек VS Code в нативный JS `Set<string>`.
+     * Если в массиве встречаются не-строковые элементы, весь массив считается невалидным и заменяется на `fallback`.
+     * *Пустой массив является валидным значением.*
+     * */
+    type StringSetOption = ConfigOption<OptionType.StringSet, StringSetSpec>;
+
+
+    type StringLiteralOption<T extends string> = ConfigOption<OptionType.StringLiteral, StringLiteralSpec<T>>;
 
 
     /** Описывает структуру схемы на основе целевого интерфейса `I`.
@@ -228,6 +240,8 @@ const Configuration = {
                             if (pattern) {
                                 assert.ok(pattern instanceof RegExp,
                                     `Invalid pattern at ${path.join('.')}: expected "RegExp" got "${typeof pattern}"`);
+                                assert.ok(pattern.source.length > 0,
+                                    `Empty RegExp pattern at ${path.join('.')}`);
                                 // если есть паттерн —
                                 // прогоняем fallback через проверку
                                 assert.ok(pattern.test(fallback),
@@ -282,6 +296,21 @@ const Configuration = {
                             assert.ok(badIdx === -1,
                                 `Invalid fallback item at ${path.join('.')}[${badIdx}]: expected "string" got "${typeof entry.spec.fallback[badIdx]}"`);
 
+                            break;
+                        }
+
+                        case OptionType.StringLiteral: {
+
+                            // spec должен содержать values: readonly string[] и fallback: string
+                            assert.ok(Array.isArray(entry.spec.values),
+                                `Invalid values at ${path.join('.')}: expected Array of strings`);
+                            const badIdx = entry.spec.values.findIndex(v => typeof v !== 'string' || v.length === 0);
+                            assert.ok(badIdx === -1,
+                                `Invalid literal value at ${path.join('.')}[${badIdx}]: expected non-empty string`);
+                            assert.ok(typeof entry.spec.fallback === 'string',
+                                `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.spec.fallback}"`);
+                            assert.ok((entry.spec.values as readonly string[]).includes(entry.spec.fallback),
+                                `Fallback "${entry.spec.fallback}" is not included in values at ${path.join('.')}`);
                             break;
                         }
 
@@ -383,6 +412,9 @@ function resolveFieldValue(configKey: string, fieldDef: {
         case OptionType.StringSet: {
             return coerceStringSet(input, fieldDef.spec as StringSetSpec);
         }
+        case OptionType.StringLiteral: {
+            return coerceStringLiteral(input, fieldDef.spec as StringLiteralSpec<string>);
+        }
 
         default: {
             const _spec: never = fieldDef.type;
@@ -457,14 +489,17 @@ function coerceStringSet(
     return new Set(value as string[]);
 }
 
+
+function coerceStringLiteral<T extends string>(value: unknown, spec: StringLiteralSpec<T>): T {
+    return (typeof value === 'string' && (spec.values as readonly string[]).includes(value))
+        ? value as T
+        : spec.fallback;
+}
+
 // #endregion Валидаторы
 
 
 export default Configuration;
 export {
     OptionType,
-    NumberOption,
-    StringOption,
-    BooleanOption,
-    StringSetOption
 };
