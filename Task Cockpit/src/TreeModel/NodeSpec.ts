@@ -1,49 +1,37 @@
+/** @file TreeModel/NodeSpec.ts */
+/** @module NodeSpec */
+
+
 import { PathItemSeparator } from '../constants';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
 
 
-interface NodeData {
-    readonly [key: string]: unknown;
-    readonly name: string;
-    readonly hidden?: boolean;
-    readonly group?: { kind: string; };
-}
-
-
-type NodeKey = string;
-
-
-interface HierarchyConfig {
-    /** Включает группировку первого уровня по свойству `group.kind`. */
-    readonly useGroupKind: boolean;
-    /** Разделитель сегментов в пути (например `:` для `build:dev:watch`). */
-    readonly segmentSeparator: string;
-    /** Показывать ли элементы, помеченные как `hidden: true`. */
-    readonly showHidden: boolean;
-}
-
-
-type NodeDataIndex<D extends NodeData> = Readonly<Record<NodeKey, {
-    readonly nodeDataItems: ReadonlyArray<D>;
-    readonly hierarchyConfig: HierarchyConfig;
-}>>;
-
-
 /** Спецификация узла: путь (сегменты) и данные. */
-interface NodeSpec<D extends NodeData> {
+interface NodeSpec<D extends NodeSpec.NodeData> {
     readonly path: ReadonlyArray<string>;
     readonly data: D;
 }
 
 
-interface SpecEntry<D extends NodeData> {
-    readonly specs: ReadonlyArray<NodeSpec<D>>;
-    readonly totalCount: number;
-    readonly hiddenCount: number; // всегда 0 при compression !== 'off'
-}
+declare namespace NodeSpec {
 
-type SpecIndex<D extends NodeData> = Readonly<Record<NodeKey, SpecEntry<D>>>;
+    export interface NodeData {
+        readonly [key: string]: unknown;
+        readonly name: string;
+        readonly group?: { kind: string; } | null;
+    }
+
+    export interface HierarchyConfig {
+        /** Включает группировку первого уровня по свойству `group.kind`. */
+        readonly useGroupKind: boolean;
+        /** Разделитель сегментов в пути (например `:` для `build:dev:watch`). */
+        readonly segmentSeparator: string;
+    }
+
+    export type CompressionBehavior = 'off' | 'on' | 'on-aggressive';
+
+}
 
 
 const NodeSpec = {
@@ -53,79 +41,57 @@ const NodeSpec = {
      * ### Режимы компрессии путей
      *
      * При `compression === 'off'` пути строятся напрямую через {@linkcode buildPath}.
-     * Элементы с `hidden: true` исключаются до построения дерева.
      *
-     * При `'on'` и `'on-aggressive'` фильтрация `hidden` отключается: все элементы
+     * При `'on'` и `'on-aggressive'`: все элементы
      * участвуют в построении временного trie, после чего пути сжимаются через
      * {@linkcode buildCompressedPath}. Линейные участки склеиваются в один сегмент;
      * `'on-aggressive'` дополнительно трактует runnable-узлы как точки разреза.
      *
-     * ### Почему скрытые элементы исключаются на *этом* этапе:
-     *
-     * Если элемент помечен как `hidden: true` и `showHidden === false`,
-     * его ветка полностью исключается из структуры. Это делается здесь,
-     * потому что вьювер не должен показывать пустые папки, но понять,
-     * что папка окажется пустой после исключения скрытых элементов, он сможет
-     * только проверив всю глубину вложенности. Проще и эффективнее
-     * отфильтровать такие элементы до построения дерева.
-     *
-     * ### Подсчёт
-     *
-     * `totalCount` всегда включает все записи секции. `hiddenCount` — реально
-     * исключённые при `compression === 'off'`; в остальных режимах равен `0`.
-     *
      * @returns Индекс спецификаций: по одной записи {@linkcode SpecEntry} на каждый ключ входного индекса.
      * */
-    createSpecs<D extends NodeData>(
-        nodeDataIndex: Readonly<NodeDataIndex<D>>,
-        compression: 'off' | 'on' | 'on-aggressive' = 'off',
-    ): Readonly<SpecIndex<D>> {
+    createSpecs<D extends NodeSpec.NodeData>(
+        nodeDataItems: ReadonlyArray<Readonly<D>>,
+        hierarchyConfig: Readonly<NodeSpec.HierarchyConfig>,
+        compression: NodeSpec.CompressionBehavior = 'off'
+    ): Readonly<ReadonlyArray<Readonly<NodeSpec<D>>>> {
 
-        const result = Object.create(null) as Record<NodeKey, SpecEntry<D>>;
-        const splitterCache: Record<string, Splitter> = {};
+        const specs: NodeSpec<D>[] = [];
 
-        for (const [key, { nodeDataItems, hierarchyConfig }] of Object.entries(nodeDataIndex)) {
+        const { segmentSeparator } = hierarchyConfig;
+        const splitter = Splitter.create(segmentSeparator);
 
-            const { segmentSeparator, showHidden } = hierarchyConfig;
-            const splitter = splitterCache[segmentSeparator] ??= new Splitter(segmentSeparator);
-            const totalCount = nodeDataItems.length;
+        if (compression === 'off') {
 
-            if (compression === 'off') {
-
-                let hiddenCount = 0;
-                const specs: NodeSpec<D>[] = [];
-
-                for (const data of nodeDataItems) {
-                    if (!showHidden && data.hidden) { hiddenCount++; continue; }
-                    specs.push({ path: buildPath(data.name, data, hierarchyConfig, splitter), data });
-                }
-
-                result[key] = { specs, totalCount, hiddenCount };
-
-            } else {
-
-                const rawSpecs = nodeDataItems.map(data => ({
-                    path: buildPath(data.name, data, hierarchyConfig, splitter),
+            for (const data of nodeDataItems) {
+                specs.push({
+                    path: buildPath(splitter.split(data.name), data, hierarchyConfig),
                     data
-                }));
-
-                const trie = Hierarchy.build(rawSpecs);
-                const specs: NodeSpec<D>[] = [];
-                const aggressive = compression === 'on-aggressive';
-
-                Hierarchy.walk(trie, (node) => {
-                    if (!Hierarchy.Node.isData(node)) { return; }
-                    specs.push({
-                        path: buildCompressedPath(node, aggressive),
-                        data: Hierarchy.Node.getData(node)
-                    });
                 });
-
-                result[key] = { specs, totalCount, hiddenCount: 0 };
             }
         }
+        else {
 
-        return result;
+            const rawSpecs = nodeDataItems.map(data => ({
+                path: buildPath(splitter.split(data.name), data, hierarchyConfig),
+                data
+            }));
+
+            const trie = Hierarchy.build(rawSpecs);
+            const aggressive = compression === 'on-aggressive';
+
+            Hierarchy.walk(trie, (node) => {
+                if (!Hierarchy.Node.isData(node)) {
+                    return;
+                }
+                const data = Hierarchy.Node.getData(node);
+                specs.push({
+                    path: buildCompressedPath(node, aggressive),
+                    data
+                });
+            });
+        }
+
+        return specs;
     }
 
 } as const;
@@ -150,13 +116,11 @@ const NodeSpec = {
  * @returns Массив сегментов пути (всегда содержит хотя бы один элемент).
  *  */
 function buildPath(
-    path: string,
-    data: Readonly<NodeData>,
-    config: Readonly<HierarchyConfig>,
-    splitter: Splitter
+    segments: ReadonlyArray<string>,
+    data: Readonly<NodeSpec.NodeData>,
+    config: Readonly<NodeSpec.HierarchyConfig>
 ): ReadonlyArray<string> {
 
-    const segments = splitter.split(path);
     const groupKind = data.group?.kind;
 
     if (config.useGroupKind && groupKind) {
@@ -165,7 +129,6 @@ function buildPath(
 
     return segments;
 }
-
 
 
 /** Строит сжатый путь от листа (data-узла) к корню иерархии.
@@ -197,7 +160,7 @@ function buildPath(
  * @param aggressive Режим сжатия. См. описание выше.
  * @returns Массив сжатых сегментов от корня к листу. При `aggressive = false` последним
  *   элементом идёт несжатый сегмент листа; при `true` лист уже включён в сжатие. */
-function buildCompressedPath<D extends NodeData>(
+function buildCompressedPath<D extends NodeSpec.NodeData>(
     dataNode: Readonly<Hierarchy.Data<D>>,
     aggressive: boolean  // true = 'on-aggressive', false = 'on'
 ): ReadonlyArray<string> {

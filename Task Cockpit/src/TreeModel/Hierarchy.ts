@@ -1,5 +1,6 @@
-/** @file Cockpit/TreeModel/Hierarchy.ts */
+/** @file TreeModel/Hierarchy.ts */
 /** @module Hierarchy */
+
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
@@ -24,7 +25,7 @@ type AnyData = Record<string, unknown>;
 interface Node<D extends AnyData> {
     [SEGMENT]: string;
     [PARENT]: Hierarchy.Branch<D> | null;
-    [CHILDREN]: ChildrenDict<D> | null;
+    [CHILDREN]: Hierarchy.ChildrenDict<D> | null;
     [DATA_FLAG]: boolean;
 }
 
@@ -39,21 +40,21 @@ const CHILDREN: unique symbol = Symbol('children');
 const PARENT: unique symbol = Symbol('parent');
 
 
-
-/** Словарь дочерних узлов: сегмент → узел. */
-type ChildrenDict<D extends AnyData> = Record<string, Hierarchy.Data<D> | Hierarchy.Branch<D>>;
+// /** Словарь дочерних узлов: сегмент → узел. */
+// type ChildrenDict<D extends AnyData> = Record<string, Hierarchy.Data<D> | Hierarchy.Branch<D>>;
 
 
 /** Спецификация узла: scope, путь (сегменты) и данные. */
 interface Spec<D extends AnyData> {
     readonly path: ReadonlyArray<string>;
     readonly data: D;
+    readonly excluded?: boolean; // true: не включать в иерархию
 }
 
 
 /** Модуль построения иерархии из плоских путей.
  *
- * Принимает массив {@link Hierarchy.Spec | "спецификаций"} — путей вида `[a, b, c]` с данными —
+ * Принимает массив {@link Spec | "спецификаций"} — путей вида `[a, b, c]` с данными —
  * и строит из них иерархию с общими префиксами.
  * Возвращает словарь верхнеуровневых узлов.
  *
@@ -213,11 +214,16 @@ interface Spec<D extends AnyData> {
  *  */
 declare namespace Hierarchy {
 
+    /** Словарь дочерних узлов: сегмент → узел. */
+    export type ChildrenDict<D extends AnyData> = Record<string, Hierarchy.Data<D> | Hierarchy.Branch<D>>;
+
+
     /** Узел-ветка: имеет дочерние узлы. */
     export type Branch<D extends AnyData> = Omit<Node<D>, typeof DATA_FLAG | typeof CHILDREN> & {
         [CHILDREN]: ChildrenDict<D>;
         [DATA_FLAG]: boolean;
     };
+
 
     /** Узел с данными из спецификации. Может также иметь дочерние узлы. */
     export type Data<D extends AnyData> = Omit<Node<D>, typeof DATA_FLAG> & D & {
@@ -229,7 +235,7 @@ declare namespace Hierarchy {
 
 const Hierarchy = {
 
-    /** Построить иерархию из плоского списка {@linkcode Hierarchy.Spec | спецификаций}.
+    /** Построить иерархию из плоского списка {@linkcode NodeSpec | спецификаций}.
      *
      * Алгоритм: для каждой спецификации проходим по сегментам,
      * создавая узлы по мере необходимости (или повторно используя существующие).
@@ -243,13 +249,13 @@ const Hierarchy = {
      *
      * @template D тип данных, записываемых в data-узлы.
      *
-     * @param specs массив {@link Hierarchy.Spec | спецификаций} (путь + данные)
+     * @param specs массив {@link NodeSpec | спецификаций} (путь + данные)
      * @returns верхнеуровневые узлы построенной иерархии */
     build<D extends AnyData>(
         specs: ReadonlyArray<Readonly<Spec<D>>>
-    ): Readonly<ChildrenDict<Readonly<D>>> {
+    ): Readonly<Hierarchy.ChildrenDict<Readonly<D>>> {
 
-        const topDict = Object.create(null) as ChildrenDict<D>;
+        const topDict = Object.create(null) as Hierarchy.ChildrenDict<D>;
 
         if (specs.length < 1) {
             return topDict;
@@ -288,7 +294,7 @@ const Hierarchy = {
                     let children = parentNode[CHILDREN];
 
                     if (children === null) {
-                        children = Object.create(null) as ChildrenDict<D>;
+                        children = Object.create(null) as Hierarchy.ChildrenDict<D>;
                         parentNode[CHILDREN] = children;
                     }
 
@@ -320,11 +326,10 @@ const Hierarchy = {
     },
 
 
-
     /** Поиск узла по полному пути.
      * Возвращает `null`, если путь не существует. */
     lookup<D extends AnyData>(
-        hierarchy: ChildrenDict<D>,
+        hierarchy: Hierarchy.ChildrenDict<D>,
         path: ReadonlyArray<string>
     ): Hierarchy.Branch<D> | Hierarchy.Data<D> | null {
         let current:
@@ -333,7 +338,7 @@ const Hierarchy = {
             | null
             = null;
         let dict:
-            | ChildrenDict<D>
+            | Hierarchy.ChildrenDict<D>
             | null
             = hierarchy;
         for (const segment of path) {
@@ -346,24 +351,26 @@ const Hierarchy = {
         return current;
     },
 
+
     /** Вернуть верхнеуровневые узлы иерархии.
      *
      * @param hierarchy корневой словарь, возвращённый {@linkcode build}
      * @returns узлы первого уровня в порядке вставки */
     getRoots<D extends AnyData>(
-        hierarchy: ChildrenDict<D>
+        hierarchy: Hierarchy.ChildrenDict<D>
     ): Array<
         Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>
     > {
         return Object.values(hierarchy);
     },
 
+
     /** Обойти все узлы иерархии в глубину.
      *
      * @param hierarchy корневой словарь, возвращённый {@linkcode build}
      * @param visitor вызывается для каждого узла */
     walk<D extends AnyData>(
-        hierarchy: ChildrenDict<D>,
+        hierarchy: Hierarchy.ChildrenDict<D>,
         visitor: (child: Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>) => void
     ): void {
 
@@ -387,6 +394,7 @@ const Hierarchy = {
             return node[DATA_FLAG];
         },
 
+
         /** Type guard: узел имеет дочерние элементы. */
         isBranch<D extends AnyData>(
             node: Hierarchy.Data<D> | Hierarchy.Branch<D>
@@ -403,6 +411,7 @@ const Hierarchy = {
             // смотри bug: integer index sorting in plain object
             return node[SEGMENT].slice(1);
         },
+
 
         /** Чистые данные узла, без структурных полей иерархии.
          *
@@ -425,6 +434,7 @@ const Hierarchy = {
             return data as D;
         },
 
+
         /** Родительский узел. Для узлов верхнего уровня (корней) возвращает null. */
         getParent<D extends AnyData>(
             node: Hierarchy.Data<D> | Hierarchy.Branch<D>
@@ -432,12 +442,14 @@ const Hierarchy = {
             return node[PARENT];
         },
 
+
         /** Дочерние узлы ветки. */
         getBranchChildren<D extends AnyData>(
             node: Hierarchy.Branch<D>
         ): Array<Readonly<Hierarchy.Data<D> | Hierarchy.Branch<D>>> {
             return Object.values(node[CHILDREN]);
         },
+
 
         /** Возвращает количество дочерних узлов */
         childCount<D extends AnyData>(node: Hierarchy.Branch<D>): number {
@@ -450,6 +462,7 @@ const Hierarchy = {
             for (_ in children) { count++; };
             return count;
         },
+
 
         /** True — если количество дочерних узлов больше одного */
         hasMultipleChildren<D extends AnyData>(node: Hierarchy.Branch<D>): boolean {
@@ -476,6 +489,7 @@ const Hierarchy = {
             return children ? Object.values(children) : [];
         },
 
+
         /** Восстановление полного пути от корня до узла (подъём по PARENT-цепочке).
          * @returns массив сегментов от корня к узлу */
         resolvePath<D extends AnyData>(
@@ -497,6 +511,7 @@ const Hierarchy = {
             }
         },
 
+
         /** Обход поддерева в глубину (pre-order), включая сам узел.
          * @param visitor вызывается для каждого узла с текущей глубиной */
         walk<D extends AnyData>(
@@ -514,8 +529,8 @@ const Hierarchy = {
                     visitor(child);
                 }
             }
-        },
-    },
+        }
+    }
 } as const;
 
 
