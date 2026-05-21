@@ -11,7 +11,7 @@ type HierarchyConfig = NodeSpec.HierarchyConfig & { showHidden: boolean; };
 
 
 interface GrowResult<T> {
-    sprouts: Readonly<Hierarchy.Data<Readonly<T>> | Hierarchy.Branch<Readonly<T>>>[];
+    sprouts: ReadonlyArray<Readonly<Hierarchy.Data<Readonly<T>> | Hierarchy.Branch<Readonly<T>>>>;
     stats: Readonly<{
         total: number;
         excluded: number;
@@ -28,28 +28,33 @@ interface GrowResult<T> {
  * @param hierarchyConfig параметры иерархии, в том числе политика видимости скрытых узлов
  * @param ignoreHiddenFlag если `true`, скрытые узлы включаются независимо от конфигурации
  * @param compression режим компрессии путей в иерархии */
-function growSprouts<T extends NodeData>(
-    nodeData: ReadonlyArray<Readonly<T>>,
-    hierarchyConfig: Readonly<HierarchyConfig>,
-    ignoreHiddenFlag: boolean,
-    compression: NodeSpec.CompressionBehavior
-): Readonly<GrowResult<T>> {
+function growSprouts<D extends NodeData>({
+    nodeData,
+    ignoreHiddenFlag,
+    hierarchyConfig,
+    compression
+}: {
+    nodeData: ReadonlyArray<Readonly<[name: string, data: D]>>;
+    ignoreHiddenFlag: boolean;
+    hierarchyConfig: Readonly<HierarchyConfig>;
+    compression: NodeSpec.CompressionBehavior;
+}): Readonly<GrowResult<D>> {
 
-    const processed = (hierarchyConfig.showHidden || ignoreHiddenFlag)
+    const nodeDataItems = (hierarchyConfig.showHidden || ignoreHiddenFlag)
         ? nodeData
-        : nodeData.filter(function (d) { return !d.hidden; });
+        : nodeData.filter(function ([_, d]) { return !d.hidden; });
 
-    const specs = NodeSpec.createSpecs(
-        processed,
+    const specs = NodeSpec.createSpecs({
+        nodeDataItems,
         hierarchyConfig,
         compression
-    );
+    });
 
     return {
-        sprouts: Hierarchy.getRoots(Hierarchy.build<T>(specs)),
+        sprouts: Hierarchy.getRoots(Hierarchy.build<D>(specs)),
         stats: {
             total: nodeData.length,
-            excluded: nodeData.length - processed.length
+            excluded: nodeData.length - nodeDataItems.length
         }
     };
 }

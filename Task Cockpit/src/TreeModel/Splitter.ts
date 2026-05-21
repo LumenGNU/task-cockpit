@@ -42,7 +42,9 @@ export type SplitFunc = (segmentsSpec: string) => string[];
  * - `split()` Разбивает строку на сегменты согласно правилам разделителя
  *
  * */
-type Splitter = { readonly split: SplitFunc; };
+interface Splitter {
+    readonly split: SplitFunc;
+};
 
 const Splitter = {
 

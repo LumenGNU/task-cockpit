@@ -2,7 +2,7 @@
 /** @module NodeSpec */
 
 
-import { PathItemSeparator } from '../constants';
+import { DisplayItemSeparator } from '../constants';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
 
@@ -18,7 +18,6 @@ declare namespace NodeSpec {
 
     export interface NodeData {
         readonly [key: string]: unknown;
-        readonly name: string;
         readonly group?: { kind: string; } | null;
     }
 
@@ -49,11 +48,15 @@ const NodeSpec = {
      *
      * @returns Индекс спецификаций: по одной записи {@linkcode SpecEntry} на каждый ключ входного индекса.
      * */
-    createSpecs<D extends NodeSpec.NodeData>(
-        nodeDataItems: ReadonlyArray<Readonly<D>>,
-        hierarchyConfig: Readonly<NodeSpec.HierarchyConfig>,
-        compression: NodeSpec.CompressionBehavior = 'off'
-    ): Readonly<ReadonlyArray<Readonly<NodeSpec<D>>>> {
+    createSpecs<D extends NodeSpec.NodeData>({
+        nodeDataItems,
+        hierarchyConfig,
+        compression
+    }: {
+        nodeDataItems: ReadonlyArray<Readonly<[name: string, data: D]>>;
+        hierarchyConfig: Readonly<NodeSpec.HierarchyConfig>;
+        compression: NodeSpec.CompressionBehavior;
+    }): Readonly<ReadonlyArray<Readonly<NodeSpec<D>>>> {
 
         const specs: NodeSpec<D>[] = [];
 
@@ -62,17 +65,18 @@ const NodeSpec = {
 
         if (compression === 'off') {
 
-            for (const data of nodeDataItems) {
+            for (const [name, data] of nodeDataItems) {
+
                 specs.push({
-                    path: buildPath(splitter.split(data.name), data, hierarchyConfig),
+                    path: buildPath(splitter.split(name), data, hierarchyConfig),
                     data
                 });
             }
         }
         else {
 
-            const rawSpecs = nodeDataItems.map(data => ({
-                path: buildPath(splitter.split(data.name), data, hierarchyConfig),
+            const rawSpecs = nodeDataItems.map(([name, data]) => ({
+                path: buildPath(splitter.split(name), data, hierarchyConfig),
                 data
             }));
 
@@ -197,7 +201,7 @@ function buildCompressedPath<D extends NodeSpec.NodeData>(
         if (isForcedBranch || isNormalDataBreak) {
             if (chain.length > 0) {
                 chain.reverse();
-                compressed.push(chain.join(PathItemSeparator));
+                compressed.push(chain.join(DisplayItemSeparator));
                 chain.length = 0;
             }
         }
@@ -216,7 +220,7 @@ function buildCompressedPath<D extends NodeSpec.NodeData>(
     // Финальный flush — оставшиеся сегменты у корня
     if (chain.length > 0) {
         chain.reverse();
-        compressed.push(chain.join(PathItemSeparator));
+        compressed.push(chain.join(DisplayItemSeparator));
         // compressed заполняется от листа к корню (flush при подъёме),
         // reverse приводит к порядку от корня к листу.
         compressed.reverse();
