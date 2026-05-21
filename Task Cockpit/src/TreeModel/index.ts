@@ -15,7 +15,7 @@ declare namespace TreeModel {
 }
 
 const TreeModel = {
-    growSprouts: buildHierarchy
+    buildHierarchy
 } as const;
 
 
