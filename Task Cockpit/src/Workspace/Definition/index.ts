@@ -16,6 +16,8 @@ import type TaskName from '../../type.d/TaskName';
  * для представления задачи в UI. */
 interface Definition {
 
+    [k: string]: unknown;
+
     /** Флаг скрытия из отображения */
     hidden: boolean;
 

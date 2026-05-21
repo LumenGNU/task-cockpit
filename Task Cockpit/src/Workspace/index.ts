@@ -12,9 +12,12 @@ import type StructureInput from './StructureInput';
 import ScopedConfig from './ScopedConfig';
 import assert from 'node:assert/strict';
 
+
 declare namespace Workspace {
 
-    export type Scopes = ReadonlyArray<Readonly<Scope>>;
+    export type Definition = import('./Definition').default;
+    export type Scope = import('./Scope').default;
+    export type ScopedConfig = import('./ScopedConfig').default;
 
 }
 
@@ -49,7 +52,7 @@ const Workspace = {
              *
              * **Инвариант:** `TaskScope.Workspace`, если присутствует — всегда первый.
              * */
-            getScopes(): Workspace.Scopes {
+            getScopes(): ReadonlyArray<Readonly<Workspace.Scope>> {
                 return [
                     ...(VscWorkspace.workspaceFile ? [TaskScope.Workspace] as const : []),
                     ...(VscWorkspace.workspaceFolders ?? []),
@@ -72,7 +75,10 @@ const Workspace = {
              *
              * @throws { CancellationError } при отмене через `token`.
              *  */
-            async buildStructureInput(scopes: Workspace.Scopes, token: CancellationToken): Promise<StructureInput> {
+            async buildStructureInput(
+                scopes: ReadonlyArray<Readonly<Workspace.Scope>>,
+                token: CancellationToken
+            ): Promise<StructureInput> {
 
                 if (token.isCancellationRequested) {
                     throw new CancellationError();
@@ -104,5 +110,10 @@ const Workspace = {
         } as const;
     },
 
+    Scope,
+
 
 } as const;
+
+
+export default Workspace;
