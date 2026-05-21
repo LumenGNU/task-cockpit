@@ -1,5 +1,5 @@
-/** @file TreeModel/GrowSprouts.ts */
-/** @module GrowSprouts */
+/** @file TreeModel/BuildHierarchy.ts */
+/** @module BuildHierarchy */
 
 
 import Hierarchy from './Hierarchy';
@@ -10,7 +10,7 @@ type NodeData = NodeSpec.NodeData & { hidden?: boolean; };
 type HierarchyConfig = NodeSpec.HierarchyConfig & { showHidden: boolean; };
 
 
-interface GrowResult<T> {
+interface BuildResult<T> {
     sprouts: ReadonlyArray<Readonly<Hierarchy.Data<Readonly<T>> | Hierarchy.Branch<Readonly<T>>>>;
     stats: Readonly<{
         total: number;
@@ -22,23 +22,22 @@ interface GrowResult<T> {
 /** Преобразует плоский список узловых данных в корневые узлы иерархии.
  *
  * Скрытые узлы исключаются, если не разрешены явно — через конфигурацию или флаг.
- * Возвращает корневые узлы построенной иерархии и статистику по исключённым элементам.
- *
- * @param nodeData исходные данные узлов
- * @param hierarchyConfig параметры иерархии, в том числе политика видимости скрытых узлов
- * @param ignoreHiddenFlag если `true`, скрытые узлы включаются независимо от конфигурации
- * @param compression режим компрессии путей в иерархии */
-function growSprouts<D extends NodeData>({
+ * Возвращает корневые узлы построенной иерархии и статистику по исключённым элементам. */
+function buildHierarchy<D extends NodeData>({
     nodeData,
     ignoreHiddenFlag,
     hierarchyConfig,
     compression
 }: {
+    /** Исходные данные узлов */
     nodeData: ReadonlyArray<Readonly<[name: string, data: D]>>;
-    ignoreHiddenFlag: boolean;
+    /** Параметры иерархии, в том числе политика видимости скрытых узлов */
     hierarchyConfig: Readonly<HierarchyConfig>;
+    /** Если `true`, скрытые узлы включаются независимо от флага `showHidden` и политики видимости */
+    ignoreHiddenFlag: boolean;
+    /** Режим компрессии путей в иерархии */
     compression: NodeSpec.CompressionBehavior;
-}): Readonly<GrowResult<D>> {
+}): Readonly<BuildResult<D>> {
 
     const nodeDataItems = (hierarchyConfig.showHidden || ignoreHiddenFlag)
         ? nodeData
@@ -59,4 +58,4 @@ function growSprouts<D extends NodeData>({
     };
 }
 
-export default growSprouts;
+export default buildHierarchy;

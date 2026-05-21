@@ -2,7 +2,7 @@
 /** @module TreeModel */
 
 
-import growSprouts from './GrowSprouts';
+import buildHierarchy from './BuildHierarchy';
 
 type AnyData = Record<string, unknown>;
 
@@ -15,7 +15,7 @@ declare namespace TreeModel {
 }
 
 const TreeModel = {
-    growSprouts
+    growSprouts: buildHierarchy
 } as const;
 
 
