@@ -2,6 +2,9 @@
 *
 # ...кроме самого этого файла
 !.gitignore
+
+
 !package.json
-!vscode-fixtures-test.mjs
-!vscode-unit-test.mjs
+!color.mjs
+!vscode-fixture-tests.mjs
+!vscode-unit-tests.mjs
