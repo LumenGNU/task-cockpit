@@ -4,3 +4,4 @@
 !.gitignore
 !package.json
 !vscode-fixtures-test.mjs
+!vscode-unit-test.mjs
