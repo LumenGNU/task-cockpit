@@ -1,4 +1,4 @@
-/** @file Cockpit/Runtime/index.ts */
+/** @file Runtime/index.ts */
 /** @module Runtime */
 
 // #region DEBUG
@@ -11,17 +11,10 @@ const { log } = Logger.get(module.filename);
 import * as vscode from 'vscode';
 import EligibleTask from '../EligibleTask';
 import Monitor from './Monitor';
+import ProcessRegistry from './ProcessRegistry';
 import Terminals from './Terminals';
-import type { ProcessId } from '../type.d/ProcessId';
-import type { ProcessInfo } from '../type.d/ProcessInfo';
-import type { TaskId } from '../type.d/TaskId';
-import type { TerminalsSnapshot } from '../type.d/TerminalsSnapshot';
-import type { RuntimeState } from '../type.d/RuntimeState';
-
-
-/** Карта терминалов задачи: terminal → информация о процессе (включая PID).
- * Отсортирована по времени запуска (старые первыми). */
-type TerminalsMap = ReadonlyMap<vscode.Terminal, ProcessInfo & { processId: ProcessId; }>;
+import type ProcessId from '../type.d/ProcessId';
+import type TaskId from '../type.d/TaskId';
 
 
 /** Отслеживает жизненный цикл процессов, порождённых задачами VS Code.
@@ -32,9 +25,9 @@ type TerminalsMap = ReadonlyMap<vscode.Terminal, ProcessInfo & { processId: Proc
  *
  * Процесс остаётся в реестре до тех пор, пока виден в терминале —
  * даже после завершения. */
-export default class Runtime implements vscode.Disposable {
+class Runtime implements vscode.Disposable {
 
-    private readonly changeEmitter: vscode.EventEmitter<TaskId>;
+    readonly #onDidChange: vscode.EventEmitter<TaskId>;
 
     // #region Events
 
@@ -44,7 +37,7 @@ export default class Runtime implements vscode.Disposable {
      * запуск, завершение, удаление из реестра.
      *
      * Payload — идентификатор затронутой задачи. */
-    public readonly onDidChange: vscode.Event<TaskId>;
+    readonly onDidChange: vscode.Event<TaskId>;
 
     // #endregion Events
 
@@ -52,38 +45,39 @@ export default class Runtime implements vscode.Disposable {
      *
      * Все процессы остаются здесь с флагами alive/dead,
      * пока видны в терминале.  */
-    private readonly registry: Map<TaskId, Map<ProcessId, ProcessInfo>>;
+    readonly #registry: ProcessRegistry;
 
-    private disposable: vscode.Disposable;
+    readonly #disposable: vscode.Disposable;
 
     /** {@link Monitor | Мониторинг процессов} */
-    private readonly monitor: Monitor;
+    readonly #monitor: Monitor;
 
     /** {@link Terminals | Управление терминалами} */
-    private readonly terminals: Terminals;
+    readonly #terminals: Terminals;
 
-    private disposed: boolean;
+    #disposed: boolean;
 
 
     // #region Lifecycle
 
-    constructor(settings: { monitor: Monitor.Settings, terminals: Terminals.Settings; }) {
+    constructor(settings: { monitor: Monitor.Settings; terminals: Terminals.Settings; }) {
 
-        this.disposed = false;
+        this.#disposed = false;
 
-        this.registry = new Map<TaskId, Map<ProcessId, ProcessInfo>>();
+        this.#registry = ProcessRegistry.create();
 
-        this.changeEmitter = new vscode.EventEmitter<TaskId>();
-        this.onDidChange = this.changeEmitter.event;
+        this.#onDidChange = new vscode.EventEmitter<TaskId>();
+        this.onDidChange = this.#onDidChange.event;
 
-        this.monitor = new Monitor(settings.monitor);
-        this.terminals = new Terminals(settings.terminals);
+        this.#monitor = new Monitor(settings.monitor);
+        this.#terminals = new Terminals(settings.terminals);
 
 
-        this.disposable = vscode.Disposable.from(
+        this.#disposable = vscode.Disposable.from(
 
             // задача породила процесс
-            vscode.tasks.onDidStartTaskProcess(this.processStartedHandler, this),
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            vscode.tasks.onDidStartTaskProcess(this.#processStartedHandler, this),
 
             // @todo возможно vscode.window.onDidEndTerminalShellExecution лучше? @reject
             // @reject - Bug:
@@ -102,19 +96,22 @@ export default class Runtime implements vscode.Disposable {
             // С событием vscode.tasks.onDidEndTaskProcess - то же есть проблемы.
             // ----
             // Процесс(ы) задач(и) сдох(ли)
-            this.monitor.onProcessesCompleted(this.processCompletedHandler, this),
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            this.#monitor.onProcessesCompleted(this.#processCompletedHandler, this),
 
             // любой терминал закрылся
-            vscode.window.onDidCloseTerminal(this.terminalClosedHandler, this),
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            vscode.window.onDidCloseTerminal(this.#terminalClosedHandler, this),
 
             // наконец-то обновилось состояние терминалов (возможно - протухшее)
-            this.terminals.onDidReconcile(this.terminalsReconciledHandler, this),
+            // eslint-disable-next-line @typescript-eslint/unbound-method
+            this.#terminals.onDidReconcile(this.#terminalsReconciledHandler, this),
 
-            this.monitor,
-            this.terminals,
+            this.#monitor,
+            this.#terminals,
 
             // эмиттер
-            this.changeEmitter,
+            this.#onDidChange
 
         );
     }
@@ -123,11 +120,12 @@ export default class Runtime implements vscode.Disposable {
     /** Cleanup: очистить все хранилища */
     dispose() {
 
-        this.disposed = true;
+        if (this.#disposed) {
+            return;
+        }
 
-        this.disposable.dispose();
-
-        this.registry.clear();
+        this.#disposed = true;
+        this.#disposable.dispose();
 
         // #region DEBUG
         log(LogLevel.Debug, 'Disposed', 'dispose');
@@ -141,17 +139,17 @@ export default class Runtime implements vscode.Disposable {
 
     /** Текущее состояние процессов задачи.
      *
-     * Возвращает **живую ссылку** на внутренний `Map` — содержимое мутируется
-     * при изменении состояния процессов. Не кешируй ссылку между циклами событий.
-     *
      * @returns `undefined`, если задача не зарегистрирована или экземпляр disposed. */
-    public state(taskId: TaskId): RuntimeState | undefined {
+    getProcessSummary(taskId: TaskId): Readonly<{
+        total: number;
+        running: number;
+    }> | undefined {
 
-        if (this.disposed) {
+        if (this.#disposed) {
             return undefined;
         }
 
-        return this.registry.get(taskId);
+        return this.#registry.summaryByTaskId(taskId);
     }
 
 
@@ -162,33 +160,45 @@ export default class Runtime implements vscode.Disposable {
      * Результат отсортирован по времени запуска (старые первыми).
      *
      * @returns Пустая `Map`, если задача не зарегистрирована. */
-    public async getTerminals(taskId: TaskId): Promise<TerminalsMap> {
+    async getTerminals(taskId: TaskId, cancellationToken: vscode.CancellationToken): Promise<ReadonlyMap<
+        vscode.Terminal,
+        Readonly<{
+            readonly processId: ProcessId;
+            readonly running: boolean;
+            readonly timestamp: number;
+            readonly taskId: TaskId;
+        }>
+    >> {
 
-        const stateInfo = this.registry.get(taskId);
+        if (this.#disposed) {
+            return new Map();
+        }
 
-        if (!stateInfo) {
+        const processes = this.#registry.getByTaskId(taskId);
+
+        if (!processes || processes.size < 1) {
             return new Map();
         }
 
         return new Map(
+
             (await Promise.all(
                 vscode.window.terminals.map(async (terminal) => {
-                    const processId = await this.terminals.getTerminalPid(terminal);
+
+                    const processId = await this.#terminals.getTerminalPid(terminal, cancellationToken);
 
                     if (!processId) {
                         return undefined;
                     }
 
-                    const processInfo = stateInfo.get(processId);
-
-                    if (!processInfo) {
+                    if (!processes.has(processId)) {
                         return undefined;
                     }
 
-                    return [terminal, { ...processInfo, processId }] as const;
+                    return [terminal, { ...this.#registry.getByProcessId(processId), processId }] as const;
                 })
             ))
-                .filter((d): d is readonly [vscode.Terminal, ProcessInfo & { processId: ProcessId; }] => Boolean(d))
+                .filter((d): d is readonly [vscode.Terminal, ProcessRegistry.Process & { processId: ProcessId; }] => d != null)
                 .sort((a, b) => a[1].timestamp - b[1].timestamp) // Старый в верху
         );
 
@@ -201,26 +211,26 @@ export default class Runtime implements vscode.Disposable {
      * Мгновенная остановка, как и остановка вообще — не гарантируется.
      *
      * После dispose — no-op. */
-    public abortAll(taskId: TaskId): void {
+    abortAll(taskId: TaskId): void {
 
-        if (this.disposed) {
+        if (this.#disposed) {
             return;
         }
 
-        const processes = this.registry.get(taskId);
+        const processes = this.#registry.getByTaskId(taskId);
 
-        if (!processes || processes.size === 0) {
+        if (!processes || processes.size < 1) {
             // #region DEBUG
             log(LogLevel.Debug, 'Abort requested but no processes registered', EligibleTask.Id.print(taskId));
             // #endregion DEBUG
             return;
         }
 
-        const runningProcesses = [...processes.entries()]
-            .filter(([_, info]) => info.running)
-            .map(([pid]) => pid);
+        const running =
+            [...processes]
+                .filter((pid) => this.#registry.getByProcessId(pid)?.running);
 
-        if (runningProcesses.length === 0) {
+        if (running.length < 1) {
             // #region DEBUG
             log(LogLevel.Debug, `Abort requested, but none running from ${processes.size} process(es) registered`, EligibleTask.Id.print(taskId));
             // #endregion DEBUG
@@ -229,11 +239,11 @@ export default class Runtime implements vscode.Disposable {
 
         // #region DEBUG
         log(LogLevel.Debug,
-            `Aborting ${runningProcesses.length} of ${processes.size} registered process(es)`, EligibleTask.Id.print(taskId));
+            `Aborting ${running.length} of ${processes.size} registered process(es)`, EligibleTask.Id.print(taskId));
         // #endregion DEBUG
 
-        for (const processId of runningProcesses) {
-            this.killProcess(processId);
+        for (const processId of running) {
+            this.#killProcess(processId);
         }
     }
 
@@ -245,7 +255,7 @@ export default class Runtime implements vscode.Disposable {
     /** Обработка события запуска процесса задачи.
      * Регистрирует процесс, если PID валиден и задача в поддерживаемом scope,
      * затем инициирует пересмотр терминалов. */
-    private processStartedHandler({ execution, processId }: vscode.TaskProcessStartEvent) {
+    #processStartedHandler({ execution, processId }: vscode.TaskProcessStartEvent) {
 
         // #region DEBUG
         log(LogLevel.Trace, '"tasks.onDidStartTaskProcess" event received');
@@ -260,15 +270,15 @@ export default class Runtime implements vscode.Disposable {
 
                 const taskId = EligibleTask.Id.from(execution.task);
 
-                this.addProcess(processId, taskId, Date.now());
+                this.#registry.register(processId, taskId, Date.now());
 
                 // #region DEBUG
                 log(LogLevel.Debug, `Task process "${processId}" added to the registry`, EligibleTask.Id.print(taskId));
                 // #endregion DEBUG
 
-                this.changeEmitter.fire(taskId);
+                this.#onDidChange.fire(taskId);
 
-                this.monitor.addTaskProcess(processId);
+                this.#monitor.addTaskProcess(processId);
 
             }
             // #region DEBUG
@@ -288,24 +298,24 @@ export default class Runtime implements vscode.Disposable {
         // #endregion DEBUG
 
         // в любом случае — пересмотр терминалов
-        this.terminals.reconcile(Date.now());
+        this.#terminals.reconcile(Date.now());
     }
 
 
     /** Обработка завершённых процессов от {@linkcode Monitor}.
      * Помечает процессы как завершённые и инициирует пересмотр терминалов. */
-    private processCompletedHandler(completed: ReadonlySet<ProcessId>) {
+    #processCompletedHandler(completed: ReadonlySet<ProcessId>) {
 
         // #region DEBUG
         log(LogLevel.Trace, '"monitor.onProcessesCompleted" event received');
         // #endregion DEBUG
 
-        const ids = this.markCompleted(new Set(completed));
+        const ids = this.#registry.markCompleted([...completed]);
 
-        if (ids.size > 0) {
+        if (ids.length > 0) {
 
             // #region DEBUG
-            log(LogLevel.Debug, `Completed ${ids.size} process(es):`);
+            log(LogLevel.Debug, `Completed ${ids.length} process(es):`);
             // #endregion DEBUG
 
             for (const taskId of ids) {
@@ -314,7 +324,7 @@ export default class Runtime implements vscode.Disposable {
                 // #endregion DEBUG
 
 
-                this.changeEmitter.fire(taskId);
+                this.#onDidChange.fire(taskId);
             }
         }
 
@@ -323,12 +333,12 @@ export default class Runtime implements vscode.Disposable {
         // #endregion DEBUG
 
         // в любом случае — пересмотр терминалов
-        this.terminals.reconcile(Date.now());
+        this.#terminals.reconcile(Date.now());
     }
 
 
     /** Обработка закрытия любого терминала. Инициирует пересмотр всех терминалов. */
-    private terminalClosedHandler(_terminal: vscode.Terminal) {
+    #terminalClosedHandler(_terminal: vscode.Terminal) {
 
         // #region DEBUG
         log(LogLevel.Trace, '"window.onDidCloseTerminal" event received');
@@ -338,7 +348,7 @@ export default class Runtime implements vscode.Disposable {
         log(LogLevel.Trace, 'Terminals reconciliation ...');
         // #endregion DEBUG
 
-        this.terminals.reconcile(Date.now());
+        this.#terminals.reconcile(Date.now());
         // @todo: для оптимизации тут можно проверять и удалять конкретный процесс,
         // а не проверять все терминалы.
         // Оставлю пока так для "а вдруг что-то пропускаю - почистит"
@@ -348,19 +358,19 @@ export default class Runtime implements vscode.Disposable {
 
     /** Обработка результата сверки терминалов от {@linkcode Terminals}.
      * Удаляет из реестра процессы, которых больше нет ни в одном терминале. */
-    private terminalsReconciledHandler(snapshot: TerminalsSnapshot) {
+    #terminalsReconciledHandler(snapshot: Terminals.Snapshot) {
 
         // #region DEBUG
         log(LogLevel.Trace,
             '"terminals.onDidReconcile" event received');
         // #endregion DEBUG
 
-        const ids = this.removeUnavailableProcesses(snapshot);
+        const ids = this.#registry.reconcileSnapshot(snapshot);
 
-        if (ids.size > 0) {
+        if (ids.length > 0) {
 
             // #region DEBUG
-            log(LogLevel.Debug, `Unavailable ${ids.size} process(es):`);
+            log(LogLevel.Debug, `Unavailable ${ids.length} process(es):`);
             // #endregion DEBUG
 
             for (const taskId of ids) {
@@ -369,7 +379,7 @@ export default class Runtime implements vscode.Disposable {
                 log(LogLevel.Debug, 'Marked as unavailable', EligibleTask.Id.print(taskId));
                 // #endregion DEBUG
 
-                this.changeEmitter.fire(taskId);
+                this.#onDidChange.fire(taskId);
             }
         }
     }
@@ -385,7 +395,7 @@ export default class Runtime implements vscode.Disposable {
      *
      * ESRCH (процесс уже мёртв) — не ошибка. Прочие ошибки логируются,
      * но не пробрасываются — kill не фатален. */
-    private killProcess(pid: ProcessId): void {
+    #killProcess(pid: ProcessId): void {
         try {
 
             // NO Win: попытка убить группу, fallback на сам процесс
@@ -395,7 +405,7 @@ export default class Runtime implements vscode.Disposable {
                     process.kill(pid, 'SIGTERM');
                 }
                 else {
-                    process.kill(-pid, 'SIGTERM');
+                    process.kill(-(pid as number), 'SIGTERM');
                 }
             }
             catch (error) {
@@ -435,152 +445,6 @@ export default class Runtime implements vscode.Disposable {
             return;
         }
     }
-
-
-    /** Регистрация нового процесса в реестре. Дубликаты игнорируются с предупреждением. */
-    private addProcess(processId: ProcessId, taskId: TaskId, timestamp: number): void {
-
-        let processes = this.registry.get(taskId);
-
-        if (!processes) {
-            processes = new Map();
-            this.registry.set(taskId, processes);
-        }
-
-        if (processes.has(processId)) {
-            // #region DEBUG
-            log(LogLevel.Warning, `Duplicate process registration attempt: "${processId}"`, EligibleTask.Id.print(taskId));
-            // #endregion DEBUG
-            return;
-        }
-
-        processes.set(processId, {
-            timestamp: timestamp,
-            running: true,
-        });
-
-        // #region DEBUG
-        log(LogLevel.Trace,
-            `Registered process "${processId}" (total: ${processes.size})`, EligibleTask.Id.print(taskId));
-        // #endregion DEBUG
-
-        return;
-    }
-
-
-    /** Помечает процессы как завершённые (`running = false`).
-     *
-     * Мутирует входной `Set`, удаляя найденные PID для раннего выхода —
-     * каждый PID уникален, повторных совпадений быть не может.
-     *
-     * @returns Множество задач, чьё состояние изменилось. */
-    private markCompleted(completed: Set<ProcessId>): ReadonlySet<TaskId> {
-
-        const changed = new Set<TaskId>();
-
-        for (const [taskId, processes] of this.registry) {
-
-            for (const [processId, processInfo] of processes) {
-
-                if (completed.has(processId)) {
-
-                    processInfo.running = false;
-
-                    changed.add(taskId);
-
-                    // процесс - штука уникальная
-                    // Значит: первое совпадение = единственное совпадение
-                    completed.delete(processId);
-                    if (completed.size < 1) {
-                        break;
-                    }
-                }
-            }
-
-            if (completed.size < 1) {
-                break;
-            }
-
-        }
-
-        return changed;
-    }
-
-
-    /** Удаляет из реестра процессы, которых нет в снапшоте терминалов.
-     *
-     * Если снапшот старше процесса (`snapshot.timestamp < processInfo.timestamp`),
-     * процесс пропускается — он появился после начала сбора снапшота.
-     *
-     * Пустые записи задач вычищаются из реестра.
-     *
-     * @returns Множество задач, чьё состояние изменилось. */
-    private removeUnavailableProcesses(snapshot: TerminalsSnapshot): ReadonlySet<TaskId> {
-
-        const changed = new Set<TaskId>();
-
-        for (const [taskId, processes] of this.registry) {
-
-            for (const [processId, processInfo] of processes) {
-
-                // снапшоты приходят по порядку и всегда актуальны, это условие — предохранитель.
-                // Он гарантирует, что если процесс был добавлен после того, как VS Code
-                // начал собирать данные для текущего снапшота, мы его не тронем.
-                if (snapshot.timestamp < processInfo.timestamp) {
-
-                    // пропуск возможного, неактуального для процесса снапшота
-
-                    // #region DEBUG
-                    log(LogLevel.Trace,
-                        `Snapshot outdated for process "${processId}" (${snapshot.timestamp} < ${processInfo.timestamp}), skipping removal check`, EligibleTask.Id.print(taskId));
-                    // continue;
-                    // #endregion DEBUG
-
-                    // @todo:
-                    // Про break vs continue в removeInvisibleProcesses:
-                    // Есть мнение что break — это не косяк, а отличная оптимизация. Поскольку:
-                    // Map в JavaScript гарантирует порядок итерации в порядке вставки. -?
-                    // Новые процессы добавляются в конец Map (в addProcess). -?
-                    // logicalClock всегда растет.
-                    // Следовательно, процессы внутри Map для конкретной задачи всегда
-                    // отсортированы по времени (timestamp). Как только встречен первый процесс,
-                    // который "моложе" снапшота (snapshot.timestamp < processInfo.timestamp),
-                    // то можно быть уверенным, что все последующие процессы в этой задаче тоже моложе.
-                    // Итог: break позволяет не проверять остальные процессы этой задачи, что
-                    // эффективнее, чем continue.
-                    // @fixme: Сейчас релизная версия использует break, но
-                    // это не достаточно протестировано
-                    break;
-                }
-
-                // если терминалы не "видят" этот процесс
-                if (!snapshot.processIds.has(processId)) {
-
-                    // удаление из реестра,
-                    // #region DEBUG
-                    log(LogLevel.Debug, `Task process "${processId}" has been removed from the registry (no longer available).`, EligibleTask.Id.print(taskId));
-                    // #endregion DEBUG
-
-                    processes.delete(processId);
-                    changed.add(taskId);
-                }
-            }
-
-            if (processes.size < 1) {
-                //  очистка пустых
-                // #region DEBUG
-                log(LogLevel.Debug, `Task removed from registry (no processes left)`, EligibleTask.Id.print(taskId));
-                // #endregion DEBUG
-
-                this.registry.delete(taskId);
-            }
-
-        }
-
-        return changed;
-
-    }
-
 }
 
 
@@ -594,3 +458,9 @@ export default class Runtime implements vscode.Disposable {
 function isValidPid(pid: number | undefined): pid is ProcessId {
     return (pid !== undefined && /*Number.isInteger(pid) &&*/ pid > 0);
 }
+
+declare namespace Runtime {
+    type ProcessStats = import('./ProcessRegistry.js').default.ProcessStats;
+}
+
+export default Runtime;

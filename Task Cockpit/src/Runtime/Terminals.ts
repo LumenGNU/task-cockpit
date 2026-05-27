@@ -1,4 +1,4 @@
-/** @file Cockpit/Runtime/Terminals.ts */
+/** @file Runtime/Terminals.ts */
 /** @module Terminals */
 
 
@@ -10,8 +10,7 @@ const { log } = Logger.get(module.filename);
 
 
 import * as vscode from 'vscode';
-import type { TerminalsSnapshot } from '../type.d/TerminalsSnapshot';
-import type { ProcessId } from '../type.d/ProcessId';
+import type ProcessId from '../type.d/ProcessId';
 
 
 interface ActiveRequest {
@@ -24,6 +23,13 @@ declare namespace Terminals {
 
     export interface Settings {
         timeout: number;
+    }
+
+    export interface Snapshot {
+        /** Time-штамп снапшота */
+        timestamp: number;
+        /** Список процессов, реально присутствующих в системе */
+        processIds: ReadonlySet<ProcessId>;
     }
 
 }
@@ -60,8 +66,8 @@ class Terminals implements vscode.Disposable {
 
     private readonly timeout: number;
 
-    private readonly reconciledEmitter: vscode.EventEmitter<TerminalsSnapshot>;
-    public readonly onDidReconcile: vscode.Event<TerminalsSnapshot>;
+    private readonly reconciledEmitter: vscode.EventEmitter<Terminals.Snapshot>;
+    public readonly onDidReconcile: vscode.Event<Terminals.Snapshot>;
 
 
     private activeExecution: ActiveRequest | undefined;
@@ -74,7 +80,7 @@ class Terminals implements vscode.Disposable {
         this.disposed = false;
         this.timeout = settings.timeout;
 
-        this.reconciledEmitter = new vscode.EventEmitter<TerminalsSnapshot>();
+        this.reconciledEmitter = new vscode.EventEmitter<Terminals.Snapshot>();
         this.onDidReconcile = this.reconciledEmitter.event;
     }
 
@@ -92,8 +98,7 @@ class Terminals implements vscode.Disposable {
         this.pending = undefined;
 
         // #region DEBUG
-        log(LogLevel.Debug,
-            'disposed');
+        log(LogLevel.Debug, 'disposed');
         // #endregion DEBUG
     }
 
@@ -130,14 +135,11 @@ class Terminals implements vscode.Disposable {
 
         // попробовать запустить (если idle)
         if (this.activeExecution === undefined) {
-            this.executeNext();
+            void this.executeNext();
         }
-
-
     }
 
     // #endregion Public
-
 
 
     // #region Управление очередью
@@ -194,7 +196,7 @@ class Terminals implements vscode.Disposable {
                 this.activeExecution = undefined;
 
                 // стек уже свободен после await — следующий вызов это отдельная микрозадача, не рекурсия
-                this.executeNext();
+                void this.executeNext();
             }
 
         }
@@ -222,7 +224,7 @@ class Terminals implements vscode.Disposable {
     private async performReconciliation(
         timestamp: number,
         cancellationToken: vscode.CancellationToken
-    ): Promise<TerminalsSnapshot> {
+    ): Promise<Terminals.Snapshot> {
 
         if (cancellationToken.isCancellationRequested) {
             throw new vscode.CancellationError();
@@ -264,14 +266,14 @@ class Terminals implements vscode.Disposable {
     //
     public async getTerminalPid(
         terminal: vscode.Terminal,
-        cancellationToken?: vscode.CancellationToken
+        cancellationToken: vscode.CancellationToken
     ): Promise<ProcessId | undefined> {
 
         if (this.disposed) {
             return;
         }
 
-        if (cancellationToken && cancellationToken.isCancellationRequested) {
+        if (cancellationToken.isCancellationRequested) {
             throw new vscode.CancellationError();
         }
 
@@ -283,11 +285,9 @@ class Terminals implements vscode.Disposable {
 
             const racers: PromiseLike<ProcessId | undefined>[] = [
                 // Успешный исход
-                terminal.processId.then(pid => pid ? pid as ProcessId : undefined)
-            ];
+                terminal.processId.then(pid => pid ? pid as ProcessId : undefined),
 
-            racers.push(
-                // Тайм-аут
+                // Тайм-аут.
                 // Workaround для багов #91905 (2020) и #236869 (2024):
                 // processId зависает, если есть проблемы с shellIntegration и т.д.
                 new Promise<undefined>((resolve) => {
@@ -302,9 +302,7 @@ class Terminals implements vscode.Disposable {
                         resolve(undefined);
                     }, this.timeout);
                 }),
-            );
 
-            racers.push(
                 // Закрытие терминала
                 new Promise<undefined>((resolve) => {
                     disposeListener = vscode.window.onDidCloseTerminal(t => {
@@ -316,18 +314,16 @@ class Terminals implements vscode.Disposable {
                         resolve(undefined);
                     }
                 }),
-            );
 
-            if (cancellationToken) {
-                racers.push(
-                    new Promise<never>((_, reject) => {
-                        cancellationListener = cancellationToken.onCancellationRequested(() => reject(new vscode.CancellationError()));
-                        if (cancellationToken.isCancellationRequested) {
-                            reject(new vscode.CancellationError());
-                        }
-                    })
-                );
-            }
+                // токен отмены
+                new Promise<never>((_, reject) => {
+                    cancellationListener = cancellationToken.onCancellationRequested(() => reject(new vscode.CancellationError()));
+                    if (cancellationToken.isCancellationRequested) {
+                        reject(new vscode.CancellationError());
+                    }
+                })
+
+            ];
 
             return await Promise.race(racers);
 

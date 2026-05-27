@@ -1,4 +1,4 @@
-/** @file Cockpit/Runtime/Monitor.ts */
+/** @file Runtime/Monitor.ts */
 /** @module Monitor */
 
 
@@ -10,12 +10,13 @@ const { log } = Logger.get(module.filename);
 
 
 import * as vscode from 'vscode';
-import type { ProcessId } from '../type.d/ProcessId';
+import type ProcessId from '../type.d/ProcessId';
 
 
 declare namespace Monitor {
 
     export interface Settings {
+
         readonly polling: {
             /** Минимальный интервал опроса (в мс). */
             readonly min: number;
@@ -46,7 +47,6 @@ declare namespace Monitor {
  *
  * */
 class Monitor implements vscode.Disposable {
-
 
     private disposed: boolean;
 
@@ -89,7 +89,7 @@ class Monitor implements vscode.Disposable {
      * @affects `checkInterval` Таймер будет остановлен
      * @affects `processes` Будет очищен
      *
-     * @implements {vscode.Disposable} */
+     * @implements { vscode.Disposable } */
     public dispose() {
 
         this.disposed = true;
@@ -111,14 +111,14 @@ class Monitor implements vscode.Disposable {
 
     /** Обновить конфигурацию опроса.
      *
-     * Значения не валидируются — ответственность на вызывающей стороне.
+     * Значения не проверяются — ответственность на вызывающей стороне.
      *
      * @param pollingCnf.min Минимальный интервал опроса (мс).
      * @param pollingCnf.cap Максимальный интервал опроса (мс). Инвариант: `cap > min × 1.7`.
      * @param pollingCnf.acceleration Коэффициент замедления при росте очереди.
      *   Чем выше — тем быстрее достигается `cap`.
      *
-     * see: {@linkcode MonitorSettings} */
+     * see: {@linkcode MonitorSettings } */
     public set polling(pollingCnf: Readonly<Monitor.Settings['polling']>) {
         this.#pollingCnf = pollingCnf;
     }
@@ -166,16 +166,14 @@ class Monitor implements vscode.Disposable {
         if (this.processes.has(processId)) {
 
             // #region DEBUG
-            log(LogLevel.Warning, `Process is already tracked, skip it`, processId.toString());
+            log(LogLevel.Warning, 'Process is already tracked, skip it', processId.toString());
             // #endregion DEBUG
 
             return;
         }
 
         // #region DEBUG
-        log(LogLevel.Debug,
-            `Added process to monitoring`,
-            processId.toString());
+        log(LogLevel.Debug, 'Added process to monitoring', processId.toString());
         // #endregion DEBUG
 
         this.processes.add(processId);
@@ -184,7 +182,7 @@ class Monitor implements vscode.Disposable {
         // отдышаться
 
         // Не пересчитываем интервал если таймаут уже работает.
-        // Буст ui при массовом добавлении процессов: если таймер уже тикает, и прилетает
+        // Отзывчивость ui при массовом добавлении процессов: если таймер уже тикает, и прилетает
         // ещё 100 процессов, то не нужно сразу же пересчитывать интервал, — ближайшая проверка
         // пройдёт быстро, а scheduleCheck пересчитает интервал уже с новым count.
         if (!this.checkInterval) {
@@ -321,9 +319,7 @@ class Monitor implements vscode.Disposable {
             if (!this.isAlive(processId)) {
 
                 // #region DEBUG
-                log(LogLevel.Trace,
-                    `Process is no longer running`,
-                    processId.toString());
+                log(LogLevel.Trace, 'Process is no longer running', processId.toString());
                 // #endregion DEBUG
 
                 this.processes.delete(processId); // Safe: Set allows delete during iteration
