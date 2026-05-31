@@ -124,9 +124,10 @@ class Terminals implements vscode.Disposable {
         this.ensureNotDisposed();
 
         // #region DEBUG
-        const status = this.activeExecution
-            ? (this.pending !== undefined ? `queued, supersedes ${this.pending}` : 'queued')
-            : 'immediate';
+        const status =
+            this.activeExecution
+                ? (this.pending !== undefined ? `queued, supersedes ${this.pending}` : 'queued')
+                : 'immediate';
         log(LogLevel.Debug, `Reconcile requested (${status})`, timestamp.toString());
         // #endregion DEBUG
 

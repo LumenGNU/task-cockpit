@@ -2,9 +2,19 @@ Logger.ts
 
 constants.ts
 
-TreeModel/Hierarchy.ts
-TreeModel/Splitter.ts
-TreeModel/Spec.ts
 
+## utils
 utils/AsyncQueue.ts
 utils/RevocablePromise.ts
+
+
+## TreeModel
+TreeModel/BuildHierarchy.ts
+TreeModel/Hierarchy.ts
+TreeModel/NodeSpec.ts
+TreeModel/Splitter.ts
+TreeModel/index.ts
+
+
+##TreeView
+TreeView/Node/ContentNode.ts

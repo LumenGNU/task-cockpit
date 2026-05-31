@@ -10,21 +10,14 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "test-extension-activate",
-        "title": "test extension activate"
-      }
-    ]
-  },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.86.0",
     "mocha": "^11.3.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "tsc-alias": "^1.8.17"
   }
 }

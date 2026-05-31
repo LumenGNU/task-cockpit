@@ -2,6 +2,8 @@
 
 # UNRELEASED
 
+- 'loading...' to 'scaning...'
+- detail для workspace больше не содержат сводку по пвпкам
 - `excludeFolders` setting now also supports excluding the workspace scope
 - `excludeFolders` имеет эффект в сингл-воркспейсе
 

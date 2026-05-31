@@ -5,7 +5,7 @@
   "tasks": [
     {
       "label": "Open as project",
-      "hide": true,
+      "hide":  true,
       "icon": {
         "id": "vscode",
         "color": "terminal.ansiBlue"
@@ -56,7 +56,6 @@
         "id": "eraser"
       },
       "dependsOn": [
-        "Clear|Clean/create '~out/'",
         "Clear|Clean/create '~out-test/'",
         "Clear|Clean/create '~stripped/'"
       ],
@@ -70,30 +69,6 @@
         "showReuseMessage": false,
         "revealProblems": "onProblem",
         "group": "Clear"
-      }
-    },
-    {
-      "label": "Clear|Clean/create '~out/'",
-      "detail": "Ensure '~out' directory exists and is empty",
-      "icon": {
-        "id": "new-folder"
-      },
-      "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "DEST_DIR": "~out"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": false,
-        "revealProblems": "onProblem"
       }
     },
     {
@@ -144,42 +119,6 @@
         "revealProblems": "onProblem"
       }
     },
-    {
-      "label": "Build DEBUG extension",
-      "icon": {
-        "id": "debug"
-      },
-      "detail": "Compile TypeScript sources into `~out/` for debug runner",
-      "dependsOn": [
-        "Prepare TEST environment",
-        "Clear|Clean/create '~out/'"
-      ],
-      "dependsOrder": "sequence",
-      "type": "shell",
-      "command": "dev-scripts/transpile-typescript.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "WORK_DIR": ".",
-          "DEST_DIR": "~out",
-          "TSCONFIG": "debug.tsconfig.json"
-        }
-      },
-      "problemMatcher": {
-        "applyTo": "allDocuments",
-        "base": "$tsc"
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "build"
-      }
-    },
     //------------------
     {
       "label": "Pretest",
@@ -188,12 +127,12 @@
         "id": "flame"
       },
       "dependsOn": [
+        // src/ стрипается
+        "Pretest|Clean/create '~stripped/'",
         "Pretest|Clean/create '~out-test/'",
-        "Pretest|Compile test TypeScript files into '~out-test/'",
         "Pretest|Strip DEBUG blocks",
-        "Pretest|Copy 'stripped.tsconfig.json' to '~out-test/src/'",
-        "Pretest|Compile stripped TypeScript files into '~out-test/src'",
-        "Pretest|Copy 'package.json' for the test runner"
+        "Pretest|Compile test TypeScript files into '~out-test/'",
+        "Pretest|Copy required stubs for the test runner"
       ],
       "dependsOrder": "sequence",
       "presentation": {
@@ -208,17 +147,38 @@
       }
     },
     {
+      "label": "Pretest|Clean/create '~stripped/'",
+      "detail": "Ensure '~stripped' directory exists and is empty",
+      "icon": {
+        "id": "new-folder"
+      },
+      "dependsOn": "Clear|Clean/create '~stripped/'",
+      "dependsOrder": "sequence"
+    },
+    {
       "label": "Pretest|Clean/create '~out-test/'",
       "detail": "Ensure '~out-test' directory exists and is empty",
       "icon": {
         "id": "new-folder"
       },
+      "dependsOn": "Clear|Clean/create '~out-test/'",
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Pretest|Strip DEBUG blocks",
+      "icon": {
+        "id": "regex"
+      },
+      "detail": "Remove debug-only code blocks from sources `src/` into `~stripped/`  \n`rc/Logger.ts` copy skipp",
       "type": "shell",
-      "command": "dev-scripts/create-empty-directory.bash",
+      "command": "dev-scripts/strip-debug-blocks.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "DEST_DIR": "~out-test"
+          "SOURCE_DIR": "src",
+          "DEST_DIR": "~stripped/",
+          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts' ! -wholename 'src/Logger.ts'",
+          "STRIP_MODE": "test"
         }
       },
       "presentation": {
@@ -245,7 +205,7 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "WORK_DIR": ".",
+          "WORK_DIR": "${workspaceFolder}",
           "TSCONFIG": "test.tsconfig.json"
         }
       },
@@ -265,36 +225,8 @@
       }
     },
     {
-      "label": "Pretest|Strip DEBUG blocks",
-      "icon": {
-        "id": "regex"
-      },
-      "detail": "Remove debug-only code blocks from sources `src/` into `~out-test/src/`",
-      "type": "shell",
-      "command": "dev-scripts/strip-debug-blocks.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "SOURCE_DIR": "src",
-          "DEST_DIR": "~out-test/src",
-          "FIND_FILTERS": "-name '~*' -prune -o -wholename 'src/*.ts' ! -wholename 'src/Logger.ts'",
-          "STRIP_MODE": "test"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "Pretest"
-      }
-    },
-    {
-      "label": "Pretest|Copy 'stripped.tsconfig.json' to '~out-test/src/'",
-      "detail": "Copy the stripped TypeScript config to the test output source directory",
+      "label": "Pretest|Copy required stubs for the test runner",
+      "detail": "Copy  \n- `package.json`  \n- `extension.js`  \nto the test output directory for the test runner",
       "icon": {
         "id": "copy"
       },
@@ -303,68 +235,9 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "SOURCE_DIR": ".",
-          "INCLUDES": "stripped.tsconfig.json",
-          "DEST_DIR": "~out-test/src/"
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "Pretest"
-      }
-    },
-    {
-      "label": "Pretest|Compile stripped TypeScript files into '~out-test/src'",
-      "detail": "Compile the debug-stripped extension sources into '~out-test/src'",
-      "icon": {
-        "id": "debug"
-      },
-      "dependsOn": [],
-      "dependsOrder": "sequence",
-      "type": "shell",
-      "command": "dev-scripts/transpile-typescript.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "WORK_DIR": "./~out-test/src",
-          "TSCONFIG": "stripped.tsconfig.json"
-        }
-      },
-      "problemMatcher": {
-        "applyTo": "allDocuments",
-        "base": "$tsc"
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "onProblem",
-        "group": "Pretest"
-      }
-    },
-    {
-      "label": "Pretest|Copy 'package.json' for the test runner",
-      "detail": "Copy package.json to the test output directory for the test runner",
-      "icon": {
-        "id": "copy"
-      },
-      "type": "shell",
-      "command": "dev-scripts/copy-files.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "SOURCE_DIR": ".",
-          "INCLUDES": "package.json",
-          "DEST_DIR": "~out-test/src"
+          "SOURCE_DIR": "${workspaceFolder}",
+          "INCLUDES": "package.json extension.js",
+          "DEST_DIR": "~out-test/"
         }
       },
       "problemMatcher": [],
@@ -379,10 +252,9 @@
         "group": "Pretest"
       }
     },
-    //------------------
-    {
-      "label": "Run tests|RevocablePromise",
-      "detail": "Run the RevocablePromise fixture tests",
+    { // ------------
+      "label": "Run tests|ALL TESTS",
+      "detail": "Run the ALL TESTS unit tests",
       "icon": {
         "id": "run-all"
       },
@@ -391,15 +263,109 @@
       ],
       "dependsOrder": "sequence",
       "type": "shell",
-      "command": "dev-scripts/run-fixtures-test.bash",
+      "command": "dev-scripts/run-unit-test.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-unit-test.mjs",
           "TEST_REPORTER": "spec",
-          "FIXTURES_TESTS": "RevocablePromise::*",
-          "OUT_DIR": "~out-test",
-          "SRC_TEST_DIR": "test"
+          "UNIT_TESTS": "*::*"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "Test Failes",
+        "source": "vscode-test",
+        "severity": "error",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+          "message": 0,
+          "file": 1,
+          "line": 2,
+          "column": 3
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "never",
+        "group": "Tests"
+      }
+    },
+    { // ------------
+      "label": "Run tests|utils|RevocablePromise",
+      "detail": "Run the RevocablePromise unit tests",
+      "icon": {
+        "id": "beaker"
+      },
+      "dependsOn": [
+        "Pretest"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/run-unit-test.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-unit-test.mjs",
+          "TEST_REPORTER": "spec",
+          "UNIT_TESTS": "utils.RevocablePromise::*"
+        }
+      },
+      "problemMatcher": {
+        "applyTo": "allDocuments",
+        "owner": "Test Failes",
+        "source": "vscode-test",
+        "severity": "error",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+          "message": 0,
+          "file": 1,
+          "line": 2,
+          "column": 3
+        }
+      },
+      "presentation": {
+        "clear": false,
+        "echo": false,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "revealProblems": "never",
+        "group": "Tests"
+      }
+    },
+    { // ------------
+      "label": "Run tests|utils|AsyncQueue",
+      "detail": "Run the AsyncQueue unit tests",
+      "icon": {
+        "id": "beaker"
+      },
+      "dependsOn": [
+        "Pretest"
+      ],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "dev-scripts/run-unit-test.bash",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-unit-test.mjs",
+          "TEST_REPORTER": "spec",
+          "UNIT_TESTS": "utils.AsyncQueue::*"
         }
       },
       "problemMatcher": {
@@ -431,25 +397,23 @@
       }
     },
     {
-      "label": "Run tests|AsyncQueue",
-      "detail": "Run the AsyncQueue fixture tests",
+      "label": "Run tests|TreeModel|Splitter",
+      "detail": "Run the Splitter unit tests",
       "icon": {
-        "id": "run-all"
+        "id": "beaker"
       },
       "dependsOn": [
         "Pretest"
       ],
       "dependsOrder": "sequence",
       "type": "shell",
-      "command": "dev-scripts/run-fixtures-test.bash",
+      "command": "dev-scripts/run-unit-test.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-unit-test.mjs",
           "TEST_REPORTER": "spec",
-          "FIXTURES_TESTS": "AsyncQueue::*",
-          "OUT_DIR": "~out-test",
-          "SRC_TEST_DIR": "test"
+          "UNIT_TESTS": "TreeModel.Splitter::*"
         }
       },
       "problemMatcher": {
@@ -480,76 +444,24 @@
         "group": "Tests"
       }
     },
-    {
-      "label": "Run tests|Splitter",
-      "detail": "Run the Splitter fixture tests",
+    { // ------------
+      "label": "Run tests|TreeModel|Hierarchy",
+      "detail": "Run the Hierarchy unit tests",
       "icon": {
-        "id": "run-all"
+        "id": "beaker"
       },
       "dependsOn": [
         "Pretest"
       ],
       "dependsOrder": "sequence",
       "type": "shell",
-      "command": "dev-scripts/run-fixtures-test.bash",
+      "command": "dev-scripts/run-unit-test.bash",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
+          "TEST_CONFIG_FILE": ".vscode-test/vscode-unit-test.mjs",
           "TEST_REPORTER": "spec",
-          "FIXTURES_TESTS": "Splitter::*",
-          "OUT_DIR": "~out-test",
-          "SRC_TEST_DIR": "test"
-        }
-      },
-      "problemMatcher": {
-        "applyTo": "allDocuments",
-        "owner": "Test Failes",
-        "source": "vscode-test",
-        "severity": "error",
-        "fileLocation": [
-          "relative",
-          "${workspaceFolder}"
-        ],
-        "pattern": {
-          "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-          "message": 0,
-          "file": 1,
-          "line": 2,
-          "column": 3
-        }
-      },
-      "presentation": {
-        "clear": false,
-        "echo": false,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "revealProblems": "never",
-        "group": "Tests"
-      }
-    },
-    {
-      "label": "Run tests|Hierarchy",
-      "detail": "Run the Hierarchy fixture tests",
-      "icon": {
-        "id": "run-all"
-      },
-      "dependsOn": [
-        "Pretest"
-      ],
-      "dependsOrder": "sequence",
-      "type": "shell",
-      "command": "dev-scripts/run-fixtures-test.bash",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "TEST_CONFIG_FILE": ".vscode-test/vscode-fixtures-test.mjs",
-          "TEST_REPORTER": "spec",
-          "FIXTURES_TESTS": "Hierarchy::*",
-          "OUT_DIR": "~out-test",
-          "SRC_TEST_DIR": "test"
+          "UNIT_TESTS": "TreeModel.Hierarchy::*"
         }
       },
       "problemMatcher": {

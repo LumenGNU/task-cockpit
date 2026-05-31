@@ -53,14 +53,21 @@ export default defineConfig(
                 ignoreUsingDeclarations: false,
                 reportUsedIgnorePattern: false,
                 varsIgnorePattern: '^_',
-                argsIgnorePattern: '^_'
+                argsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_'
             }],
             '@stylistic/quotes': ['warn', 'single'],
-            // '@stylistic/semi': ['warn', 'always'],
-            // '@stylistic/comma-dangle': ['warn', 'always-multiline'],
-            // '@stylistic/indent': ['warn', 4],
-            // '@stylistic/no-trailing-spaces': 'warn',
-            // '@stylistic/no-multiple-empty-lines': ['warn', { max: 2, maxEOF: 1, maxBOF: 0 }],
+            '@stylistic/semi': ['warn', 'always'],
+            '@stylistic/comma-dangle': ['warn', 'never'],
+            '@stylistic/member-delimiter-style': ['warn', {
+                multiline: { delimiter: 'semi', requireLast: true },
+                singleline: { delimiter: 'semi', requireLast: true },
+            }],
+            // '@stylistic/indent': ['warn', 4, {
+            //     "assignmentOperator": "off"
+            // }],
+            '@stylistic/no-trailing-spaces': 'warn',
+            '@stylistic/no-multiple-empty-lines': ['warn', { max: 2, maxEOF: 1, maxBOF: 1 }],
             // '@stylistic/no-multi-spaces': ['warn', { ignoreEOLComments: true }],
             // '@stylistic/brace-style': ['warn', 'stroustrup', { allowSingleLine: true }],
         },

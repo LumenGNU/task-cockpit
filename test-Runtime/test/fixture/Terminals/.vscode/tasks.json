@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "New Terminal Infinite Process", // Отроет новый терминал, не завершится, не закроет терминал
+            "command": "sleep inf",
+            "type": "shell",
+            "args": [],
+            "presentation": {
+                "panel": "new",
+                "close": false,
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "instanceLimit": 5
+            }
+        },
+        {
+            "label": "New Terminal 3s Auto Close", // Отроет новый терминал, через 3секунды закроет терминал
+            "command": "sleep 3",
+            "type": "shell",
+            "args": [],
+            "presentation": {
+                "panel": "new",
+                "close": true
+            },
+            "problemMatcher": [],
+        },
+        {
+            "label": "New Broken Terminal", // Отроет новый терминал *сломанный*, не закроет терминал
+            "type": "process",
+            "command": "",
+            "args": [],
+            "presentation": {
+                "panel": "new",
+                "close": false
+            },
+            "problemMatcher": [],
+        }
+    ]
+}

@@ -24,11 +24,11 @@
 
 import * as vscode from 'vscode';
 import AsyncQueue from '../utils/AsyncQueue';
-import Scope from '../Scope';
+import Scope from '../ProjectSpace/Scope/Scope';
 import type EligibleTask from '../EligibleTask';
-import type { TaskName } from '../type.d/TaskName';
-import type { ScopeKey } from '../type.d/ScopeKey';
-import type { DefinitionId } from '../type.d/DefinitionId';
+import type TaskName from '../type.d/TaskName';
+import type Key from '../ProjectSpace/Scope/Key';
+import type DefinitionId from '../type.d/DefinitionId';
 
 
 /** Контракт хранилища данных пинов.
@@ -61,7 +61,7 @@ declare namespace Pins {
      *
      * Инвариант: пустых `Refs` в хранилище не бывает — при последнем
      * удалении пина scope удаляется из объекта целиком. */
-    type Entries = Record<ScopeKey, Pins.Refs>;
+    type Entries = Record<Key, Pins.Refs>;
 
 }
 
@@ -138,7 +138,7 @@ class Pins implements vscode.Disposable {
 
         const { name, scope, definition: { id } } = task;
 
-        const key: ScopeKey = Scope.getKey(scope);
+        const key: Key = Scope.getKey(scope);
 
         return this.#queue.enqueue(async () => {
             const current = this.#storage.read();
@@ -164,7 +164,7 @@ class Pins implements vscode.Disposable {
      * @param key  Ключ scope (результат `Scope.getKey()`).
      * @param name Имя задачи, которую нужно открепить.
      * @returns Promise, разрешающийся после завершения записи. */
-    public unpin(key: ScopeKey, name: TaskName): Promise<void> {
+    public unpin(key: Key, name: TaskName): Promise<void> {
 
         return this.#queue.enqueue(async () => {
             const current = this.#storage.read();
@@ -203,7 +203,7 @@ class Pins implements vscode.Disposable {
  */
 function removePinFromStorage(
     current: Readonly<Pins.Entries>,
-    key: ScopeKey,
+    key: Key,
     entry: Pins.Refs,
     name: TaskName,
 ): Pins.Entries {

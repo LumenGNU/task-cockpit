@@ -1,5 +1,12 @@
+/** @file utils/RevocablePromise.ts */
+/** @module RevocablePromise */
 
-import * as vscode from 'vscode';
+import {
+    CancellationError,
+    CancellationTokenSource,
+    type CancellationToken,
+    type Disposable
+} from 'vscode';
 
 // #region DEBUG
 import { LogLevel } from 'vscode';
@@ -13,15 +20,15 @@ const { log, table } = Logger.get(module.filename);
  *
  * Возвращает {@linkcode RevocablePromise}: промис с результатом {@linkcode worker}
  * и функцию `revoke()` для отмены. Вызов `revoke()` переводит промис
- * в rejected-состояние с {@linkcode vscode.CancellationError}, независимо от того,
+ * в rejected-состояние с {@linkcode CancellationError}, независимо от того,
  * успел ли `worker` отреагировать на отмену через переданный токен.
  *
  * @param worker Функция, выполняющая работу. Получает
- * {@linkcode vscode.CancellationToken} для кооперативной отмены.
+ * {@linkcode CancellationToken} для кооперативной отмены.
  *
- * Ожидается поведение в стиле {@linkcode vscode.Thenable}-API самого VS Code:
+ * Ожидается поведение в стиле {@linkcode Thenable}-API самого VS Code:
  * - при отмене (`token.onCancellationRequested`) — прервать работу
- *   и отклонить промис через {@linkcode vscode.CancellationError} (*);
+ *   и отклонить промис через {@linkcode CancellationError} (*);
  * - при "настоящей" ошибке (сбой в логике, недоступные данные и т.п.) —
  *   **не бросать исключение**, а завершиться штатно с "пустым" значением типа `T`
  *   (например, `undefined`, `null`, пустой массив/объект — в зависимости
@@ -57,7 +64,7 @@ const { log, table } = Logger.get(module.filename);
  *
  * @returns { RevocablePromise<T> } с результатом `worker` и функцией отмены.
  *
- * @throws {vscode.CancellationError} Если вызвана `revoke()`, промис отклоняется с этой ошибкой. */
+ * @throws { CancellationError } Если вызвана `revoke()`, промис отклоняется с этой ошибкой. */
 // @note Замечание для тестирования
 // Код, к которому нельзя подступиться через контракт, — это код, которого
 // в контракте нет. А значит, его не должно быть и в реализации.
@@ -65,15 +72,15 @@ const { log, table } = Logger.get(module.filename);
 // бросает не-CancellationError, — то есть compute, нарушающий свой же контракт.
 // Валидного сценария, в котором эта ветка срабатывает, не существует по построению.
 function runCancellable<T>(
-    worker: (token: vscode.CancellationToken) => Promise<T>,
+    worker: (token: CancellationToken) => Promise<T>,
 ): RevocablePromise<T> {
 
-    const cts = new vscode.CancellationTokenSource();
+    const cts = new CancellationTokenSource();
 
     const promise = new Promise<T>((resolve, reject) => {
 
-        let cancelSub: vscode.Disposable | null = cts.token.onCancellationRequested(() => {
-            reject(new vscode.CancellationError());
+        let cancelSub: Disposable | null = cts.token.onCancellationRequested(() => {
+            reject(new CancellationError());
             if (cancelSub) {
                 cancelSub.dispose();
                 cancelSub = null;
@@ -84,7 +91,7 @@ function runCancellable<T>(
         worker(cts.token)
             .then(resolve, (error) => {
                 // #region DEBUG
-                if (!(error instanceof vscode.CancellationError)) {
+                if (!(error instanceof CancellationError)) {
                     const workerName = worker.name || '<anonymous>';
                     const detail = error instanceof Error
                         ? `${error.name}: ${error.message}\n${error.stack ?? '(no stack)'}`

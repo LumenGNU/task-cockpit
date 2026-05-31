@@ -3,14 +3,18 @@
     "compilerOptions": {
         "sourceMap": true,
         "removeComments": false,
-        "rootDir": ".",
-        "outDir": "./~out-test"
+        "outDir": "~out-test",
+        "paths": {
+            "src/*": ["./~stripped/*"]
+        }
     },
     "exclude": [
         "**/~*"
     ],
     "include": [
         "test/*.ts",
-        "test/**/*.ts"
+        "test/**/*.ts",
+        "~stripped/*.ts",
+        "~stripped/**/*.ts"
     ]
 }

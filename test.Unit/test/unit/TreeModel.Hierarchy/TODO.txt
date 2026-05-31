@@ -1,0 +1,4 @@
+excluded flag
+if (excluded || path.length < 1) {
+    continue;
+}

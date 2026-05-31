@@ -10,17 +10,17 @@ const { log, assert } = Logger.get(module.filename);
 
 
 import * as vscode from 'vscode';
-import TaskCache from './TaskIndex/TaskCache';
+import Cache from './EligibleTask/Cache';
 import { ConfigSectionName } from './constants';
-import type { ProjectSettings } from './Settings/ProjectConfiguration';
-import type { ScopedSettings } from './Settings/ScopedConfiguration';
-import ProjectConfiguration from './Settings/ProjectConfiguration';
-import ScopedConfiguration from './Settings/ScopedConfiguration';
-import Scope from './Scope';
-import { TaskId } from './type.d/TaskId';
+import type { ProjectSettings } from './Configuration/Global/ProjectConfiguration';
+import type { ScopedSettings } from './Configuration/Scoped';
+import ProjectConfiguration from './Configuration/Global/ProjectConfiguration';
+import Configuration from './Configuration/Scoped';
+import Scope from './ProjectSpace/Scope/Scope';
+import TaskId from './type.d/TaskId';
 import type EligibleTask from './EligibleTask';
 import Runtime from './Runtime';
-import { ScopeKey } from './type.d/ScopeKey';
+import Key from './ProjectSpace/Scope/Key';
 
 
 /** Производное представление рабочей области проекта.
@@ -51,18 +51,18 @@ class Project implements vscode.Disposable {
     readonly #subscriptions: vscode.Disposable;
 
 
-    #taskCache: TaskCache;
+    #taskCache: Cache;
 
     #disposed = false;
 
     #projectConfiguration: ReturnType<typeof ProjectConfiguration['init']>;
-    #scopedConfiguration: ReturnType<typeof ScopedConfiguration['init']>;
+    #scopedConfiguration: ReturnType<typeof Configuration['init']>;
 
     #projectSettings: ProjectSettings;
 
 
     #scopes: {
-        scopeRecord: Record<ScopeKey, Scope>;
+        scopeRecord: Record<Key, Scope>;
         total: number;
         hidden: number;
     };
@@ -74,13 +74,13 @@ class Project implements vscode.Disposable {
     constructor() {
 
         this.#projectConfiguration = ProjectConfiguration.init(ConfigSectionName);
-        this.#scopedConfiguration = ScopedConfiguration.init(ConfigSectionName);
+        this.#scopedConfiguration = Configuration.init(ConfigSectionName);
 
         // ---
 
 
         this.#projectSettings = this.#projectConfiguration.read();
-        this.#taskCache = new TaskCache(this.#projectSettings.cockpit.cacheIdleTTL);
+        this.#taskCache = new Cache(this.#projectSettings.cockpit.cacheIdleTTL);
         this.#scopes = this.#scopesUpdate(this.#projectSettings.filtering.excludeFolders);
 
         this.#runtime = new Runtime(this.#projectSettings.cockpit);
@@ -142,12 +142,12 @@ class Project implements vscode.Disposable {
     #scopesUpdate(
         excludeFolders: Set<string>
     ): {
-        scopeRecord: Record<ScopeKey, Scope>;
+        scopeRecord: Record<Key, Scope>;
         total: number;
         hidden: number;
     } {
 
-        const scopeRecord = Object.create(null) as Record<ScopeKey, Scope>;
+        const scopeRecord = Object.create(null) as Record<Key, Scope>;
 
         const scopeList = Scope.List.get();
         const total = scopeList.length;

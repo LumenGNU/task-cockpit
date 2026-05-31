@@ -10,7 +10,7 @@
             "path": "test-Cockpit.Pins"
         },
         {
-            "path": "test-Workspace::Settings"
+            "path": "test-Configuration"
         },
         {
             "path": "test-Workspace"
@@ -29,7 +29,15 @@
         "taskCockpit.display.segmentSeparator": "|",
         "taskCockpit.validation.dependencies": true,
         "taskCockpit.filtering.excludeFolders": [
-            "~Task Cockpit (Workspace)"
+            "~Task Cockpit (Workspace)",
+            "~Task Cockpit",
+            "test.Unit",
+            "test-Cockpit.Pins",
+            "~test-Configuration",
+            "test-Workspace",
+            "test-Cockpit.Tree",
+            "test-Runtime",
+            "test.semi-manual"
         ],
         "codeium.enableCodeLens": false,
         "files.exclude": {
@@ -52,12 +60,31 @@
         "js/ts.format.semicolons": "insert",
         "js/ts.preferences.importModuleSpecifierEnding": "minimal",
         "js/ts.preferences.quoteStyle": "single",
-        "js/ts.workspaceSymbols.scope": "currentProject"
+        "js/ts.workspaceSymbols.scope": "currentProject",
+        "js/ts.hover.maximumLength": 2500,
+        "taskCockpit.filtering.showHidden": true,
+        "notelets.notesFolder": "../notelets/",
+        "cSpell.useGitignore": false,
+        // --------------------------------------------------------
+        "workbench.iconTheme": "symbols",
+        "symbols.hidesExplorerArrows": false,
+        "symbols.folders.associations": {
+            "/": "folder-purple"
+        },
+        "symbols.files.associations": {
+            "tsconfig.json": "tsconfig",
+            "test.unit.tsconfig.jsonc": "tsconfig",
+            "test.fixture.tsconfig.jsonc": "tsconfig",
+            "debug.tsconfig.jsonc": "tsconfig",
+            "tested-files.list": "csv"
+        },
+        "explorer.fileNesting.expand": false,
+        "explorer.autoReveal": "focusNoScroll",
+        // --------------------------------------------------------
     },
     "tasks": {
         "version": "2.0.0",
         "tasks": [
-            
             // -----
             {
                 "label": "Dev Tooling|Dev-Scripts|shellcheck",
@@ -230,18 +257,6 @@
             },
             // EsLint
             {
-                "label": "Dev Tooling|Code Quality/Validation|ESLint|Open ESLint Config",
-                "detail": "Open ESLint config",
-                "icon": {
-                    "id": "go-to-file"
-                },
-                "type": "shell",
-                "command": "codium ../eslint.config.mjs",
-                "options": {
-                    "cwd": "${cwd}",
-                },
-            },
-            {
                 "label": "Dev Tooling|Code Quality/Validation|ESLint|Check Entire Project",
                 "detail": "Run ESLint on all source files",
                 "icon": {
@@ -317,6 +332,18 @@
                     "echo": false,
                     "showReuseMessage": false
                 }
+            },
+            {
+                "label": "Dev Tooling|Code Quality/Validation|ESLint|Open ESLint Config",
+                "detail": "Open ESLint config",
+                "icon": {
+                    "id": "go-to-file"
+                },
+                "type": "shell",
+                "command": "codium ../eslint.config.mjs",
+                "options": {
+                    "cwd": "${cwd}",
+                },
             },
             // Unicode
             {
