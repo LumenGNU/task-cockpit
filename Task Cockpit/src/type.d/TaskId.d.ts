@@ -1,6 +1,6 @@
 import type { GroupSeparator } from '../constants';
-import type { TaskName } from './TaskName';
-import type { ScopeKey } from './ScopeKey';
+import type TaskName from './TaskName';
+import type Key from '../ProjectSpace/Scope/Key';
 
 /** Строковый идентификатор задачи, уникальный в пределах
  * текущего снимка рабочей области.
@@ -13,4 +13,6 @@ import type { ScopeKey } from './ScopeKey';
  *   либо строковое представление URI папки ({@linkcode FolderKey}) для задачи из конкретной папки;
  * - `taskName` — непустое {@link TaskName имя задачи}.
  */
-export type TaskId = `${ScopeKey}${GroupSeparator}${TaskName}`;
+type TaskId = `${Key}${GroupSeparator}${TaskName}`;
+
+export default TaskId;

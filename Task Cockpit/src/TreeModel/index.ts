@@ -2,7 +2,8 @@
 /** @module TreeModel */
 
 
-import buildHierarchy from './BuildHierarchy';
+import Hierarchy from './Hierarchy';
+import type NodeSpec from './NodeSpec';
 
 type AnyData = Record<string, unknown>;
 
@@ -15,7 +16,15 @@ declare namespace TreeModel {
 }
 
 const TreeModel = {
-    buildHierarchy
+
+    Hierarchy: {
+        buildRoots<D extends AnyData>(specs: ReadonlyArray<Readonly<NodeSpec<D>>>) {
+            return Hierarchy.getRoots(Hierarchy.build(specs));
+        },
+        ...Hierarchy.Node
+
+    } as const,
+
 } as const;
 
 

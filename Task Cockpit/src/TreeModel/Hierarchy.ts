@@ -48,7 +48,7 @@ const PARENT: unique symbol = Symbol('parent');
 interface Spec<D extends AnyData> {
     readonly path: ReadonlyArray<string>;
     readonly data: D;
-    readonly excluded?: boolean; // true: не включать в иерархию
+    // readonly excluded?: boolean; // true: не включать в иерархию
 }
 
 

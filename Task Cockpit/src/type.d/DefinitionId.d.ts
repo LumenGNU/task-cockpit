@@ -1,6 +1,8 @@
 declare const ___DefinitionId: unique symbol;
 
 
-export type DefinitionId = string & {
+type DefinitionId = string & {
     readonly [___DefinitionId]: never;
 };
+
+export default DefinitionId;
