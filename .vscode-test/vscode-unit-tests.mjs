@@ -162,7 +162,7 @@ const TEST_FILES_OUT = (() => {
 })();
 
 
-const subdirs = (() => {
+const subDirs = (() => {
     if (SUBDIR_NAME === '*') {
         const all = fs.readdirSync(UNITS_SRC, { withFileTypes: true })
             .filter(e => e.isDirectory() && !e.name.startsWith('~') && !e.name.startsWith('.'))
@@ -191,7 +191,7 @@ const files = (() => {
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
     const result = [];
 
-    for (const subdir of subdirs) {
+    for (const subdir of subDirs) {
         const outDir = path.join(TEST_FILES_OUT, subdir);
         if (!fs.existsSync(outDir) || !fs.statSync(outDir).isDirectory()) {
             console.error(c.fail(`${c.bold('[Error]')}: unit output subdirectory '${outDir}' not found or not a directory.`));

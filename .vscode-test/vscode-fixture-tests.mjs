@@ -228,7 +228,7 @@ const TEST_FILES_OUT = (() => {
 const fixtures = (() => {
     if (FIXTURE_NAME === '*') {
         const all = fs.readdirSync(FIXTURE_SRC, { withFileTypes: true })
-            .filter(e => e.isDirectory())
+            .filter(e => e.isDirectory() && !e.name.startsWith('~') && !e.name.startsWith('.'))
             .map(d => d.name)
             .sort(new Intl.Collator(undefined, {
                 numeric: true,      // Sort numbers numerically (1, 2, 10)
