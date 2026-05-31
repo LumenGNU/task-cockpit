@@ -1,11 +1,11 @@
-/** @file Configuration.ts */
-/** @module Configuration */
 /** Модуль для работы с конфигурацией VS Code.
  * Обеспечивает строгую типизацию, валидацию и безопасное приведение типов (coercion).
  */
 
 import * as vscode from 'vscode';
 import * as assert from 'assert/strict';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { AssertionError } from 'assert/strict';
 
 
 /** Базовый интерфейс дескриптора опции.
@@ -14,7 +14,9 @@ import * as assert from 'assert/strict';
 interface ConfigOption<Type extends OptionType, Spec> {
     /** Ключ в package.json или путь к секции. Если указана точка '.', используется ключ объекта. */
     readonly from: string;
+    /** Тип получаемого значения */
     readonly type: Type;
+    /** Параметры валидации */
     readonly spec: Spec;
 }
 
@@ -88,16 +90,21 @@ type FieldDefFor<T> =
 /** Тег-дискриминант для дескрипторов полей конфигурации.
  *
  * Используется как свойство `type` в дескрипторах, передаваемых в {@linkcode Configuration.ConfigSchema}. */
-const enum OptionType {
+enum OptionType {
+
     /** Логическое значение */
     Boolean,
+
     /** Строка */
     String,
+
     /** Число */
     Number,
+
     /** Множество уникальных строк (`Set<string>`) */
     StringSet,
 
+    /** Union перечисление */
     StringLiteral
 }
 
@@ -115,9 +122,11 @@ declare namespace Configuration {
      * - Если значение число, но выходит за границы `min`/`max` -> значение **clamped** (прижимается к границе).
      *
      * @example
+     * ~~~
      * spec: { fallback: 10, min: 0 }
      * // -5 -> 0 (clamped)
      * // "abc" -> 10 (fallback)
+     * ~~~
      * */
     type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
 
@@ -206,7 +215,7 @@ const Configuration = {
      * Рекомендуется вызывать один раз при инициализации расширения.
      *
      * @param schema Объект схемы.
-     * @throws {AssertionError} Если схема содержит логические ошибки. */
+     * @throws { AssertionError } Если схема содержит логические ошибки. */
     createSchema<S extends object>(schema: Readonly<Configuration.ConfigSchema<S>>): typeof schema {
 
         function walkSchema(entry: unknown, path: string[] = []) {
@@ -240,8 +249,11 @@ const Configuration = {
                             if (pattern) {
                                 assert.ok(pattern instanceof RegExp,
                                     `Invalid pattern at ${path.join('.')}: expected "RegExp" got "${typeof pattern}"`);
-                                assert.ok(pattern.source.length > 0,
-                                    `Empty RegExp pattern at ${path.join('.')}`);
+
+                                // @reject: new RegExp('').source → '(?:)'
+                                // - assert.ok(pattern.source.length > 0, // не достижимо?
+                                // -    `Empty RegExp pattern at ${path.join('.')}`);
+
                                 // если есть паттерн —
                                 // прогоняем fallback через проверку
                                 assert.ok(pattern.test(fallback),
@@ -254,6 +266,9 @@ const Configuration = {
 
                             assert.ok(typeof entry.spec.fallback === 'number',
                                 `Invalid fallback type at ${path.join('.')}: expected "number" got "${typeof entry.spec.fallback}"`);
+
+                            assert.ok(Number.isFinite(entry.spec.fallback),
+                                `Invalid fallback value at ${path.join('.')}: expected finite number, got ${entry.spec.fallback}`);
 
                             const { min, fallback, max } = entry.spec;
 
@@ -337,15 +352,16 @@ const Configuration = {
         return walkSchema(schema) as typeof schema;
     },
 
-    /** Читает настройки из VS Code и применяет правила валидации согласно схеме.
+    /** Читает настройки полученные от VS Code и применяет правила валидации согласно схеме.
      *
      * **Контракт:**
-     * - Метод никогда не бросает исключений (при ошибках данных возвращается `fallback`).
-     * - Структура результата всегда соответствует структуре схемы.
-     * - Все числовые значения будут в рамках заданных границ (clamped).
+     * - Метод никогда не бросает исключений (при ошибках данных возвращается `fallback`)
+     * - Структура результата всегда соответствует структуре схемы
+     * - Все значения будут присутствовать
+     * - Все числовые значения будут в рамках заданных границ (clamped)
      *
      * @template S Тип схемы.
-     * @param {S} schema Объект, {@linkcode Configuration.ConfigSchema | описывающий структуру и правила валидации},
+     * @param {S} schema Объект, {@link Configuration.ConfigSchema описывающий структуру и правила валидации},
      *   полученный через {@linkcode Configuration.createSchema}.
      * @param workspaceConfig Экземпляр `vscode.WorkspaceConfiguration`.
      * @returns Объект, зеркально повторяющий структуру схемы, с валидными значениями,
@@ -381,8 +397,7 @@ const Configuration = {
         }
 
         return walkSchema(schema) as InferConfigType<Schema>;
-
-    },
+    }
 
 } as const;
 
@@ -457,7 +472,6 @@ function coerceBoolean(
 }
 
 
-// @todo строки от vscode приходят в дебильном виде (экранирование/спецсимволы)
 function coerceString(
     value: unknown,
     stringSpec: StringSpec
@@ -499,7 +513,7 @@ function coerceStringLiteral<T extends string>(value: unknown, spec: StringLiter
 // #endregion Валидаторы
 
 
-export default Configuration;
 export {
-    OptionType,
+    Configuration,
+    OptionType
 };
