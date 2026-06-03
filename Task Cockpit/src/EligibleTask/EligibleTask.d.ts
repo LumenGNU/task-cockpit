@@ -1,0 +1,32 @@
+import type {
+    Task,
+    TaskDefinition,
+} from 'vscode';
+import type DefinitionId from '../type.d/DefinitionId';
+import type TaskName from '../type.d/TaskName';
+import type Scope from '../Scope/Scope';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type qualifies from './qualifies';
+
+
+/** Задача VS Code, прошедшая проверку {@linkcode qualifies}:
+ * `scope` определён и не глобальный, `name` — валидная, не пустая строка.
+ *
+ * Сужает {@linkcode Task}:
+ * - `scope` — сужен до {@linkcode Scope}
+ * - `name` — сужен до {@linkcode TaskName}
+ * - `definition` — расширен опциональным полем `id`
+ * */
+type EligibleTask = Omit<Task,
+    | 'scope'
+    | 'name'
+    | 'definition'
+> & {
+    readonly scope: Scope;
+    readonly name: TaskName;
+    readonly definition: TaskDefinition & { id?: DefinitionId; };
+};
+
+
+export default EligibleTask;
