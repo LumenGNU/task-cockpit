@@ -1,4 +1,4 @@
-import type { ProcessId } from './ProcessId';
+import type { ProcessId } from '../Runtime/ProcessId';
 import type { ProcessInfo } from './ProcessInfo';
 
 /** Детализация состояния процессов задачи. */

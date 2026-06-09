@@ -1,6 +1,6 @@
 // @todo на удаление?
 
-import TaskId from "./TaskId";
+import TaskId from "../TaskId";
 
 /**
  * Процесс задачи
