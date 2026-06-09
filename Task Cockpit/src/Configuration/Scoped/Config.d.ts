@@ -1,4 +1,11 @@
 
+interface Filtering {
+    /** Показывать ли задачи, помеченные `hide: true`.
+     * Соответствует `taskCockpit.filtering.showHidden`. */
+    showHidden: boolean;
+}
+
+
 interface HierarchyConfig {
 
     /** Символ-разделитель для разбиения `label` на сегменты иерархии.
@@ -11,10 +18,6 @@ interface HierarchyConfig {
     /** Группировать ли задачи по свойству `group` в task definition.
      * Соответствует `taskCockpit.display.useGroupKind`. */
     useGroupKind: boolean;
-
-    /** Показывать ли задачи, помеченные `hide: true`.
-     * Соответствует `taskCockpit.filtering.showHidden`. */
-    showHidden: boolean;
 
 }
 
@@ -38,6 +41,7 @@ interface NodeConfig {
 
 
 interface Config {
+    filtering: Filtering,
     hierarchyConfig: HierarchyConfig;
     nodeConfig: NodeConfig;
 }

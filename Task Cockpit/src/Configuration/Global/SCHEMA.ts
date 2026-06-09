@@ -40,12 +40,12 @@ const SCHEMA = {
                 min: {
                     from: 'monitor.polling',
                     type: OptionType.Number,
-                    spec: { min: 200, fallback: 322, max: 10_000 }
+                    spec: { min: 200, fallback: 250, max: 1_000 }
                 },
                 cap: {
                     from: 'monitor.polling',
                     type: OptionType.Number,
-                    spec: { min: 100, fallback: 550, max: 300_000 }
+                    spec: { min: 340, fallback: 550, max: 3_500 }
                 },
                 acceleration: {
                     from: 'monitor.polling',

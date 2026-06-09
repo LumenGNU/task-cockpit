@@ -24,19 +24,11 @@ function read(
     schema: Readonly<Configuration.ConfigSchema<Config>>
 ) {
 
-    const configuration = Configuration.get(
+    return Configuration.get(
         schema,
         workspace.getConfiguration(section, undefined)
     );
 
-    // дополнительная валидация polling.cap >= polling.min * 1.7
-    configuration.cockpit.monitor.polling.cap =
-        Math.max(
-            configuration.cockpit.monitor.polling.min * 1.7,
-            configuration.cockpit.monitor.polling.cap
-        );
-
-    return configuration;
 }
 
 

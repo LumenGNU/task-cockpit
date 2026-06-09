@@ -6,6 +6,13 @@ import type Config from './Config';
 
 
 const SCHEMA = {
+    filtering: {
+        showHidden: {
+            from: 'filtering',
+            type: OptionType.Boolean,
+            spec: { fallback: false }
+        }
+    },
     hierarchyConfig: {
         segmentSeparator: {
             from: 'display',
@@ -14,11 +21,6 @@ const SCHEMA = {
         },
         useGroupKind: {
             from: 'display',
-            type: OptionType.Boolean,
-            spec: { fallback: false }
-        },
-        showHidden: {
-            from: 'filtering',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
