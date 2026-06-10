@@ -5,9 +5,6 @@ import {
     type Disposable,
     window
 } from 'vscode';
-import {
-    setTimeout
-} from 'node:timers/promises';
 import type ProcessId from '../ProcessId';
 
 /** Надёжно получить PID терминала с поддержкой таймаута и отмены.
@@ -33,7 +30,8 @@ import type ProcessId from '../ProcessId';
  * @param token `CancellationToken` для отмены операции
  * @returns Возвращает {@linkcode ProcessId} или `undefined` при таймауте/закрытии/отсутствии pid
  * @throws { CancellationError } Бросается только при отмене через token.
- *   (`terminal.processId` не бросает. По ее контракту всегда разрешается в `number` | `undefined`)
+ *   (`terminal.processId` не бросает. По ее контракту всегда разрешается в
+ *   `number` | `undefined` или "никогда")
  *  */
 async function getProcessId(
     terminal: Readonly<Terminal>,
@@ -45,18 +43,12 @@ async function getProcessId(
         throw new CancellationError();
     }
 
-    const ac = new AbortController();
+    let timer: NodeJS.Timeout | null = null;
     const disposables: Disposable[] = [];
 
     try {
 
         const racers: PromiseLike<ProcessId | undefined>[] = [
-            // Успешный исход
-            // ..............
-            terminal.processId.then(function (pid) {
-                return pid ? pid as ProcessId : undefined;
-            }),
-            //----------------------------------------------------------------------
             // Тайм-аут
             // ........
             // Workaround для багов #91905 (2020) и #236869 (2024) и т.д.:
@@ -65,10 +57,14 @@ async function getProcessId(
             // `vscode.terminal.processId` — асинхронное свойство (Thenable). Возвращает обещание
             // "ничего не обещать".
             // Нельзя отменить — можно только выбросить когда надоест
-            // ждать. (Возможно есть внутренний таймаут (точно есть), но он
+            // ждать. (Возможно есть внутренний таймаут (точно есть - не всегда включается в работу), но он
             // слишком долгий — десятки секунд).
             // Так что если терминал не отвечает за timeout — не ждем, считаем его "пустым".
-            setTimeout<undefined>(timeout, undefined, { signal: ac.signal, ref: false }),
+            new Promise<undefined>(function (resolve) {
+                timer = setTimeout(function () {
+                    resolve(undefined);
+                }, timeout);
+            }),
             //----------------------------------------------------------------------
             // Закрытие терминала
             // ..................
@@ -83,7 +79,7 @@ async function getProcessId(
                 }
             }),
             //----------------------------------------------------------------------
-            // токен отмены
+            // Токен отмены
             // ............
             new Promise<never>(function (_, reject) {
                 disposables.push(
@@ -93,15 +89,23 @@ async function getProcessId(
                 if (token.isCancellationRequested) { // ...или уже отменен
                     reject(new CancellationError());
                 }
-            })
-
+            }),
+            //----------------------------------------------------------------------
+            // Успешный исход
+            // ..............
+            terminal.processId.then(function (pid) {
+                return pid ? pid as ProcessId : undefined;
+            }),
+            //----------------------------------------------------------------------
         ];
 
         return await Promise.race(racers);
 
     }
     finally {
-        ac.abort();
+        if (timer != null) {
+            clearTimeout(timer);
+        }
         disposables.forEach(function (disposable) {
             disposable.dispose();
         });

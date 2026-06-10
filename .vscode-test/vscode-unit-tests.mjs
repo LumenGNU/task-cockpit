@@ -128,6 +128,7 @@ const defaults = {
         color: true,
         'full-trace': false,
         require: ['source-map-support/register'],
+        "node-option": ["unhandled-rejections=strict"]
     },
     launchArgs: [
         '--disable-telemetry',

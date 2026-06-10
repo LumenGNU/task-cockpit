@@ -181,7 +181,8 @@ const defaults = {
         diff: true,
         color: true,
         'full-trace': false,
-        require: ['source-map-support/register']
+        require: ['source-map-support/register'],
+        "node-option": ["unhandled-rejections=strict"]
     },
     launchArgs: [
         // '--disable-gpu',

@@ -53,6 +53,11 @@ import type Snapshot from './Snapshot';
  * - **Частичные результаты не возвращаются** — только полный snapshot (терминал, не ответивший
  *   за таймаут — это "терминал без PID").
  * - Событие `onDidCollectSnapshot` испускается только после успешного сбора всех PID.
+ *
+ * ## Заметки
+ *
+ * «Глючный» терминал увеличивает время сбора снапшота до `timeout`,
+ * а события `onDidCollectSnapshot` станут приходить c произвольной задержкой.
  *  */
 class SnapshotCollector implements Disposable {
 

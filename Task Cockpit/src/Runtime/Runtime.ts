@@ -105,7 +105,7 @@ class Runtime implements Disposable {
 
         this.#disposable = Disposable.from(
 
-            // задача породила процесс
+            // Задача породила процесс
             // eslint-disable-next-line @typescript-eslint/unbound-method
             VscTasks.onDidStartTaskProcess(this.#processStartedHandler, this),
 
@@ -326,7 +326,18 @@ class Runtime implements Disposable {
             }
         }
 
-        // в любом случае — пересмотр терминалов
+        // В любом случае — пересмотр терминалов.
+        //
+        // Замечание: Реализация getProcessId используемая в SnapshotCollector
+        // расценивает закрытый терминал (норм.) или терминал не ответивший
+        // за время `timeout` (завис) — как терминал без процесса.
+        // Последствия: если vscode смогла получить PID процесса (отправила
+        // `onDidStartTaskProcess` с валидным PID), но терминал умудрился сойти
+        // с ума уже после этого — снапшот НЕ будет содержать этот PID, как
+        // если бы терминал был закрыт.
+        // Наличие таких «глючных» терминалов увеличивает время сбора снапшота
+        // вплоть до `timeout`, и `onDidCollectSnapshot` станут приходить с
+        // непредсказуемой задержкой.
         this.#terminalSnapshot.enqueueRequest(this.#eventCounter());
     }
 

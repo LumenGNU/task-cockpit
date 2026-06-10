@@ -151,11 +151,16 @@ const Registry = {
 
                     const process = processById.get(processId)!;
 
+                    if (!process.running) {
+                        // процесс уже в состоянии completed
+                        continue;
+                    }
+
                     process.running = false;
 
                     // #region DEBUG
                     assert.ok(identifierByProcess.has(process),
-                        `reconcileSnapshot: process "${processId}" in byId but missing from identifierByProcess — registration invariant violated`);
+                        `markCompleted: process "${processId}" in processById but missing from identifierByProcess — registration invariant violated`);
                     // #endregion DEBUG
 
                     const { scopeKey, taskName } = identifierByProcess.get(process)!;
@@ -254,7 +259,7 @@ const Registry = {
                             if (!namedMap) {
                                 return undefined; // scope исчез между ProcessId.get и этим вызовом
                             }
-                            return namedMap.get(taskName);
+                            return new Set(namedMap.get(taskName));
                         }
                     };
                 }
