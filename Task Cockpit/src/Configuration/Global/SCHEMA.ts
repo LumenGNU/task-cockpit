@@ -46,18 +46,41 @@ const SCHEMA = {
         }
     },
     cockpit: {
-        monitor: {
+
+        cacheIdleTTL: {
+            from: 'tasks.cacheTTL',
+            type: OptionType.Number,
+            spec: { min: 66_000, fallback: 666_000, max: 6.6e6 } // 1.1 мин; 11.1 мин; 1ч 50мин
+        }
+    },
+
+    runtimeConf: {
+        monitorConf: {
+            /** Параметры адаптивной кривой опроса системы на работающие задачи.
+             * Интервал опроса будет увеличиваться от min до cap с скоростью
+             * acceleration при росте количества одновременно работающих задач.
+             * Позволяет оптимально настроить отзывчивость UI/нагрузку на
+             * систему при запуске реально большого количества одновременно
+             * работающих задач. */
             polling: {
+                /** Минимальный интервал опроса (в мс). */
                 min: {
                     from: 'monitor.polling',
                     type: OptionType.Number,
                     spec: { min: 200, fallback: 250, max: 1_000 }
                 },
+                /** Максимальный интервал опроса (в мс). При достижении
+                 * интервал опроса фиксируется на этом значении и не будет
+                 * увеличиваться при росте количества одновременно работающих задач.
+                 * Ожидается что будет как минимум cap > min * 1.7  */
                 cap: {
                     from: 'monitor.polling',
                     type: OptionType.Number,
                     spec: { min: 340, fallback: 550, max: 3_500 }
                 },
+                /** Коэффициент замедления опроса при росте количества
+                 * одновременно работающих задач.
+                 * Чем выше, тем быстрее интервал достигает `cap`. */
                 acceleration: {
                     from: 'monitor.polling',
                     type: OptionType.Number,
@@ -65,17 +88,19 @@ const SCHEMA = {
                 }
             }
         },
-        terminals: {
+
+        terminalsConf: {
+            /** Максимальное время ожидание разрешения PID от терминала (в мс).
+             * Если терминал не отдает PID выполняемого процесса за это время —
+             * то такой терминал будет считаться как терминал без процесса.
+             * Уменьшение значения может ускорить реакцию UI но, в
+             * некоторых ситуациях, может приводить к не корректной интерпретации
+             * выполняемой задачи как завершенной. */
             timeout: {
                 from: 'terminals',
                 type: OptionType.Number,
                 spec: { min: 500, fallback: 1_300, max: 12_000 }
             }
-        },
-        cacheIdleTTL: {
-            from: 'tasks.cacheTTL',
-            type: OptionType.Number,
-            spec: { min: 66_000, fallback: 666_000, max: 6.6e6 } // 1.1 мин; 11.1 мин; 1ч 50мин
         }
     },
 
@@ -115,7 +140,7 @@ const SCHEMA = {
             type: OptionType.String,
             spec: { fallback: '•', pattern: /^[^\d\s]$/u }
         }
-    }
+    },
 
 
 } satisfies Readonly<Configuration.ConfigSchema<Config>>;

@@ -1,7 +1,7 @@
 import type createReader from './createReader';
 import type FileDecorationProviderConf from '../../DecorationProvider/Conf';
+import type RuntimeConf from '../../Runtime/Conf';
 
-// @fixme это все чьи-то пропсы!
 
 interface Filtering {
 
@@ -32,27 +32,7 @@ interface Validation {
 
 interface Cockpit {
 
-    monitor: {
 
-        /** параметры адаптивного поллинга опроса системы на работающие задачи */
-        polling: {
-
-            /** минимальный интервал */
-            min: number;
-
-            /** максимально достижимый интервал */
-            cap: number;
-
-            /** коэффициент ускорения роста интервала (большее значение - раньше cap) */
-            acceleration: number;
-        };
-    };
-
-    terminals: {
-
-        /** Таймаут ожидания запроса process id от терминала. */
-        timeout: number;
-    };
 
     cacheIdleTTL: number;
 
@@ -73,6 +53,8 @@ interface Config {
     validation: Validation;
 
     cockpit: Cockpit;
+
+    runtimeConf: RuntimeConf;
 
     fileDecorationConf: FileDecorationProviderConf;
 }
