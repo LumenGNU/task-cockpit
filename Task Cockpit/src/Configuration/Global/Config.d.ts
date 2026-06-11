@@ -1,5 +1,5 @@
 import type createReader from './createReader';
-import type FileDecorationProviderProps from '../../DecorationProvider/Props';
+import type FileDecorationProviderConf from '../../DecorationProvider/Conf';
 
 // @fixme это все чьи-то пропсы!
 
@@ -74,7 +74,7 @@ interface Config {
 
     cockpit: Cockpit;
 
-    fileDecorationProvider: FileDecorationProviderProps;
+    fileDecorationConf: FileDecorationProviderConf;
 }
 
 

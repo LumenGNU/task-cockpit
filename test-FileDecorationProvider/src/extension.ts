@@ -1,8 +1,21 @@
+/**
+ * Ручной стенд для FileDecorationProvider.
+ *
+ * Что проверялось:
+ *  - корректность badge-логики на статическом наборе узлов,
+ *    покрывающем все кейсы: r=0/a=0, r=1, r=2..9, r≥10 (overflow), только available;
+ *  - смена скина через setProps + fire(undefined) обновляет все декорации разом;
+ *  - вмещает ли badge emoji (> U+FFFF, суррогатная пара в UTF-16).
+ *
+ * Запуск: F5 → Extension Development Host, дерево появится в Explorer
+ *   и будет автоматически обновляться.
+ */
+
 import * as vscode from 'vscode';
 import type UriSchema from './DecorationProvider/UriSchema';
 import type UriQuery from './DecorationProvider/UriQuery';
 import FileDecorationProvider from './DecorationProvider/FileDecorationProvider';
-import type Props from './DecorationProvider/Props';
+import type Props from './DecorationProvider/Conf';
 
 const logChannel = vscode.window.createOutputChannel('DecorationProvider TEST', { log: true });
 
@@ -94,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
         const skin = skins[tick % skins.length]!;
         logChannel.debug(`skin → ${skin.name}`);
         decor.setProps(skin);
-    }, 2500);
+    }, 1500);
 
     context.subscriptions.push(
         treeView, regDecor, decor, logChannel,

@@ -374,7 +374,7 @@
                 "Pretest|Clean/create '~stripped/'",
                 "Pretest|Clean/create '~out-test/'",
                 "Pretest|Strip DEBUG blocks",
-                "Pretest|Fixture|Compile Fixture test ts files into '~out-test/'",
+                "Pretest|Fixture|Compile Fixture Test .ts Files into '~out-test/'",
                 "Pretest|Prepare `package.json` for test runner"
             ],
             "dependsOrder": "sequence",
@@ -389,9 +389,9 @@
                 "group": "Pretest"
             }
         },
-        // Compile Fixture test ts files into '~out-test/' ---------------------------------------------------------------
+        // Compile Fixture Test .ts Files into '~out-test/' ---------------------------------------------------------------
         {
-            "label": "Pretest|Fixture|Compile Fixture test ts files into '~out-test/'",
+            "label": "Pretest|Fixture|Compile Fixture Test .ts Files into '~out-test/'",
             "detail": "Compile test TypeScript sources into the '~out-test' directory",
             "icon": {
                 "id": "debug"

@@ -2,7 +2,7 @@
 /** Конфигурация декорации узлов дерева.
  *
  * (Бейдж в  VS Code ограничен двумя символами) */
-interface Props {
+interface Conf {
     /** Символ активного выполнения.
      * Отображается когда хотя бы одна задача запущена прямо сейчас.
      * Будет дополнен цифрой или символом `overflowSymbol`,
@@ -19,4 +19,4 @@ interface Props {
     availableSymbol: string,
 }
 
-export default Props;
+export default Conf;

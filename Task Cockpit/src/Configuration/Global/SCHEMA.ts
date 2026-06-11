@@ -79,7 +79,7 @@ const SCHEMA = {
         }
     },
 
-    fileDecorationProvider: {
+    fileDecorationConf: {
         /** The symbol shown when at least one task instance is currently running.
          * If multiple instances run, the badge will show this symbol together with a count
          * or the overflow symbol depending on space.  \n

@@ -11,7 +11,7 @@ import {
     type Uri
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import type Props from './Props';
+import type Conf from './Conf';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
 
@@ -44,13 +44,13 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
 
-    #props: Readonly<Props>;
+    #props: Readonly<Conf>;
 
     #disposed: boolean;
 
     /**Создаёт провайдер.
      * @param props начальные значения конфигурации декораций. */
-    constructor(props: Readonly<Props>) {
+    constructor(props: Readonly<Conf>) {
         this.#disposed = false;
 
         this.#onDidChangeFileDecorations = new EventEmitter();
@@ -76,11 +76,11 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
      * @param props новые значения конфигурации.
      *
      * @fires FileDecorationProvider#onDidChangeFileDecorations */
-    setProps(props: Readonly<Props>): void {
+    setProps(props: Readonly<Conf>): void {
 
         assert.equal(this.#disposed, false, 'FileDecorationProvider: use after dispose');
 
-        if ((Object.keys(props) as ReadonlyArray<keyof Props>)
+        if ((Object.keys(props) as ReadonlyArray<keyof Conf>)
             .every(k => this.#props[k] === props[k])) {
             // diff -> no-op
             return;
@@ -157,7 +157,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         } as const;
     }
 
-    #setProps(props: Readonly<Props>): Readonly<Props> {
+    #setProps(props: Readonly<Conf>): Readonly<Conf> {
         return { ...props };
     }
 }
