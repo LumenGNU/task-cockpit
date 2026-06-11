@@ -1,3 +1,7 @@
+import type createReader from './createReader';
+import type FileDecorationProviderProps from '../../DecorationProvider/Props';
+
+// @fixme это все чьи-то пропсы!
 
 interface Filtering {
 
@@ -58,7 +62,7 @@ interface Cockpit {
 /** Глобальные настройки.
  * Читаются из конфигурации VS Code без привязки к scope ресурса.
  *
- * Используй {@link Config.init} для получения читателя.
+ * Используй {@linkcode createReader} для получения читателя.
  * */
 interface Config {
 
@@ -69,6 +73,8 @@ interface Config {
     validation: Validation;
 
     cockpit: Cockpit;
+
+    fileDecorationProvider: FileDecorationProviderProps;
 }
 
 

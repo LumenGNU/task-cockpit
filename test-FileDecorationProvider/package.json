@@ -1,0 +1,40 @@
+{
+  "name": "task-cockpit",
+  "publisher": "papio-dev",
+  "displayName": "Task Cockpit test extension",
+  "description": "Task Cockpit test extension",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["onStartupFinished"],
+  "main": "extension.js",
+    "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "icon": "zap",
+          "id": "decorationTest",
+          "name": "Decoration Test"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "decorationTest.toggleMode",
+        "title": "Decoration Test: Toggle URI mode (same ↔ unique)"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.86.0",
+    "mocha": "^11.3.0",
+    "typescript": "^5.9.3",
+    "tsc-alias": "^1.8.17"
+  }
+}

@@ -1,0 +1,9 @@
+
+
+
+## FileDecorationProvider
+## --------------------------------
+DecorationProvider/FileDecorationProvider.ts
+DecorationProvider/Props.d.ts
+DecorationProvider/UriQuery.d.ts
+DecorationProvider/UriSchema.d.ts
