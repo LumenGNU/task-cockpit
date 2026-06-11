@@ -30,7 +30,7 @@ import type UriSchema from './UriSchema';
  * - Цвет берётся из параметра `color` и применяется как `ThemeColor`.
  *
  * #### События:
- * - `onDidChangeFileDecorations` — эмитируется при изменении конфигурации (`props`).
+ * - `onDidChangeFileDecorations` — эмитируется при изменении конфигурации (`conf`).
  *
  * #### Жизненный цикл:
  * - Вызов `dispose()` освобождает ресурсы; дальнейшее использование методов
@@ -44,19 +44,19 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
 
-    #props: Readonly<Conf>;
+    #conf: Readonly<Conf>;
 
     #disposed: boolean;
 
     /**Создаёт провайдер.
-     * @param props начальные значения конфигурации декораций. */
-    constructor(props: Readonly<Conf>) {
+     * @param conf начальные значения конфигурации декораций. */
+    constructor(conf: Readonly<Conf>) {
         this.#disposed = false;
 
         this.#onDidChangeFileDecorations = new EventEmitter();
         this.onDidChangeFileDecorations = this.#onDidChangeFileDecorations.event;
 
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
     }
 
 
@@ -73,20 +73,20 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     /** Обновляет конфигурацию декораций и испускает {@linkcode onDidChangeFileDecorations},
      * если произошли реальные изменения.
      *
-     * @param props новые значения конфигурации.
+     * @param conf новые значения конфигурации.
      *
      * @fires FileDecorationProvider#onDidChangeFileDecorations */
-    setProps(props: Readonly<Conf>): void {
+    setConf(conf: Readonly<Conf>): void {
 
         assert.equal(this.#disposed, false, 'FileDecorationProvider: use after dispose');
 
-        if ((Object.keys(props) as ReadonlyArray<keyof Conf>)
-            .every(k => this.#props[k] === props[k])) {
+        if ((Object.keys(conf) as ReadonlyArray<keyof Conf>)
+            .every(k => this.#conf[k] === conf[k])) {
             // diff -> no-op
             return;
         }
 
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
 
         this.#onDidChangeFileDecorations.fire(undefined);
     }
@@ -139,26 +139,26 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             const countSymbol = running === '1'
                 ? ''
                 : running.length > 1
-                    ? this.#props.overflowSymbol
+                    ? this.#conf.overflowSymbol
                     : running;
 
             runningBadge =
-                this.#props.badgeOrder === 'symbolFirst'
-                    ? `${this.#props.runningSymbol}${countSymbol}`
-                    : `${countSymbol}${this.#props.runningSymbol}`;
+                this.#conf.badgeOrder === 'symbolFirst'
+                    ? `${this.#conf.runningSymbol}${countSymbol}`
+                    : `${countSymbol}${this.#conf.runningSymbol}`;
         }
 
         return {
             color: color ? new ThemeColor(color) : undefined,
             // Большой `runningSymbol` если есть "активные", `availableSymbol` если нет, но есть "терминалы".
             // Цифра если running>1; знак `overflowSymbol` если running>9. (badge в VS Code — строго не более двух символов)
-            badge: runningBadge || (available !== '0' ? this.#props.availableSymbol : undefined),
+            badge: runningBadge || (available !== '0' ? this.#conf.availableSymbol : undefined),
             propagate: false
         } as const;
     }
 
-    #setProps(props: Readonly<Conf>): Readonly<Conf> {
-        return { ...props };
+    #setConf(conf: Readonly<Conf>): Readonly<Conf> {
+        return { ...conf };
     }
 }
 

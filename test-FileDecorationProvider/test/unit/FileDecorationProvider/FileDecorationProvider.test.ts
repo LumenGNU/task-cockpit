@@ -25,7 +25,7 @@ function isThenable<T>(value: T | Thenable<T>): value is Thenable<T> {
     return value != null && typeof (value as Thenable<T>).then === 'function';
 }
 
-const props = {
+const conf = {
     runningSymbol: '●',
     overflowSymbol: '+',
     badgeOrder: 'symbolFirst',
@@ -44,7 +44,7 @@ suite('FileDecorationProvider', function () {
     setup(function () {
         cts = new CancellationTokenSource();
         token = cts.token;
-        fileDecorationProvider = new FileDecorationProvider(props);
+        fileDecorationProvider = new FileDecorationProvider(conf);
     });
 
     teardown(function () {
@@ -210,9 +210,9 @@ suite('FileDecorationProvider', function () {
                 eventCounter++;
             });
 
-            fileDecorationProvider.setProps({ ...props, availableSymbol: 'x' });
-            fileDecorationProvider.setProps({ ...props, badgeOrder: 'countFirst' });
-            fileDecorationProvider.setProps({ ...props, runningSymbol: '>' });
+            fileDecorationProvider.setConf({ ...conf, availableSymbol: 'x' });
+            fileDecorationProvider.setConf({ ...conf, badgeOrder: 'countFirst' });
+            fileDecorationProvider.setConf({ ...conf, runningSymbol: '>' });
 
             assert.equal(eventCounter, 3);
 
@@ -227,9 +227,9 @@ suite('FileDecorationProvider', function () {
                 eventCounter++;
             });
 
-            fileDecorationProvider.setProps({ ...props, runningSymbol: '>' });
-            fileDecorationProvider.setProps({ ...props, runningSymbol: '>' });
-            fileDecorationProvider.setProps({ ...props, runningSymbol: '>' });
+            fileDecorationProvider.setConf({ ...conf, runningSymbol: '>' });
+            fileDecorationProvider.setConf({ ...conf, runningSymbol: '>' });
+            fileDecorationProvider.setConf({ ...conf, runningSymbol: '>' });
 
             assert.equal(eventCounter, 1, 'только первое изменение должно вызвать событие');
 
@@ -240,7 +240,7 @@ suite('FileDecorationProvider', function () {
 
         test(`${/*++N*/'015'/**/} корректно применяет конфигурацию`, function () {
 
-            fileDecorationProvider.setProps({
+            fileDecorationProvider.setConf({
                 runningSymbol: '>',
                 overflowSymbol: '!',
                 badgeOrder: 'countFirst',

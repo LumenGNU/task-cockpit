@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
         tick++;
         const skin = skins[tick % skins.length]!;
         logChannel.debug(`skin → ${skin.name}`);
-        decor.setProps(skin);
+        decor.setConf(skin);
     }, 1500);
 
     context.subscriptions.push(

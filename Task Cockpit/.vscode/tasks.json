@@ -187,7 +187,7 @@
         "id": "rocket"
       },
       "dependsOn": [
-        "Dev Environment|Prepare|Create/Clean '~out/'",
+        "Dev Environment|Prepare|Create/Clean '~out/'"
       ],
       "dependsOrder": "sequence",
       "type": "shell",
@@ -634,7 +634,7 @@
       "problemMatcher": {
         "applyTo": "allDocuments",
         "base": "$tsc"
-      },
+      }
     },
     {
       "label": "Pack|Pack release VSIX|Remove './~src'",
@@ -882,6 +882,6 @@
         "group": "Pack release VSIX"
       },
       "problemMatcher": []
-    },
+    }
   ]
 }
