@@ -133,6 +133,7 @@ const defaults = {
     launchArgs: [
         '--disable-telemetry',
         '--disable-crash-reporter',
+        '--disable-extensions', // @todo в фикстуры
         ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
     ],
     env: {
@@ -162,10 +163,10 @@ const TEST_FILES_OUT = (() => {
     process.exit(1);
 })();
 
-
+// @todo UNITS_SRC -> TEST_FILES_OUT в фикстуры
 const subDirs = (() => {
     if (SUBDIR_NAME === '*') {
-        const all = fs.readdirSync(UNITS_SRC, { withFileTypes: true })
+        const all = fs.readdirSync(TEST_FILES_OUT, { withFileTypes: true })
             .filter(e => e.isDirectory() && !e.name.startsWith('~') && !e.name.startsWith('.'))
             .map(d => d.name)
             .sort(new Intl.Collator(undefined, {
@@ -174,12 +175,12 @@ const subDirs = (() => {
             }).compare);
 
         if (all.length < 1) {
-            console.error(c.fail(`${c.bold('[Error]')}: no subdirectories found in '${UNITS_SRC}'.`));
+            console.error(c.fail(`${c.bold('[Error]')}: no subdirectories found in '${TEST_FILES_OUT}'.`));
             process.exit(1);
         }
         return all;
     }
-    const full = path.join(UNITS_SRC, SUBDIR_NAME);
+    const full = path.join(TEST_FILES_OUT, SUBDIR_NAME);
     if (fs.existsSync(full) && fs.statSync(full).isDirectory()) {
         return [SUBDIR_NAME];
     }
