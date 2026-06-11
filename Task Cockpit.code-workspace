@@ -4,25 +4,31 @@
             "path": "Task Cockpit"
         },
         {
-            "path": "test.Unit"
-        },
-        {
             "path": "test-Cockpit.Pins"
-        },
-        {
-            "path": "test-Configuration"
-        },
-        {
-            "path": "test-Workspace"
         },
         {
             "path": "test-Cockpit.Tree"
         },
         {
+            "path": "test-Configuration"
+        },
+        {
+            "path": "test-ProjectSpace"
+        },
+        {
             "path": "test-Runtime"
         },
         {
+            "path": "test-Workspace"
+        },
+        {
             "path": "test.semi-manual"
+        },
+        {
+            "path": "test.Unit"
+        },
+        {
+            "path": "test-FileDecorationProvider"
         }
     ],
     "settings": {
@@ -31,13 +37,15 @@
         "taskCockpit.filtering.excludeFolders": [
             "~Task Cockpit (Workspace)",
             "~Task Cockpit",
-            "test.Unit",
+            "~test.Unit",
             "test-Cockpit.Pins",
-            "~test-Configuration",
+            "test-Configuration",
             "test-Workspace",
             "test-Cockpit.Tree",
             "test-Runtime",
-            "test.semi-manual"
+            "test.semi-manual",
+            "test-ProjectSpace",
+            "~test-FileDecorationProvider"
         ],
         "codeium.enableCodeLens": false,
         "files.exclude": {
@@ -85,7 +93,6 @@
     "tasks": {
         "version": "2.0.0",
         "tasks": [
-            // -----
             {
                 "label": "Dev Tooling|Dev-Scripts|shellcheck",
                 "type": "shell",
@@ -140,7 +147,6 @@
                     "group": "CI"
                 }
             },
-            // -----
             {
                 "label": "Dev Tooling|Code Quality/Validation|Check Module Headers",
                 "detail": "Check module headers",
@@ -199,7 +205,6 @@
                     "showReuseMessage": false
                 }
             },
-            // Type Check
             {
                 "label": "Dev Tooling|Code Quality/Validation|Type Check|Run type check",
                 "detail": "Run TypeScript type check without emitting",
@@ -255,7 +260,6 @@
                     "$tsc"
                 ]
             },
-            // EsLint
             {
                 "label": "Dev Tooling|Code Quality/Validation|ESLint|Check Entire Project",
                 "detail": "Run ESLint on all source files",
@@ -342,10 +346,9 @@
                 "type": "shell",
                 "command": "codium ../eslint.config.mjs",
                 "options": {
-                    "cwd": "${cwd}",
-                },
+                    "cwd": "${cwd}"
+                }
             },
-            // Unicode
             {
                 "label": "Dev Tooling|Unicode|Find Hidden Characters in current file",
                 "detail": "Scan current file for hidden Unicode characters",
@@ -415,7 +418,6 @@
                     "showReuseMessage": false
                 }
             },
-            // ---
             {
                 "label": "Dev Tooling|Tests|Stamp markers in current file",
                 "type": "shell",
@@ -426,7 +428,7 @@
                         "FILEPATH": "${file}"
                     }
                 }
-            },
+            }
         ]
     }
 }
