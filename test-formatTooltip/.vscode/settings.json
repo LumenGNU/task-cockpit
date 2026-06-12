@@ -1,0 +1,61 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+    // --------------------------------------------------------
+	"files.exclude": {
+		".vscode-test": false,
+		"node_modules": true,
+        "~f-icon.svg": true,
+	},
+	"search.exclude": {
+		"~*": true,
+		".vscode-test": true,
+		"node_modules": true,
+	},
+    // --------------------------------------------------------
+	"taskCockpit.display.segmentSeparator": "|",
+	"taskCockpit.display.tintLabel": true,
+	"taskCockpit.validation.dependencies": true,
+    "taskCockpit.display.defaultIconName": "target",
+    // --------------------------------------------------------
+	"files.trimTrailingWhitespace": true,
+	"files.autoSave": "afterDelay",
+	"files.autoSaveDelay": 660000,
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true,
+	"notelets.notesFolder": "dev-docs",
+	"notelets.showStatusBar": false,
+	"terminal.integrated.shellIntegration.enabled": false,
+	"cSpell.ignoreRandomStrings": false,
+	"cSpell.language": "en,ru",
+	"markdown.styles": [
+		".vscode/markdown.css"
+	],
+	"markdown.validate.enabled": true,
+	"files.associations": {
+		"CHANGELOG.md": "plaintext"
+	},
+    // --------------------------------------------------------
+	"js/ts.format.semicolons": "insert",
+    // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+    "js/ts.tsc.autoDetect": "off",
+	"[typescript]": {
+		"editor.colorDecorators": false
+	},
+	"[javascript]": {
+		"editor.colorDecorators": false
+	},
+    // --------------------------------------------------------
+    "workbench.iconTheme": "symbols",
+    "symbols.hidesExplorerArrows": false,
+    "symbols.folders.associations": {
+        "/": "folder-purple"
+    },
+    "symbols.files.associations": {
+        "tsconfig.json": "tsconfig",
+        "test.unit.tsconfig.jsonc": "tsconfig",
+		"test.fixture.tsconfig.jsonc": "tsconfig",
+		"debug.tsconfig.jsonc": "tsconfig",
+        "tested-files.list": "csv"
+    }
+    // --------------------------------------------------------
+}
