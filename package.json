@@ -128,7 +128,14 @@
       {
         "command": "task-cockpit.view.find",
         "title": "Find Task",
-        "icon": "$(search)"
+        "icon": "$(search)",
+        "enablement": "view == task-cockpit-view && workbenchState != 'empty'"
+      },
+      {
+        "command": "task-cockpit.view.expand-all",
+        "title": "Expand All",
+        "icon": "$(expand-all)",
+        "enablement": "view == task-cockpit-view && workbenchState != 'empty'"
       }
     ],
     "viewsContainers": {
@@ -177,6 +184,11 @@
           "command": "task-cockpit.view.refresh",
           "when": "view == task-cockpit-view && workbenchState != 'empty'",
           "group": "navigation@2"
+        },
+        {
+          "command": "task-cockpit.view.expand-all",
+          "when": "view == task-cockpit-view && workbenchState != 'empty'",
+          "group": "navigation@3"
         },
         {
           "command": "task-cockpit.settings.configure-display",
@@ -357,7 +369,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
+    "@types/node": "^22.19.19",
     "@types/vscode": "^1.86.0",
     "@vscode/codicons": "^0.0.44",
     "@vscode/test-cli": "^0.0.11",

@@ -71,6 +71,16 @@ export class Panel implements vscode.Disposable {
     }
 
 
+    public async expandAll() {
+        for (const root of this.dataProvider.roots) {
+            await this.treeView.reveal(root, {
+                expand: 3,
+                focus: false,
+                select: false,
+            });
+        }
+    }
+
     public getSelectedDataNode(): Tree.DataNode | undefined {
 
         const node = this.getSelectedNode();

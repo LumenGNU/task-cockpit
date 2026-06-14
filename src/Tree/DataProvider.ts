@@ -64,8 +64,6 @@ export class DataProvider implements vscode.TreeDataProvider<Node>, vscode.Dispo
 
     constructor(shellIntegrationTimeout: number, polingCap: number) {
 
-
-
         this.runtime = new Task.Runtime(shellIntegrationTimeout, polingCap);
 
         this.disposables = vscode.Disposable.from(
@@ -144,6 +142,14 @@ export class DataProvider implements vscode.TreeDataProvider<Node>, vscode.Dispo
             vscode.LogLevel.Debug,
             'disposed');
         // #endregion DEBUG
+    }
+
+
+    public get roots(): (FolderRoot | WorkspaceRoot)[] {
+        if (!this.rootsMap) {
+            return [];
+        }
+        return [...this.rootsMap.values()];
     }
 
 

@@ -385,6 +385,10 @@ export function activate(context: vscode.ExtensionContext) {
         }),
 
 
+        vscode.commands.registerCommand('task-cockpit.view.expand-all', async function () {
+            await panel.expandAll();
+        }),
+
         vscode.commands.registerCommand('task-cockpit.settings.configure-display', function () {
             return vscode.commands.executeCommand(
                 'workbench.action.openWorkspaceSettings',
