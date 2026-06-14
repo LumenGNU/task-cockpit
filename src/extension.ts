@@ -379,6 +379,12 @@ export function activate(context: vscode.ExtensionContext) {
         }),
 
 
+        vscode.commands.registerCommand('task-cockpit.view.find', async () => {
+            await vscode.commands.executeCommand('task-cockpit-view.focus');
+            await vscode.commands.executeCommand('list.find');
+        }),
+
+
         vscode.commands.registerCommand('task-cockpit.settings.configure-display', function () {
             return vscode.commands.executeCommand(
                 'workbench.action.openWorkspaceSettings',

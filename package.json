@@ -124,6 +124,11 @@
         "title": "Filtering Settings",
         "icon": "$(list-filter)",
         "enablement": "view == task-cockpit-view && workbenchState != 'empty'"
+      },
+      {
+        "command": "task-cockpit.view.find",
+        "title": "Find Task",
+        "icon": "$(search)"
       }
     ],
     "viewsContainers": {
@@ -163,6 +168,11 @@
     "menus": {
       "commandPalette": [],
       "view/title": [
+        {
+          "command": "task-cockpit.view.find",
+          "when": "view == task-cockpit-view && workbenchState != 'empty'",
+          "group": "navigation@1"
+        },
         {
           "command": "task-cockpit.view.refresh",
           "when": "view == task-cockpit-view && workbenchState != 'empty'",
