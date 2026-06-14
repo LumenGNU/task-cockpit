@@ -18,7 +18,7 @@ import type TaskSource from './TaskSource/TaskSource';
  * Семантика: "эта область (не)разрешается в источник задач".
  * Не дает информации "есть ли задачи фактически".
  *
- * @throws Не бросает */
+ * @throws { never } Не бросает */
 async function resolveTaskSource(scope: Scope): Promise<Readonly<TaskSource> | null> {
 
     const uri = getSourceUri(scope);

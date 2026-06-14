@@ -65,7 +65,7 @@ interface Raw {
  *
  * @throws { CancellationError } при срабатывании токена отмены —
  *   единственное исключение, которое пробрасывается наружу. При любых
- *   других проблемах (IO, парсинг) возвращается пустая/частичная карта. */
+ *   других проблемах (IO, парсинг) возвращается пустая карта. */
 async function fetchDefinitions(
     taskSource: Readonly<TaskSource>,
     token: CancellationToken

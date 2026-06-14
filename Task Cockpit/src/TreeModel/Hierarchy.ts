@@ -1,20 +1,6 @@
-/** @file TreeModel/Hierarchy.ts */
-/** @module Hierarchy */
-
-
-// #region DEBUG
-import { LogLevel } from 'vscode';
-import Logger from '../Logger';
-const { log } = Logger.get(module.filename);
-// #endregion DEBUG
-
-
-// =================================
-
-
-// interface AnyData {
-//     [k: string]: unknown;
-// };
+import {
+    type LogOutputChannel
+} from 'vscode';
 
 type AnyData = Record<string, unknown>;
 
@@ -252,7 +238,8 @@ const Hierarchy = {
      * @param specs массив {@link NodeSpec | спецификаций} (путь + данные)
      * @returns верхнеуровневые узлы построенной иерархии */
     build<D extends AnyData>(
-        specs: ReadonlyArray<Readonly<Spec<D>>>
+        specs: ReadonlyArray<Readonly<Spec<D>>>,
+        logOutputChannel: LogOutputChannel | null = null
     ): Readonly<Hierarchy.ChildrenDict<Readonly<D>>> {
 
         const topDict = Object.create(null) as Hierarchy.ChildrenDict<D>;
@@ -309,7 +296,9 @@ const Hierarchy = {
             // назначаем ему данные
             if (parentNode![DATA_FLAG]) {
                 // #region DEBUG
-                log(LogLevel.Warning, `Duplicate path: "${path.join(' › ')}". Data was overwritten`);
+                if (logOutputChannel) {
+                    logOutputChannel.warn(`[Hierarchy.build]: Duplicate path "${path.join(' › ')}". Data was overwritten`);
+                }
                 // #endregion DEBUG
                 // должна быть перезапись, не слияние
                 for (const key of Object.keys(parentNode!)) {

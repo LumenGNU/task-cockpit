@@ -6,6 +6,7 @@
 - detail для workspace больше не содержат сводку по пвпкам
 - `excludeFolders` setting now also supports excluding the workspace scope
 - `excludeFolders` имеет эффект в сингл-воркспейсе
+- "taskCockpit.validation.duplicateLabels" -> "taskCockpit.validation.duplicates"
 
 ## [1.1.0] - 2025-06-20
 

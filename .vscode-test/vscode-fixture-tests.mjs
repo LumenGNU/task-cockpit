@@ -125,7 +125,7 @@ import * as c from './color.mjs';
 const OUT_DIR = path.join(process.cwd(), process.env.OUT_DIR || '~out-test');
 const SUT_TEST_REL = process.env.SUT_TEST || 'test';
 const SUT_TEST = path.join(process.cwd(), SUT_TEST_REL);
-
+const VSC_PROFILE = process.env.VSC_PROFILE;
 
 const TEST_FILE_SUFFIX = 'test.js';
 
@@ -188,6 +188,8 @@ const defaults = {
         // '--disable-gpu',
         '--disable-telemetry',
         '--disable-crash-reporter',
+        '--disable-extensions', // @todo в фикстуры
+        ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
         // '--disable-workspace-trust',
         // '--no-sandbox',
     ],

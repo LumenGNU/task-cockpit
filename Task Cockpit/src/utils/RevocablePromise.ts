@@ -11,7 +11,7 @@ import {
 // #region DEBUG
 import { LogLevel } from 'vscode';
 import Logger from '../Logger';
-const { log, table } = Logger.get(module.filename);
+const { log } = Logger.get(module.filename);
 // #endregion DEBUG
 
 

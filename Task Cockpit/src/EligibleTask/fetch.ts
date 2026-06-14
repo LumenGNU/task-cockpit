@@ -5,21 +5,10 @@ import {
 } from 'vscode';
 import getKey from '../Scope/getKey';
 import qualifies from './qualifies';
-import ScopeKey from '../Scope/Key';
 import type EligibleTask from './EligibleTask';
+import type EligibleMap from './EligibleMap';
+import type ScopeKey from '../Scope/Key';
 import type TaskName from '../type.d/TaskName';
-
-
-/** Индекс {@link EligibleTask | "подходящих" задач} одной области видимости,
- * сгруппированных по имени задачи. */
-type TaskMap = ReadonlyMap<TaskName, Readonly<EligibleTask>>;
-
-
-/** Индекс "{@link EligibleTask | "подходящих" задач} по всем областям видимости.
- *
- * Отсутствие ключа означает, что в данной области
- * подходящих задач не обнаружено. */
-type EligibleTasks = ReadonlyMap<ScopeKey, TaskMap>;
 
 
 /** Строит индекс "подходящих" задач из списка, полученного
@@ -38,14 +27,16 @@ type EligibleTasks = ReadonlyMap<ScopeKey, TaskMap>;
  * @returns Индекс подходящих задач, сгруппированных по {@linkcode ScopeKey}.
  *   Если для конкретного `ScopeKey` задач нет — ключ в индексе отсутствует.
  *   Вызывающий не должен рассчитывать на наличие конкретного ключа.
- *   При отмене или ошибке возвращает пустой или частичный индекс.
+ *   При отмене возвращает пустой индекс.
+ *   При ошибке возвращает пустой или частичный индекс (определяется
+ *   поведением `VscTasks.fetchTasks()`).
  *
  * @throws { never } Исключений не бросает — при отмене возвращает пустой индекс.
  *   Поведение при ошибках определяется контрактом {@linkcode VscTasks.fetchTasks}. */
 async function fetch(
     ct: CancellationToken
 ): Promise<
-    EligibleTasks
+    EligibleMap
 > {
 
     if (ct.isCancellationRequested) {
@@ -61,7 +52,7 @@ async function fetch(
         VscTasks.fetchTasks(),
         // не ждем если сработала отмена — возвращаем null
         new Promise<null>(resolve => {
-            cancelDisposable = ct.onCancellationRequested(() => resolve(null));
+            cancelDisposable = ct.onCancellationRequested(function () { resolve(null); });
         })
     ]);
 
@@ -72,7 +63,7 @@ async function fetch(
         return new Map();
     }
 
-    return fetched.reduce((map, task) => {
+    return fetched.reduce(function (map, task) {
         if (qualifies(task)) {
             // Отобрать "подходящие" задачи и проиндексировать по
             // идентификаторам (ScopeKey, TaskName),
@@ -87,9 +78,9 @@ async function fetch(
             }
             taskMap.set(task.name, task);
         }
-        else {
-            // @todo log
-        }
+        // else {
+        //     // @todo log
+        // }
         return map;
     }, new Map<ScopeKey, Map<TaskName, EligibleTask>>());
 

@@ -354,9 +354,6 @@
       }
     ]
   },
-  "scripts": {
-    "test": "vscode-test"
-  },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.19.17",

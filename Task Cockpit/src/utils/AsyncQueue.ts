@@ -16,7 +16,7 @@ class AsyncQueue {
      *
      * @param op Асинхронная операция без аргументов, которую нужно выполнить.
      * @returns Промис, отражающий выполнение конкретной операции. */
-    enqueue(op: () => Promise<void>): Promise<void> {
+    enqueue(op: () => PromiseLike<void>): Promise<void> {
         const next = this.pending.then(op);
         // Заменяем pending на цепочку, которая не падает при ошибке,
         // чтобы следующие операции могли стартовать.

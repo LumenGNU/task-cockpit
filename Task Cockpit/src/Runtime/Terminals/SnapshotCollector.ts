@@ -11,7 +11,7 @@ import {
 import * as assert from 'node:assert/strict';
 import getProcessId from './getProcessId';
 import type ProcessId from '../ProcessId';
-import type Props from '../Props';
+import type Conf from '../Conf';
 import type Snapshot from './Snapshot';
 
 
@@ -66,7 +66,7 @@ class SnapshotCollector implements Disposable {
 
     #disposed: boolean;
 
-    #props: Readonly<Props['terminals']>;
+    #conf: Readonly<Conf['terminalsConf']>;
 
     #pendingId: number | undefined;
     #running: boolean;
@@ -75,12 +75,12 @@ class SnapshotCollector implements Disposable {
     readonly #logOutputChannel: LogOutputChannel | null;
 
     constructor(
-        props: Props['terminals'],
+        conf: Conf['terminalsConf'],
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
         this.#disposed = false;
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
 
         this.#logOutputChannel = logOutputChannel;
 
@@ -120,11 +120,11 @@ class SnapshotCollector implements Disposable {
     /**
      * Текущие активные запросы доработают со старым таймаутом (или как попало - не важно).
      * Следующий снапшот будет обработан с новым значением. */
-    public setProps(props: Readonly<Props['terminals']>) {
+    public setConf(conf: Readonly<Conf['terminalsConf']>) {
 
-        assert.ok(!this.#disposed, 'SnapshotCollector: use after dispose');
+        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
 
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
     }
 
 
@@ -149,7 +149,7 @@ class SnapshotCollector implements Disposable {
      * @fire Terminals#onDidCollectSnapshot после успешного сбора всех PID */
     public enqueueRequest(requestId: number): void {
 
-        assert.ok(!this.#disposed, 'SnapshotCollector: use after dispose');
+        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
 
         this.#pendingId = requestId;
 
@@ -164,8 +164,8 @@ class SnapshotCollector implements Disposable {
 
     // #region Private
 
-    #setProps(props: Readonly<Props['terminals']>): Readonly<Props['terminals']> {
-        return { ...props };
+    #setConf(conf: Readonly<Conf['terminalsConf']>): Readonly<Conf['terminalsConf']> {
+        return { ...conf };
     }
 
 
@@ -190,7 +190,7 @@ class SnapshotCollector implements Disposable {
 
                     const snapshot = await SnapshotCollector.#collectProcessIds(
                         requestId,
-                        this.#props.timeout,
+                        this.#conf.timeout,
                         cancelSource.token
                     );
 

@@ -1,0 +1,13 @@
+
+
+UserState/Pins.ts
+UserState/PinMap.d.ts
+
+## deps
+#-----------------
+utils/AsyncQueue.ts
+EligibleTask/DefinitionId.d.ts
+Scope/Key.d.ts
+type.d/TaskName.d.ts
+Scope/Folder/Key.d.ts
+Scope/Workspace/Key.ts

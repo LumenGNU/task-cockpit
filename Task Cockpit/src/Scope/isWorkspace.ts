@@ -1,8 +1,8 @@
 import {
     TaskScope
 } from 'vscode';
-import type Scope from './Scope.d';
-import type Workspace from './Workspace/Workspace.d';
+import type Scope from './Scope';
+import type Workspace from './Workspace/Workspace';
 
 
 function isWorkspace(scope: Scope): scope is Workspace {

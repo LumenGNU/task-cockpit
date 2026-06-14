@@ -15,7 +15,7 @@ import type EligibleTask from './EligibleTask';
  *  */
 function qualifies(task: Task): task is EligibleTask {
 
-    // Дружим только с задачами из Workspace- и Folder-scopes,
+    // Дружим только с задачами из Workspace- и Folder-scopes (а других и нет :) ),
     // и имеющих имя
     return task.scope != null &&
         task.name?.length > 0 &&

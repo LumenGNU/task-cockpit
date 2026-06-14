@@ -1,13 +1,5 @@
-/** @file TreeView/Node/EmptyNode.ts */
-/** @module EmptyNode */
 
-
-import { ItemSeparator } from '../../constants';
-import UriSchema from '../../type.d/UriSchema';
-import NodeType from '../NodeType';
-import type ScopeSection from '../Section/ScopeSection';
 import {
-    MarkdownString,
     ThemeColor,
     ThemeIcon,
     TreeItemCollapsibleState,
@@ -16,24 +8,53 @@ import {
     type TreeItem,
     Uri
 } from 'vscode';
+import formatTooltip from '../formatTooltip';
+import NodeType from '../NodeType';
+import type ContextValue from '../ContextValue';
+import type NodeId from '../NodeId';
+import type ScopeKey from '../../Scope/Key';
+import type ScopeType from '../../Scope/Type';
+import type UriSchema from '../../DecorationProvider/UriSchema';
 
 
 /** Узел-заглушка — отображается внутри секции,
  * когда секция пуста. */
 interface EmptyNode {
-    typeKey: NodeType.EmptyNode;
-    parent: Readonly<ScopeSection>;
+
+    /** (*) Уникальный id узла в дереве */
+    nodeId: NodeId;
+
+    /** (*) Тип узла. */
+    nodeType: NodeType.EmptyNode;
+
+    viewData: Readonly<{
+
+        /** (*) Область, отображаемая этой веткой */
+        scopeKey: ScopeKey;
+
+        /** (*) Отображаемая метка */
+        label: string;
+
+        cause: 'Hidden' | 'Empty';
+
+        /** Логический тип области */
+        scopeType: ScopeType; // @todo полее подробное описание "почему-где" ?
+    }>;
 }
 
 
 const EmptyNode = {
 
     /** Создаёт узел-заглушку для пустой секции. */
-    create(parent: Readonly<ScopeSection>): Readonly<EmptyNode> {
+    create(
+        nodeId: NodeId,
+        viewData: EmptyNode['viewData']
+    ): Readonly<EmptyNode> {
 
         return {
-            typeKey: NodeType.EmptyNode,
-            parent
+            nodeId,
+            nodeType: NodeType.EmptyNode,
+            viewData
         } as const;
     },
 
@@ -45,58 +66,36 @@ const EmptyNode = {
      * `contextValue`: `task-cockpit:Node:Special:(Empty|Hidden)` */
     getTreeItem(emptyNode: Readonly<EmptyNode>): TreeItem {
 
-        const parent = emptyNode.parent;
-
-        const total = parent.stats.total;
-
-        const allHidden = total > 0
-            && parent.stats.excluded === total;
-
-        const contextType = `Special:${allHidden ? 'Hidden' : 'Empty'}`;
-
-        // Стабильный поскольку может быть только эксклюзивно один на секцию
-        const id = `${parent.id}${ItemSeparator}\x00\x00${contextType}`;
-
-        const tooltip = new MarkdownString();
-        tooltip.isTrusted = false;
-        tooltip.supportHtml = false;
-        tooltip.supportThemeIcons = false;
-
-        const kind =
-            parent.isWorkspace
-                ? 'workspace'
-                : 'folder';
-
-        if (allHidden) {
-            tooltip.appendMarkdown(
-                `*All \`${total}\` task${total === 1 ? '' : 's'} hidden by active filters*  \n` +
-                '\u00A0'
-            );
-        } else {
-            tooltip.appendMarkdown(
-                `*No tasks in this ${kind}*  \n` +
-                '\u00A0'
-            );
-        }
-
         return {
-            id,
-            label: 'No tasks',
-            description: allHidden ? '(all filtered out)' : `(empty ${kind})`,
+            id: emptyNode.nodeId,
+            label: emptyNode.viewData.label,
+            description: false,
             iconPath: new ThemeIcon('dash', new ThemeColor('list.deemphasizedForeground')),
             collapsibleState: TreeItemCollapsibleState.None,
-            contextValue: `task-cockpit:Node:${contextType}`,
-            resourceUri: buildResourceURI(),
-            tooltip
+            contextValue: `task-cockpit:Node:Special:${emptyNode.viewData.cause}` satisfies ContextValue.Node.Special,
+            resourceUri: buildResourceURI()
         };
     },
 
 
     resolveTreeItem(
         item: TreeItem,
-        _emptyNode: Readonly<EmptyNode>,
-        _token: Readonly<CancellationToken>
+        emptyNode: Readonly<EmptyNode>,
+        token: Readonly<CancellationToken>
     ): ProviderResult<TreeItem> {
+
+        if (token.isCancellationRequested) {
+            return item;
+        }
+
+        item.tooltip = formatTooltip(
+            undefined,
+            undefined,
+            (emptyNode.viewData.cause === 'Hidden')
+                ? '*All tasks hidden by active filters*'
+                : '*No tasks in this scope*'
+        );
+
         return item;
     },
 
@@ -105,17 +104,14 @@ const EmptyNode = {
 
 function buildResourceURI(): Uri {
 
-    const usp = new URLSearchParams();
-
-    usp.set('color', 'list.deemphasizedForeground');
-
-    const uriSchema: UriSchema = {
+    return Uri.from({
         scheme: 'task-cockpit',
         authority: 'Node',
-        query: usp.toString()
-    };
-
-    return Uri.from(uriSchema);
+        path: '',
+        query: (new URLSearchParams({
+            color: 'list.deemphasizedForeground'
+        })).toString()
+    } satisfies UriSchema);
 }
 
 

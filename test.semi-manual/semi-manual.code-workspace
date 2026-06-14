@@ -1,0 +1,46 @@
+{
+    "folders": [
+        {
+            "path": "OnlyProblems"
+        },
+        {
+            "path": "Empty"
+        },
+        {
+            "path": "OrderingTest"
+        },
+        {
+            "path": "Multiroot-Dependencies"
+        },
+        {
+            "path": "Multiroot-HappyPath"
+        },
+        {
+            "path": "Void"
+        },
+        {
+            "path": "DuplicateLabelsProblem"
+        },
+        {
+            "path": "SingleFolder-DepGraph-Resolution"
+        },
+        {
+            "path": "SingleFolder"
+        },
+        {
+            "path": "DifferentsConfigs"
+        },
+        {
+            "path": "DepensResolveProblem"
+        },
+        {
+            "path": "DecorationsTest"
+        },
+        {
+            "path": "MassiveParallelDeps"
+        },
+    ],
+    "settings": {
+        "git.openRepositoryInParentFolders": "never"
+    }
+}

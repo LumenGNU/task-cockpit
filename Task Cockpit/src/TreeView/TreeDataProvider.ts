@@ -1,13 +1,25 @@
-import * as vscode from 'vscode';
-import type PinsSection from './Section/PinsSection';
-import type SubSection from './Section/SubSection';
-import ScopeSection from './Section/ScopeSection';
+import {
+    EventEmitter,
+    type CancellationToken,
+    type ProviderResult,
+    type TreeDataProvider as VscTreeDataProvider,
+    type TreeItem,
+} from 'vscode';
 import * as assert from 'node:assert/strict';
-import NodeType from './NodeType';
-import ContentNode from './Node/ContentNode';
-import Snapshot from '../ProjectSpace/Snapshot';
 import EmptyNode from './Node/EmptyNode';
-import EligibleTask from '../EligibleTask';
+import IntermediateNode from './Node/IntermediateNode';
+import NodeType from './NodeType';
+import RunnableNode from './Node/RunnableNode';
+import type Runtime from '../Runtime/Runtime';
+import type ScopeKey from '../Scope/Key';
+import ScopeSection from './Section/ScopeSection';
+import type Snapshot from '../ProjectSpace/Snapshot';
+import type TaskName from '../type.d/TaskName';
+import type EligibleMap from '../EligibleTask/EligibleMap';
+import createContentNode from './createContentNode';
+import createEmptyNode from './createEmptyNode';
+import createSectionNode from './createSectionNode';
+import type PinMap from '../UserState/PinMap';
 
 
 type Sections =
@@ -18,7 +30,8 @@ type Sections =
 type Child =
     | EmptyNode
     // | SubSection
-    | ContentNode
+    | RunnableNode
+    | IntermediateNode
     ;
 
 type Nodes =
@@ -26,22 +39,44 @@ type Nodes =
     | Child
     ;
 
+// @todo parents через weakMap
+export default class TreeDataProvider implements VscTreeDataProvider<Readonly<Nodes>> {
 
-export default class TreeDataProvider implements vscode.TreeDataProvider<Readonly<Nodes>> {
 
-
-    readonly #onDidChangeTreeData = new vscode.EventEmitter<Nodes | void>();
+    readonly #onDidChangeTreeData = new EventEmitter<Nodes | void>();
     readonly onDidChangeTreeData = this.#onDidChangeTreeData.event;
 
 
-    #PinsSection: Readonly<PinsSection> | null = null;
+    #workspaceSnapshot: Snapshot;
+
+    #eligibleMap: EligibleMap; // @fixme кеш!
 
 
-    #workspaceSnapshot?: Snapshot;
+    #runnableNodes: Map<ScopeKey, Map<TaskName, WeakRef<Readonly<RunnableNode>>>>;
 
-    #eligibleCache?: Readonly<EligibleTask.Cache>;
+    #parentsMap: WeakMap<Readonly<Nodes>, Readonly<Nodes> | null>;
 
-    constructor() { }
+    #runtime: Runtime['registry'];
+
+
+    constructor(
+        props: {
+            runtime: Runtime['registry'],
+            workspaceSnapshot: Snapshot,
+            eligibleMap: EligibleMap;
+            pins: PinMap;
+        }
+    ) {
+
+        this.#runnableNodes = new Map();
+
+        this.#parentsMap = new WeakMap();
+
+        this.#runtime = props.runtime;
+
+        this.#workspaceSnapshot = props.workspaceSnapshot;
+        this.#eligibleMap = props.eligibleMap;
+    }
 
 
     dispose() {
@@ -49,48 +84,86 @@ export default class TreeDataProvider implements vscode.TreeDataProvider<Readonl
     }
 
 
+    public getTreeItem(element: Readonly<Nodes>): TreeItem {
 
-    public updatePinsSection(PinsSection: Readonly<PinsSection>) {
-        this.#PinsSection = PinsSection;
-        this.#onDidChangeTreeData.fire(); // @todo
+        switch (element.nodeType) {
+
+            case NodeType.ScopeSection: {
+                return ScopeSection.getTreeItem(element);
+            }
+
+            case NodeType.EmptyNode: {
+                return EmptyNode.getTreeItem(element);
+            }
+
+            case NodeType.IntermediateNode: {
+                // intermediate node
+                const scopeKey = element.viewData.scopeKey;
+                const scopeInput = this.#workspaceSnapshot.get(scopeKey);
+                return IntermediateNode.getTreeItem(element, {
+                    conf: scopeInput?.config.nodeConf ?? null
+                });
+            }
+
+            case NodeType.RunnableNode: {
+                // runnable node
+                const scopeKey = element.viewData.scopeKey;
+                const scopeInput = this.#workspaceSnapshot.get(scopeKey);
+                const taskName = element.viewData.taskName;
+
+                // регистрация ноды по область + имя задачи
+                let namesMap = this.#runnableNodes.get(scopeKey);
+                if (!namesMap) {
+                    namesMap = new Map();
+                    this.#runnableNodes.set(scopeKey, namesMap);
+                }
+                namesMap.set(taskName, new WeakRef(element));
+
+                return RunnableNode.getTreeItem(element, {
+                    conf: scopeInput?.config.nodeConf ?? null,
+                    definition: scopeInput?.definitions.get(taskName) ?? null,
+                    eligibleTask: this.#eligibleMap.get(scopeKey)?.get(taskName) ?? null,
+                    runtimeState: this.#runtime.Stats.get(scopeKey)?.get(taskName) ?? null
+                });
+            }
+
+            default: {
+                const _: never = element;
+                assert.fail('never give you up...');
+            }
+        }
+
     }
 
 
-    public updateScopeSections(scopeSections: ReadonlyArray<Readonly<ScopeSection>>) {
-        this.#scopeSections = scopeSections;
-        this.#onDidChangeTreeData.fire(); // @todo
-    }
+    getChildren(element?: Readonly<Nodes>): Array<Readonly<Nodes>> | null {
 
-
-    async getChildren(element?: Readonly<Nodes>): Promise<Array<Readonly<Nodes>> | null> {
-
-
-        if (!element) {
+        if (!element) { // сначала дерево заполняется "секциями"
 
             const sections: Array<Readonly<Sections>> = [];
 
-            // первой идет секция с закрепленными задачами
-            // если отображение разрешено и **не пуста**
-            if (this.#PinsSection) {
-                sections.push(this.#PinsSection);
-            }
+            // // первой идет секция с закрепленными задачами
+            // // если отображение разрешено и **не пуста**
+            // if (this.#pinsSection) {
+            //     sections.push(this.#pinsSection);
+            // }
 
             // потом секции по scope
-            // @note "workspace первым" — структурный инвариант входных данных.
-            if (this.#workspaceSnapshot) {
-
-                for (const [scopeKey, scopeInput] of this.#workspaceSnapshot) {
-                    sections.push(ScopeSection.create({ scopeKey, scopeInput }));
-                }
+            // Note: "workspace первым" — структурный инвариант входных данных.
+            for (const [scopeKey, scopeInput] of this.#workspaceSnapshot) {
+                // @todo filter
+                sections.push(createSectionNode(scopeKey, scopeInput));
             }
 
-            // Если в итоге пусто, то ничего не показываем, все очищаем
-            return sections.length > 0 ? sections : null;
+            return sections.length > 0
+                ? sections
+                // Если в итоге пусто, то ничего не показываем, все очищаем
+                : null;
         }
 
 
 
-        switch (element.typeKey) {
+        switch (element.nodeType) {
 
             // // PinsSection
             // case NodeKey.PinsSectionKey: {
@@ -99,24 +172,48 @@ export default class TreeDataProvider implements vscode.TreeDataProvider<Readonl
 
             // }
 
-            // SubSection ("Корни" внутри секции "запинованые")
-            // Section ("Верхние корни")
-            // case NodeKey.SubSectionKey:
+
             case NodeType.ScopeSection: {
+                // ScopeSection — секция "источник-задач".
+                // Презентует workspace, директорию или глобальное пространство.
+                // Отображается всегда, даже если пуста.
 
-                if (element.hierarchy.length < 1) {
-                    return [EmptyNode.create(element)];
+                const children: Array<Readonly<RunnableNode | IntermediateNode | EmptyNode>> = [];
+                // создаем Content-Node для каждого hierarchy-элемента
+                for (const hierarchy of element.viewData.children) {
+                    const contentNode = createContentNode(element, hierarchy);
+                    this.#parentsMap.set(contentNode, element);
+                    children.push(contentNode);
                 }
 
-                const children: Readonly<ContentNode>[] = [];
-
-                for (const hierarchy of element.hierarchy) {
-                    children.push(ContentNode.create(element, {
-                        hierarchy,
-                        eligibleIndex: await this.#eligibleCache?.get()
-                    }));
+                if (children.length < 1) {
+                    // иерархия пуста, нет задач в области — Вставляем заглушку
+                    const emptyNode = createEmptyNode(element);
+                    this.#parentsMap.set(emptyNode, element);
+                    children.push(emptyNode);
                 }
 
+                return children;
+            }
+
+            case NodeType.RunnableNode:
+            case NodeType.IntermediateNode: {
+                const hierarchies = element.viewData.children;
+                if (!hierarchies) {
+                    return null;
+                }
+                const children: Array<Readonly<RunnableNode | IntermediateNode>> = [];
+                for (const hierarchy of hierarchies) {
+                    const contentNode = createContentNode(element, hierarchy);
+                    this.#parentsMap.set(contentNode, element);
+                    children.push(contentNode);
+                }
+
+                return children;
+            }
+
+            case NodeType.EmptyNode: {
+                return null;
             }
 
             default: {
@@ -129,18 +226,42 @@ export default class TreeDataProvider implements vscode.TreeDataProvider<Readonl
     }
 
 
-    resolveTreeItem(item: vscode.TreeItem, element: Sections, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
-        return item;
+    resolveTreeItem(item: TreeItem, element: Readonly<Nodes>, token: CancellationToken): ProviderResult<TreeItem> {
+
+        switch (element.nodeType) {
+
+            case NodeType.ScopeSection: {
+                return ScopeSection.resolveTreeItem(item, element, token);
+            }
+
+            case NodeType.EmptyNode: {
+                return EmptyNode.resolveTreeItem(item, element, token);
+            }
+
+            case NodeType.RunnableNode: {
+                return RunnableNode.resolveTreeItem(item, element, {
+                    definition: this.#workspaceSnapshot.get(element.viewData.scopeKey)?.definitions.get(element.viewData.taskName) ?? null,
+                    eligibleTask: this.#eligibleMap.get(element.viewData.scopeKey)?.get(element.viewData.taskName) ?? null
+                }, token);
+            }
+
+            case NodeType.IntermediateNode: {
+                return IntermediateNode.resolveTreeItem(item, element, token);
+            }
+
+
+            default: {
+                const _: never = element;
+                assert.fail('never give you up...');
+            }
+        }
     }
 
 
-    getTreeItem(element: Sections): vscode.TreeItem {
-
+    getParent(element: Readonly<Nodes>): Readonly<Nodes> | null {
+        return this.#parentsMap.get(element) ?? null;
     }
 
-
-    getParent(element: Sections): Sections | null {
-        return getParent(element);
-    }
+    // ---------------------------------------------------------------------------
 
 }

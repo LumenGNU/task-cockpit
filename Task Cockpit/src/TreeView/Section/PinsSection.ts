@@ -8,7 +8,7 @@ import type HierarchyConfig from '../../Configuration/Scoped/HierarchyConfig';
 import type NodeConfig from '../../Configuration/Scoped/NodeConfig';
 import type Config from '../../Configuration/Global/Config';
 import type Key from '../../ProjectSpace/Scope/Key';
-import ContentNode from '../Node/ContentNode';
+import RunnableNode from '../Node/RunnableNode';
 import {
     type TreeItem,
     ThemeIcon,

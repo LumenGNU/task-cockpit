@@ -1,8 +1,4 @@
-/** @file TreeModel/NodeSpec.ts */
-/** @module NodeSpec */
-
-
-import { DisplayItemSeparator } from '../constants';
+import { DISPLAY_ITEM_SEPARATOR } from '../constants';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
 
@@ -37,6 +33,9 @@ const NodeSpec = {
 
     /** Преобразует индекс определений узлов в индекс спецификаций для построения иерархии.
      *
+     * Принимает плоскую структуру и возвращает структурированную — где у каждого
+     * элемента уже есть явный path.
+     *
      * #### Режимы компрессии путей
      *
      * При `compression === 'off'` пути строятся напрямую через {@linkcode buildPath}.
@@ -46,16 +45,19 @@ const NodeSpec = {
      * {@linkcode buildCompressedPath}. Линейные участки склеиваются в один сегмент;
      * `'on-aggressive'` дополнительно трактует runnable-узлы как точки разреза.
      *
+     * @param entries Плоский список пар `[name, data]`. `name` — полное имя элемента
+     *   (например `build:dev:watch`); разбивается по `segmentSeparator` в сегменты пути.
+     *   `data` — полезная нагрузка, которая оседает в листьях результирующих спецификаций.
      * @returns Индекс спецификаций: по одной записи {@linkcode SpecEntry} на каждый ключ входного индекса.
      * */
     createSpecs<D extends NodeSpec.NodeData>({
-        nodeDataItems,
+        entries,
         hierarchyConfig,
-        compression
+        pathCompression
     }: {
-        nodeDataItems: ReadonlyArray<Readonly<[name: string, data: D]>>;
+        entries: ReadonlyArray<Readonly<[name: string, data: D]>>;
         hierarchyConfig: Readonly<NodeSpec.HierarchyConfig>;
-        compression: NodeSpec.CompressionBehavior;
+        pathCompression: NodeSpec.CompressionBehavior;
     }): Readonly<ReadonlyArray<Readonly<NodeSpec<D>>>> {
 
         const specs: NodeSpec<D>[] = [];
@@ -63,9 +65,9 @@ const NodeSpec = {
         const { segmentSeparator } = hierarchyConfig;
         const splitter = Splitter.create(segmentSeparator);
 
-        if (compression === 'off') {
+        if (pathCompression === 'off') {
 
-            for (const [name, data] of nodeDataItems) {
+            for (const [name, data] of entries) {
 
                 specs.push({
                     path: buildPath(splitter.split(name), data, hierarchyConfig),
@@ -75,13 +77,13 @@ const NodeSpec = {
         }
         else {
 
-            const rawSpecs = nodeDataItems.map(([name, data]) => ({
+            const rawSpecs = entries.map(([name, data]) => ({
                 path: buildPath(splitter.split(name), data, hierarchyConfig),
                 data
             }));
 
             const trie = Hierarchy.build(rawSpecs);
-            const aggressive = compression === 'on-aggressive';
+            const aggressive = pathCompression === 'on-aggressive';
 
             Hierarchy.walk(trie, (node) => {
                 if (!Hierarchy.Node.isData(node)) {
@@ -201,7 +203,7 @@ function buildCompressedPath<D extends NodeSpec.NodeData>(
         if (isForcedBranch || isNormalDataBreak) {
             if (chain.length > 0) {
                 chain.reverse();
-                compressed.push(chain.join(DisplayItemSeparator));
+                compressed.push(chain.join(DISPLAY_ITEM_SEPARATOR));
                 chain.length = 0;
             }
         }
@@ -220,7 +222,7 @@ function buildCompressedPath<D extends NodeSpec.NodeData>(
     // Финальный flush — оставшиеся сегменты у корня
     if (chain.length > 0) {
         chain.reverse();
-        compressed.push(chain.join(DisplayItemSeparator));
+        compressed.push(chain.join(DISPLAY_ITEM_SEPARATOR));
         // compressed заполняется от листа к корню (flush при подъёме),
         // reverse приводит к порядку от корня к листу.
         compressed.reverse();

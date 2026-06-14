@@ -6,7 +6,7 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import type ProcessId from './ProcessId';
-import type Props from './Props';
+import type Conf from './Conf';
 
 
 /** Мониторинг процессов (адаптивный интервал опроса).
@@ -40,19 +40,19 @@ class Monitor implements Disposable {
     #checkInterval: NodeJS.Timeout | undefined;
 
 
-    #props: Readonly<Props['monitor']>;
+    #conf: Readonly<Conf['monitorConf']>;
 
 
     // #region Lifecycle
 
     /** Создать экземпляр монитора. */
     constructor(
-        props: Readonly<Props['monitor']>,
+        conf: Readonly<Conf['monitorConf']>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
         this.#disposed = false;
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
         this.#processes = new Set();
 
         this.#onProcessesCompleted = new EventEmitter<ReadonlySet<ProcessId>>();
@@ -100,17 +100,17 @@ class Monitor implements Disposable {
      *
      * Смотри: src/Configuration/Global/SCHEMA.ts — границы и значения по умолчанию
      *
-     * @param props {@linkcode Props} */
+     * @param conf {@linkcode Conf} */
     // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
     // скорректировать оставшееся время.
-    // Для этого нужно хранить метку запуска таймера и в setProps вычислять
+    // Для этого нужно хранить метку запуска таймера и в setConf вычислять
     // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
     // Важность — Низкая. Пока просто ждем нового тика.
-    public setProps(props: Readonly<Props['monitor']>) {
+    public setConf(conf: Readonly<Conf['monitorConf']>) {
 
-        assert.ok(!this.#disposed, 'Monitor: use after dispose');
+        assert.equal(this.#disposed, false, 'Monitor: use after dispose');
 
-        this.#props = this.#setProps(props);
+        this.#conf = this.#setConf(conf);
     }
 
 
@@ -125,7 +125,7 @@ class Monitor implements Disposable {
      * */
     public addTaskProcess(processId: ProcessId) {
 
-        assert.ok(!this.#disposed, 'Monitor: use after dispose');
+        assert.equal(this.#disposed, false, 'Monitor: use after dispose');
 
         if (this.#processes.has(processId)) {
             return;
@@ -150,19 +150,19 @@ class Monitor implements Disposable {
 
     // #region Private
 
-    #setProps(props: Readonly<Props['monitor']>): Readonly<Props['monitor']> {
+    #setConf(conf: Readonly<Conf['monitorConf']>): Readonly<Conf['monitorConf']> {
 
         // Clamp polling.cap >= polling.min * 1.7
         // Остальные значения и их границы должны проверятся
         // выше - на уровне конфигурации.
         return {
             polling: {
-                min: props.polling.min,
+                min: conf.polling.min,
                 cap: Math.max(
-                    props.polling.min * 1.7,
-                    props.polling.cap
+                    conf.polling.min * 1.7,
+                    conf.polling.cap
                 ),
-                acceleration: props.polling.acceleration
+                acceleration: conf.polling.acceleration
             } as const
         } as const;
     }
@@ -211,7 +211,7 @@ class Monitor implements Disposable {
             return undefined;
         }
 
-        const { min, acceleration, cap } = this.#props.polling;
+        const { min, acceleration, cap } = this.#conf.polling;
 
         // Медленный рост вначале; резкое ускорение; cap
         return Math.min(min + acceleration * count * count, cap);

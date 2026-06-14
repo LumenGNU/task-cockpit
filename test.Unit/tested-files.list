@@ -9,12 +9,14 @@ utils/RevocablePromise.ts
 
 
 ## TreeModel
-TreeModel/BuildHierarchy.ts
 TreeModel/Hierarchy.ts
 TreeModel/NodeSpec.ts
 TreeModel/Splitter.ts
-TreeModel/index.ts
 
 
-##TreeView
-TreeView/Node/ContentNode.ts
+## FileDecorationProvider
+## --------------------------------
+DecorationProvider/FileDecorationProvider.ts
+DecorationProvider/Props.d.ts
+DecorationProvider/UriQuery.d.ts
+DecorationProvider/UriSchema.d.ts

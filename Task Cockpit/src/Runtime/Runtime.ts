@@ -19,7 +19,7 @@ import qualifies from '../EligibleTask/qualifies';
 import Registry from './Registry';
 import SnapshotCollector from './Terminals/SnapshotCollector';
 import type ProcessId from './ProcessId';
-import type Props from './Props';
+import type Conf from './Conf';
 import type ScopeKey from '../Scope/Key';
 import type Snapshot from './Terminals/Snapshot';
 import type TaskIdentifier from './TaskIdentifier';
@@ -87,7 +87,7 @@ class Runtime implements Disposable {
     // #region Lifecycle
 
     constructor(
-        props: Props,
+        conf: Conf,
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
@@ -98,10 +98,10 @@ class Runtime implements Disposable {
         this.#onDidChange = new EventEmitter();
         this.onDidChange = this.#onDidChange.event;
 
-        this.#monitor = new Monitor(props.monitor, logOutputChannel);
-        this.#terminalSnapshot = new SnapshotCollector(props.terminals, logOutputChannel);
+        this.#monitor = new Monitor(conf.monitorConf, logOutputChannel);
+        this.#terminalSnapshot = new SnapshotCollector(conf.terminalsConf, logOutputChannel);
 
-        this.#timeout = props.terminals.timeout;
+        this.#timeout = conf.terminalsConf.timeout;
 
         this.#disposable = Disposable.from(
 
@@ -170,11 +170,11 @@ class Runtime implements Disposable {
 
     // #region Public
 
-    public setProps(props: Readonly<Props>) {
+    public setConf(conf: Readonly<Conf>) {
 
-        assert.ok(!this.#disposed, 'SnapshotCollector: use after dispose');
+        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
 
-        this.#timeout = this.#setProps(props);
+        this.#timeout = this.#setConf(conf);
     }
 
 
@@ -185,7 +185,7 @@ class Runtime implements Disposable {
         readonly Stats: Registry['Stats'];
     }> {
 
-        assert.ok(!this.#disposed, 'Runtime: use after dispose');
+        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
         return this.#registry;
     }
@@ -205,7 +205,6 @@ class Runtime implements Disposable {
      *   `terminalRef` — слабая ссылка: к моменту использования терминал может быть
      *   закрыт, переиспользован или уничтожен. Гарантировано только что на момент `timestamp`
      *   Terminal содержал (выполнял) `processId`.
-     *   После dispose — пустой массив.
      * @throws { CancellationError } */
     async getSnapshot({ scopeKey, taskName }: TaskIdentifier, token: CancellationToken): Promise<
         ReadonlyArray<Readonly<{
@@ -218,7 +217,7 @@ class Runtime implements Disposable {
         }>>
     > {
 
-        assert.ok(!this.#disposed, 'Runtime: use after dispose');
+        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
         const pids = this.#registry.ProcessId.get(scopeKey)?.get(taskName);
 
@@ -273,12 +272,11 @@ class Runtime implements Disposable {
      *
      * Отправляет `SIGTERM` каждому живому процессу.
      * Мгновенная остановка, как и остановка вообще — не гарантируется.
-     * После dispose — no-op.
      *
      * @param taskIdentifier Идентификатор задачи */
     abortAll({ scopeKey, taskName }: TaskIdentifier): void {
 
-        assert.ok(!this.#disposed, 'Runtime: use after dispose');
+        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
         const processes = this.#registry.ProcessId.get(scopeKey)?.get(taskName);
 
@@ -404,12 +402,12 @@ class Runtime implements Disposable {
     // #endregion Handlers
 
 
-    #setProps(props: Readonly<Props>): Readonly<Props['terminals']['timeout']> {
+    #setConf(conf: Readonly<Conf>): Readonly<Conf['terminalsConf']['timeout']> {
 
-        this.#monitor.setProps(props.monitor);
-        this.#terminalSnapshot.setProps(props.terminals);
+        this.#monitor.setConf(conf.monitorConf);
+        this.#terminalSnapshot.setConf(conf.terminalsConf);
 
-        return props.terminals.timeout;
+        return conf.terminalsConf.timeout;
     }
 
 

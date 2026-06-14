@@ -2,7 +2,7 @@ import type {
     Task,
     TaskDefinition,
 } from 'vscode';
-import type DefinitionId from '../type.d/DefinitionId';
+import type DefinitionId from './DefinitionId';
 import type TaskName from '../type.d/TaskName';
 import type Scope from '../Scope/Scope';
 

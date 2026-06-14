@@ -1,10 +1,3 @@
-/** @file TreeView/Section/ScopeSection.ts */
-/** @module ScopeSection */
-
-
-import NodeType from '../NodeType';
-import TreeModel from '../../TreeModel';
-import WorkSpace from '../../ProjectSpace';
 import {
     MarkdownString,
     ThemeIcon,
@@ -14,48 +7,58 @@ import {
     type ProviderResult,
     type Uri
 } from 'vscode';
-import Key from '../../ProjectSpace/Scope/Key';
-import NodeSpec from '../../TreeModel/NodeSpec';
-import TaskName from '../../type.d/TaskName';
-
-
-type HierarchyElement = Readonly<
-    | TreeModel.Hierarchy.Data<{ readonly taskName: TaskName; }>
-    | TreeModel.Hierarchy.Branch<{ readonly taskName: TaskName; }>
->;
+import NodeType from '../NodeType';
+import type ContextValue from '../ContextValue';
+import type HierarchyElement from '../HierarchyElement';
+import type Key from '../../Scope/Key';
+import type ScopeInput from '../../ProjectSpace/ScopeInput';
+import type ScopeType from '../../Scope/Type';
+import formatTooltip from '../formatTooltip';
+import NodeId from '../NodeId';
 
 
 /** `ScopeSection` — ViewModel корневого узла дерева задач для одного scope'а
  * (workspace или папка).
  *
- * Строится из {@linkcode WorkSpace.Snapshot.ScopeInput} фабрикой {@linkcode ScopeSection.build}
+ * Строится из {@linkcode ScopeInput} фабрикой {@linkcode ScopeSection.create}
  * и содержит всё необходимое для рендеринга узла и его дочерней иерархии
  * через `TreeDataProvider`. */
 interface ScopeSection {
 
-    /** Тип узла. */
-    typeKey: NodeType.ScopeSection;
+    /** (*) Уникальный id узла в дереве */
+    nodeId: NodeId;
+
+    /** (*) Тип узла. */
+    nodeType: NodeType.ScopeSection;
+
+    // /** (**) Родительский узел. (Нет) */
+    // parent: null;
 
 
-    displayName: string;
+    viewData: Readonly<{
 
-    resourceUri: Uri;
+        /** (*) Область, отображаемая этой веткой */
+        scopeKey: Key;
 
-    isWorkspace: boolean;
+        /** Элементы модели дерева — результат построения иерархии для данной области.
+         * Всегда массив, возможно пустой */
+        children: ReadonlyArray<HierarchyElement>;
 
-    /** Элементы модели дерева — результат построения иерархии для данной области.
-     * Всегда массив, возможно пустой */
-    hierarchy: ReadonlyArray<HierarchyElement>;
+        /** (*) Отображаемая метка */
+        label: string;
 
+        /** Логический тип области */
+        scopeType: ScopeType;
 
-    /** Статистика задач, попавших в это дерево. */
-    stats: Readonly<{
-        total: number;
-        excluded: number;
+        /** Uri источника-задач этой области */
+        sourceUri: Uri;
+
+        /** Статистика задач, попавших в это дерево после фильтрации. */
+        stats: Readonly<{
+            total: number;
+            excluded: number;
+        }>;
     }>;
-
-    id: string;
-    scopeKey: Key;
 }
 
 
@@ -69,28 +72,20 @@ const ScopeSection = {
      *
      * Компрессия путей в иерархии всегда отключена.
      *
+     * @param scopeKey Ключ области, которую отображает ветка
+     * @param scopeInput Входные данные из снапшота, описывающие эту область
+     *
      * @returns Построенная секция */
-    create({
-        scopeKey,
-        scopeInput
-    }: {
-        /** Область которую отображает ветка */
-        scopeKey: Key;
-        /** Входные данные из снапшота, описывающие эту область */
-        scopeInput: Readonly<WorkSpace.Snapshot.ScopeInput>;
-    }): Readonly<ScopeSection> {
-
-        const { hierarchy, stats } = buildHierarchy(scopeInput.definitions, scopeInput.config.hierarchyConfig);
+    create(
+        scopeKey: Key,
+        viewData: ScopeSection['viewData']
+    ): Readonly<ScopeSection> {
 
         return {
-            id: scopeKey,
-            scopeKey,
-            typeKey: NodeType.ScopeSection,
-            displayName: WorkSpace.Scope.displayName(scopeInput.scope),
-            resourceUri: WorkSpace.Scope.getSourceUri(scopeInput.scope),
-            isWorkspace: WorkSpace.Scope.isWorkspace(scopeInput.scope),
-            hierarchy,
-            stats
+            nodeId: scopeKey,
+            nodeType: NodeType.ScopeSection,
+            // parent: null,
+            viewData
         } as const;
     },
 
@@ -105,26 +100,17 @@ const ScopeSection = {
      *
      * `resourceUri` — файл-источник задач (не обязан существовать)
      *
-     * `contextValue`: `task-cockpit:Section:Scope:(Workspace|Folder)` */
+     * `contextValue`: `task-cockpit:Section:Scope:(Global|Workspace|Folder)` */
     getTreeItem(section: Readonly<ScopeSection>): TreeItem {
 
         return {
-            id: section.id,
-            label: section.displayName,
             collapsibleState: TreeItemCollapsibleState.Expanded, // @todo
-            resourceUri: section.resourceUri,
-            ...(
-                section.isWorkspace
-                    ? {
-                        iconPath: new ThemeIcon('layers'),
-                        contextValue: 'task-cockpit:Section:Scope:Workspace'
-                    }
-                    : {
-                        iconPath: new ThemeIcon('root-folder'),
-                        contextValue: 'task-cockpit:Section:Scope:Folder'
-                    }
-            ),
-            description: false
+            contextValue: `task-cockpit:Section:Group:Scope:${section.viewData.scopeType}` satisfies ContextValue.Section.Scope,
+            description: false,
+            iconPath: new ThemeIcon(getIconName(section.viewData.scopeType)),
+            id: section.nodeId,
+            label: section.viewData.label,
+            resourceUri: section.viewData.sourceUri,
         } as const;
     },
 
@@ -144,63 +130,16 @@ const ScopeSection = {
             return item;
         }
 
-        const tooltip = new MarkdownString();
-        tooltip.isTrusted = false;
-        tooltip.supportHtml = false;
-        tooltip.supportThemeIcons = true;
-
-        tooltip.appendMarkdown(
-            `**${section.displayName || '<unnamed>'}**${section.isWorkspace ? '' : ' (*folder*)'}  \n` +
-            `$(tools) Tasks: ${formatTasksSummary(section.stats)}  \n` +
-            '\u00A0'
+        item.tooltip = formatTooltip(
+            section.viewData.scopeType,
+            section.viewData.label || '<unnamed>',
+            `$(tools) Tasks: ${formatTasksSummary(section.viewData.stats)}`
         );
 
-        item.tooltip = tooltip;
         return item;
     },
 
-
 } as const;
-
-
-function buildHierarchy(
-    definitionMap: WorkSpace.Definition.DefinitionMap,
-    hierarchyConfig: Readonly<WorkSpace.ScopedConfig['hierarchyConfig']>
-): Readonly<{
-    hierarchy: ReadonlyArray<
-        Readonly<
-            | TreeModel.Hierarchy.Data<{ readonly taskName: TaskName; }>
-            | TreeModel.Hierarchy.Branch<{ readonly taskName: TaskName; }>
-        >
-    >;
-    stats: Readonly<{
-        total: number;
-        excluded: number;
-    }>;
-}> {
-
-    const nodeDataItems = WorkSpace.Definition.extractTaskNames(
-        definitionMap,
-        hierarchyConfig.showHidden ? undefined : function (_name, definition) { return !definition.hidden; }
-    )
-        .map(function (taskName) { return [taskName, { taskName }] as const; });
-
-    return {
-        hierarchy: TreeModel.Hierarchy.buildRoots<{ readonly taskName: TaskName; }>(
-            NodeSpec.createSpecs({
-                nodeDataItems,
-                hierarchyConfig,
-                compression: 'off'
-            })
-        ),
-        stats: {
-            total: definitionMap.size,
-            excluded: definitionMap.size - nodeDataItems.length
-        } as const
-    } as const;
-
-
-}
 
 
 /** Форматирует краткую сводку по видимости задач
@@ -228,6 +167,14 @@ function formatTasksSummary(stats: Readonly<{ total: number; excluded: number; }
     }
 
     return `\`${stats.total}\``;
+}
+
+
+function getIconName(scopeType: ScopeType) {
+    if (scopeType === 'Folder') {
+        return 'root-folder';
+    }
+    return 'layers';
 }
 
 

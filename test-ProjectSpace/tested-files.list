@@ -1,0 +1,46 @@
+#
+# Logger.ts
+#
+#
+# ProjectSpace/ScopeInput.d.ts
+# ProjectSpace/ProjectSpace.d.ts
+# ProjectSpace/Snapshot.d.ts
+# ProjectSpace/createProjectSpace.ts
+#
+#
+# Scope/Folder/Folder.d.ts
+# Scope/Folder/Key.d.ts
+# Scope/Folder/Uri.d.ts
+# Scope/getDisplayName.ts
+# Scope/getKey.ts
+# Scope/getSourceUri.ts
+# Scope/isWorkspace.ts
+# Scope/Key.d.ts
+# Scope/readConfig.ts
+# Scope/resolveTaskSource.ts
+# Scope/Scope.d.ts
+# Scope/SourceFile/getJSONPath.ts
+# Scope/SourceFile/SourceFile.d.ts
+# Scope/TaskSource/Definitions/Definition/Definition.d.ts
+# Scope/TaskSource/Definitions/Definition/Group.d.ts
+# Scope/TaskSource/Definitions/Definition/Icon.d.ts
+# Scope/TaskSource/Definitions/Definition/TaskGroup.d.ts
+# Scope/TaskSource/Definitions/Definitions.d.ts
+# Scope/TaskSource/fetchDefinitions.ts
+# Scope/TaskSource/SourceUri/SourceUri.d.ts
+# Scope/TaskSource/TaskSource.d.ts
+# Scope/Workspace/Key.ts
+# Scope/Workspace/Workspace.d.ts
+#
+#
+# Configuration/Global/SCHEMA.ts
+# Configuration/Global/createReader.ts
+# Configuration/Global/Reader.d.ts
+# Configuration/Global/Config.d.ts
+# Configuration/Configuration.ts
+# Configuration/Scoped/SCHEMA.ts
+# Configuration/Scoped/createReader.ts
+# Configuration/Scoped/Reader.d.ts
+# Configuration/Scoped/Config.d.ts
+#
+# type.d/TaskName.d.ts

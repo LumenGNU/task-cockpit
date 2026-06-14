@@ -29,6 +29,12 @@
         },
         {
             "path": "test-FileDecorationProvider"
+        },
+        {
+            "path": "test-formatTooltip"
+        },
+        {
+            "path": "test-UserState"
         }
     ],
     "settings": {
@@ -39,7 +45,7 @@
             "~Task Cockpit",
             "~test.Unit",
             "test-Cockpit.Pins",
-            "test-Configuration",
+            "~test-Configuration",
             "test-Workspace",
             "test-Cockpit.Tree",
             "test-Runtime",

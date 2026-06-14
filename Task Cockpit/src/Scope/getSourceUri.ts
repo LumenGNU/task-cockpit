@@ -4,7 +4,7 @@ import {
 } from 'vscode';
 import isWorkspace from './isWorkspace';
 import type Scope from './Scope';
-import SourceUri from './TaskSource/SourceUri/SourceUri';
+import type SourceUri from './SourceUri/SourceUri';
 
 
 /** Получает URI файла-источника задач ассоциированного с указанною областью.
