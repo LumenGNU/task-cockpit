@@ -92,10 +92,10 @@ class TreeModel<T extends { readonly id: NodeId; }> implements Disposable {
 
     update({
         projectMap,
-        pinsMap
+        pinMap
     }: {
         projectMap: ProjectMap,
-        pinsMap: PinMap;
+        pinMap: PinMap;
     }) {
 
     }

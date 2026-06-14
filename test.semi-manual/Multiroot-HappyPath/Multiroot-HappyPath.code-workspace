@@ -10,9 +10,9 @@
     "taskCockpit.filtering.excludeFolders": [
       "_Multiroot-HappyPath (Workspace)",
       "_Frontend",
-      "Backend",
-      "Shared",
-      "Shared-simlink"
+      "-Backend",
+      "-Shared",
+      "-Shared-simlink"
     ],
     "taskCockpit.filtering.showHidden": true,
     "taskCockpit.display.useFolderIcon": true
