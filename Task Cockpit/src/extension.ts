@@ -3,7 +3,7 @@ import Project from './Project';
 import DecorationProviders from './DecorationProviders';
 import Runtime from './Runtime/Runtime';
 import TasksFile from './TasksFile';
-import Workspace from './ProjectSpace/Snapshot';
+import Workspace from './ProjectSpace/ProjectMap';
 import helpers from './helpers';
 
 

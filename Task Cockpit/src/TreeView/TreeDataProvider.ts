@@ -13,7 +13,7 @@ import RunnableNode from './Node/RunnableNode';
 import type Runtime from '../Runtime/Runtime';
 import type ScopeKey from '../Scope/Key';
 import ScopeSection from './Section/ScopeSection';
-import type Snapshot from '../ProjectSpace/Snapshot';
+import type ProjectMap from '../ProjectSpace/ProjectMap';
 import type TaskName from '../type.d/TaskName';
 import type EligibleMap from '../EligibleTask/EligibleMap';
 import createContentNode from './createContentNode';
@@ -47,7 +47,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<No
     readonly onDidChangeTreeData = this.#onDidChangeTreeData.event;
 
 
-    #workspaceSnapshot: Snapshot;
+    #workspaceSnapshot: ProjectMap;
 
     #eligibleMap: EligibleMap; // @fixme кеш!
 
@@ -62,7 +62,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<No
     constructor(
         props: {
             runtime: Runtime['registry'],
-            workspaceSnapshot: Snapshot,
+            workspaceSnapshot: ProjectMap,
             eligibleMap: EligibleMap;
             pins: PinMap;
         }

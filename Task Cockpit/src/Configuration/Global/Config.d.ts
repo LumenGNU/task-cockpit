@@ -1,23 +1,10 @@
 import type createReader from './createReader';
 import type FileDecorationProviderConf from '../../DecorationProvider/Conf';
 import type RuntimeConf from '../../Runtime/Conf';
+import type TreeModelConf from '../../TreeModel/Conf';
 
 
-interface Filtering {
 
-    /** папки, исключённые из отображения */
-    excludeFolders: Set<string>;
-}
-
-
-interface Pinned {
-
-    /** скрывает/показывает закреплённые задачи */
-    visibility: boolean;
-
-    /** режим сжатия путей для закрепленных задач */
-    pathCompression: 'off' | 'on' | 'on-aggressive';
-}
 
 
 interface Validation {
@@ -57,6 +44,8 @@ interface Config {
     runtimeConf: RuntimeConf;
 
     fileDecorationConf: FileDecorationProviderConf;
+
+    treeModel: TreeModelConf;
 }
 
 

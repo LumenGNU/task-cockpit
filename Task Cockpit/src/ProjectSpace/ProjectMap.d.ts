@@ -17,7 +17,7 @@ import type ScopeInput from './ScopeInput';
  * Содержит полный набор данных, отражающий текущее состояние
  * источников задач рабочей области.
  */
-type Snapshot = ReadonlyMap<Key, Readonly<ScopeInput>>;
+type ProjectMap = ReadonlyMap<Key, Readonly<ScopeInput>>;
 
 
-export default Snapshot;
+export default ProjectMap;

@@ -3,7 +3,7 @@ import {
     type CancellationToken
 } from 'vscode';
 import type Scope from '../Scope/Scope';
-import type Snapshot from './Snapshot';
+import type ProjectMap from './ProjectMap';
 
 
 /** ProjectSpace — адаптер над VS Code workspace API, изолирующий доменную модель
@@ -104,7 +104,7 @@ interface ProjectSpace {
      * @returns Promise, разрешающийся в `Snapshot` с данными
      *   по всем переданным областям.
      */
-    readonly buildSnapshot: (scopes: ReadonlyArray<Readonly<Scope>>, token: CancellationToken) => Promise<Snapshot>;
+    readonly buildSnapshot: (scopes: ReadonlyArray<Readonly<Scope>>, token: CancellationToken) => Promise<ProjectMap>;
 }
 
 

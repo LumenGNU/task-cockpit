@@ -7,6 +7,8 @@ import {
     Disposable
 } from 'vscode';
 import type NodeId from '../TreeView/NodeId';
+import type ProjectMap from '../ProjectSpace/ProjectMap';
+import type PinMap from '../UserState/PinMap';
 
 
 
@@ -64,7 +66,7 @@ class TreeModel<T extends { readonly id: NodeId; }> implements Disposable {
 
     // #endregion Навигация
 
-    // // ─── Мутации ──────────────────────────────────────────────────────────────
+    // Мутации -------------------------------
 
     // insert(data: T, parentId: NodeId | null = null): void {
     //     this._entries.set(data.id, { data, parentId });
@@ -89,35 +91,38 @@ class TreeModel<T extends { readonly id: NodeId; }> implements Disposable {
 
 
     update({
-        workspaceSnapshot: Snapshot,
-        pins: PinMap;
+        projectMap,
+        pinsMap
+    }: {
+        projectMap: ProjectMap,
+        pinsMap: PinMap;
     }) {
 
     }
 
 
-    // ─── Оповещение ───────────────────────────────────────────────────────────
+    // Оповещение -----------------------------─
 
     /** Без аргумента — полный рефреш дерева. */
     invalidate(node?: T): void {
         this.#onDidChange.fire(node);
     }
 
-    // ─── Служебное ────────────────────────────────────────────────────────────
+    // Служебное ------------------------------
 
-    private _deleteSubtree(id: NodeId): void {
-        for (const childId of this.#childIndex.get(id) ?? []) {
-            this._deleteSubtree(childId);
-        }
+    // private _deleteSubtree(id: NodeId): void {
+    //     for (const childId of this.#childIndex.get(id) ?? []) {
+    //         this._deleteSubtree(childId);
+    //     }
 
-        const entry = this._entries.get(id);
-        if (entry) {
-            const siblings = this.#childIndex.get(entry.parentId) ?? [];
-            this.#childIndex.set(entry.parentId, siblings.filter(s => s !== id));
-        }
+    //     const entry = this._entries.get(id);
+    //     if (entry) {
+    //         const siblings = this.#childIndex.get(entry.parentId) ?? [];
+    //         this.#childIndex.set(entry.parentId, siblings.filter(s => s !== id));
+    //     }
 
-        this._entries.delete(id);
-        this.#childIndex.delete(id);
-    }
+    //     this._entries.delete(id);
+    //     this.#childIndex.delete(id);
+    // }
 
 }

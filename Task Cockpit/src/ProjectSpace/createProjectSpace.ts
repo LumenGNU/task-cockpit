@@ -17,7 +17,7 @@ import resolveTaskSource from '../Scope/resolveTaskSource';
 import type ProjectSpace from './ProjectSpace';
 import type Reader from '../Configuration/Scoped/Reader';
 import type ScopeInput from './ScopeInput';
-import type Snapshot from './Snapshot';
+import type ProjectMap from './ProjectMap';
 import type Scope from '../Scope/Scope.d';
 import type Folder from '../Scope/Folder/Folder.d';
 
@@ -95,7 +95,7 @@ async function buildSnapshot(
     scopes: ReadonlyArray<Readonly<Scope>>,
     configReader: Reader,
     token: CancellationToken
-): Promise<Snapshot> {
+): Promise<ProjectMap> {
 
     if (token.isCancellationRequested) {
         throw new CancellationError();
