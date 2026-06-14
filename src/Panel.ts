@@ -51,7 +51,8 @@ export class Panel implements vscode.Disposable {
 
         this.treeView = vscode.window.createTreeView('task-cockpit-view', {
             treeDataProvider: this.dataProvider,
-            canSelectMany: false
+            canSelectMany: false,
+            showCollapseAll: true
         });
 
     }

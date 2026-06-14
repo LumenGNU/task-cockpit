@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2026-06-15
+
+### Added
+- "Collapse All" button in the Task Explorer panel ([#6](https://github.com/papio-dev/task-cockpit/issues/6))
+
 ## [1.1.0] - 2025-06-20
 
 ### Changes
