@@ -6,7 +6,7 @@
 - "Collapse All" button in the Task Explorer panel ([#6](https://github.com/papio-dev/task-cockpit/issues/6))
 - "Find Task" button — quick search and filtering in the task tree (`list.find`)
 
-## [1.1.0] - 2025-06-20
+## [1.1.0] - 2025-03-20
 
 ### Changes
 
