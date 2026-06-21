@@ -14,7 +14,7 @@ import type TaskName from '../../../type.d/TaskName';
  * - Карта является `ReadonlyMap`, не предполагается модификация
  *   после построения.
  *  */
-type Definitions = ReadonlyMap<TaskName, Readonly<Definition>>;
+type Definitions = Map<TaskName, Readonly<Definition>>;
 
 
 export default Definitions;

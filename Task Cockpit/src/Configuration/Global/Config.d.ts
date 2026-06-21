@@ -1,29 +1,5 @@
+import { type CompressionBehavior } from '../../HierarchyModel/createSpecs';
 import type createReader from './createReader';
-import type FileDecorationProviderConf from '../../DecorationProvider/Conf';
-import type RuntimeConf from '../../Runtime/Conf';
-import type TreeModelConf from '../../TreeModel/Conf';
-
-
-
-
-
-interface Validation {
-
-    /** выполнять поиск дубликатов лейблов в файлах задач */
-    duplicates: boolean;
-
-    /** выполнять поиск потерянных зависимостей в файлах задач */
-    dependencies: boolean;
-}
-
-
-interface Cockpit {
-
-
-
-    cacheIdleTTL: number;
-
-}
 
 
 /** Глобальные настройки.
@@ -33,19 +9,72 @@ interface Cockpit {
  * */
 interface Config {
 
-    filtering: Filtering;
+    ValidationConf: {
 
-    pinned: Pinned;
+        /** выполнять поиск дубликатов лейблов в файлах задач */
+        duplicates: boolean;
 
-    validation: Validation;
+        /** выполнять поиск потерянных зависимостей в файлах задач */
+        dependencies: boolean;
+    };
 
-    cockpit: Cockpit;
+    FileDecorationConf: {
 
-    runtimeConf: RuntimeConf;
+        /** Символ активного выполнения.
+         * Отображается когда хотя бы одна задача запущена прямо сейчас.
+         * Будет дополнен цифрой или символом `overflowSymbol`,
+         * если выполняется больше одного экземпляра задачи. (порядок задаётся `badgeOrder)*/
+        runningSymbol: string;
 
-    fileDecorationConf: FileDecorationProviderConf;
+        /** Символ "переполнения". Отображается вместо цифры, когда количество экземпляров
+         * превышает 9: двузначное число вместе с `runningSymbol` превысило бы
+         * ограничение в два символа. */
+        overflowSymbol: string;
 
-    treeModel: TreeModelConf;
+        /** Порядок символа-маркера и счётчика экземпляров в бейдже. */
+        badgeOrder: 'symbolFirst' | 'countFirst';
+
+        /** Символ "доступности". Отображается когда задача уже не выполняется,
+         * но результат ее работы еще доступен в терминалах. */
+        availableSymbol: string;
+    };
+
+    ProjectSpaceConf: {
+
+        filtering: {
+
+            /** папки, исключённые из отображения */
+            excludeFolders: Set<string>;
+        };
+
+        pins: {
+
+            /** скрывает/показывает закреплённые задачи */
+            visibility: boolean;
+
+            /** режим сжатия путей для закрепленных задач */
+            pathCompression: CompressionBehavior;
+        };
+    };
+
+    MonitorConf: {
+
+        /** Параметры адаптивного поллинга опроса системы на работающие задачи */
+        polling: {
+            /** Минимальный интервал опроса (в мс). */
+            min: number;
+            /** Максимальный интервал опроса (в мс).
+             * Ожидается что будет как минимум cap > min * 1.7  */
+            cap: number;
+            /** Коэффициент замедления опроса при росте очереди.
+             * Чем выше, тем быстрее интервал достигает `cap`. */
+            acceleration: number;
+        };
+    };
+
+    TerminalsConf: {
+        timeout: number;
+    };
 }
 
 

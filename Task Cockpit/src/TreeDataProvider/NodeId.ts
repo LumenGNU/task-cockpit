@@ -1,10 +1,11 @@
 import type ScopeKey from '../Scope/Key';
+import type PinsKey from '../Pins/Key';
 
-const SEPARATOR = '\x1F\x00\x00';
+const SEPARATOR = '\x00\x00\x1F';
 
 declare const ___NodeId: unique symbol;
 
-type NodeId = (string & { [___NodeId]: never; }) | ScopeKey;
+type NodeId = (string & { [___NodeId]: never; }) | ScopeKey | PinsKey;
 
 const NodeId = {
     buildNodeId(parentId: NodeId, selfId: string): NodeId {

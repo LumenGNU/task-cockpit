@@ -4,13 +4,17 @@ import type Scope from '../Scope/Scope';
 import type ScopeType from '../Scope/Type';
 import type Definitions from '../Scope/TaskSource/Definitions/Definitions';
 import type SourceUri from '../Scope/SourceUri/SourceUri';
+import type ScopedDetail from './ScopedDetail';
+import type HierarchyElement from '../HierarchyModel/HierarchyElement';
+import type TaskName from '../type.d/TaskName';
+import type DefinitionId from '../EligibleTask/DefinitionId';
 
 /** Входные данные для одного {@linkcode Scope} —
  * области-источника задач, для которой собраны данные. */
-interface ScopeInput {
+interface ScopeData {
 
     // Тип области
-    scopeType: ScopeType;
+    type: ScopeType;
 
     /** Отображаемое имя области */
     label: string;
@@ -19,10 +23,24 @@ interface ScopeInput {
     sourceUri: SourceUri;
 
     /** Конфигурация для области. */
-    config: Config;
+    nodeConfig: Config['Node'];
 
     /** Карта определений задач из этой области, индексированная по имени задачи. */
     definitions: Definitions;
+
+    detail: ScopedDetail;
+
+    userProps: Readonly<{ pins: ReadonlyMap<TaskName, DefinitionId | null> | null; }> | null,
+
+    /**
+     * null — только если scope скрыт для просмотра
+    */
+    scopeHierarchy: ReadonlyArray<HierarchyElement> | null;
+
+    /**
+     * null — нет пинов в этой scope
+    */
+    pinHierarchy: ReadonlyArray<HierarchyElement> | null;
 }
 
-export default ScopeInput;
+export default ScopeData;

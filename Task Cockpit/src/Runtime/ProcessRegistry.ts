@@ -16,7 +16,7 @@ export interface Stats {
 
 
 /** Хранит сопоставления задача → рантайм-состояние её процессов.
- * Создаётся через {@link Registry.create}.
+ * Создаётся через {@link ProcessRegistry.create}.
  *
  * #### Управление:
  * - `register` — регистрация нового процесса
@@ -27,7 +27,7 @@ export interface Stats {
  * - `get` — снимок состояния процесса по его id
  * - `ProcessId.get` — id процессов, порождённых задачей
  * - `Stats.get` — агрегированная статистика по процессам задачи */
-interface Registry {
+interface ProcessRegistry {
 
     /** Регистрация нового процесса в реестре. Дубликаты — ошибка.
      *
@@ -65,34 +65,25 @@ interface Registry {
 
     /** Возвращает снимок состояния процесса, или `undefined` если
      * процесс не зарегистрирован. */
-    get(id: ProcessId): Readonly<Process> | undefined;
+    getProcess(id: ProcessId): Readonly<Process> | undefined;
 
 
     /** Возвращает множество id процессов, порождённых указанной задачей,
      *  или `undefined` если задача не имеет зарегистрированных процессов. */
-    readonly ProcessId: {
-        get(scopeKey: ScopeKey): {
-            get(taskName: TaskName): ReadonlySet<ProcessId> | undefined;
-        } | undefined;
-    };
+    getProcessId(scopeKey: ScopeKey, taskName: TaskName): ReadonlySet<ProcessId> | undefined;
 
 
     /** Возвращает агрегированную статистику по процессам задачи:
      *  общее количество и количество активных (`running: true`).
      *  `undefined` — задача не имеет зарегистрированных процессов. */
-    readonly Stats: {
-        get(scopeKey: ScopeKey): {
-            get(taskName: TaskName): Readonly<Stats> | undefined;
-        } | undefined;
-    };
+    getStats(scopeKey: ScopeKey, taskName: TaskName): Readonly<Stats> | undefined;
 
 }
 
-
-const Registry = {
+const ProcessRegistry = {
 
     /** Создаёт новый изолированный экземпляр реестра процессов. */
-    create(): Registry {
+    create(): ProcessRegistry {
 
         // Основной индекс: processId → состояние процесса
         const processById = new Map<ProcessId, Process>();
@@ -239,7 +230,7 @@ const Registry = {
             },
 
 
-            get(processId) {
+            getProcess(processId) {
                 const process = processById.get(processId);
                 if (process) {
                     return { ...process };
@@ -248,69 +239,54 @@ const Registry = {
             },
 
 
-            ProcessId: {
-                get(scopeKey) {
-                    if (!scopedMap.has(scopeKey)) {
-                        return undefined;
-                    }
-                    return {
-                        get(taskName) {
-                            const namedMap = scopedMap.get(scopeKey);
-                            if (!namedMap) {
-                                return undefined; // scope исчез между ProcessId.get и этим вызовом
-                            }
-                            return new Set(namedMap.get(taskName));
-                        }
-                    };
+            getProcessId(scopeKey, taskName) {
+                const namedMap = scopedMap.get(scopeKey);
+                if (!namedMap) {
+                    return undefined;
                 }
-            } as const,
-
-
-            Stats: {
-                get(scopeKey) {
-                    if (!scopedMap.has(scopeKey)) {
-                        return undefined;
-                    }
-                    return {
-                        get(taskName) {
-                            const namedMap = scopedMap.get(scopeKey);
-                            if (!namedMap) {
-                                return undefined; // scope исчез между Summary.get и этим вызовом
-                            }
-                            const ids = namedMap.get(taskName);
-                            if (!ids) {
-                                return undefined;
-                            }
-
-                            // #region DEBUG
-                            assert.ok(ids.size > 0, 'namedTask invariant violated: entry exists but set is empty');
-                            // #endregion DEBUG
-
-                            let total = 0;
-                            let running = 0;
-                            for (const processId of ids) {
-
-                                // #region DEBUG
-                                // Инвариант: каждый id в byTask должен присутствовать в byId
-                                assert.ok(processById.has(processId), 'byId index out of sync: missing entry tracked in byTask');
-                                // #endregion DEBUG
-
-                                const process = processById.get(processId)!;
-
-                                ++total;
-                                if (process.running) {
-                                    ++running;
-                                }
-                            }
-
-                            return { total, running };
-                        }
-                    } as const;
+                const processIds = namedMap.get(taskName);
+                if (!processIds) {
+                    return undefined;
                 }
-            } as const
+                return new Set(processIds);
+            },
 
+
+            getStats(scopeKey, taskName) {
+                const namedMap = scopedMap.get(scopeKey);
+                if (!namedMap) {
+                    return undefined; // scope исчез между Summary.get и этим вызовом
+                }
+                const ids = namedMap.get(taskName);
+                if (!ids) {
+                    return undefined;
+                }
+
+                // #region DEBUG
+                assert.ok(ids.size > 0, 'namedTask invariant violated: entry exists but set is empty');
+                // #endregion DEBUG
+
+                let total = 0;
+                let running = 0;
+                for (const processId of ids) {
+
+                    // #region DEBUG
+                    // Инвариант: каждый id в byTask должен присутствовать в byId
+                    assert.ok(processById.has(processId), 'byId index out of sync: missing entry tracked in byTask');
+                    // #endregion DEBUG
+
+                    const process = processById.get(processId)!;
+
+                    ++total;
+                    if (process.running) {
+                        ++running;
+                    }
+                }
+
+                return { total, running };
+            }
         };
     }
 } as const;
 
-export default Registry;
+export default ProcessRegistry;

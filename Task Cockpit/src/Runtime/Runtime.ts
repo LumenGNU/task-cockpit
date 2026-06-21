@@ -8,7 +8,7 @@ import {
     type Terminal,
     type TaskProcessStartEvent,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    type CancellationError,
+    CancellationError,
     LogOutputChannel
 } from 'vscode';
 import * as assert from 'node:assert/strict';
@@ -16,14 +16,15 @@ import getKey from '../Scope/getKey';
 import getProcessId from './Terminals/getProcessId';
 import Monitor from './Monitor';
 import qualifies from '../EligibleTask/qualifies';
-import Registry from './Registry';
+import ProcessRegistry from './ProcessRegistry';
 import SnapshotCollector from './Terminals/SnapshotCollector';
 import type ProcessId from './ProcessId';
-import type Conf from './Conf';
+import type Conf from '../Configuration/Global/Config';
 import type ScopeKey from '../Scope/Key';
 import type Snapshot from './Terminals/Snapshot';
 import type TaskIdentifier from './TaskIdentifier';
 import type TaskName from '../type.d/TaskName';
+import type RuntimeRegistry from './RuntimeRegistry';
 
 
 /** Отслеживает жизненный цикл процессов, порождённых задачами VS Code.
@@ -69,8 +70,8 @@ class Runtime implements Disposable {
 
     // #endregion Events
 
-    /** {@link Registry | Реестр процессов} */
-    readonly #registry: Registry;
+    /** {@link ProcessRegistry | Реестр процессов} */
+    readonly #registry: ProcessRegistry;
 
     readonly #disposable: Disposable;
 
@@ -84,6 +85,8 @@ class Runtime implements Disposable {
 
     #timeout: number;
 
+    readonly #logOutputChannel: LogOutputChannel | null;
+
     // #region Lifecycle
 
     constructor(
@@ -93,15 +96,17 @@ class Runtime implements Disposable {
 
         this.#disposed = false;
 
-        this.#registry = Registry.create();
+        this.#registry = ProcessRegistry.create();
 
         this.#onDidChange = new EventEmitter();
         this.onDidChange = this.#onDidChange.event;
 
-        this.#monitor = new Monitor(conf.monitorConf, logOutputChannel);
-        this.#terminalSnapshot = new SnapshotCollector(conf.terminalsConf, logOutputChannel);
+        this.#logOutputChannel = logOutputChannel;
 
-        this.#timeout = conf.terminalsConf.timeout;
+        this.#monitor = new Monitor(conf.MonitorConf, logOutputChannel);
+        this.#terminalSnapshot = new SnapshotCollector(conf.TerminalsConf, logOutputChannel);
+
+        this.#timeout = conf.TerminalsConf.timeout;
 
         this.#disposable = Disposable.from(
 
@@ -180,10 +185,7 @@ class Runtime implements Disposable {
 
     /** Доступ к реестру процессов (только чтение).
      * */
-    get registry(): Readonly<{
-        readonly ProcessId: Registry['ProcessId'];
-        readonly Stats: Registry['Stats'];
-    }> {
+    get registry(): Readonly<RuntimeRegistry> {
 
         assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
@@ -219,52 +221,61 @@ class Runtime implements Disposable {
 
         assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
-        const pids = this.#registry.ProcessId.get(scopeKey)?.get(taskName);
+        const pids = this.#registry.getProcessId(scopeKey, taskName);
 
         if (!pids || pids.size < 1) {
             return [];
         }
 
-        return (await Promise.all(
-            window.terminals.map(async (terminal) => {
+        const promises = window.terminals.map(async (terminal) => {
 
-                // Терминал может быть диспознут в процессе.
-                // Сопоставление processId -> Terminal как 1:1 гарантировать не возможно.
-                // getTerminalPid выбрасывает только CancellationError.
-                // Пры любых проблемах вернет `undefined`.
-                // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
-                const processId = await getProcessId(terminal, this.#timeout, token);
+            // Терминал может быть диспознут в процессе.
+            // Сопоставление processId -> Terminal как 1:1 гарантировать не возможно.
+            // getTerminalPid выбрасывает только CancellationError.
+            // Пры любых проблемах вернет `undefined`.
+            // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
+            const processId = await getProcessId(terminal, this.#timeout, token);
 
-                if (!processId) {
-                    return undefined;
-                }
+            if (!processId) {
+                return undefined;
+            }
 
-                if (!pids.has(processId)) {
-                    return undefined;
-                }
+            if (!pids.has(processId)) {
+                return undefined;
+            }
 
-                const process = this.#registry.get(processId);
+            const process = this.#registry.getProcess(processId);
 
-                if (!process) { // состояние реестра могло измениться после await
-                    return undefined;
-                }
+            if (!process) { // состояние реестра могло измениться после await
+                return undefined;
+            }
 
-                return {
-                    terminalRef: new WeakRef(terminal),
-                    processId,
-                    ...process
-                } as const;
-            })
-        )).filter(
-            (entry): entry is {
-                terminalRef: WeakRef<Terminal>;
-                processId: ProcessId;
-                running: boolean;
-                timestamp: number;
-            } => entry != null
-        ).sort( // Старый первым
-            (a, b) => a.timestamp - b.timestamp
-        );
+            return {
+                terminalRef: new WeakRef(terminal),
+                processId,
+                ...process
+            } as const;
+        });
+
+        promises.forEach((p) => {
+            p.catch((error) => {
+                if (!(error instanceof CancellationError)) {
+                    this.#logOutputChannel?.error(`getSnapshot: an unexpected exception in getProcessId, errorType=${error?.constructor?.name ?? typeof error}`);
+                };
+            });
+        });
+
+        return (await Promise.all(promises))
+            .filter(
+                function (entry): entry is {
+                    terminalRef: WeakRef<Terminal>;
+                    processId: ProcessId;
+                    running: boolean;
+                    timestamp: number;
+                } { return entry != null; }
+            ).sort( // Старый первым
+                function (a, b) { return a.timestamp - b.timestamp; }
+            );
     }
 
 
@@ -278,14 +289,14 @@ class Runtime implements Disposable {
 
         assert.equal(this.#disposed, false, 'Runtime: use after dispose');
 
-        const processes = this.#registry.ProcessId.get(scopeKey)?.get(taskName);
+        const processes = this.#registry.getProcessId(scopeKey, taskName);
 
         if (!processes || processes.size < 1) {
             return;
         }
 
         for (const processId of processes) {
-            if (this.#registry.get(processId)?.running) {
+            if (this.#registry.getProcess(processId)?.running) {
                 this.#killProcess(processId);
             }
         }
@@ -402,12 +413,12 @@ class Runtime implements Disposable {
     // #endregion Handlers
 
 
-    #setConf(conf: Readonly<Conf>): Readonly<Conf['terminalsConf']['timeout']> {
+    #setConf(conf: Readonly<Conf>): Readonly<Conf['TerminalsConf']['timeout']> {
 
-        this.#monitor.setConf(conf.monitorConf);
-        this.#terminalSnapshot.setConf(conf.terminalsConf);
+        this.#monitor.setConf(conf.MonitorConf);
+        this.#terminalSnapshot.setConf(conf.TerminalsConf);
 
-        return conf.terminalsConf.timeout;
+        return conf.TerminalsConf.timeout;
     }
 
 

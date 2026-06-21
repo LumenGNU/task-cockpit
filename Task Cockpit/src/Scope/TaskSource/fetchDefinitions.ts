@@ -1,10 +1,3 @@
-// #region DEBUG
-import { LogLevel } from 'vscode';
-import Logger from '../../Logger';
-const { log } = Logger.get(module.filename);
-// #endregion DEBUG
-
-
 import {
     parse,
     JSONPath
@@ -12,7 +5,8 @@ import {
 import {
     CancellationError,
     type CancellationToken,
-    workspace as VscWorkspace
+    workspace as VscWorkspace,
+    LogOutputChannel
 } from 'vscode';
 import type TaskSource from './TaskSource';
 import type Definitions from './Definitions/Definitions';
@@ -68,7 +62,8 @@ interface Raw {
  *   других проблемах (IO, парсинг) возвращается пустая карта. */
 async function fetchDefinitions(
     taskSource: Readonly<TaskSource>,
-    token: CancellationToken
+    token: CancellationToken,
+    logOutputChannel: LogOutputChannel | null = null
 ): Promise<Definitions> {
 
     if (token.isCancellationRequested) {
@@ -86,8 +81,10 @@ async function fetchDefinitions(
         // #region DEBUG
         // Отсутствие файла - нормальная ситуация
         // Проблемы с файлом/чтением/парсингом/кодировкой (или, например, там каталог - не файл) — не наши проблемы, VS Code разберётся
-        const reason = error instanceof Error ? error.message : JSON.stringify(error);
-        log(LogLevel.Debug, `fetch: Tasks file processing error, skipping: ${VscWorkspace.asRelativePath(taskSource.uri)}. Reason: ${reason}`);
+        const reason = error instanceof Error ? error.message : String(error);
+        if (logOutputChannel) {
+            logOutputChannel.debug(`fetchDefinitions: Tasks file processing error, skipping: ${VscWorkspace.asRelativePath(taskSource.uri)}. Reason: ${reason}`);
+        }
 
         // #endregion DEBUG
         // Единственное, как реагируем: "в этой области задач нет"
@@ -107,7 +104,8 @@ async function fetchDefinitions(
         extract(
             textContent,
             taskSource.JSONPath
-        )
+        ),
+        logOutputChannel
     );
 };
 
@@ -160,7 +158,10 @@ function extract(jsoncContent: string, jsonPath: Readonly<JSONPath>): Raw[] {
  *
  * @param rawArr {@link Raw Сырой массив определений}, извлечённый из файла-источника.
  * @returns Карта определений проиндексирована по TaskName. */
-function mapDefinitions(rawArr: ReadonlyArray<Raw>): Readonly<Definitions> {
+function mapDefinitions(
+    rawArr: ReadonlyArray<Raw>,
+    logOutputChannel: LogOutputChannel | null = null
+): Readonly<Definitions> {
 
     const map = new Map<TaskName, Definition>;
 
@@ -182,10 +183,13 @@ function mapDefinitions(rawArr: ReadonlyArray<Raw>): Readonly<Definitions> {
         definition.isBackground = parseIsBackground(raw.isBackground);
         definition.icon = parseIcon(raw.icon);
         definition.group = parseGroup(raw.group);
+        definition.taskName = raw.label;
 
         // #region DEBUG
         if (map.has(raw.label)) {
-            log(LogLevel.Debug, `mapDefinitions: Definition with label "${raw.label}" already exists in map`);
+            if (logOutputChannel) {
+                logOutputChannel.debug(`mapDefinitions: Definition with label "${raw.label}" already exists in map`);
+            }
         }
         // #endregion DEBUG
 

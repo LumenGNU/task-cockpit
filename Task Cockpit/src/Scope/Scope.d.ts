@@ -1,6 +1,6 @@
 
-import Folder from './Folder/Folder';
-import Workspace from './Workspace/Workspace';
+import type Folder from './Folder/Folder';
+import type Workspace from './Workspace/Workspace';
 
 
 /** Scope — область-источник задач и их настроек.

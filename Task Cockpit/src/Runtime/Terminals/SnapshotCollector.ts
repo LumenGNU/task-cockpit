@@ -11,7 +11,7 @@ import {
 import * as assert from 'node:assert/strict';
 import getProcessId from './getProcessId';
 import type ProcessId from '../ProcessId';
-import type Conf from '../Conf';
+import type Conf from '../../Configuration/Global/Config';
 import type Snapshot from './Snapshot';
 
 
@@ -66,7 +66,7 @@ class SnapshotCollector implements Disposable {
 
     #disposed: boolean;
 
-    #conf: Readonly<Conf['terminalsConf']>;
+    #conf: Readonly<Conf['TerminalsConf']>;
 
     #pendingId: number | undefined;
     #running: boolean;
@@ -75,7 +75,7 @@ class SnapshotCollector implements Disposable {
     readonly #logOutputChannel: LogOutputChannel | null;
 
     constructor(
-        conf: Conf['terminalsConf'],
+        conf: Conf['TerminalsConf'],
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
@@ -120,7 +120,7 @@ class SnapshotCollector implements Disposable {
     /**
      * Текущие активные запросы доработают со старым таймаутом (или как попало - не важно).
      * Следующий снапшот будет обработан с новым значением. */
-    public setConf(conf: Readonly<Conf['terminalsConf']>) {
+    public setConf(conf: Readonly<Conf['TerminalsConf']>) {
 
         assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
 
@@ -164,7 +164,7 @@ class SnapshotCollector implements Disposable {
 
     // #region Private
 
-    #setConf(conf: Readonly<Conf['terminalsConf']>): Readonly<Conf['terminalsConf']> {
+    #setConf(conf: Readonly<Conf['TerminalsConf']>): Readonly<Conf['TerminalsConf']> {
         return { ...conf };
     }
 
@@ -250,16 +250,25 @@ class SnapshotCollector implements Disposable {
         }
 
         // Запускаем опрос.
-        const results = await Promise.all(
-            terminals.map(function (terminal) {
-                // Гарантии:
-                // - CancellationError бросается только при отмене через token.
-                //   Других ошибок не бросает. Пры любых проблемах возвращает `undefined`.
-                // - По достижении timeout обязательно разрешится в `undefined`
-                // - В остальных случаях вернет PID процесса терминала (number|undefined)
-                return getProcessId(terminal, timeout, token);
-            })
-        );
+
+        const promises = terminals.map(function (terminal) {
+            // Гарантии:
+            // - CancellationError бросается только при отмене через token.
+            //   Других ошибок не бросает. Пры любых проблемах возвращает `undefined`.
+            // - По достижении timeout обязательно разрешится в `undefined`
+            // - В остальных случаях вернет PID процесса терминала (number|undefined)
+            return getProcessId(terminal, timeout, token);
+        });
+
+        promises.forEach(function (p) {
+            p.catch(function (e) {
+                if (!(e instanceof CancellationError)) {
+                    // @todo log
+                };
+            });
+        });
+
+        const results = await Promise.all(promises);
 
         if (token.isCancellationRequested) {
             throw new CancellationError();

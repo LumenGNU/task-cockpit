@@ -1,7 +1,7 @@
 import type Key from '../Scope/Key';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type Scope from '../Scope/Scope';
-import type ScopeInput from './ScopeInput';
+import type ScopeData from './ScopeData';
 
 
 /** Снимок данных рабочей области: набор конфигураций и определений задач,
@@ -17,7 +17,7 @@ import type ScopeInput from './ScopeInput';
  * Содержит полный набор данных, отражающий текущее состояние
  * источников задач рабочей области.
  */
-type ProjectMap = ReadonlyMap<Key, Readonly<ScopeInput>>;
+type ScopeMap = ReadonlyMap<Key, Readonly<ScopeData> | null>;
 
 
-export default ProjectMap;
+export default ScopeMap;

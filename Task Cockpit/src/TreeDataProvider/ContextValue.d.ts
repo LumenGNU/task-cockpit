@@ -5,12 +5,7 @@ type ContextPrefix = 'task-cockpit';
 
 declare namespace ContextValue {
 
-    export namespace Section {
-
-        export type Scope = `${ContextPrefix}:Section:Group:Scope:${ScopeType}`;
-
-        export type Pins = `${ContextPrefix}:Section:Group:Pins`;
-    }
+    export type Section = `${ContextPrefix}:Section:${'Pins' | ScopeType}:Group`;
 
 
     export namespace Node {

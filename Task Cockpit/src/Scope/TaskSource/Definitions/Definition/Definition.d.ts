@@ -1,3 +1,4 @@
+import type TaskName from '../../../../type.d/TaskName';
 import type Icon from './Icon';
 import type TaskGroup from './TaskGroup';
 
@@ -9,6 +10,8 @@ import type TaskGroup from './TaskGroup';
  * (с валидацией и значениями по умолчанию), минимально необходимое
  * для представления задачи в UI. */
 interface Definition {
+
+    taskName: TaskName;
 
     /** Флаг скрытия из отображения */
     hidden: boolean;

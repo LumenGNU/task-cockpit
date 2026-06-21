@@ -1,4 +1,4 @@
-import type Hierarchy from '../TreeModel/Hierarchy';
+import type Hierarchy from './Hierarchy';
 import type TaskName from '../type.d/TaskName';
 
 

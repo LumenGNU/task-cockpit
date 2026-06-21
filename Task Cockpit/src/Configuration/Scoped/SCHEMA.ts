@@ -6,14 +6,14 @@ import type Config from './Config';
 
 
 const SCHEMA = {
-    filtering: {
+    Filtering: {
         showHidden: {
             from: 'filtering',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
     },
-    hierarchyConfig: {
+    Hierarchy: {
         segmentSeparator: {
             from: 'display',
             type: OptionType.String,
@@ -25,7 +25,7 @@ const SCHEMA = {
             spec: { fallback: false }
         }
     },
-    nodeConfig: {
+    Node: {
         defaultIconName: {
             from: 'display',
             type: OptionType.String,

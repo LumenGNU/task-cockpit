@@ -47,7 +47,7 @@ function formatTooltip(
     tooltip.supportHtml = false;
     tooltip.supportThemeIcons = true;
 
-    tooltip.appendMarkdown(`${outer.join(P)}${BR}${EXPANDER}`);
+    tooltip.appendMarkdown(`${outer.join(P)}${BR}${EXPANDER}${BR}`);
 
     return tooltip;
 }

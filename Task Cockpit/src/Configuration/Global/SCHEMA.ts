@@ -3,31 +3,8 @@ import Config from './Config';
 
 const SCHEMA = {
 
-    /** Control which tasks and workspace folders are visible in the explorer. */
-    filtering: {
-        /** Excludes specified workspace folders from the task explorer.
-         * Matches the display name as shown by VS Code, not the directory name.
-         * Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`). */
-        excludeFolders: {
-            from: 'filtering',
-            type: OptionType.StringSet,
-            spec: { fallback: [] }
-        }
-    },
-    pinned: {
-        visibility: {
-            from: 'pinned',
-            type: OptionType.Boolean,
-            spec: { fallback: true }
-        },
-        pathCompression: {
-            from: 'pinned',
-            type: OptionType.StringLiteral,
-            spec: { fallback: 'on', values: ['off', 'on', 'on-aggressive'] }
-        }
-    },
     /** Enable diagnostics to detect potential issues with task definitions. Changes require window reload. */ // @todo все еще require?
-    validation: {
+    ValidationConf: {
         /** Check for tasks with duplicate labels and flag them as problematic.  \n
          * (_Requires window reload to take effect._) */ // @todo все еще Requires?
         duplicates: {
@@ -45,66 +22,94 @@ const SCHEMA = {
             spec: { fallback: false }
         }
     },
-    cockpit: {
 
-        cacheIdleTTL: {
-            from: 'tasks.cacheTTL',
-            type: OptionType.Number,
-            spec: { min: 66_000, fallback: 666_000, max: 6.6e6 } // 1.1 мин; 11.1 мин; 1ч 50мин
-        }
-    },
+    ProjectSpaceConf: {
 
-    runtimeConf: {
-        monitorConf: {
-            /** Параметры адаптивной кривой опроса системы на работающие задачи.
-             * Интервал опроса будет увеличиваться от min до cap с скоростью
-             * acceleration при росте количества одновременно работающих задач.
-             * Позволяет оптимально настроить отзывчивость UI/нагрузку на
-             * систему при запуске реально большого количества одновременно
-             * работающих задач. */
-            polling: {
-                /** Минимальный интервал опроса (в мс). */
-                min: {
-                    from: 'monitor.polling',
-                    type: OptionType.Number,
-                    spec: { min: 200, fallback: 250, max: 1_000 }
-                },
-                /** Максимальный интервал опроса (в мс). При достижении
-                 * интервал опроса фиксируется на этом значении и не будет
-                 * увеличиваться при росте количества одновременно работающих задач.
-                 * Ожидается что будет как минимум cap > min * 1.7  */
-                cap: {
-                    from: 'monitor.polling',
-                    type: OptionType.Number,
-                    spec: { min: 340, fallback: 550, max: 3_500 }
-                },
-                /** Коэффициент замедления опроса при росте количества
-                 * одновременно работающих задач.
-                 * Чем выше, тем быстрее интервал достигает `cap`. */
-                acceleration: {
-                    from: 'monitor.polling',
-                    type: OptionType.Number,
-                    spec: { min: 0.1, fallback: 0.2, max: 1.0 }
-                }
+        /** Control which tasks and workspace folders are visible in the explorer. */
+        filtering: {
+            /** Excludes specified workspace folders from the task explorer.
+             * Matches the display name as shown by VS Code, not the directory name.
+             * Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`). */
+            excludeFolders: {
+                from: 'filtering',
+                type: OptionType.StringSet,
+                spec: { fallback: [] }
             }
         },
 
-        terminalsConf: {
-            /** Максимальное время ожидание разрешения PID от терминала (в мс).
-             * Если терминал не отдает PID выполняемого процесса за это время —
-             * то такой терминал будет считаться как терминал без процесса.
-             * Уменьшение значения может ускорить реакцию UI но, в
-             * некоторых ситуациях, может приводить к не корректной интерпретации
-             * выполняемой задачи как завершенной. */
-            timeout: {
-                from: 'terminals',
-                type: OptionType.Number,
-                spec: { min: 500, fallback: 1_300, max: 12_000 }
+        pins: {
+            visibility: {
+                from: 'display.pins',
+                type: OptionType.Boolean,
+                spec: { fallback: true }
+            },
+            pathCompression: {
+                from: 'display.pins',
+                type: OptionType.StringLiteral,
+                spec: { fallback: 'on', values: ['off', 'on', 'on-aggressive'] }
             }
         }
     },
 
-    fileDecorationConf: {
+    // cockpit: {
+
+    //     cacheIdleTTL: {
+    //         from: 'tasks.cacheTTL',
+    //         type: OptionType.Number,
+    //         spec: { min: 66_000, fallback: 666_000, max: 6.6e6 } // 1.1 мин; 11.1 мин; 1ч 50мин
+    //     }
+    // },
+
+    MonitorConf: {
+        /** Параметры адаптивной кривой опроса системы на работающие задачи.
+         * Интервал опроса будет увеличиваться от min до cap с скоростью
+         * acceleration при росте количества одновременно работающих задач.
+         * Позволяет оптимально настроить отзывчивость UI/нагрузку на
+         * систему при запуске реально большого количества одновременно
+         * работающих задач. */
+        polling: {
+            /** Минимальный интервал опроса (в мс). */
+            min: {
+                from: 'monitor.polling',
+                type: OptionType.Number,
+                spec: { min: 200, fallback: 250, max: 1_000 }
+            },
+            /** Максимальный интервал опроса (в мс). При достижении
+             * интервал опроса фиксируется на этом значении и не будет
+             * увеличиваться при росте количества одновременно работающих задач.
+             * Ожидается что будет как минимум cap > min * 1.7  */
+            cap: {
+                from: 'monitor.polling',
+                type: OptionType.Number,
+                spec: { min: 340, fallback: 550, max: 3_500 }
+            },
+            /** Коэффициент замедления опроса при росте количества
+             * одновременно работающих задач.
+             * Чем выше, тем быстрее интервал достигает `cap`. */
+            acceleration: {
+                from: 'monitor.polling',
+                type: OptionType.Number,
+                spec: { min: 0.1, fallback: 0.2, max: 1.0 }
+            }
+        }
+    },
+
+
+    TerminalsConf: {
+        /** Максимальное время ожидание разрешения PID от терминала (в мс).
+         * Если терминал не отдает PID выполняемого процесса за это время —
+         * то такой терминал будет считаться как терминал без процесса.
+         * Уменьшение значения может ускорить реакцию UI но, в
+         * некоторых ситуациях, может приводить к не корректной интерпретации
+         * выполняемой задачи как завершенной. */
+        timeout: {
+            from: 'terminals',
+            type: OptionType.Number,
+            spec: { min: 500, fallback: 1_300, max: 12_000 }
+        }
+    },
+
+    FileDecorationConf: {
         /** The symbol shown when at least one task instance is currently running.
          * If multiple instances run, the badge will show this symbol together with a count
          * or the overflow symbol depending on space.  \n
