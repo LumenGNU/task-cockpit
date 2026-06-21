@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "AAA:child-task-s2.1",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "AAA:child-task-s2.2",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "BBB",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

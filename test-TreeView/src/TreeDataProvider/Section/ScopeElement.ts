@@ -1,0 +1,1 @@
+../../../../Task Cockpit/src/TreeDataProvider/Section/ScopeElement.ts

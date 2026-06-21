@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-2",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-3",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "S:a:b:c:d:e:f:g:h:k:l:m:n:o:p:r:s:t:x:y:z:task-1",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "a:b:c:d:e:g:h:task-4",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "x:y:z:task-5",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

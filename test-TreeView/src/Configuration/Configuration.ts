@@ -1,0 +1,1 @@
+../../../Task Cockpit/src/Configuration/Configuration.ts

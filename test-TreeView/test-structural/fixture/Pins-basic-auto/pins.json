@@ -1,0 +1,6 @@
+[
+    "lint",
+    "test:e2e",
+    "build:prod",
+    "build:dev"
+]

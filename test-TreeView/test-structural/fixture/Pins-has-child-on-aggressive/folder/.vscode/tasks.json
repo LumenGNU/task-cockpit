@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-all",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "build-all:prepare",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

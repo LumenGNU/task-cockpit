@@ -1,0 +1,1 @@
+../../../Task Cockpit/src/EligibleTask/EligibleMap.d.ts

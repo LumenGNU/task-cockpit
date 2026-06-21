@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "pinned",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

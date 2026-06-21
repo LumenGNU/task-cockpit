@@ -1,0 +1,1 @@
+../../../Task Cockpit/src/ProjectSpace/ScopeMap.d.ts

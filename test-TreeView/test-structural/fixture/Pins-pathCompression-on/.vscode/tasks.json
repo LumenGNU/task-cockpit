@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G1",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "AAA:BBB:CCC:DDD:EEE:FFF:GGG:task-G2",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "AAA:BBB:CCC:DDD:EEE:side-FFF:task3",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "AAA:BBB:CCC:side-DDD:task4",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "AAA:side-BBB:task5",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

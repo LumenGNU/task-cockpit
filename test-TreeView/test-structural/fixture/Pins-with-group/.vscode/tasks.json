@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ci:lint",
+            "group": {
+                "kind": "build"
+            },
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        },
+        {
+            "label": "task",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+        }
+    ]
+}

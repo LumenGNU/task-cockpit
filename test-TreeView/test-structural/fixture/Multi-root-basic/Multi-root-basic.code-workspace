@@ -1,0 +1,39 @@
+{
+    "folders": [
+        {
+            "path": "scope2"
+        },
+        {
+            "path": "scope3"
+        }
+    ],
+    "settings": {
+        "taskCockpit.display.segmentSeparator": ":"
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "AAA:child-task-s1.1",
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": [],
+            },
+            {
+                "label": "AAA:child-task-s1.2",
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": [],
+            },
+            {
+                "label": "BBB",
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": [],
+            }
+        ]
+    }
+}

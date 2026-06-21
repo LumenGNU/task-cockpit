@@ -1,0 +1,1 @@
+../../../../Task Cockpit/src/Scope/SourceUri/SourceUri.d.ts

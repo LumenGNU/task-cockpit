@@ -1,0 +1,16 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        },
+        {
+            "path": "folder3"
+        }
+    ],
+    "settings": {
+        "taskCockpit.filtering.excludeFolders": ["Exclude-workspace-level (Workspace)"]
+    }
+}

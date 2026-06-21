@@ -85,11 +85,11 @@
 //                  (default: 1.86.2)
 // REPORTER       — Репортер Mocha. Если не задана, используется репортер по умолчанию.
 //                  (default: не задан)
+// MOCHA_SLOW      — Порог «медленного» теста в Mocha(мс).    (750)
 // ------
 // @todo
 //
 // MOCHA_TIMEOUT   — Таймаут для тестов Mocha (в миллисекундах).    (5000)
-// MOCHA_SLOW      — Порог «медленного» теста в Mocha(мс).    (750)
 // OUT_TO_FILE     — Если задано значение true, y, yes(без учёта регистра), включается кастомный репортер,
 //                   выводящий результаты в файл через *-reporter.mjs.
 //
@@ -128,6 +128,8 @@ const SUT_TEST = path.join(process.cwd(), SUT_TEST_REL);
 const VSC_PROFILE = process.env.VSC_PROFILE;
 
 const TEST_FILE_SUFFIX = 'test.js';
+
+const MOCHA_SLOW = Number(process.env.MOCHA_SLOW) || 750;
 
 
 // Специальное имя '*' для "все"
@@ -175,6 +177,16 @@ const REPORTER = process.env.REPORTER;
 // --- defaults ---
 const defaults = {
     version: VSC_VERSION,
+    extensionDevelopmentPath: OUT_DIR, // где находится package.json
+    launchArgs: [
+        // '--disable-gpu',
+        '--disable-telemetry',
+        '--disable-crash-reporter',
+        '--disable-extensions',
+        ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
+        // '--disable-workspace-trust',
+        // '--no-sandbox',
+    ],
     mocha: {
         ui: /** @type { 'tdd' } */('tdd'),
         reporter: REPORTER,
@@ -182,23 +194,14 @@ const defaults = {
         color: true,
         'full-trace': false,
         require: ['source-map-support/register'],
-        "node-option": ["unhandled-rejections=strict"]
+        "node-option": ["unhandled-rejections=strict"],
+        slow: MOCHA_SLOW
     },
-    launchArgs: [
-        // '--disable-gpu',
-        '--disable-telemetry',
-        '--disable-crash-reporter',
-        '--disable-extensions', // @todo в фикстуры
-        ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
-        // '--disable-workspace-trust',
-        // '--no-sandbox',
-    ],
     env: {
         // "DRI_PRIME": "1",
         // "LIBVA_DRIVER_NAME": "radeonsi",
         'VK_ICD_FILENAMES': '',
-    },
-    extensionDevelopmentPath: OUT_DIR, // где находится package.json
+    }
 };
 // ----------
 

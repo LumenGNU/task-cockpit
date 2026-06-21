@@ -1,0 +1,1 @@
+../../../../../../Task Cockpit/src/Scope/TaskSource/Definitions/Definition/Icon.d.ts

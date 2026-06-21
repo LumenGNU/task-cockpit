@@ -1,0 +1,86 @@
+
+## ----------------------------------------------------
+TreeDataProvider/Node/EmptyElement.ts
+TreeDataProvider/Node/IntermediateElement.ts
+TreeDataProvider/Node/RunnableElement.ts
+TreeDataProvider/ElementType.ts
+TreeDataProvider/Section/PinsElement.ts
+TreeDataProvider/Section/ScopeElement.ts
+TreeDataProvider/ContextValue.d.ts
+TreeDataProvider/formatTooltip.ts
+TreeDataProvider/NodeId.ts
+TreeDataProvider/TreeDataProvider.ts
+
+## ----------------------------------------------------
+HierarchyModel/Splitter.ts
+HierarchyModel/createSpecs.ts
+HierarchyModel/Hierarchy.ts
+HierarchyModel/buildHierarchy.ts
+HierarchyModel/HierarchyElement.d.ts
+
+## ----------------------------------------------------
+Runtime/RuntimeRegistry.d.ts
+Runtime/ProcessId.d.ts
+
+## ----------------------------------------------------
+type.d/TaskName.d.ts
+
+## ----------------------------------------------------
+Scope/Key.d.ts
+Scope/Scope.d.ts
+Scope/isWorkspace.ts
+Scope/Workspace/Workspace.d.ts
+Scope/Workspace/Key.ts
+Scope/Folder/Folder.d.ts
+Scope/Folder/Uri.d.ts
+Scope/Folder/Key.d.ts
+Scope/getKey.ts
+Scope/Type.d.ts
+Scope/TaskSource/Definitions/Definition/Definition.d.ts
+Scope/TaskSource/Definitions/Definition/Icon.d.ts
+Scope/TaskSource/Definitions/Definition/TaskGroup.d.ts
+Scope/TaskSource/Definitions/Definition/Group.d.ts
+Scope/TaskSource/Definitions/Definitions.d.ts
+Scope/SourceUri/SourceUri.d.ts
+Scope/SourceFile/SourceFile.d.ts
+Scope/SourceFile/getJSONPath.ts
+Scope/TaskSource/fetchDefinitions.ts
+Scope/getDisplayName.ts
+Scope/getSourceUri.ts
+Scope/getType.ts
+Scope/resolveTaskSource.ts
+Scope/TaskSource/TaskSource.d.ts
+
+## ----------------------------------------------------
+Configuration/Global/SCHEMA.ts
+Configuration/Global/createReader.ts
+Configuration/Global/Reader.d.ts
+Configuration/Global/Config.d.ts
+Configuration/Configuration.ts
+Configuration/Scoped/SCHEMA.ts
+Configuration/Scoped/createReader.ts
+Configuration/Scoped/Reader.d.ts
+Configuration/Scoped/Config.d.ts
+
+## ----------------------------------------------------
+constants.ts
+
+## ----------------------------------------------------
+ProjectSpace/ScopeMap.d.ts
+ProjectSpace/ScopeData.d.ts
+ProjectSpace/createProjectSpace.ts
+ProjectSpace/ScopedDetail.d.ts
+
+## ----------------------------------------------------
+EligibleTask/qualifies.ts
+EligibleTask/EligibleTask.d.ts
+EligibleTask/DefinitionId.d.ts
+EligibleTask/fetchEligibleTasks.ts
+EligibleTask/EligibleMap.d.ts
+
+## ----------------------------------------------------
+Pins/Key.ts
+
+## ----------------------------------------------------
+DecorationProvider/UriSchema.d.ts
+DecorationProvider/UriQuery.d.ts

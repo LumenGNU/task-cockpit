@@ -1,0 +1,1 @@
+../../../Task Cockpit/src/Scope/Key.d.ts

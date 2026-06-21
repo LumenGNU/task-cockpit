@@ -1,0 +1,1 @@
+../../../../Task Cockpit/src/Configuration/Scoped/Reader.d.ts

@@ -1,0 +1,1 @@
+../../../../Task Cockpit/src/Configuration/Scoped/Config.d.ts

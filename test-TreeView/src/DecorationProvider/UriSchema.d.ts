@@ -1,0 +1,1 @@
+../../../Task Cockpit/src/DecorationProvider/UriSchema.d.ts
