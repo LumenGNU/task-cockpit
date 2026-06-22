@@ -34,7 +34,9 @@ trap 'echo -e "\n\e[31;1m[ABORT] Process terminated\e[0m\n" >&2 ; exit 1' TERM I
 }
 
 echo -e "\n\e[34;1m▶ Running Tests:\e[0m [$(date +'%Y-%m-%d %H:%M:%S')]" >&2
-echo -e "config: \e[1m${CONFIG_FILE}\e[0m  tests: \e[1m${TESTS}\e[0m" >&2
+echo -e "config  : \e[1m${CONFIG_FILE}\e[0m" >&2
+echo -e "fixture : \e[1m${SUT_TEST:-All}\e[0m" >&2
+echo -e "tests   : \e[1m${TESTS}\e[0m" >&2
 # Безопасное получение ширины терминала (фоллбэк на 80 для CI/CD)
 TERM_COLS=$(tput cols 2>/dev/null || echo 80)
 printf '%*s\n\n' "$(($TERM_COLS - 5))" '' | tr ' ' '~' >&2
