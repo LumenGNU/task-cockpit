@@ -425,8 +425,670 @@
         },
         // ============================================================================================
         // == Fixture Test
+        // Basic ------------------------------------------------------------------------------------------
         {
-            "label": "Run tests|Structural|ALL TESTS",
+            "label": "Run Fixtures Tests|Basic|All",
+            "detail": "Run the All \"Basic\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-basic",
+                    "TESTS": "*::*", // All
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        {
+            "label": "Run Fixtures Tests|Basic|Tree Structure",
+            "detail": "Run the \"Basic Tree Structure\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-basic",
+                    "TESTS": "*::Tree-Structure", // Tree-Structure* only
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+{
+            "label": "Run Fixtures Tests|Basic|Appearance",
+            "detail": "Run the \"Basic Appearance\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-basic",
+                    "TESTS": "*::Appearance", // Appearance* only
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        // Edges ----------------------------------------------------------------------------------
+        {
+            "label": "Run Fixtures Tests|Edges|All",
+            "detail": "Run the All \"Edges\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-edges",
+                    "TESTS": "*::*",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        {
+            "label": "Run Fixtures Tests|Edges|Tree Structure",
+            "detail": "Run the \"Edges Tree Structure\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-edges",
+                    "TESTS": "*::Tree-Structure",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        // Hierarchy -----------------------------------------------------------------------------
+        {
+            "label": "Run Fixtures Tests|Hierarchy|ALL",
+            "detail": "Run the All \"Hierarchy\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-hierarchy",
+                    "TESTS": "*::*",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        {
+            "label": "Run Fixtures Tests|Hierarchy|Tree Structure",
+            "detail": "Run the \"Hierarchy Tree Structure\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-hierarchy",
+                    "TESTS": "*::Tree-Structure",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        // Pins ----------------------------------------------------------------------------------
+        {
+            "label": "Run Fixtures Tests|Pins|ALL",
+            "detail": "Run the All \"Pins\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-pins",
+                    "TESTS": "*::*",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        {
+            "label": "Run Fixtures Tests|Pins|Tree Structure",
+            "detail": "Run the \"Pins Tree Structure\" Tests",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Pretest|Fixture"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/run-tests.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "~stripped",
+                    "SUT_TEST": "test-pins",
+                    "TESTS": "*::Tree-Structure",
+                    "REPORTER": "spec",
+                    "VSC_PROFILE": "Clean",
+                    // "VSC_VERSION": "1.116.0", // "1.86.2",
+                    "MOCHA_SLOW": "3000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                { // TODO сделать так везде
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ],
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "never",
+                "group": "Tests"
+            }
+        },
+        // -----------------------------------------------------------------------------------
+        {
+            "label": "Run tests|Run All Structural Tests",
             "detail": "Run the ALL Fixtures Tests",
             "icon": {
                 "id": "run-all"
@@ -499,7 +1161,7 @@
             }
         },
         {
-            "label": "Run tests|Structural|--- xxx ---",
+            "label": "Run tests|Temp --- xxx --->",
             "detail": "Run the ALL Fixtures Tests",
             "icon": {
                 "id": "run-all"

@@ -35,11 +35,11 @@
   "main": "extension.js",
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
+    "@types/node": "^22.19.20",
     "@types/vscode": "^1.86.0",
     "mocha": "^11.3.0",
-    "typescript": "^5.9.3",
-    "tsc-alias": "^1.8.17"
+    "tsc-alias": "^1.8.17",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"

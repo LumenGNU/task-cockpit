@@ -1,0 +1,26 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "task-in-workspace",
+                "icon": {
+                    "id": "zap"
+                },
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": [],
+            }
+        ]
+    }
+}

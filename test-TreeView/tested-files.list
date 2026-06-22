@@ -1,14 +1,15 @@
 
 ## ----------------------------------------------------
+TreeDataProvider/ContextValue.d.ts
+TreeDataProvider/Element.d.ts
+TreeDataProvider/ElementType.ts
+TreeDataProvider/formatTooltip.ts
 TreeDataProvider/Node/EmptyElement.ts
 TreeDataProvider/Node/IntermediateElement.ts
 TreeDataProvider/Node/RunnableElement.ts
-TreeDataProvider/ElementType.ts
+TreeDataProvider/NodeId.ts
 TreeDataProvider/Section/PinsElement.ts
 TreeDataProvider/Section/ScopeElement.ts
-TreeDataProvider/ContextValue.d.ts
-TreeDataProvider/formatTooltip.ts
-TreeDataProvider/NodeId.ts
 TreeDataProvider/TreeDataProvider.ts
 
 ## ----------------------------------------------------

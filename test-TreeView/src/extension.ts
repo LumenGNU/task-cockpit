@@ -11,6 +11,7 @@ import TaskName from './type.d/TaskName';
 import DefinitionId from './EligibleTask/DefinitionId';
 import { prepareUserProps } from './prepareUserProps';
 import { readScopedPins } from './readScopedPins';
+import type Element from './TreeDataProvider/Element';
 
 
 type UserProps = ReadonlyMap<ScopeKey, {
@@ -47,12 +48,42 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
 
 
-        vscode.commands.registerCommand('taskCockpit.test.fillTree', async function () {
+        // Возвращает ASCII дерево полученное из структуры построенной TreeDataProvider.
+        //
+        // Правила для корневых и структурных узлов:
+        // | Тип узла                          | Формат          |
+        // |---                                |---              |
+        // | Pinned                            | `[★[ label ]]`  |
+        // | Папка (Folder|Workspace)          | `[F[ label ]]`  |
+        // | Пустое состояние                  | `« label »`     |
+        // | Runnable узел                     | `▶ label`       |
+        // | Промежуточный узел                | `label`         |
+        //
+        // Каждое дерево начинается с корневого узла, перед которым стоит `━`.
+        // Первый уровень дочерних узлов — 2 пробела + символ ветки:
+        // ~~~
+        // ━[F[ scope ]]
+        //   ├─ ▶ AAA
+        //   ├─ ▶ BBB
+        //   └─ ▶ CCC
+        // ~~~
+        // Пустых строк нет.
+        //
+        vscode.commands.registerCommand('taskCockpit.test.getTreeStructure', async function () {
             const userProps = prepareUserProps(
                 await readScopedPins()
             );
             await fillTree(provider, globalConfReader.read(), userProps);
             return await buildTreeString(provider, await Promise.resolve(provider.getChildren()), '', true);
+        }),
+
+
+        vscode.commands.registerCommand('taskCockpit.test.getFlatItems', async function () {
+            const userProps = prepareUserProps(
+                await readScopedPins()
+            );
+            await fillTree(provider, globalConfReader.read(), userProps);
+            return await flattenTree(provider, await Promise.resolve(provider.getChildren()));
         }),
     );
 }
@@ -123,5 +154,37 @@ async function buildTreeString(
     }
     return lines.join('\n');
 }
+
+
+type FlatItem = {
+    element: Element;
+    item: vscode.TreeItem;
+    depth: number;
+};
+
+async function flattenTree(
+    provider: TreeDataProvider,
+    children: Awaited<ReturnType<TreeDataProvider['getChildren']>>,
+    depth = 0
+): Promise<FlatItem[]> {
+    if (!children?.length) return [];
+
+    const result: FlatItem[] = [];
+    for (const element of children) {
+
+        const item = await Promise.resolve(provider.getTreeItem(element));
+
+        result.push({ element, item, depth });
+
+        const subtree = await flattenTree(
+            provider,
+            await Promise.resolve(provider.getChildren(element)),
+            depth + 1
+        );
+        result.push(...subtree);
+    }
+    return result;
+}
+
 
 export function deactivate(): void { }
