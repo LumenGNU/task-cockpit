@@ -281,17 +281,25 @@ const tests = [
                 sensitivity: 'base', // Ignore accents/case differences
             }).compare);
 
-        const includes = TEST_PREFIX === '*'
-            ? allFiles
-            : allFiles.filter(f => path.basename(f).startsWith(TEST_PREFIX));
+        const includes =
+            TEST_PREFIX === '*'
+                ? allFiles
+                : allFiles.filter(f => path.basename(f).startsWith(TEST_PREFIX));
 
-        // const pending = TEST_PREFIX === '*'
-        //     ? []
-        //     : allFiles.filter(f => !path.basename(f).startsWith(TEST_PREFIX));
 
-        if (includes.length < 1) {
+        if (includes.length < 1 && TEST_PREFIX === '*') {
             console.error(c.fail(`${c.bold('[Error]')}: no test files ('*${TEST_FILE_SUFFIX}') found in '${out}'.`));
             process.exit(1);
+        }
+
+
+        // не запускать фикстуру если ncludes.length < 1
+        if (includes.length < 1) {
+            if (TEST_PREFIX !== '*') {
+                // больше информации если TEST_PREFIX !== '*'
+                console.warn(c.warn(`${c.bold('[Warn]')}: no test files ('${TEST_PREFIX}*${TEST_FILE_SUFFIX}') found in '${path.relative(SUT_OUT, dir)}'. The fixture will be skipped.`));
+            }
+            return null
         }
 
         const reporterOptions = undefined;
@@ -333,16 +341,18 @@ const tests = [
 ];
 
 
-if (tests.length < 1) {
+const testsFiltered = tests.filter(t => t != null)
+
+if (testsFiltered.length < 1) {
     console.error(c.fail(`${c.bold('[Error]')}: No tests.`));
     process.exit(1);
 }
 
 
-if (tests.length > 1) { // проверка на возможные коллизии label
+if (testsFiltered.length > 1) { // проверка на возможные коллизии label
     const seen = new Set();
     const duplicates = new Set();
-    for (const t of tests) {
+    for (const t of testsFiltered) {
         if (seen.has(t.label)) {
             duplicates.add(t.label);
         }
@@ -361,7 +371,7 @@ if (tests.length > 1) { // проверка на возможные коллиз
 
 
 export default defineConfig({
-    tests
+    tests: testsFiltered
 });
 
 
