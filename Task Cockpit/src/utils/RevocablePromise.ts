@@ -1,19 +1,9 @@
-/** @file utils/RevocablePromise.ts */
-/** @module RevocablePromise */
-
 import {
     CancellationError,
     CancellationTokenSource,
     type CancellationToken,
     type Disposable
 } from 'vscode';
-
-// #region DEBUG
-import { LogLevel } from 'vscode';
-import Logger from '../Logger';
-const { log } = Logger.get(module.filename);
-// #endregion DEBUG
-
 
 
 /** Запускает {@linkcode worker} с возможностью кооперативной отмены извне.
@@ -91,13 +81,13 @@ function runCancellable<T>(
         worker(cts.token)
             .then(resolve, (error) => {
                 // #region DEBUG
-                if (!(error instanceof CancellationError)) {
-                    const workerName = worker.name || '<anonymous>';
-                    const detail = error instanceof Error
-                        ? `${error.name}: ${error.message}\n${error.stack ?? '(no stack)'}`
-                        : `(non-Error) ${String(error)}`;
-                    log(LogLevel.Error, `worker '${workerName}' rejected with non-CancellationError (contract violation): ${detail}`, 'runCancellable');
-                }
+                // if (!(error instanceof CancellationError)) {
+                //     const workerName = worker.name || '<anonymous>';
+                //     const detail = error instanceof Error
+                //         ? `${error.name}: ${error.message}\n${error.stack ?? '(no stack)'}`
+                //         : `(non-Error) ${String(error)}`;
+                //     log(LogLevel.Error, `worker '${workerName}' rejected with non-CancellationError (contract violation): ${detail}`, 'runCancellable');
+                // }
                 // #endregion DEBUG
 
                 reject(error);

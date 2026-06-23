@@ -5,18 +5,7 @@
     { "name": "Shared", "path": "shared" },
     { "name": "Shared-simlink", "path": "shared.lnk" },
   ],
-  "settings": {
-    "taskCockpit.display.tintLabel": false,
-    "taskCockpit.filtering.excludeFolders": [
-      "_Multiroot-HappyPath (Workspace)",
-      "_Frontend",
-      "-Backend",
-      "-Shared",
-      "-Shared-simlink"
-    ],
-    "taskCockpit.filtering.showHidden": true,
-    "taskCockpit.display.useFolderIcon": true
-  },
+  "settings": {},
   "tasks": {
     "version": "2.0.0",
     "tasks": [

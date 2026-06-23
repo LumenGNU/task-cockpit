@@ -11,8 +11,13 @@ import {
 import * as assert from 'node:assert/strict';
 import getProcessId from './getProcessId';
 import type ProcessId from '../ProcessId';
-import type Conf from '../../Configuration/Global/Config';
+import type Config from '../../Configuration/Global/Config';
 import type Snapshot from './Snapshot';
+import GlobalConfig from '../../Configuration/Global/GlobalConfig';
+
+
+const CONFIGURATION_KEY = 'TerminalsConf';
+type TerminalsConf = Config[typeof CONFIGURATION_KEY];
 
 
 // Snapshot Dementia-based Event Machine (Latest-wins mod)
@@ -56,7 +61,7 @@ import type Snapshot from './Snapshot';
  *
  * ## Заметки
  *
- * «Глючный» терминал увеличивает время сбора снапшота до `timeout`,
+ * «Глючный» терминал увеличивает время сбора снапшота врлоть до `timeout`,
  * а события `onDidCollectSnapshot` станут приходить c произвольной задержкой.
  *  */
 class SnapshotCollector implements Disposable {
@@ -66,7 +71,7 @@ class SnapshotCollector implements Disposable {
 
     #disposed: boolean;
 
-    #conf: Readonly<Conf['TerminalsConf']>;
+    #conf: TerminalsConf;
 
     #pendingId: number | undefined;
     #running: boolean;
@@ -74,13 +79,17 @@ class SnapshotCollector implements Disposable {
 
     readonly #logOutputChannel: LogOutputChannel | null;
 
+    #disposables: Disposable[];
+
+    #configuration: Readonly<GlobalConfig>;
+
+
     constructor(
-        conf: Conf['TerminalsConf'],
+        configuration: Readonly<GlobalConfig>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
-
         this.#disposed = false;
-        this.#conf = this.#setConf(conf);
+        this.#disposables = [];
 
         this.#logOutputChannel = logOutputChannel;
 
@@ -89,7 +98,23 @@ class SnapshotCollector implements Disposable {
         this.#running = false;
         this.#activeCancel = null;
 
-        this.#onDidCollectSnapshot = new EventEmitter<Snapshot>();
+        // conf ---
+        this.#configuration = configuration;
+
+        this.#disposables.push(
+            this.#configuration.onDidChange((affectedKey) => {
+                if (affectedKey !== CONFIGURATION_KEY) {
+                    return;
+                }
+                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+            })
+        );
+        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        // ---
+
+        this.#disposables.push(
+            this.#onDidCollectSnapshot = new EventEmitter<Snapshot>()
+        );
         this.onDidCollectSnapshot = this.#onDidCollectSnapshot.event;
 
     }
@@ -102,8 +127,9 @@ class SnapshotCollector implements Disposable {
         }
 
         this.#disposed = true;
-
-        this.#onDidCollectSnapshot.dispose();
+        this.#disposables.forEach(function (d) {
+            d.dispose();
+        });
 
         // отмена очереди
         this.#pendingId = undefined;
@@ -116,16 +142,6 @@ class SnapshotCollector implements Disposable {
 
 
     // #region Public
-
-    /**
-     * Текущие активные запросы доработают со старым таймаутом (или как попало - не важно).
-     * Следующий снапшот будет обработан с новым значением. */
-    public setConf(conf: Readonly<Conf['TerminalsConf']>) {
-
-        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
-
-        this.#conf = this.#setConf(conf);
-    }
 
 
     /** Инициировать сбор PID всех открытых терминалов.
@@ -163,10 +179,6 @@ class SnapshotCollector implements Disposable {
     // #endregion Public
 
     // #region Private
-
-    #setConf(conf: Readonly<Conf['TerminalsConf']>): Readonly<Conf['TerminalsConf']> {
-        return { ...conf };
-    }
 
 
     // #region Управление очередью
@@ -286,7 +298,12 @@ class SnapshotCollector implements Disposable {
 
     // #endregion
 
+    #applyConf(conf: Readonly<TerminalsConf>): Readonly<TerminalsConf> {
+        return conf;
+    }
+
     // #endregion Private
+
 }
 
 

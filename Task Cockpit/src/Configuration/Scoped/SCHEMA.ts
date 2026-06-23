@@ -1,5 +1,6 @@
+
 import {
-    Configuration,
+    type ConfigSchema,
     OptionType
 } from '../Configuration';
 import type Config from './Config';
@@ -8,41 +9,41 @@ import type Config from './Config';
 const SCHEMA = {
     Filtering: {
         showHidden: {
-            from: 'filtering',
+            section: 'filtering',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
     },
     Hierarchy: {
         segmentSeparator: {
-            from: 'display',
+            section: 'display',
             type: OptionType.String,
             spec: { fallback: '', pattern: /^.?$/ }
         },
         useGroupKind: {
-            from: 'display',
+            section: 'display',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
     },
     Node: {
         defaultIconName: {
-            from: 'display',
+            section: 'display',
             type: OptionType.String,
             spec: { fallback: 'tools', pattern: /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/ }
         },
         tintLabel: {
-            from: 'display',
+            section: 'display',
             type: OptionType.Boolean,
             spec: { fallback: false }
         },
         useFolderIcon: {
-            from: 'display',
+            section: 'display',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
     }
-} satisfies Readonly<Configuration.ConfigSchema<Config>>;
+} satisfies Readonly<ConfigSchema<Config>>;
 
 
 export default SCHEMA;

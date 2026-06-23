@@ -6,7 +6,12 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import type ProcessId from './ProcessId';
-import type Conf from './Conf';
+import type Config from '../Configuration/Global/Config';
+import GlobalConfig from '../Configuration/Global/GlobalConfig';
+
+
+const CONFIGURATION_KEY = 'ProcessMonitorConf';
+type ProcessMonitorConf = Config[typeof CONFIGURATION_KEY];
 
 
 /** Мониторинг процессов (адаптивный интервал опроса).
@@ -22,7 +27,7 @@ import type Conf from './Conf';
  * Использует `process.kill(pid, 0)` для проверки жизни процесса.
  *
  * */
-class Monitor implements Disposable {
+class ProcessMonitor implements Disposable {
 
     #disposed: boolean;
 
@@ -38,26 +43,55 @@ class Monitor implements Disposable {
      *
      * Undefined когда мониторинг остановлен (нет активных процессов). */
     #checkInterval: NodeJS.Timeout | undefined;
-
-
-    #conf: Readonly<Conf['monitorConf']>;
-
+    #disposables: Disposable[];
 
     // #region Lifecycle
 
+    #configuration: Readonly<GlobalConfig>;
+
+    #conf: ProcessMonitorConf;
+
+
     /** Создать экземпляр монитора. */
     constructor(
-        conf: Readonly<Conf['monitorConf']>,
+        configuration: Readonly<GlobalConfig>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
-
         this.#disposed = false;
-        this.#conf = this.#setConf(conf);
+        this.#disposables = [];
+
+
         this.#processes = new Set();
 
-        this.#onProcessesCompleted = new EventEmitter<ReadonlySet<ProcessId>>();
+        // conf ---
+        this.#configuration = configuration;
+
+        this.#disposables.push(
+            this.#configuration.onDidChange((affectedKey) => {
+                if (affectedKey !== CONFIGURATION_KEY) {
+                    return;
+                }
+                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+            })
+        );
+        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        // ---
+
+        this.#disposables.push(
+            this.#onProcessesCompleted = new EventEmitter<ReadonlySet<ProcessId>>()
+        );
         this.onProcessesCompleted = this.#onProcessesCompleted.event;
     }
+
+
+    // public static create(props: {
+    //     conf: Readonly<ProcessMonitorConf>;
+    //     logOutputChannel?: LogOutputChannel | null;
+    // }): Readonly<ProcessMonitor> {
+    //     const monitor = new ProcessMonitor(props.logOutputChannel);
+    //     monitor.setConf(props.conf);
+    //     return monitor;
+    // }
 
 
     /** Освободить ресурсы монитора.
@@ -67,14 +101,13 @@ class Monitor implements Disposable {
      * @affects `checkInterval` Таймер будет остановлен
      * @affects `processes` Будет очищен  */
     public dispose() {
-
         if (this.#disposed) {
             return;
         }
-
         this.#disposed = true;
-
-        this.#onProcessesCompleted.dispose();
+        this.#disposables.forEach(function (d) {
+            d.dispose();
+        });
 
         if (this.#checkInterval) {
             clearTimeout(this.#checkInterval);
@@ -89,29 +122,6 @@ class Monitor implements Disposable {
 
 
     // #region Public
-
-    /** Обновить конфигурацию опроса.
-     *
-     * Изменение конфигурации применится с задержкой — текущий интервал, если есть,
-     * доработает с прошлыми параметрами. Новые вступят в силу только после
-     * следующего срабатывания таймера.
-     *
-     * Clamp polling.cap >= polling.min * 1.7
-     *
-     * Смотри: src/Configuration/Global/SCHEMA.ts — границы и значения по умолчанию
-     *
-     * @param conf {@linkcode Conf} */
-    // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
-    // скорректировать оставшееся время.
-    // Для этого нужно хранить метку запуска таймера и в setConf вычислять
-    // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
-    // Важность — Низкая. Пока просто ждем нового тика.
-    public setConf(conf: Readonly<Conf['monitorConf']>) {
-
-        assert.equal(this.#disposed, false, 'Monitor: use after dispose');
-
-        this.#conf = this.#setConf(conf);
-    }
 
 
     /** Добавить процесс в мониторинг.
@@ -150,22 +160,6 @@ class Monitor implements Disposable {
 
     // #region Private
 
-    #setConf(conf: Readonly<Conf['monitorConf']>): Readonly<Conf['monitorConf']> {
-
-        // Clamp polling.cap >= polling.min * 1.7
-        // Остальные значения и их границы должны проверятся
-        // выше - на уровне конфигурации.
-        return {
-            polling: {
-                min: conf.polling.min,
-                cap: Math.max(
-                    conf.polling.min * 1.7,
-                    conf.polling.cap
-                ),
-                acceleration: conf.polling.acceleration
-            } as const
-        } as const;
-    }
 
     /** Запланировать следующую проверку процессов.
      *
@@ -188,7 +182,7 @@ class Monitor implements Disposable {
 
         const timeout = this.#pollingInterval(this.#processes.size);
 
-        if (timeout) {
+        if (timeout !== undefined) {
 
             this.#checkInterval = setTimeout(function (monitor) {
                 monitor.#pruneDead();
@@ -213,7 +207,7 @@ class Monitor implements Disposable {
 
         const { min, acceleration, cap } = this.#conf.polling;
 
-        // Медленный рост вначале; резкое ускорение; cap
+        // При увеличении count: медленный рост вначале → резкое ускорение → cap
         return Math.min(min + acceleration * count * count, cap);
     }
 
@@ -278,9 +272,43 @@ class Monitor implements Disposable {
 
         return false;
     }
+
+    /** Обновить конфигурацию опроса.
+ *
+ * Изменение конфигурации применится с задержкой — текущий интервал, если есть,
+ * доработает с прошлыми параметрами. Новые вступят в силу только после
+ * следующего срабатывания таймера.
+ *
+ * Clamp polling.cap >= polling.min * 1.7
+ *
+ * Смотри: src/Configuration/Global/SCHEMA.ts — границы и значения по умолчанию
+ *
+ * @param conf {@linkcode Conf} */
+    // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
+    // скорректировать оставшееся время.
+    // Для этого нужно хранить метку запуска таймера и в applyConf вычислять
+    // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
+    // Важность — Низкая. Пока просто ждем нового тика.
+    #applyConf(conf: Readonly<ProcessMonitorConf>): ProcessMonitorConf {
+
+        // Clamp polling.cap >= polling.min * 1.7
+        // Остальные значения и их границы должны проверятся
+        // выше - на уровне конфигурации.
+
+        return {
+            polling: {
+                min: conf.polling.min,
+                cap: Math.max(
+                    conf.polling.min * 1.7,
+                    conf.polling.cap
+                ),
+                acceleration: conf.polling.acceleration
+            }
+        } as const;
+    }
 }
 
 // #endregion
 
 
-export default Monitor;
+export default ProcessMonitor;

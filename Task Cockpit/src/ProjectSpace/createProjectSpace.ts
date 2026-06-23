@@ -27,19 +27,19 @@ import type ScopeType from '../Scope/Type';
 import type SourceUri from '../Scope/SourceUri/SourceUri';
 import type TaskName from '../type.d/TaskName';
 import type TaskSource from '../Scope/TaskSource/TaskSource';
-import type TaskGroup from 'src/Scope/TaskSource/Definitions/Definition/TaskGroup';
+import TaskGroup from '../Scope/TaskSource/Definitions/Definition/TaskGroup';
 
 
 /**
  * @throws { never }
  *  */
 function createProjectSpace(
-    configSectionName: string,
+    baseConfigSection: string,
     logOutputChannel: LogOutputChannel | null = null
 ) {
 
     // Читатель per-scope конфигурации
-    const scopedReader = createScopedReader(configSectionName);
+    const scopedReader = createScopedReader(baseConfigSection);
 
     let currentSource: CancellationTokenSource | undefined;
 

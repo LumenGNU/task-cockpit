@@ -20,15 +20,7 @@ import type ScopeMap from '../ProjectSpace/ScopeMap';
 import type TaskName from '../type.d/TaskName';
 import type EligibleMap from '../EligibleTask/EligibleMap';
 import type RuntimeRegistry from '../Runtime/RuntimeRegistry';
-
-
-type Element =
-    | ScopeElement
-    | EmptyElement
-    | IntermediateElement
-    | RunnableElement
-    | PinsElement
-    ;
+import type Element from './Element';
 
 
 export default class TreeDataProvider implements VscTreeDataProvider<Readonly<Element>> {
@@ -84,6 +76,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
     public updateRunnable(scopeKey: ScopeKey, taskName: TaskName) {
 
         const elements = this.#runnableMap.get(scopeKey)?.get(taskName);
+
         if (!elements || elements.size < 1) {
             return;
         }

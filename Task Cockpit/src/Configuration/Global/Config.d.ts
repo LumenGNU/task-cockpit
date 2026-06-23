@@ -1,11 +1,9 @@
 import { type CompressionBehavior } from '../../HierarchyModel/createSpecs';
-import type createReader from './createReader';
 
 
 /** Глобальные настройки.
  * Читаются из конфигурации VS Code без привязки к scope ресурса.
  *
- * Используй {@linkcode createReader} для получения читателя.
  * */
 interface Config {
 
@@ -57,7 +55,7 @@ interface Config {
         };
     };
 
-    MonitorConf: {
+    ProcessMonitorConf: {
 
         /** Параметры адаптивного поллинга опроса системы на работающие задачи */
         polling: {

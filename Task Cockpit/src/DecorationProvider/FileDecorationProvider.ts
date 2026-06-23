@@ -11,9 +11,14 @@ import {
     type Uri
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import type Conf from './Conf';
+import type Config from '../Configuration/Global/Config';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
+import GlobalConfig from '../Configuration/Global/GlobalConfig';
+
+
+const CONFIGURATION_KEY = 'FileDecorationConf';
+type FileDecorationConf = Config[typeof CONFIGURATION_KEY];
 
 
 /** Провайдер декораций (бейдж, цвет) для VS Code.
@@ -34,7 +39,7 @@ import type UriSchema from './UriSchema';
  *
  * #### Жизненный цикл:
  * - Вызов `dispose()` освобождает ресурсы; дальнейшее использование методов
- *   провайдера приведёт к `assert`-ошибке.
+ *   провайдера ничего не делает.
  * */
 class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
@@ -43,20 +48,39 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     /** {@link VscFileDecorationProvider.onDidChangeFileDecorations Событие провайдера}, происходит при изменении конфигурации. */
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
+    #configuration: Readonly<GlobalConfig>;
 
-    #conf: Readonly<Conf>;
+    #conf: FileDecorationConf;
+
+    #disposables: Disposable[];
 
     #disposed: boolean;
 
     /**Создаёт провайдер.
-     * @param conf начальные значения конфигурации декораций. */
-    constructor(conf: Readonly<Conf>) {
+     * @param configuration начальные значения конфигурации декораций. */
+    constructor(configuration: Readonly<GlobalConfig>) {
         this.#disposed = false;
+        this.#disposables = [];
 
-        this.#onDidChangeFileDecorations = new EventEmitter();
+        // conf ---
+        this.#configuration = configuration;
+
+        this.#disposables.push(
+            this.#configuration.onDidChange((affectedKey) => {
+                if (affectedKey !== CONFIGURATION_KEY) {
+                    return;
+                }
+                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+                this.#onDidChangeFileDecorations.fire(undefined);
+            })
+        );
+        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        // ---
+
+        this.#disposables.push(
+            this.#onDidChangeFileDecorations = new EventEmitter()
+        );
         this.onDidChangeFileDecorations = this.#onDidChangeFileDecorations.event;
-
-        this.#conf = this.#setConf(conf);
     }
 
 
@@ -66,29 +90,9 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             return;
         }
         this.#disposed = true;
-        this.#onDidChangeFileDecorations.dispose();
-    }
-
-
-    /** Обновляет конфигурацию декораций и испускает {@linkcode onDidChangeFileDecorations},
-     * если произошли реальные изменения.
-     *
-     * @param conf новые значения конфигурации.
-     *
-     * @fires FileDecorationProvider#onDidChangeFileDecorations */
-    setConf(conf: Readonly<Conf>): void {
-
-        assert.equal(this.#disposed, false, 'FileDecorationProvider: use after dispose');
-
-        if ((Object.keys(conf) as ReadonlyArray<keyof Conf>)
-            .every(k => this.#conf[k] === conf[k])) {
-            // diff -> no-op
-            return;
-        }
-
-        this.#conf = this.#setConf(conf);
-
-        this.#onDidChangeFileDecorations.fire(undefined);
+        this.#disposables.forEach(function (d) {
+            d.dispose();
+        });
     }
 
 
@@ -110,13 +114,15 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
      * @throws { CancellationError } Если передан отмененный токен. */
     provideFileDecoration(uri: Uri, token: CancellationToken): ProviderResult<FileDecoration> {
 
-        assert.equal(this.#disposed, false, 'FileDecorationProvider: use after dispose');
+        if (this.#disposed) {
+            return;
+        }
 
         if (token.isCancellationRequested) {
             throw new CancellationError();
         }
 
-        // see: src/type.d/UriSchema.d.ts
+        // see: UriSchema.d.ts
         if (uri.scheme !== 'task-cockpit' satisfies UriSchema['scheme']
             || uri.authority !== 'Node' satisfies UriSchema['authority']) {
             return undefined;
@@ -129,6 +135,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         const color: UriQuery['color'] = query.get('color') || '';
 
         if (`${available}${running}${color}` === '00') {
+            // нет ни бейджа, ни цвета
             return undefined;
         }
 
@@ -157,8 +164,11 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         } as const;
     }
 
-    #setConf(conf: Readonly<Conf>): Readonly<Conf> {
-        return { ...conf };
+    /** Обновляет конфигурацию декораций и испускает {@linkcode onDidChangeFileDecorations}.
+     *
+     * @fires FileDecorationProvider#onDidChangeFileDecorations */
+    #applyConf(conf: Readonly<FileDecorationConf>): Readonly<FileDecorationConf> {
+        return conf;
     }
 }
 

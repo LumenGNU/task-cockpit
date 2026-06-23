@@ -14,8 +14,8 @@
   "license": "MIT",
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.10.0",
+    "@vscode/test-cli": "^0.0.11",
     "eslint": "^9.39.4",
-    "typescript-eslint": "^8.46.3",
-    "@vscode/test-cli": "^0.0.11"
+    "typescript-eslint": "^8.46.3"
   }
 }

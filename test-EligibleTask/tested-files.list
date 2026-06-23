@@ -1,0 +1,19 @@
+EligibleTask/DefinitionId.d.ts
+EligibleTask/EligibleMap.d.ts
+EligibleTask/EligibleTaskCache.ts
+EligibleTask/EligibleTask.d.ts
+EligibleTask/fetchEligibleTasks.ts
+EligibleTask/qualifies.ts
+
+## ====================
+#
+type.d/TaskName.d.ts
+Scope/Key.d.ts
+Scope/Scope.d.ts
+Scope/getKey.ts
+Scope/Folder/Key.d.ts
+Scope/Folder/Uri.d.ts
+Scope/Workspace/Key.ts
+Scope/Workspace/Workspace.d.ts
+Scope/Folder/Folder.d.ts
+Scope/isWorkspace.ts

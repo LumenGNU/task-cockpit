@@ -3,38 +3,44 @@
         {
             "path": "Task Cockpit"
         },
-        {
-            "path": "test-Cockpit.Pins"
-        },
-        {
-            "path": "test-Cockpit.Tree"
-        },
+        // {
+        //     "path": "test-Cockpit.Pins"
+        // },
+        // {
+        //     "path": "test-Cockpit.Tree"
+        // },
         {
             "path": "test-Configuration"
         },
-        {
-            "path": "test-ProjectSpace"
-        },
+        // {
+        //     "path": "test-ProjectSpace"
+        // },
         {
             "path": "test-Runtime"
         },
+        // {
+        //     "path": "test-Workspace"
+        // },
+        // {
+        //     "path": "test.semi-manual"
+        // },
+        // {
+        //     "path": "test.Unit"
+        // },
+        // {
+        //     "path": "test-FileDecorationProvider"
+        // },
+        // {
+        //     "path": "test-formatTooltip"
+        // },
+        // {
+        //     "path": "test-UserState"
+        // },
+        // {
+        //     "path": "test-EligibleTask"
+        // },
         {
-            "path": "test-Workspace"
-        },
-        {
-            "path": "test.semi-manual"
-        },
-        {
-            "path": "test.Unit"
-        },
-        {
-            "path": "test-FileDecorationProvider"
-        },
-        {
-            "path": "test-formatTooltip"
-        },
-        {
-            "path": "test-UserState"
+            "path": "test-TreeView"
         }
     ],
     "settings": {

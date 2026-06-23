@@ -7,24 +7,28 @@ import {
     type CancellationToken,
     type Terminal,
     type TaskProcessStartEvent,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     CancellationError,
     LogOutputChannel
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import getKey from '../Scope/getKey';
 import getProcessId from './Terminals/getProcessId';
-import Monitor from './Monitor';
+import ProcessMonitor from './ProcessMonitor';
 import qualifies from '../EligibleTask/qualifies';
 import ProcessRegistry from './ProcessRegistry';
 import SnapshotCollector from './Terminals/SnapshotCollector';
 import type ProcessId from './ProcessId';
-import type Conf from '../Configuration/Global/Config';
 import type ScopeKey from '../Scope/Key';
 import type Snapshot from './Terminals/Snapshot';
 import type TaskIdentifier from './TaskIdentifier';
 import type TaskName from '../type.d/TaskName';
 import type RuntimeRegistry from './RuntimeRegistry';
+import GlobalConfig from '../Configuration/Global/GlobalConfig';
+import type Config from '../Configuration/Global/Config';
+
+
+const CONFIGURATION_KEY = 'TerminalsConf';
+type TerminalsConf = Config[typeof CONFIGURATION_KEY];
 
 
 /** Отслеживает жизненный цикл процессов, порождённых задачами VS Code.
@@ -56,10 +60,10 @@ import type RuntimeRegistry from './RuntimeRegistry';
  * - `dispose` — деактивация и освобождение ресурсов */
 class Runtime implements Disposable {
 
-    readonly #onDidChange: EventEmitter<TaskIdentifier>;
 
     // #region Events
 
+    readonly #onDidChange: EventEmitter<TaskIdentifier>;
     /** Изменение состояния процессов.
      *
      * Срабатывает при любом изменении состояния процессов задачи:
@@ -73,28 +77,30 @@ class Runtime implements Disposable {
     /** {@link ProcessRegistry | Реестр процессов} */
     readonly #registry: ProcessRegistry;
 
-    readonly #disposable: Disposable;
+    readonly #disposables: Disposable[];
 
-    /** {@link Monitor | Мониторинг процессов} */
-    readonly #monitor: Monitor;
+    /** {@link ProcessMonitor | Мониторинг процессов} */
+    readonly #monitor: ProcessMonitor;
 
     /** {@link SnapshotCollector | Сборщик атомарных снимков PID’ов открытых терминалов} */
     readonly #terminalSnapshot: SnapshotCollector;
 
     #disposed: boolean;
 
-    #timeout: number;
-
-    readonly #logOutputChannel: LogOutputChannel | null;
-
     // #region Lifecycle
 
+    #configuration: Readonly<GlobalConfig>;
+    readonly #logOutputChannel: LogOutputChannel | null;
+
+    #conf: TerminalsConf;
+
     constructor(
-        conf: Conf,
+        configuration: Readonly<GlobalConfig>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
         this.#disposed = false;
+        this.#disposables = [];
 
         this.#registry = ProcessRegistry.create();
 
@@ -103,12 +109,24 @@ class Runtime implements Disposable {
 
         this.#logOutputChannel = logOutputChannel;
 
-        this.#monitor = new Monitor(conf.MonitorConf, logOutputChannel);
-        this.#terminalSnapshot = new SnapshotCollector(conf.TerminalsConf, logOutputChannel);
+        this.#monitor = new ProcessMonitor(configuration, logOutputChannel);
+        this.#terminalSnapshot = new SnapshotCollector(configuration, logOutputChannel);
 
-        this.#timeout = conf.TerminalsConf.timeout;
+        // conf ---
+        this.#configuration = configuration;
 
-        this.#disposable = Disposable.from(
+        this.#disposables.push(
+            this.#configuration.onDidChange((affectedKey) => {
+                if (affectedKey !== CONFIGURATION_KEY) {
+                    return;
+                }
+                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+            })
+        );
+        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        // ---
+
+        this.#disposables.push(
 
             // Задача породила процесс
             // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -165,7 +183,9 @@ class Runtime implements Disposable {
         }
 
         this.#disposed = true;
-        this.#disposable.dispose();
+        this.#disposables.forEach(function (d) {
+            d.dispose();
+        });
         this.#registry.clear();
 
     }
@@ -174,13 +194,6 @@ class Runtime implements Disposable {
 
 
     // #region Public
-
-    public setConf(conf: Readonly<Conf>) {
-
-        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
-
-        this.#timeout = this.#setConf(conf);
-    }
 
 
     /** Доступ к реестру процессов (только чтение).
@@ -234,7 +247,7 @@ class Runtime implements Disposable {
             // getTerminalPid выбрасывает только CancellationError.
             // Пры любых проблемах вернет `undefined`.
             // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
-            const processId = await getProcessId(terminal, this.#timeout, token);
+            const processId = await getProcessId(terminal, this.#conf.timeout, token);
 
             if (!processId) {
                 return undefined;
@@ -351,7 +364,7 @@ class Runtime implements Disposable {
     }
 
 
-    /** Обработка завершённых процессов от {@linkcode Monitor}.
+    /** Обработка завершённых процессов от {@linkcode ProcessMonitor}.
      * - Помечает процессы как завершённые
      * - Сообщает о каждой задаче, затронутой изменением
      * - Инициирует пересмотр терминалов
@@ -413,13 +426,7 @@ class Runtime implements Disposable {
     // #endregion Handlers
 
 
-    #setConf(conf: Readonly<Conf>): Readonly<Conf['TerminalsConf']['timeout']> {
 
-        this.#monitor.setConf(conf.MonitorConf);
-        this.#terminalSnapshot.setConf(conf.TerminalsConf);
-
-        return conf.TerminalsConf.timeout;
-    }
 
 
     /** Отправка SIGTERM процессу.
@@ -479,6 +486,12 @@ class Runtime implements Disposable {
             }
         }
     }
+
+
+    #applyConf(conf: Readonly<TerminalsConf>): Readonly<TerminalsConf> {
+        return conf;
+    }
+
 
     // Сейчас
     // - монотонный счетчик. теряем информацию о времени

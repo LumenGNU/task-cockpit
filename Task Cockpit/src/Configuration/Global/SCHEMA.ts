@@ -1,4 +1,8 @@
-import { Configuration, OptionType } from '../Configuration';
+
+import {
+    ConfigSchema,
+    OptionType
+} from '../Configuration';
 import Config from './Config';
 
 const SCHEMA = {
@@ -8,7 +12,7 @@ const SCHEMA = {
         /** Check for tasks with duplicate labels and flag them as problematic.  \n
          * (_Requires window reload to take effect._) */ // @todo все еще Requires?
         duplicates: {
-            from: 'validation',
+            section: 'validation',
             type: OptionType.Boolean,
             spec: { fallback: true }
         },
@@ -17,7 +21,7 @@ const SCHEMA = {
          * **Results may be inaccurate or incomplete**. Disable if you encounter incorrect diagnostics.  \n
          * (_Requires window reload to take effect._) */
         dependencies: {
-            from: 'validation',
+            section: 'validation',
             type: OptionType.Boolean,
             spec: { fallback: false }
         }
@@ -31,7 +35,7 @@ const SCHEMA = {
              * Matches the display name as shown by VS Code, not the directory name.
              * Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`). */
             excludeFolders: {
-                from: 'filtering',
+                section: 'filtering',
                 type: OptionType.StringSet,
                 spec: { fallback: [] }
             }
@@ -39,12 +43,12 @@ const SCHEMA = {
 
         pins: {
             visibility: {
-                from: 'display.pins',
+                section: 'display.pins',
                 type: OptionType.Boolean,
                 spec: { fallback: true }
             },
             pathCompression: {
-                from: 'display.pins',
+                section: 'display.pins',
                 type: OptionType.StringLiteral,
                 spec: { fallback: 'on', values: ['off', 'on', 'on-aggressive'] }
             }
@@ -60,7 +64,7 @@ const SCHEMA = {
     //     }
     // },
 
-    MonitorConf: {
+    ProcessMonitorConf: {
         /** Параметры адаптивной кривой опроса системы на работающие задачи.
          * Интервал опроса будет увеличиваться от min до cap с скоростью
          * acceleration при росте количества одновременно работающих задач.
@@ -70,7 +74,7 @@ const SCHEMA = {
         polling: {
             /** Минимальный интервал опроса (в мс). */
             min: {
-                from: 'monitor.polling',
+                section: 'monitor.polling',
                 type: OptionType.Number,
                 spec: { min: 200, fallback: 250, max: 1_000 }
             },
@@ -79,7 +83,7 @@ const SCHEMA = {
              * увеличиваться при росте количества одновременно работающих задач.
              * Ожидается что будет как минимум cap > min * 1.7  */
             cap: {
-                from: 'monitor.polling',
+                section: 'monitor.polling',
                 type: OptionType.Number,
                 spec: { min: 340, fallback: 550, max: 3_500 }
             },
@@ -87,7 +91,7 @@ const SCHEMA = {
              * одновременно работающих задач.
              * Чем выше, тем быстрее интервал достигает `cap`. */
             acceleration: {
-                from: 'monitor.polling',
+                section: 'monitor.polling',
                 type: OptionType.Number,
                 spec: { min: 0.1, fallback: 0.2, max: 1.0 }
             }
@@ -103,7 +107,7 @@ const SCHEMA = {
          * некоторых ситуациях, может приводить к не корректной интерпретации
          * выполняемой задачи как завершенной. */
         timeout: {
-            from: 'terminals',
+            section: 'terminals',
             type: OptionType.Number,
             spec: { min: 500, fallback: 1_300, max: 12_000 }
         }
@@ -116,7 +120,7 @@ const SCHEMA = {
          * *Notes*: Keep this to a single visible glyph. Avoid digits because counts
          * may be shown alongside the symbol. Default: `●`. */
         runningSymbol: {
-            from: 'display.badges',
+            section: 'display.badges',
             type: OptionType.String,
             spec: { fallback: '●', pattern: /^[^\d\s]$/u }
         },
@@ -125,7 +129,7 @@ const SCHEMA = {
          * When the count would require two digits (10+), the
          * badge shows the this symbol instead of the numeric count. Default: `+` */
         overflowSymbol: {
-            from: 'display.badges',
+            section: 'display.badges',
             type: OptionType.String,
             spec: { fallback: '+', pattern: /^[^\d\s]$/u }
         },
@@ -133,7 +137,7 @@ const SCHEMA = {
          * before the instance count (`symbolFirst`) or the count appears before the
          * symbol (`countFirst`). Default: `symbolFirst` */
         badgeOrder: {
-            from: 'display.badges',
+            section: 'display.badges',
             type: OptionType.StringLiteral,
             spec: { fallback: 'symbolFirst', values: ['symbolFirst', 'countFirst'] }
         },
@@ -141,14 +145,14 @@ const SCHEMA = {
          * still available in terminals (for example, a finished task whose terminal is
          * still present). Default: `•` */
         availableSymbol: {
-            from: 'display.badges',
+            section: 'display.badges',
             type: OptionType.String,
             spec: { fallback: '•', pattern: /^[^\d\s]$/u }
         }
     },
 
 
-} satisfies Readonly<Configuration.ConfigSchema<Config>>;
+} satisfies Readonly<ConfigSchema<Config>>;
 
 
 export default SCHEMA;

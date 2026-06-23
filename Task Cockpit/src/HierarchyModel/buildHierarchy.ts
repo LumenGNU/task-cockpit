@@ -3,8 +3,7 @@ import Hierarchy from './Hierarchy';
 import type HierarchyElement from './HierarchyElement';
 import type ScopedConf from '../Configuration/Scoped/Config';
 import type TaskName from '../type.d/TaskName';
-import type TaskGroup from 'src/Scope/TaskSource/Definitions/Definition/TaskGroup';
-
+import TaskGroup from '../Scope/TaskSource/Definitions/Definition/TaskGroup';
 
 
 function buildHierarchy(

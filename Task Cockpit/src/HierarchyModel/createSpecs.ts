@@ -2,7 +2,7 @@ import { DISPLAY_ITEM_SEPARATOR } from '../constants';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
 import type ScopedConf from '../Configuration/Scoped/Config';
-import type TaskGroup from 'src/Scope/TaskSource/Definitions/Definition/TaskGroup';
+import TaskGroup from '../Scope/TaskSource/Definitions/Definition/TaskGroup';
 
 
 /** Спецификация узла: путь (сегменты) и данные. */
