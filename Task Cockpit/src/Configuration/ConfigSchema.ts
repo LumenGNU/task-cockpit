@@ -1,5 +1,6 @@
 /** Модуль для работы с конфигурацией VS Code.
  * Обеспечивает строгую типизацию, валидацию и безопасное приведение типов (coercion).
+ * Предоставляет инфраструктурные утилиты для типизированной работы с настройками VS Code.
  */
 
 import * as vscode from 'vscode';
@@ -126,14 +127,14 @@ type BooleanOption = ConfigOption<OptionType.Boolean, BooleanSpec>;
  * // "abc" -> 10 (fallback)
  * ~~~
  * */
-type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
+export type NumberOption = ConfigOption<OptionType.Number, NumberSpec>;
 
 
 /** Дескриптор строкового поля.
  *
  * При проверке в рантайме (`get`), если значение не прошло `pattern`, будет возвращен `fallback`.
  * При создании схемы (`createSchema`), сам `fallback` также проверяется на соответствие паттерну. */
-type StringOption = ConfigOption<OptionType.String, StringSpec>;
+export type StringOption = ConfigOption<OptionType.String, StringSpec>;
 
 
 /** Дескриптор поля типа "множество строк".
@@ -142,10 +143,10 @@ type StringOption = ConfigOption<OptionType.String, StringSpec>;
  * Если в массиве встречаются не-строковые элементы, весь массив считается невалидным и заменяется на `fallback`.
  * *Пустой массив является валидным значением.*
  * */
-type StringSetOption = ConfigOption<OptionType.StringSet, StringSetSpec>;
+export type StringSetOption = ConfigOption<OptionType.StringSet, StringSetSpec>;
 
 
-type StringLiteralOption<T extends string> = ConfigOption<OptionType.StringLiteral, StringLiteralSpec<T>>;
+export type StringLiteralOption<T extends string> = ConfigOption<OptionType.StringLiteral, StringLiteralSpec<T>>;
 
 
 /** Описывает структуру схемы на основе целевого интерфейса `I`.
@@ -337,22 +338,19 @@ export function createSchema<S extends object>(schema: Readonly<ConfigSchema<S>>
 };
 
 
-/** Читает настройки полученные от VS Code и применяет правила валидации согласно схеме.
+/**
+ * Читает настройки полученные от VS Code и применяет правила валидации согласно схеме.
  *
  * **Контракт:**
  * - Метод никогда не бросает исключений (при ошибках данных возвращается `fallback`)
  * - Структура результата всегда соответствует структуре схемы
  * - Все значения будут присутствовать
  * - Все числовые значения будут в рамках заданных границ (clamped)
- *
  * @template S Тип схемы.
- * @param {S} schema Объект, {@link Configuration.ConfigSchema описывающий структуру и правила валидации},
- *   полученный через {@linkcode Configuration.createSchema}.
  * @param workspaceConfig Экземпляр `vscode.WorkspaceConfiguration`.
  * @returns Объект, зеркально повторяющий структуру схемы, с валидными значениями,
- *   приведёнными к соответствующим типам и границам.
- *
- *  */
+приведёнными к соответствующим типам и границам.
+ */
 export function read<Schema extends object>(props: {
     schema: Readonly<Schema>,
     baseSection: string,
@@ -393,10 +391,9 @@ export function read<Schema extends object>(props: {
  * включая случай `section === '.'` — специальный маркер, означающий что секция
  * не задана явно и ключ поля используется напрямую при обращении к `WorkspaceConfiguration`.
  * */
-export function collectSections<S extends object>(props: {
-    schema: Readonly<ConfigSchema<S>>;
-    baseSection: string;
-}): ReadonlyMap<keyof S, ReadonlySet<string>> {
+export function collectSections<S extends object>(
+    schema: Readonly<ConfigSchema<S>>
+): ReadonlyMap<keyof S, ReadonlySet<string>> {
 
     function gatherSections(entry: unknown, accumulator: Set<string>, ownKey: string): void {
         if (!isKVObject(entry)) return;
@@ -404,8 +401,8 @@ export function collectSections<S extends object>(props: {
         if (isFieldDef(entry)) {
             const path =
                 entry.section === '.'
-                    ? `${props.baseSection}.${ownKey}`
-                    : `${props.baseSection}.${entry.section}.${ownKey}`;
+                    ? `${ownKey}`
+                    : `${entry.section}.${ownKey}`;
 
             accumulator.add(path);
         } else {
@@ -417,7 +414,7 @@ export function collectSections<S extends object>(props: {
 
     const result = new Map<keyof S, ReadonlySet<string>>();
 
-    for (const [topKey, branch] of Object.entries(props.schema)) {
+    for (const [topKey, branch] of Object.entries(schema)) {
         const sections = new Set<string>();
         gatherSections(branch, sections, topKey);   // topKey как начальный ownKey
         result.set(topKey as keyof S, sections);

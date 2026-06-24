@@ -2,7 +2,7 @@
 import {
     ConfigSchema,
     OptionType
-} from '../Configuration';
+} from '../ConfigSchema';
 import Config from './Config';
 
 const SCHEMA = {

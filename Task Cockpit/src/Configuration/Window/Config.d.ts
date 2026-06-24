@@ -1,5 +1,4 @@
-import { type CompressionBehavior } from '../../HierarchyModel/createSpecs';
-
+import CompressionBehavior from '../../HierarchyModel/CompressionBehavior';
 
 /** Глобальные настройки.
  * Читаются из конфигурации VS Code без привязки к scope ресурса.

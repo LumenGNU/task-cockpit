@@ -2,7 +2,7 @@
 import {
     type ConfigSchema,
     OptionType
-} from '../Configuration';
+} from '../ConfigSchema';
 import type Config from './Config';
 
 
