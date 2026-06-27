@@ -21,10 +21,10 @@ import type ProcessId from './ProcessId';
 import type ScopeKey from '../Scope/Key';
 import type Snapshot from './Terminals/Snapshot';
 import type TaskIdentifier from './TaskIdentifier';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type RuntimeRegistry from './RuntimeRegistry';
-import GlobalConfig from '../Configuration/Global/GlobalConfig';
-import type Config from '../Configuration/Global/Config';
+import ConfigurationProvider from '../Configuration/ConfigurationProvider';
+import type Config from '../Configuration/Window/Config';
 
 
 const CONFIGURATION_KEY = 'TerminalsConf';
@@ -89,13 +89,13 @@ class Runtime implements Disposable {
 
     // #region Lifecycle
 
-    #configuration: Readonly<GlobalConfig>;
+    #configuration: Readonly<ConfigurationProvider>;
     readonly #logOutputChannel: LogOutputChannel | null;
 
     #conf: TerminalsConf;
 
     constructor(
-        configuration: Readonly<GlobalConfig>,
+        configuration: Readonly<ConfigurationProvider>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
 
@@ -117,13 +117,13 @@ class Runtime implements Disposable {
 
         this.#disposables.push(
             this.#configuration.onDidChange((affectedKey) => {
-                if (affectedKey !== CONFIGURATION_KEY) {
+                if (!affectedKey.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
         // ---
 
         this.#disposables.push(

@@ -13,6 +13,7 @@ import {
 } from './ConfigSchema';
 import * as assert from 'node:assert/strict';
 import isWorkspace from '../Scope/isWorkspace';
+import nameIsQualifies from '../TaskName/nameIsQualifies';
 import RESOURCE_SCHEMA from './Resource/SCHEMA';
 import type Group from './Group';
 import type Icon from './Icon';
@@ -21,7 +22,7 @@ import type ResourceConfig from './Resource/Config';
 import type Scope from '../Scope/Scope';
 import type TaskDefinition from './TaskDefinition';
 import type TaskGroup from './TaskGroup';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type WindowConfig from './Window/Config';
 import WINDOW_SCHEMA from './Window/SCHEMA';
 
@@ -137,7 +138,7 @@ class ConfigurationProvider implements Disposable {
      * - Карта является `ReadonlyMap`, не предполагается модификация
      *   после построения.
      *  */
-    public readTasks(scope: Scope): ReadonlyMap<TaskName, TaskDefinition> {
+    public readTaskDefinitions(scope: Scope): ReadonlyMap<TaskName, TaskDefinition> {
 
         assert.equal(this.#disposed, false);
 
@@ -217,12 +218,6 @@ function mapDefinitions(
 
 // #region Валидаторы/парсеры
 // --------------------------
-
-/** Проверяет, что значение является непустой строкой
- * и может использоваться как ключ. */
-function nameIsQualifies(raw: unknown): raw is TaskName {
-    return typeof raw === 'string' && raw.length > 0;
-}
 
 
 /** Разбирает сырое значение `group` из файла-источника.

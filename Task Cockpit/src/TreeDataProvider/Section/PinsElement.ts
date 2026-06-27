@@ -41,7 +41,7 @@ function create(children: ReadonlyMap<ScopeKey, ReadonlyArray<HierarchyElement>>
  * `resourceUri` — файл-источник задач (не обязан существовать)
  *
  * `contextValue`: `task-cockpit:Section:Scope:(Global|Workspace|Folder)` */
-function getTreeItem(element: Readonly<Element>): TreeItem {
+function createTreeItem(element: Readonly<Element>): TreeItem {
 
     return {
         collapsibleState: TreeItemCollapsibleState.Expanded, // @todo
@@ -97,7 +97,7 @@ function buildContextValue(): ContextValue.Section {
 const Element = {
     create,
     resolveTreeItem,
-    getTreeItem
+    createTreeItem
 } as const;
 
 

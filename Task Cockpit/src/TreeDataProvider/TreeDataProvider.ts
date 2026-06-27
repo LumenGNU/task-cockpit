@@ -17,7 +17,7 @@ import ScopeElement from './Section/ScopeElement';
 import type HierarchyElement from '../HierarchyModel/HierarchyElement';
 import type ScopeKey from '../Scope/Key';
 import type ScopeMap from '../ProjectSpace/ScopeMap';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type EligibleMap from '../EligibleTask/EligibleMap';
 import type RuntimeRegistry from '../Runtime/RuntimeRegistry';
 import type Element from './Element';
@@ -30,7 +30,9 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
     readonly onDidChangeTreeData: Event<void | Readonly<Element>>;
 
 
-    #runnableMap: Map<ScopeKey, Map<TaskName, Set<Readonly<RunnableElement>>>>;
+    #runnableElementToTreeItem: Map<Readonly<RunnableElement>, TreeItem>;
+    #runnableIdentifierToElements: Map<ScopeKey, Map<TaskName, Set<Readonly<RunnableElement>>>>;
+
     #roots: Array<Readonly<ScopeElement | PinsElement>> | null;
 
     #scopeMap: Readonly<ScopeMap>;
@@ -43,10 +45,13 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
         runtimeRegistry: RuntimeRegistry,
     ) {
 
-        this.#runnableMap = new Map();
         this.#roots = null;
         this.#scopeMap = new Map();
         this.#eligibleMap = null;
+
+        this.#runnableElementToTreeItem = new Map();
+        this.#runnableIdentifierToElements = new Map();
+
         this.#runtimeRegistry = runtimeRegistry;
 
         this.#onDidChangeTreeData = new EventEmitter<Readonly<Element> | void>();
@@ -63,7 +68,9 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
         scopeMap: Readonly<ScopeMap>,
         eligibleMap: EligibleMap
     ) {
-        this.#runnableMap = new Map();
+
+        this.#runnableElementToTreeItem = new Map();
+        this.#runnableIdentifierToElements = new Map();
         this.#roots = null;
 
         this.#scopeMap = scopeMap;
@@ -73,9 +80,9 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
     }
 
 
-    public updateRunnable(scopeKey: ScopeKey, taskName: TaskName) {
+    public updateRuntimeState(scopeKey: ScopeKey, taskName: TaskName) {
 
-        const elements = this.#runnableMap.get(scopeKey)?.get(taskName);
+        const elements = this.#runnableIdentifierToElements.get(scopeKey)?.get(taskName);
 
         if (!elements || elements.size < 1) {
             return;
@@ -93,37 +100,75 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
         switch (element.type) {
 
             case ElementType.PinsSection: {
-                return PinsElement.getTreeItem(element);
+                return PinsElement.createTreeItem(element);
             }
 
             case ElementType.ScopeSection: {
-                return ScopeElement.getTreeItem(element);
+                return ScopeElement.createTreeItem(element);
             }
 
             case ElementType.EmptyNode: {
-                return EmptyElement.getTreeItem(element);
+                return EmptyElement.createTreeItem(element);
             }
 
             case ElementType.IntermediateNode: {
                 // intermediate node
-                return IntermediateElement.getTreeItem(element, {
+                return IntermediateElement.createTreeItem(element, {
                     conf: this.#scopeMap.get(element.scopeKey)?.nodeConfig ?? null
                 });
             }
 
             case ElementType.RunnableNode: {
                 // runnable node
+
                 const scopeKey = element.scopeKey;
-                const scopeData = this.#scopeMap.get(scopeKey);
                 const taskName = element.taskName;
 
-                return RunnableElement.getTreeItem(element, {
-                    conf: scopeData?.nodeConfig ?? null,
-                    definition: scopeData?.definitions.get(taskName) ?? null,
-                    hasEligibleTask: this.#eligibleMap?.get(scopeKey)?.has(taskName) ?? false,
-                    isPinned: scopeData?.userProps?.pins?.has(element.taskName) ?? false,
-                    runtimeState: this.#runtimeRegistry.getStats(scopeKey, taskName) ?? null
-                });
+                { // -----
+                    // регистрация элемента по идентификатору,
+                    // если еще не зарегистрирован.
+                    // @todo: возможно это нужно делать при создании runnable элемента?
+                    let elementsByTask = this.#runnableIdentifierToElements.get(scopeKey);
+                    if (!elementsByTask) {
+                        elementsByTask = new Map();
+                        this.#runnableIdentifierToElements.set(scopeKey, elementsByTask);
+                    }
+
+                    let elementSet = elementsByTask.get(taskName);
+                    if (!elementSet) {
+                        elementSet = new Set();
+                        elementsByTask.set(taskName, elementSet);
+                    }
+
+                    elementSet.add(element);
+
+                } // -----
+
+                let registeredTreeItem = this.#runnableElementToTreeItem.get(element);
+
+                if (!registeredTreeItem) {
+                    // Не зарегистрированный TreeItem — первый вызов getTreeItem()
+                    // для этого element.
+
+                    assert.ok(this.#scopeMap.has(scopeKey), `getTreeItem called for stale element: ${scopeKey}`);
+
+                    // scopeData может быть falsy для staled pins? -- нет:
+                    // Пины вне валидных scopes не должны попадать в дерево.
+                    const scopeData = this.#scopeMap.get(scopeKey);
+
+                    registeredTreeItem = RunnableElement.createTreeItem(element, {
+                        conf: scopeData!.nodeConfig,
+                        taskDefinition: scopeData!.definitions.get(taskName) ?? null,
+                        hasEligibleTask: this.#eligibleMap?.get(scopeKey)?.has(taskName) ?? false,
+                    });
+
+                    this.#runnableElementToTreeItem.set(element, registeredTreeItem);
+                }
+
+                // Обновить TreeItem на основе runtime stats
+                RunnableElement.applyRuntimeState(registeredTreeItem, this.#runtimeRegistry.getStats(scopeKey, taskName) ?? null);
+
+                return registeredTreeItem;
             }
 
             default: {
@@ -151,10 +196,6 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
             const pinSubSections: Array<[ScopeKey, ReadonlyArray<Readonly<HierarchyElement>>]> = [];
 
             for (const [scopeKey, scopeData] of this.#scopeMap) {
-
-                if (!scopeData) {
-                    continue;
-                }
 
                 if (scopeData.pinHierarchy) {
                     pinSubSections.push([scopeKey, scopeData.pinHierarchy]);
@@ -212,7 +253,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
 
                 const [scopeKey, hierarchy] = subsections.entries().next().value!;
 
-                return this.#createAndGetElementChildren(
+                return createElementChildren(
                     element.id,
                     scopeKey,
                     hierarchy
@@ -225,7 +266,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
                 // Отображается всегда, даже если пуста.
 
                 const sectionChildren: Array<Readonly<IntermediateElement | RunnableElement | EmptyElement>>
-                    = this.#createAndGetElementChildren(
+                    = createElementChildren(
                         element.id,
                         element.scopeKey,
                         element.children
@@ -252,7 +293,7 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
                 if (!hierarchies) {
                     return null;
                 }
-                const elementChildren = this.#createAndGetElementChildren(
+                const elementChildren = createElementChildren(
                     element.id,
                     element.scopeKey,
                     hierarchies
@@ -315,44 +356,23 @@ export default class TreeDataProvider implements VscTreeDataProvider<Readonly<El
     // ---------------------------------------------------------------------------
 
 
-    /**
-     * @affects @todo
-     * */
-    #createAndGetElementChildren(
-        parentId: NodeId,
-        parentScopeKey: ScopeKey,
-        hierarchies: ReadonlyArray<Readonly<HierarchyElement>>
-    ): Array<Readonly<IntermediateElement | RunnableElement>> {
-
-        const elementChildren: Array<Readonly<RunnableElement | IntermediateElement>> = [];
-        for (const hierarchy of hierarchies) {
-
-            const childElement = createChildElement(parentId, parentScopeKey, hierarchy);
-
-            if (childElement.type === ElementType.RunnableNode) {
-
-                let scopeRunnables = this.#runnableMap.get(parentScopeKey);
-                if (!scopeRunnables) {
-                    scopeRunnables = new Map<TaskName, Set<Readonly<RunnableElement>>>();
-                    this.#runnableMap.set(parentScopeKey, scopeRunnables);
-                }
-
-                let elements = scopeRunnables.get(childElement.taskName);
-                if (!elements) {
-                    elements = new Set<Readonly<RunnableElement>>();
-                    scopeRunnables.set(childElement.taskName, elements);
-                }
-
-                elements.add(childElement);
-            }
-
-            elementChildren.push(childElement);
-        }
-
-        return elementChildren;
-    }
 }
 
+
+function createElementChildren(
+    parentId: NodeId,
+    parentScopeKey: ScopeKey,
+    hierarchies: ReadonlyArray<Readonly<HierarchyElement>>
+): Array<Readonly<IntermediateElement | RunnableElement>> {
+
+    const elementChildren: Array<Readonly<RunnableElement | IntermediateElement>> = [];
+    for (const hierarchy of hierarchies) {
+        const childElement = createChildElement(parentId, parentScopeKey, hierarchy);
+        elementChildren.push(childElement);
+    }
+
+    return elementChildren;
+}
 
 function createChildElement(
     parentId: NodeId,

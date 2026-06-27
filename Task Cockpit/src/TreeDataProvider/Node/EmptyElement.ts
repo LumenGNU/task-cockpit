@@ -50,7 +50,7 @@ function create(
  * Иконка: `-`
  * Состояние: лист
  * `contextValue`: `task-cockpit:Node:Special:(Empty|Hidden)` */
-function getTreeItem(element: Readonly<Element>): TreeItem {
+function createTreeItem(element: Readonly<Element>): TreeItem {
 
     return {
         id: element.id,
@@ -96,7 +96,7 @@ function resolveTreeItem(
 const Element = {
     create,
     resolveTreeItem,
-    getTreeItem
+    createTreeItem
 } as const;
 
 

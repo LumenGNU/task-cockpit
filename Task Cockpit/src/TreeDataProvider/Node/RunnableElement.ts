@@ -9,16 +9,18 @@ import {
 } from 'vscode';
 import formatTooltip from '../formatTooltip';
 import ElementType from '../ElementType';
-import type Conf from '../../Configuration/Scoped/Config';
+import type Conf from '../../Configuration/Resource/Config';
 import type ContextValue from '../ContextValue';
-import type Definition from '../../Scope/TaskSource/Definitions/Definition/Definition';
+import type TaskDefinition from '../../Configuration/TaskDefinition';
 import type EligibleTask from '../../EligibleTask/EligibleTask';
 import type HierarchyElement from '../../HierarchyModel/HierarchyElement';
 import type NodeId from '../NodeId';
 import type ScopeKey from '../../Scope/Key';
-import type TaskName from '../../type.d/TaskName';
+import type TaskName from '../../TaskName/TaskName';
 import type UriQuery from '../../DecorationProvider/UriQuery';
 import type UriSchema from '../../DecorationProvider/UriSchema';
+import assert from 'node:assert/strict';
+import Icon from '../../Configuration/Icon';
 
 
 interface Element {
@@ -66,87 +68,46 @@ function create(
 
 
 /** Создаёт {@link vscode.TreeItem} для узла содержимого.
- *
- * Итоговый `TreeItem` определяется двумя независимыми свойствами узла:
- * наличием {@link definition} и наличием {@link children}.
- *
- * ---
- *
- * ### Сопоставлен с задачей (`definition !== null`)
- *
- * **`resourceUri`** — `task-cockpit://Node` (без path).
- * Query присутствует только если узел сопоставлен с задачей (`definition !== null`):
- * - `color` — `icon.color` задачи, если `nodeConfig.tintLabel` включён;
- * - `terminals=true` — если есть хотя бы один терминал (`processStats.total > 0`);
- * - `running=<n>` — количество работающих процессов (`processStats.running`).
- *
- * Если узел не сопоставлен с задачей (чистая группа) — query отсутствует.
- *
- * **`iconPath`** — `ThemeIcon` с `icon.id` из определения
- * (или `nodeConfig.defaultIconName` если отсутствует)
- * и `ThemeColor(icon.color)` (или `undefined`).
- *
- * **`description`** — активные флаги в формате `(Flag1, Flag2)`,
- * или `undefined`. Возможные значения: `Hidden`, `Default`, `Background`.
- *
- * ---
- *
- * ### Является ветвью (`children !== null`)
- *
- * **`iconPath`** — если узел *не* сопоставлен с задачей:
- * `ThemeIcon('symbol-folder')` при `nodeConfig.useFolderIcon`, иначе `undefined`.
- * (Если сопоставлен — иконка определяется задачей, см. выше.)
- *
- * **`tooltip`** — назначается резолвером (@todo)
- *
- * ---
- *
- * ### Общее (не зависит от комбинации)
- *
- * **`id`** -- node.id
- *
- * **`collapsibleState`** — `Collapsed` если `children !== null`, иначе `None`.
- *
- *
- * **`contextValue`** — строка вида `task-cockpit:Node:T1:T2:...:Tn`,
- * где токены добавляются независимо:
- * - `:Runnable` — `definition !== null`;
- * - `:Group` — `children !== null`;
- * - `:Running` — есть живые процессы;
- * - `:Terminals` — есть терминалы;
- * - `:Broken` — задача не распознана VS Code;
- * - `:Pinned` — задача запинована.
- *
- * @param
- * @param runtimeState Runtime-состояние расширения (процессы, пины и т.д.).
  *     */
-function getTreeItem(
+function createTreeItem(
     element: Readonly<Element>,
     props: Readonly<{
-        conf: Readonly<Conf['Node']> | null,
-        definition: Readonly<Definition> | null;
+        conf: Readonly<Conf['Node']>,
+        taskDefinition: Readonly<TaskDefinition> | null;
         hasEligibleTask: boolean;
-        isPinned: boolean,
-        runtimeState: Readonly<RuntimeState> | null;
     }>
 ): TreeItem {
+
+    // Цвет окраски label:
+    // 'list.invalidItemForeground' — если taskDefinition=null или
+    // hasEligibleTask=false.
+    // Иначе, если conf.tintLabel=true, то из taskDefinition.icon?.color ?? ''.
+    // Пустая строка — в остальных случаях.
+    const tintColor = props.taskDefinition === null || !props.hasEligibleTask
+        ? 'list.invalidItemForeground'
+        : props.conf.tintLabel
+            ? props.taskDefinition.icon?.color ?? ''
+            : '';
 
     const treeItem: TreeItem = {
         id: element.id,
         label: element.label,
         collapsibleState: buildCollapsibleState(element),
-        description: buildDescription(props.definition),
-        contextValue: buildContextValue(
-            element,
-            props.definition,
-            props.hasEligibleTask,
-            props.isPinned,
-            props.runtimeState
-        ),
-        iconPath: buildIconPath(props.definition, props.conf),
-        resourceUri: buildResourceURI(props),
+        description: buildDescription(props.taskDefinition),
+        // статическая часть contextValue
+        contextValue: buildContextValue(element.children != null, props.taskDefinition != null),
+        iconPath: buildIconPath(props.taskDefinition, props.conf),
+        // статическая часть resourceUri (только query color, если есть)
+        resourceUri: buildResourceURI(tintColor)
     } as const;
 
+    return treeItem;
+}
+
+
+function applyRuntimeState(treeItem: TreeItem, runtimeState: Readonly<RuntimeState> | null): TreeItem {
+    updateResourceUriQuery(treeItem, runtimeState);
+    updateContextValue(treeItem, runtimeState);
     return treeItem;
 }
 
@@ -169,7 +130,7 @@ function resolveTreeItem(
         item.tooltip = formatTooltip(
             'Task',
             element.label,
-            `$(warning) Stale pin — task definition not found`
+            `$(warning) Task definition not found`
         );
         return item;
     }
@@ -178,7 +139,7 @@ function resolveTreeItem(
         item.tooltip = formatTooltip(
             'Task',
             element.label,
-            `$(warning) Unresolved — no task matches this definition`
+            `$(warning) No task matches this definition`
         );
         return item;
     }
@@ -191,8 +152,6 @@ function resolveTreeItem(
 
     return item;
 }
-
-
 
 
 // @todo from UserState
@@ -215,7 +174,7 @@ function buildCollapsibleState(element: Readonly<Element>) {
  * Description есть только у runnable-узлов сопоставленного задаче.
  * */
 function buildDescription(
-    definition: Readonly<Definition> | null
+    definition: Readonly<TaskDefinition> | null
 ): string | false {
 
     if (!definition) {
@@ -244,43 +203,53 @@ function buildDescription(
 }
 
 
-/** Возвращает контекст узла — **`contextValue`**, строку вида `task-cockpit:Node:T1:T2:...:Tn`,
- * где токены добавляются независимо:
- * Статические
- * - `:Broken` — задача не распознана VS Code;
- * - `:Runnable` — `definition !== null`;
- * - `:Group` — `children !== null`;
- * Динамические
- * - `:Pinned` — задача запинована.
- * - `:Running` — есть живые процессы;
- * - `:Terminals` — есть терминалы (подразумевается что есть хотя бы один процесс);
- * */
+// статическая часть contextValue
 function buildContextValue(
-    element: Readonly<Element>,
-    definition: Readonly<Definition> | null,
-    hasEligibleTask: boolean,
-    isPinned: boolean,
-    runtimeState: Readonly<RuntimeState> | null
+    hasChildren: boolean,
+    hasEligibleTask: boolean
 ): ContextValue.Node.Runnable {
 
     return `task-cockpit${':Node'
-        }${element.children == null ? '' : ':Group'
-        }${hasEligibleTask
-            ? ':Runnable:Broken'
-            : `:Runnable${runtimeState == null
-                ? ''
-                : `${runtimeState.running === 0 ? '' : ':Running'}${runtimeState.total === 0 ? '' : ':Terminals'}` as const
-            }` as const
-        }${isPinned
-            ? definition == null ? ':Pinned:Stale' : ':Pinned'
+        }${hasChildren
+            ? ':Group'
             : ''
-        }` as const;
+        }${hasEligibleTask
+            ? ':Runnable'
+            : ':Runnable:Broken'
+        }`;
+}
+
+
+function updateContextValue(
+    treeItem: TreeItem,
+    runtimeState: Readonly<RuntimeState> | null
+) {
+
+    // изменяет contextValue на основе runtimeState.
+    // Добавляет / удаляет флаги
+    // `:Running` — если runtimeState.running (> / ==) 0
+    // `:Terminals` — если runtimeState.total (> / ==) 0
+
+    assert.ok(treeItem.contextValue, '??????????????????');
+
+    // Удалить старые флаги, если они есть
+    let contextValue = treeItem.contextValue!.replace(/:Running\b/, '').replace(/:Terminals\b/, '');
+
+    // ставим флаги
+    if (runtimeState && runtimeState.running > 0) {
+        contextValue += ':Running';
+    }
+    if (runtimeState && runtimeState.total > 0) {
+        contextValue += ':Terminals';
+    }
+
+    treeItem.contextValue = contextValue;
 
 }
 
 
 function buildIconPath(
-    definition: Readonly<Definition> | null,
+    definition: Readonly<TaskDefinition> | null,
     conf: Readonly<Conf['Node']> | null,
 ): ThemeIcon {
 
@@ -295,41 +264,43 @@ function buildIconPath(
 
 
 function buildResourceURI(
-    props: Readonly<{
-        conf: Readonly<Conf['Node']> | null,
-        definition: Readonly<Definition> | null;
-        runtimeState: Readonly<RuntimeState> | null;
-        hasEligibleTask: boolean;
-    }>
+    tintColor: string
 ): Uri {
-
     return Uri.from({
         scheme: 'task-cockpit',
         authority: 'Node',
         path: '',
         query: (new URLSearchParams({
-            available:
-                props.runtimeState
-                    ? props.runtimeState.total.toString()
-                    : '0',
-            running:
-                props.runtimeState
-                    ? props.runtimeState.running.toString()
-                    : '0',
-            color:
-                (props.definition && props.hasEligibleTask)
-                    ? (props.conf?.tintLabel && props.definition.icon?.color) || ''
-                    : 'list.invalidItemForeground'
+            available: '0',
+            running: '0',
+            tintColor
         } satisfies UriQuery)).toString()
     } satisfies UriSchema);
+}
+
+
+function updateResourceUriQuery(
+    treeItem: TreeItem,
+    runtimeState: Readonly<RuntimeState> | null
+) {
+
+    const resourceUri = treeItem.resourceUri;
+    assert.ok(resourceUri);
+
+    const params = new URLSearchParams(resourceUri.query);
+    params.set('available', runtimeState?.total.toString() ?? '0');
+    params.set('running', runtimeState?.running.toString() ?? '0');
+
+    treeItem.resourceUri = resourceUri.with({ query: params.toString() });
 
 }
 
 const Element = {
     create,
     resolveTreeItem,
-    getTreeItem
+    createTreeItem,
+    applyRuntimeState
 } as const;
 
 
-export default Element;
+export default Element;;;

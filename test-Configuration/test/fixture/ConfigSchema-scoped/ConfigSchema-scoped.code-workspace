@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+    "settings": {
+            "existsConfig.existPath.existKey": "value-from-workspace"
+    }
+}

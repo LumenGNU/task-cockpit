@@ -7,7 +7,7 @@ import {
 } from 'vscode';
 import formatTooltip from '../formatTooltip';
 import ElementType from '../ElementType';
-import type Conf from '../../Configuration/Scoped/Config';
+import type Conf from '../../Configuration/Resource/Config';
 import type ContextValue from '../ContextValue';
 import type HierarchyElement from '../../HierarchyModel/HierarchyElement';
 import type NodeId from '../NodeId';
@@ -50,7 +50,7 @@ function create(
  * - всегда имеет не пустую иерархию детей
  * - никогда не сопоставлен задаче (с вытекающими)
  * */
-function getTreeItem(
+function createTreeItem(
     element: Readonly<Element>,
     props: Readonly<{
         conf: Readonly<Conf["Node"]> | null,
@@ -99,7 +99,7 @@ function resolveTreeItem(
 const Element = {
     create,
     resolveTreeItem,
-    getTreeItem
+    createTreeItem
 } as const;
 
 

@@ -4,7 +4,7 @@ import type ProcessId from './ProcessId';
 import type ScopeKey from '../Scope/Key';
 import type Snapshot from './Terminals/Snapshot';
 import type TaskIdentifier from './TaskIdentifier';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 
 
 export interface Stats {

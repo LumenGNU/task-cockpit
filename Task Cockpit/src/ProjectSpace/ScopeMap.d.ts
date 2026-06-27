@@ -17,7 +17,7 @@ import type ScopeData from './ScopeData';
  * Содержит полный набор данных, отражающий текущее состояние
  * источников задач рабочей области.
  */
-type ScopeMap = ReadonlyMap<Key, Readonly<ScopeData> | null>;
+type ScopeMap = ReadonlyMap<Key, Readonly<ScopeData>>;
 
 
 export default ScopeMap;

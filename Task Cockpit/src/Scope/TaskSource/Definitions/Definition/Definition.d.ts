@@ -1,4 +1,4 @@
-import type TaskName from '../../../../type.d/TaskName';
+import type TaskName from '../../../../TaskName/TaskName';
 import type Icon from './Icon';
 import type TaskGroup from './TaskGroup';
 

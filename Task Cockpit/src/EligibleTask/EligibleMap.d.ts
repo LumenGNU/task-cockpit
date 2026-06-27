@@ -1,4 +1,4 @@
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type EligibleTask from './EligibleTask';
 import type ScopeKey from '../Scope/Key';
 

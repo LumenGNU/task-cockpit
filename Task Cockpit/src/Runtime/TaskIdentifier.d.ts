@@ -1,5 +1,5 @@
 import type ScopeKey from '../Scope/Key';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 
 interface TaskIdentifier {
     scopeKey: ScopeKey;

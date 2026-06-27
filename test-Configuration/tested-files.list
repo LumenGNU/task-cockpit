@@ -1,8 +1,32 @@
 
+Configuration/ConfigSchema.ts
+Configuration/ConfigurationProvider.ts
 
-Configuration/Configuration.ts
+Configuration/Window/Config.d.ts
+Configuration/Window/SCHEMA.ts
 
-Configuration/Global/Config.d.ts
-Configuration/Global/Reader.d.ts
-Configuration/Global/SCHEMA.ts
-Configuration/Global/createReader.ts
+Configuration/Resource/Config.d.ts
+Configuration/Resource/SCHEMA.ts
+
+Configuration/TaskGroup.d.ts
+Configuration/TaskDefinition.d.ts
+Configuration/RawTaskDefinition.d.ts
+Configuration/Icon.d.ts
+Configuration/Group.d.ts
+
+
+## -----------------------------------------------------------
+Scope/isWorkspace.ts
+Scope/Scope.d.ts
+HierarchyModel/CompressionBehavior.d.ts
+Scope/Workspace/Workspace.d.ts
+Scope/Folder/Folder.d.ts
+Scope/Folder/Uri.d.ts
+Scope/Folder/Key.d.ts
+Scope/getDisplayName.ts
+
+## ----------------------------------------------------------
+constants.ts
+
+## ----------------------------------------------------------
+type.d/TaskName.d.ts

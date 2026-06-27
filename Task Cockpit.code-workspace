@@ -30,9 +30,9 @@
         // {
         //     "path": "test-FileDecorationProvider"
         // },
-        // {
-        //     "path": "test-formatTooltip"
-        // },
+        {
+            "path": "test-formatTooltip"
+        },
         // {
         //     "path": "test-UserState"
         // },
@@ -41,7 +41,11 @@
         // },
         {
             "path": "test-TreeView"
-        }
+        },
+        {
+            "path": "_PROBA"
+        },
+
     ],
     "settings": {
         "taskCockpit.display.segmentSeparator": "|",

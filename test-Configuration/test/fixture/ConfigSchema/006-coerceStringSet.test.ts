@@ -1,7 +1,7 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 
-import { Configuration, OptionType } from 'src/Configuration/Configuration';
+import { createSchema, OptionType, read } from 'src/Configuration/ConfigSchema';
 
 // В settings.json:
 // "stringSetConfig": {
@@ -17,16 +17,17 @@ import { Configuration, OptionType } from 'src/Configuration/Configuration';
 
 // `${/*N=0*/'000'/**/}`
 
-suite('Configuration', function () {
+suite('ConfigSchema', function () {
 
-    suite('get', function () {
+    suite('read', function () {
 
         suite('coerceStringSet (валидация множеств строк)', function () {
 
-            let workspaceConfiguration: vscode.WorkspaceConfiguration;
+            const baseSection = 'stringSetConfig';
+            const configurationScope = null;
 
             suiteSetup(function () {
-                workspaceConfiguration = vscode.workspace.getConfiguration('stringSetConfig');
+                const workspaceConfiguration = vscode.workspace.getConfiguration(baseSection);
 
                 assert.ok(!workspaceConfiguration.get('noExistKey'),
                     'pre: stringSetConfig.noExistKey не должно быть в конфигурации');
@@ -56,11 +57,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'001'/**/} отсутствующий ключ — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noExistKey: Set<string>; }>({
-                    noExistKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['x', 'y'] } }
+                const schema = createSchema<{ noExistKey: Set<string>; }>({
+                    noExistKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['x', 'y'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.noExistKey, new Set(['x', 'y']),
                     'noExistKey: должен вернуть фолбек как Set');
@@ -69,11 +70,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'002'/**/} значение является массивом строк — возвращает Set со строками`, function () {
 
-                const schema = Configuration.createSchema<{ stringsOnlyKey: Set<string>; }>({
-                    stringsOnlyKey: { from: '.', type: OptionType.StringSet, spec: { fallback: [] } }
+                const schema = createSchema<{ stringsOnlyKey: Set<string>; }>({
+                    stringsOnlyKey: { section: '.', type: OptionType.StringSet, spec: { fallback: [] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.stringsOnlyKey, new Set(['apple', 'banana', 'cherry']),
                     'stringsOnlyKey: должен вернуть Set из строк конфигурации');
@@ -82,11 +83,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'003'/**/} значение не является массивом (строка) — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ notArrayStringKey: Set<string>; }>({
-                    notArrayStringKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                const schema = createSchema<{ notArrayStringKey: Set<string>; }>({
+                    notArrayStringKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.notArrayStringKey, new Set(['fallback']),
                     'notArrayStringKey: строка не массив — должен вернуть фолбек');
@@ -95,11 +96,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'004'/**/} значение не является массивом (число) — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ notArrayNumberKey: Set<string>; }>({
-                    notArrayNumberKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                const schema = createSchema<{ notArrayNumberKey: Set<string>; }>({
+                    notArrayNumberKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.notArrayNumberKey, new Set(['fallback']),
                     'notArrayNumberKey: число не массив — должен вернуть фолбек');
@@ -108,11 +109,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'005'/**/} значение является пустым массивом — возвращает пустой Set, не фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ emptyArrayKey: Set<string>; }>({
-                    emptyArrayKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                const schema = createSchema<{ emptyArrayKey: Set<string>; }>({
+                    emptyArrayKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.emptyArrayKey, new Set(),
                     'emptyArrayKey: пустой массив — валидное значение, не должен возвращать фолбек');
@@ -121,11 +122,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'006'/**/} массив содержит смешанные типы — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ mixedTypesKey: Set<string>; }>({
-                    mixedTypesKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                const schema = createSchema<{ mixedTypesKey: Set<string>; }>({
+                    mixedTypesKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.mixedTypesKey, new Set(['fallback']),
                     'mixedTypesKey: не-строки должны быть отброшены, возвращает фолбек');
@@ -134,11 +135,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'007'/**/} массив содержит только не строки — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ nonStringsOnlyKey: Set<string>; }>({
-                    nonStringsOnlyKey: { from: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                const schema = createSchema<{ nonStringsOnlyKey: Set<string>; }>({
+                    nonStringsOnlyKey: { section: '.', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.nonStringsOnlyKey, new Set(['fallback']),
                     'nonStringsOnlyKey: массив не строк — фолбек');
@@ -147,11 +148,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'008'/**/} массив содержит дубликаты — Set схлопывает их`, function () {
 
-                const schema = Configuration.createSchema<{ duplicatesKey: Set<string>; }>({
-                    duplicatesKey: { from: '.', type: OptionType.StringSet, spec: { fallback: [] } }
+                const schema = createSchema<{ duplicatesKey: Set<string>; }>({
+                    duplicatesKey: { section: '.', type: OptionType.StringSet, spec: { fallback: [] } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.deepEqual(result.duplicatesKey, new Set(['a', 'b', 'c']),
                     'duplicatesKey: дубликаты должны отсутствовать Set-ом');

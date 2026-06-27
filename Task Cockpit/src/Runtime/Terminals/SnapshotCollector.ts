@@ -11,9 +11,9 @@ import {
 import * as assert from 'node:assert/strict';
 import getProcessId from './getProcessId';
 import type ProcessId from '../ProcessId';
-import type Config from '../../Configuration/Global/Config';
+import type Config from '../../Configuration/Window/Config';
 import type Snapshot from './Snapshot';
-import GlobalConfig from '../../Configuration/Global/GlobalConfig';
+import ConfigurationProvider from '../../Configuration/ConfigurationProvider';
 
 
 const CONFIGURATION_KEY = 'TerminalsConf';
@@ -81,11 +81,11 @@ class SnapshotCollector implements Disposable {
 
     #disposables: Disposable[];
 
-    #configuration: Readonly<GlobalConfig>;
+    #configuration: Readonly<ConfigurationProvider>;
 
 
     constructor(
-        configuration: Readonly<GlobalConfig>,
+        configuration: Readonly<ConfigurationProvider>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
         this.#disposed = false;
@@ -103,13 +103,13 @@ class SnapshotCollector implements Disposable {
 
         this.#disposables.push(
             this.#configuration.onDidChange((affectedKey) => {
-                if (affectedKey !== CONFIGURATION_KEY) {
+                if (!affectedKey.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
         // ---
 
         this.#disposables.push(

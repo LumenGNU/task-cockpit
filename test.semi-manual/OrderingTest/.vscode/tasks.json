@@ -13,6 +13,11 @@
             "problemMatcher": []
         },
         {
+            "label": "--2?--",
+            "script": "test",
+            "type": "npm"
+        },
+        {
             "label": "a1/c",
             "detail": "Second child before parent",
             "type": "shell",

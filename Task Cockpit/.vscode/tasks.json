@@ -196,7 +196,8 @@
         "cwd": "${workspaceFolder}",
         "env": {
           "TSCONFIG": "tsconfig.json",
-          "DEST_DIR": "~out"
+          "OUT_DIR": "~out",
+          "WORK_DIR": "."
         }
       },
       "group": {

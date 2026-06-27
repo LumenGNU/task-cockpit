@@ -1,5 +1,5 @@
 import type Hierarchy from './Hierarchy';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 
 
 type LeafPayload = { readonly taskName: TaskName; };

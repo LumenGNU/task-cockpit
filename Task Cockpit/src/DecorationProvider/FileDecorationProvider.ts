@@ -11,10 +11,10 @@ import {
     type Uri
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import type Config from '../Configuration/Global/Config';
+import type Config from '../Configuration/Window/Config';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
-import GlobalConfig from '../Configuration/Global/GlobalConfig';
+import ConfigurationProvider from '../Configuration/ConfigurationProvider';
 
 
 const CONFIGURATION_KEY = 'FileDecorationConf';
@@ -48,7 +48,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     /** {@link VscFileDecorationProvider.onDidChangeFileDecorations Событие провайдера}, происходит при изменении конфигурации. */
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
-    #configuration: Readonly<GlobalConfig>;
+    #configuration: Readonly<ConfigurationProvider>;
 
     #conf: FileDecorationConf;
 
@@ -58,7 +58,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
     /**Создаёт провайдер.
      * @param configuration начальные значения конфигурации декораций. */
-    constructor(configuration: Readonly<GlobalConfig>) {
+    constructor(configuration: Readonly<ConfigurationProvider>) {
         this.#disposed = false;
         this.#disposables = [];
 
@@ -66,15 +66,15 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         this.#configuration = configuration;
 
         this.#disposables.push(
-            this.#configuration.onDidChange((affectedKey) => {
-                if (affectedKey !== CONFIGURATION_KEY) {
+            this.#configuration.onDidChange((affectedKeys) => {
+                if (!affectedKeys.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
                 this.#onDidChangeFileDecorations.fire(undefined);
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
         // ---
 
         this.#disposables.push(
@@ -132,7 +132,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
         const available: UriQuery['available'] = query.get('available') || '0';
         const running: UriQuery['running'] = query.get('running') || '0';
-        const color: UriQuery['color'] = query.get('color') || '';
+        const color: UriQuery['tintColor'] = query.get('color') || '';
 
         if (`${available}${running}${color}` === '00') {
             // нет ни бейджа, ни цвета

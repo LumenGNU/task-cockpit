@@ -1,12 +1,12 @@
-import type Config from '../Configuration/Scoped/Config';
+import type Config from '../Configuration/Resource/Config';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type Scope from '../Scope/Scope';
 import type ScopeType from '../Scope/Type';
-import type Definitions from '../Scope/TaskSource/Definitions/Definitions';
+import type TaskDefinition from '../Configuration/TaskDefinition';
 import type SourceUri from '../Scope/SourceUri/SourceUri';
 import type ScopedDetail from './ScopedDetail';
 import type HierarchyElement from '../HierarchyModel/HierarchyElement';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type DefinitionId from '../EligibleTask/DefinitionId';
 
 /** Входные данные для одного {@linkcode Scope} —
@@ -26,7 +26,7 @@ interface ScopeData {
     nodeConfig: Config['Node'];
 
     /** Карта определений задач из этой области, индексированная по имени задачи. */
-    definitions: Definitions;
+    definitions: ReadonlyMap<TaskName, TaskDefinition>;
 
     detail: ScopedDetail;
 

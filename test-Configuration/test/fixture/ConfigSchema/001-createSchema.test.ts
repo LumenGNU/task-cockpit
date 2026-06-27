@@ -1,26 +1,28 @@
 import * as assert from 'assert/strict';
-
 import {
-    Configuration,
-    OptionType
-} from 'src/Configuration/Configuration';
+    createSchema,
+    OptionType,
+    NumberOption,
+    StringOption
+} from 'src/Configuration/ConfigSchema';
+
 
 
 // `${/*N=0*/'000'/**/}`
 
-suite('Configuration', function () {
+suite('ConfigSchema', function () {
 
-    suite('createSchema', function () {
+    suite('read', function () {
 
         test(`${/*++N*/'001'/**/} пустая схема — нормально создание схемы`, function () {
             assert.doesNotThrow(() => {
-                Configuration.createSchema({});
+                createSchema({});
             });
         });
 
         test(`${/*++N*/'002'/**/} значение true (не объект) — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>(
+                createSchema<{}>(
                     { anyKey: true }
                 );
             }, /Invalid schema structure/);
@@ -28,7 +30,7 @@ suite('Configuration', function () {
 
         test(`${/*++N*/'003'/**/} значение false (не объект) — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>(
+                createSchema<{}>(
                     { anyKey: false }
                 );
             }, /Invalid schema structure/);
@@ -36,7 +38,7 @@ suite('Configuration', function () {
 
         test(`${/*++N*/'004'/**/} значение undefined — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>(
+                createSchema<{}>(
                     { anyKey: undefined }
                 );
             }, /Invalid schema structure/);
@@ -44,24 +46,24 @@ suite('Configuration', function () {
 
         test(`${/*++N*/'005'/**/} значение [] (массив) — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>({ anyKey: [] });
+                createSchema<{}>({ anyKey: [] });
             }, /Invalid schema structure/);
         });
 
 
         test(`${/*++N*/'006'/**/} from пустой — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>({
-                    anyKey: { from: '', type: OptionType.String, spec: { fallback: '' } }
+                createSchema<{}>({
+                    anyKey: { section: '', type: OptionType.String, spec: { fallback: '' } }
                 });
             }, /path is empty/);
         });
 
         test(`${/*++N*/'007'/**/} поле spec отсутствует — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>({
+                createSchema<{}>({
                     anyKey: {
-                        from: 'anyPath', type: OptionType.String
+                        section: 'anyPath', type: OptionType.String
                     }
                 });
             }, /Invalid schema structure/);
@@ -69,9 +71,9 @@ suite('Configuration', function () {
 
         test(`${/*++N*/'008'/**/} поле spec=null — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>({
+                createSchema<{}>({
                     anyKey: {
-                        from: 'anyPath', type: OptionType.String,
+                        section: 'anyPath', type: OptionType.String,
                         spec: null
                     }
                 });
@@ -80,8 +82,8 @@ suite('Configuration', function () {
 
         test(`${/*++N*/'009'/**/} spec без fallback — ошибка при создании схемы`, function () {
             assert.throws(() => {
-                Configuration.createSchema<{}>({
-                    anyKey: { from: 'anyPath', type: OptionType.String, spec: {} }
+                createSchema<{}>({
+                    anyKey: { section: 'anyPath', type: OptionType.String, spec: {} }
                 });
             }, /Field spec is corrupted at anyKey/);
         });
@@ -107,9 +109,9 @@ suite('Configuration', function () {
 
             // интерфейс задан — ts помогает
             // ts видит неправильный тип спеки
-            const schema = Configuration.createSchema<CnfI>({
+            const schema = createSchema<CnfI>({
                 anyKeyBool: {
-                    from: 'anyPath',
+                    section: 'anyPath',
                     // @ts-expect-error /* проверка что ts видит здесь ошибку */
                     type: OptionType.StringSet,
                     spec: {
@@ -117,7 +119,7 @@ suite('Configuration', function () {
                     }
                 },
                 anyKeyNumb: {
-                    from: 'anyPath',
+                    section: 'anyPath',
                     // @ts-expect-error /* проверка что ts видит здесь ошибку */
                     type: OptionType.String,
                     spec: {
@@ -125,7 +127,7 @@ suite('Configuration', function () {
                     }
                 },
                 anyKeyStr: {
-                    from: 'anyPath',
+                    section: 'anyPath',
                     // @ts-expect-error /* проверка что ts видит здесь ошибку */
                     type: OptionType.Number,
                     spec: {
@@ -133,7 +135,7 @@ suite('Configuration', function () {
                     }
                 },
                 anyKeySet: {
-                    from: 'anyPath',
+                    section: 'anyPath',
                     // @ts-expect-error /* проверка что ts видит здесь ошибку */
                     type: OptionType.Boolean,
                     spec: {
@@ -145,11 +147,11 @@ suite('Configuration', function () {
             // ts помогает
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
             const _anyKeyStr: StringOption = schema.anyKeyNumb;
-            const _anyKeyStr_ok: Configuration.StringOption = schema.anyKeyStr;
+            const _anyKeyStr_ok: StringOption = schema.anyKeyStr;
 
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
             const _anyKeyNum: NumberOption = schema.anyKeyStr;
-            const _anyKeyNum_ok: Configuration.NumberOption = schema.anyKeyNumb;
+            const _anyKeyNum_ok: NumberOption = schema.anyKeyNumb;
 
             // @ts-expect-error /* проверка что ts видит здесь ошибку */
             const _p: BooleanOption = schema.d.e.e.p;
@@ -163,16 +165,16 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'011'/**/} фолбек не проходит pattern — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: string; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^\d+$/ } }
+                    createSchema<{ anyKey: string; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^\d+$/ } }
                     });
                 }, /does not match pattern/);
             });
 
             test(`${/*++N*/'012'/**/} фолбек (пустая строка) не проходит pattern — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: string; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.String, spec: { fallback: '', pattern: /^\d+$/ } }
+                    createSchema<{ anyKey: string; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.String, spec: { fallback: '', pattern: /^\d+$/ } }
                     });
                 }, /does not match pattern/);
             });
@@ -180,9 +182,9 @@ suite('Configuration', function () {
             test(`${/*++N*/'013'/**/} fallback неправильного типа — ошибка при создании схемы`, function () {
 
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKeyStr: string; }>({
+                    createSchema<{ anyKeyStr: string; }>({
                         anyKeyStr: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.String,
                             spec: {
                                 // @ts-expect-error /* ts видит здесь ошибку */
@@ -197,8 +199,8 @@ suite('Configuration', function () {
             test(`${/*++N*/'014'/**/} валидная схема — нормально создается`, function () {
 
                 assert.doesNotThrow(() => {
-                    Configuration.createSchema<{ anyKeyStr: string; }>({
-                        anyKeyStr: { from: 'anyPath', type: OptionType.String, spec: { fallback: '42', pattern: /42/ } }
+                    createSchema<{ anyKeyStr: string; }>({
+                        anyKeyStr: { section: 'anyPath', type: OptionType.String, spec: { fallback: '42', pattern: /42/ } }
                     });
 
                 });
@@ -211,9 +213,9 @@ suite('Configuration', function () {
             test(`${/*++N*/'015'/**/} fallback неправильного типа — ошибка при создании схемы`, function () {
 
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKeyNumb: number; }>({
+                    createSchema<{ anyKeyNumb: number; }>({
                         anyKeyNumb: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Number,
                             spec: {
                                 // @ts-expect-error /* ts видит здесь ошибку */
@@ -227,49 +229,49 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'016'/**/} fallback меньше min — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.Number, spec: { min: 0, fallback: -1 } }
+                    createSchema<{ anyKey: number; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.Number, spec: { min: 0, fallback: -1 } }
                     });
                 }, /Fallback \(-?\d+\) is less than min/);
             });
 
             test(`${/*++N*/'017'/**/} fallback равно min — схема создается`, function () {
                 assert.doesNotThrow(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.Number, spec: { min: 0, fallback: 0 } }
+                    createSchema<{ anyKey: number; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.Number, spec: { min: 0, fallback: 0 } }
                     });
                 });
             });
 
             test(`${/*++N*/'018'/**/} fallback больше max — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.Number, spec: { max: 0, fallback: 1 } }
+                    createSchema<{ anyKey: number; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.Number, spec: { max: 0, fallback: 1 } }
                     });
                 }, /Fallback \(\d+\) is greater than max/);
             });
 
             test(`${/*++N*/'019'/**/} fallback равно max — схема создается`, function () {
                 assert.doesNotThrow(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.Number, spec: { max: 1, fallback: 1 } }
+                    createSchema<{ anyKey: number; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.Number, spec: { max: 1, fallback: 1 } }
                     });
                 });
             });
 
             test(`${/*++N*/'020'/**/} min больше max — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
-                        anyKey: { from: 'anyPath', type: OptionType.Number, spec: { min: 1, fallback: 0, max: -1 } }
+                    createSchema<{ anyKey: number; }>({
+                        anyKey: { section: 'anyPath', type: OptionType.Number, spec: { min: 1, fallback: 0, max: -1 } }
                     });
                 }, /Min \(\d+\) is greater than max/);
             });
 
             test(`${/*++N*/'021'/**/} fallback равен Infinity — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
+                    createSchema<{ anyKey: number; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Number,
                             spec: { fallback: Infinity }
                         }
@@ -280,9 +282,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'022'/**/} min равен Infinity — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
+                    createSchema<{ anyKey: number; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Number,
                             spec: { min: Infinity, fallback: 0 }
                         }
@@ -293,9 +295,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'023'/**/} max равен Infinity — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
+                    createSchema<{ anyKey: number; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Number,
                             spec: { max: Infinity, fallback: 0 }
                         }
@@ -306,9 +308,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'024'/**/} fallback равен NaN — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: number; }>({
+                    createSchema<{ anyKey: number; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Number,
                             spec: { fallback: NaN }
                         }
@@ -321,8 +323,8 @@ suite('Configuration', function () {
 
                 assert.doesNotThrow(() => {
 
-                    Configuration.createSchema<{ anyKeyNum: number; }>({
-                        anyKeyNum: { from: 'anyPath', type: OptionType.Number, spec: { min: 42, fallback: 42, max: 42 } }
+                    createSchema<{ anyKeyNum: number; }>({
+                        anyKeyNum: { section: 'anyPath', type: OptionType.Number, spec: { min: 42, fallback: 42, max: 42 } }
                     });
 
                 });
@@ -335,9 +337,9 @@ suite('Configuration', function () {
             test(`${/*++N*/'026'/**/} fallback неправильного типа — ошибка при создании схемы`, function () {
 
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKeyBool: boolean; }>({
+                    createSchema<{ anyKeyBool: boolean; }>({
                         anyKeyBool: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.Boolean,
                             spec: {
                                 // @ts-expect-error /* ts видит здесь ошибку */
@@ -353,8 +355,8 @@ suite('Configuration', function () {
 
                 assert.doesNotThrow(() => {
 
-                    Configuration.createSchema<{ anyKeyBool: boolean; }>({
-                        anyKeyBool: { from: 'anyPath', type: OptionType.Boolean, spec: { fallback: true } }
+                    createSchema<{ anyKeyBool: boolean; }>({
+                        anyKeyBool: { section: 'anyPath', type: OptionType.Boolean, spec: { fallback: true } }
                     });
 
                 });
@@ -367,9 +369,9 @@ suite('Configuration', function () {
             test(`${/*++N*/'028'/**/} fallback неправильного типа — ошибка при создании схемы`, function () {
 
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKeySet: Set<string>; }>({
+                    createSchema<{ anyKeySet: Set<string>; }>({
                         anyKeySet: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringSet,
                             spec: {
                                 // @ts-expect-error /* ts видит здесь ошибку */
@@ -384,9 +386,9 @@ suite('Configuration', function () {
             test(`${/*++N*/'029'/**/} fallback содержит не строки — ошибка при создании схемы`, function () {
 
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKeySet: Set<string>; }>({
+                    createSchema<{ anyKeySet: Set<string>; }>({
                         anyKeySet: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringSet,
                             spec: {
                                 // @ts-expect-error /* ts видит здесь ошибку */
@@ -400,9 +402,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'030'/**/} fallback пустой массив — нормально создается`, function () {
                 assert.doesNotThrow(() => {
-                    Configuration.createSchema<{ anyKey: Set<string>; }>({
+                    createSchema<{ anyKey: Set<string>; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringSet,
                             spec: { fallback: [] }
                         }
@@ -414,8 +416,8 @@ suite('Configuration', function () {
 
                 assert.doesNotThrow(() => {
 
-                    Configuration.createSchema<{ anyKeySet: Set<string>; }>({
-                        anyKeySet: { from: 'anyPath', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
+                    createSchema<{ anyKeySet: Set<string>; }>({
+                        anyKeySet: { section: 'anyPath', type: OptionType.StringSet, spec: { fallback: ['fallback'] } }
                     });
 
                 });
@@ -427,9 +429,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'032'/**/} values не массив — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: {
                                 // @ts-expect-error
@@ -443,9 +445,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'033'/**/} values содержит пустую строку — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: {
                                 // @ts-expect-error
@@ -459,9 +461,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'034'/**/} values содержит не-строку — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: {
                                 // @ts-expect-error
@@ -475,9 +477,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'035'/**/} fallback не строка — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: {
                                 values: ['a', 'b'],
@@ -491,9 +493,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'036'/**/} fallback не входит в values — ошибка при создании схемы`, function () {
                 assert.throws(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: {
                                 values: ['a', 'b'],
@@ -507,9 +509,9 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'037'/**/} валидная схема — нормально создается`, function () {
                 assert.doesNotThrow(() => {
-                    Configuration.createSchema<{ anyKey: 'a' | 'b'; }>({
+                    createSchema<{ anyKey: 'a' | 'b'; }>({
                         anyKey: {
-                            from: 'anyPath',
+                            section: 'anyPath',
                             type: OptionType.StringLiteral,
                             spec: { values: ['a', 'b'], fallback: 'a' }
                         }

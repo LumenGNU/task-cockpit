@@ -6,8 +6,8 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import type ProcessId from './ProcessId';
-import type Config from '../Configuration/Global/Config';
-import GlobalConfig from '../Configuration/Global/GlobalConfig';
+import type Config from '../Configuration/Window/Config';
+import ConfigurationProvider from '../Configuration/ConfigurationProvider';
 
 
 const CONFIGURATION_KEY = 'ProcessMonitorConf';
@@ -47,14 +47,14 @@ class ProcessMonitor implements Disposable {
 
     // #region Lifecycle
 
-    #configuration: Readonly<GlobalConfig>;
+    #configuration: Readonly<ConfigurationProvider>;
 
     #conf: ProcessMonitorConf;
 
 
     /** Создать экземпляр монитора. */
     constructor(
-        configuration: Readonly<GlobalConfig>,
+        configuration: Readonly<ConfigurationProvider>,
         logOutputChannel: LogOutputChannel | null = null
     ) {
         this.#disposed = false;
@@ -68,13 +68,13 @@ class ProcessMonitor implements Disposable {
 
         this.#disposables.push(
             this.#configuration.onDidChange((affectedKey) => {
-                if (affectedKey !== CONFIGURATION_KEY) {
+                if (!affectedKey.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.read(CONFIGURATION_KEY));
+        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
         // ---
 
         this.#disposables.push(

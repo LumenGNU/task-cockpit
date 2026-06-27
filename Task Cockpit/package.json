@@ -161,7 +161,7 @@
       },
       {
         "view": "task-cockpit-view",
-        "contents": "Loading...",
+        "contents": "Scanning...",
         "when": "workbenchState != 'empty'",
         "enablement": "workbenchState != 'empty'"
       }

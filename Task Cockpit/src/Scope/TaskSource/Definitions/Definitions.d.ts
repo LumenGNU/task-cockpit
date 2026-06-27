@@ -1,5 +1,5 @@
 import type Definition from './Definition/Definition';
-import type TaskName from '../../../type.d/TaskName';
+import type TaskName from '../../../TaskName/TaskName';
 
 
 /** Карта определений задач, проиндексированная по имени задачи ({@link TaskName}).

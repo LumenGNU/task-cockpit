@@ -1,7 +1,7 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 
-import { Configuration, OptionType } from 'src/Configuration/Configuration';
+import { createSchema, OptionType, read } from 'src/Configuration/ConfigSchema';
 
 // В settings.json:
 // "numberConfig": {
@@ -15,16 +15,17 @@ import { Configuration, OptionType } from 'src/Configuration/Configuration';
 // }
 
 
-suite('Configuration', function () {
+suite('ConfigSchema', function () {
 
-    suite('get', function () {
+    suite('read', function () {
 
         suite('coerceNumber (валидация чисел)', function () {
 
-            let workspaceConfiguration: vscode.WorkspaceConfiguration;
+            const baseSection = 'numberConfig';
+            const configurationScope = null;
 
             suiteSetup(function () {
-                workspaceConfiguration = vscode.workspace.getConfiguration('numberConfig');
+                const workspaceConfiguration = vscode.workspace.getConfiguration(baseSection);
 
                 assert.ok(!workspaceConfiguration.get('noExistKey'),
                     'pre: numberConfig.noExistKey не должно быть в конфигурации');
@@ -57,11 +58,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'001'/**/} отсутствующий ключ — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noExistKey: number; }>({
-                    noExistKey: { from: '.', type: OptionType.Number, spec: { fallback: 99 } }
+                const schema = createSchema<{ noExistKey: number; }>({
+                    noExistKey: { section: '.', type: OptionType.Number, spec: { fallback: 99 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noExistKey, 99,
                     'noExistKey: должен вернуть фолбек значение');
@@ -70,11 +71,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'002'/**/} значение является числом, границ нет — возвращает как есть`, function () {
 
-                const schema = Configuration.createSchema<{ intKey: number; }>({
-                    intKey: { from: '.', type: OptionType.Number, spec: { fallback: 0 } }
+                const schema = createSchema<{ intKey: number; }>({
+                    intKey: { section: '.', type: OptionType.Number, spec: { fallback: 0 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.intKey, 42,
                     'intKey: должен вернуть значение из конфигурации');
@@ -83,11 +84,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'003'/**/} значение не является числом, границ нет — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noNumberKey: number; }>({
-                    noNumberKey: { from: '.', type: OptionType.Number, spec: { fallback: 7 } }
+                const schema = createSchema<{ noNumberKey: number; }>({
+                    noNumberKey: { section: '.', type: OptionType.Number, spec: { fallback: 7 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noNumberKey, 7,
                     'noNumberKey: не число, должен вернуть фолбек');
@@ -96,11 +97,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'004'/**/} значение не является числом, границы заданы — возвращает фолбек, не обрезает`, function () {
 
-                const schema = Configuration.createSchema<{ noNumberKey: number; }>({
-                    noNumberKey: { from: '.', type: OptionType.Number, spec: { fallback: 7, min: 0, max: 100 } }
+                const schema = createSchema<{ noNumberKey: number; }>({
+                    noNumberKey: { section: '.', type: OptionType.Number, spec: { fallback: 7, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noNumberKey, 7,
                     'noNumberKey: не число — фолбек, а не обрезание до границы');
@@ -109,11 +110,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'005'/**/} значение в диапазоне [min, max] — возвращает как есть`, function () {
 
-                const schema = Configuration.createSchema<{ inRangeKey: number; }>({
-                    inRangeKey: { from: '.', type: OptionType.Number, spec: { fallback: 0, min: 0, max: 100 } }
+                const schema = createSchema<{ inRangeKey: number; }>({
+                    inRangeKey: { section: '.', type: OptionType.Number, spec: { fallback: 0, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.inRangeKey, 50,
                     'inRangeKey: в диапазоне, должен вернуть значение из конфигурации');
@@ -122,11 +123,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'006'/**/} значение ниже min — обрезается до min`, function () {
 
-                const schema = Configuration.createSchema<{ belowMinKey: number; }>({
-                    belowMinKey: { from: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
+                const schema = createSchema<{ belowMinKey: number; }>({
+                    belowMinKey: { section: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.belowMinKey, 0,
                     'belowMinKey: -5 ниже min=0, должен обрезаться до 0');
@@ -135,11 +136,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'007'/**/} значение выше max — обрезается до max`, function () {
 
-                const schema = Configuration.createSchema<{ aboveMaxKey: number; }>({
-                    aboveMaxKey: { from: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
+                const schema = createSchema<{ aboveMaxKey: number; }>({
+                    aboveMaxKey: { section: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.aboveMaxKey, 100,
                     'aboveMaxKey: 150 выше max=100, должен обрезаться до 100');
@@ -148,11 +149,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'008'/**/} значение равно min — возвращает как есть, не считается "ниже"`, function () {
 
-                const schema = Configuration.createSchema<{ atMinKey: number; }>({
-                    atMinKey: { from: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
+                const schema = createSchema<{ atMinKey: number; }>({
+                    atMinKey: { section: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.atMinKey, 0,
                     'atMinKey: 0 === min=0, должен вернуть 0 без изменений');
@@ -161,11 +162,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'009'/**/} значение равно max — возвращает как есть, не считается "выше"`, function () {
 
-                const schema = Configuration.createSchema<{ atMaxKey: number; }>({
-                    atMaxKey: { from: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
+                const schema = createSchema<{ atMaxKey: number; }>({
+                    atMaxKey: { section: '.', type: OptionType.Number, spec: { fallback: 50, min: 0, max: 100 } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.atMaxKey, 100,
                     'atMaxKey: 100 === max=100, должен вернуть 100 без изменений');

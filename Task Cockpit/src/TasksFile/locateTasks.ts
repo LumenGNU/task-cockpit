@@ -1,13 +1,11 @@
-/** @file TasksFile/LocateTask.ts */
-/** @module LocateTask */
 
 import * as JSONC from 'jsonc-parser';
-import type * as TC from '../types';
-import helpers from '../helpers';
+import type TaskName from '../TaskName/TaskName';
+import nameIsQualifies from '../TaskName/nameIsQualifies';
 
 
 interface Range { start: number, end: number; }
-type TasksLocations = ReadonlyMap<TC.Name, ReadonlyArray<Range>>;
+type TasksLocations = ReadonlyMap<TaskName, ReadonlyArray<Range>>;
 
 
 /** Определяет позиции задач в JSON-документе по их меткам.
@@ -21,14 +19,13 @@ type TasksLocations = ReadonlyMap<TC.Name, ReadonlyArray<Range>>;
  *
  * @returns Карта: Метка→Массив_Границ. Будет пустая, если задачи не найдены или JSON невалиден.
  *
- * @throws Никогда не выбрасывает исключения — результат
+ * @throws { never } Никогда не выбрасывает исключения — результат
  *   пустой/частичный. Если JSON битый - VSCode это уже показал. Нет смысла
  *   ронять extension или шуметь еще раз.
  *  */
-export default function locateTask(
+export default function locateTasks(
     content: string,
     jsonPath: JSONC.JSONPath,
-    targetLabel?: string | undefined
 ): TasksLocations {
 
 
@@ -38,7 +35,7 @@ export default function locateTask(
         allowTrailingComma: true,
     });
 
-    const result = new Map<TC.Name, Array<Range>>();
+    const result = new Map<TaskName, Array<Range>>();
 
     if (!jsoncTree) {
         return result;
@@ -65,7 +62,7 @@ export default function locateTask(
 
         const label = labelNode.value;
 
-        if (!helpers.isName(label)) {
+        if (!nameIsQualifies(label)) {
             // Метка не валидна - пропуск
             continue;
         }

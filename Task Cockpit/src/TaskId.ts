@@ -1,7 +1,7 @@
 import {
     workspace
 } from 'vscode';
-import type TaskName from './type.d/TaskName';
+import type TaskName from './TaskName/TaskName';
 import type ScopeKey from './Scope/Key';
 import getKey from './Scope/getKey';
 import type Definition from './Scope/TaskSource/Definitions/Definition/Definition';

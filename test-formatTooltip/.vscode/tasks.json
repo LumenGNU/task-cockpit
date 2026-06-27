@@ -166,7 +166,6 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "WORK_DIR": ".",
-                    "DEST_DIR": "~out",
                     "TSCONFIG": "debug.tsconfig.jsonc"
                 }
             },

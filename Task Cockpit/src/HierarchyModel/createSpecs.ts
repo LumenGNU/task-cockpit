@@ -1,8 +1,9 @@
 import { DISPLAY_ITEM_SEPARATOR } from '../constants';
 import Hierarchy from './Hierarchy';
 import Splitter from './Splitter';
-import type ScopedConf from '../Configuration/Scoped/Config';
-import TaskGroup from '../Scope/TaskSource/Definitions/Definition/TaskGroup';
+import type ScopedConf from '../Configuration/Resource/Config';
+import TaskGroup from '../Configuration/TaskGroup';
+import type CompressionBehavior from './CompressionBehavior';
 
 
 /** Спецификация узла: путь (сегменты) и данные. */
@@ -18,7 +19,7 @@ interface NodeData {
 
 
 type HierarchyConf = ScopedConf['Hierarchy'];
-export type CompressionBehavior = "off" | "on" | "on-aggressive";
+
 
 /** Преобразует индекс определений узлов в индекс спецификаций для построения иерархии.
  *
@@ -44,7 +45,11 @@ function createSpecs<D extends NodeData>({
     hierarchyConfig: hierarchyConf,
     pathCompression
 }: {
-    entries: ReadonlyArray<Readonly<[name: string, groupKind: TaskGroup | null, data: D]>>;
+    entries: ReadonlyArray<Readonly<{
+        name: string;
+        groupKind: TaskGroup | null;
+        data: D;
+    }>>;
     hierarchyConfig: Readonly<HierarchyConf>;
     pathCompression: CompressionBehavior;
 }): Readonly<ReadonlyArray<Readonly<NodeSpec<D>>>> {
@@ -58,11 +63,10 @@ function createSpecs<D extends NodeData>({
 
         for (const entry of entries) {
 
-            const data = entry.at(-1) as D;
-            const segments = entry.slice(0, -1) as [name: string, groupKind: TaskGroup | null];
+            const data = entry.data;
 
             specs.push({
-                path: buildPath(segments, hierarchyConf, splitter),
+                path: buildPath(entry, hierarchyConf, splitter),
                 data
             });
         }
@@ -70,10 +74,9 @@ function createSpecs<D extends NodeData>({
     else {
 
         const rawSpecs = entries.map(function (entry) {
-            const data = entry.at(-1) as D;
-            const segments = entry.slice(0, -1) as [name: string, groupKind: TaskGroup | null];
+            const data = entry.data;
             return {
-                path: buildPath(segments, hierarchyConf, splitter),
+                path: buildPath(entry, hierarchyConf, splitter),
                 data
             };
         });
@@ -118,17 +121,20 @@ function createSpecs<D extends NodeData>({
  * @returns Массив сегментов пути (всегда содержит хотя бы один элемент).
  *  */
 function buildPath(
-    segments: Readonly<[name: string, groupKind: TaskGroup | null]>,
+    segments: Readonly<{
+        name: string,
+        groupKind: TaskGroup | null;
+    }>,
     conf: Readonly<HierarchyConf>,
     splitter: Splitter
 ): ReadonlyArray<string> {
 
-    const group = segments.at(1) as TaskGroup | undefined | null;
-    if (conf.useGroupKind && group) {
-        return [group.kind, ...splitter.split(segments.at(0)! as string)];
+    const groupKind = segments.groupKind;
+    if (conf.useGroupKind && groupKind) {
+        return [groupKind.kind, ...splitter.split(segments.name)];
     }
 
-    return splitter.split(segments.at(0)! as string);
+    return splitter.split(segments.name);
 }
 
 

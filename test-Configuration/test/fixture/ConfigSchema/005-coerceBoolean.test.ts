@@ -1,7 +1,7 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 
-import { Configuration, OptionType } from 'src/Configuration/Configuration';
+import { createSchema, OptionType, read } from 'src/Configuration/ConfigSchema';
 
 // В settings.json:
 // "booleanConfig": {
@@ -14,16 +14,17 @@ import { Configuration, OptionType } from 'src/Configuration/Configuration';
 // }
 
 
-suite('Configuration', function () {
+suite('ConfigSchema', function () {
 
-    suite('get', function () {
+    suite('read', function () {
 
         suite('coerceBoolean (валидация булевых значений)', function () {
 
-            let workspaceConfiguration: vscode.WorkspaceConfiguration;
+            const baseSection = 'booleanConfig';
+            const configurationScope = null;
 
             suiteSetup(function () {
-                workspaceConfiguration = vscode.workspace.getConfiguration('booleanConfig');
+                const workspaceConfiguration = vscode.workspace.getConfiguration(baseSection);
 
                 assert.ok(!workspaceConfiguration.get('noExistKey'),
                     'pre: booleanConfig.noExistKey не должно быть в конфигурации');
@@ -50,11 +51,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'001'/**/} отсутствующий ключ — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noExistKey: boolean; }>({
-                    noExistKey: { from: '.', type: OptionType.Boolean, spec: { fallback: true } }
+                const schema = createSchema<{ noExistKey: boolean; }>({
+                    noExistKey: { section: '.', type: OptionType.Boolean, spec: { fallback: true } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noExistKey, true,
                     'noExistKey: должен вернуть фолбек значение');
@@ -63,11 +64,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'002'/**/} значение true — возвращает true`, function () {
 
-                const schema = Configuration.createSchema<{ trueKey: boolean; }>({
-                    trueKey: { from: '.', type: OptionType.Boolean, spec: { fallback: false } }
+                const schema = createSchema<{ trueKey: boolean; }>({
+                    trueKey: { section: '.', type: OptionType.Boolean, spec: { fallback: false } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.trueKey, true,
                     'trueKey: должен вернуть true из конфигурации');
@@ -77,11 +78,11 @@ suite('Configuration', function () {
             test(`${/*++N*/'003'/**/} значение false — возвращает false, не фолбек`, function () {
 
                 // Ловушка: наивная проверка !rawValue вернёт фолбек вместо false
-                const schema = Configuration.createSchema<{ falseKey: boolean; }>({
-                    falseKey: { from: '.', type: OptionType.Boolean, spec: { fallback: true } }
+                const schema = createSchema<{ falseKey: boolean; }>({
+                    falseKey: { section: '.', type: OptionType.Boolean, spec: { fallback: true } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.falseKey, false,
                     'falseKey: false — валидное булево значение, фолбек не должен применяться');
@@ -91,11 +92,11 @@ suite('Configuration', function () {
             test(`${/*++N*/'004'/**/} значение 1 (truthy число) — возвращает фолбек, не true`, function () {
 
                 // Ловушка: !!rawValue === true, но 1 — не boolean
-                const schema = Configuration.createSchema<{ oneKey: boolean; }>({
-                    oneKey: { from: '.', type: OptionType.Boolean, spec: { fallback: false } }
+                const schema = createSchema<{ oneKey: boolean; }>({
+                    oneKey: { section: '.', type: OptionType.Boolean, spec: { fallback: false } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.oneKey, false,
                     'oneKey: 1 не является boolean, должен вернуть фолбек');
@@ -105,11 +106,11 @@ suite('Configuration', function () {
             test(`${/*++N*/'005'/**/} значение 0 (falsy число) — возвращает фолбек, не false`, function () {
 
                 // Ловушка: выглядит как false, но typeof 0 !== 'boolean'
-                const schema = Configuration.createSchema<{ zeroKey: boolean; }>({
-                    zeroKey: { from: '.', type: OptionType.Boolean, spec: { fallback: true } }
+                const schema = createSchema<{ zeroKey: boolean; }>({
+                    zeroKey: { section: '.', type: OptionType.Boolean, spec: { fallback: true } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.zeroKey, true,
                     'zeroKey: 0 не является boolean, должен вернуть фолбек');
@@ -118,11 +119,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'006'/**/} значение "true" (truthy строка) — возвращает фолбек, не true`, function () {
 
-                const schema = Configuration.createSchema<{ trueStringKey: boolean; }>({
-                    trueStringKey: { from: '.', type: OptionType.Boolean, spec: { fallback: false } }
+                const schema = createSchema<{ trueStringKey: boolean; }>({
+                    trueStringKey: { section: '.', type: OptionType.Boolean, spec: { fallback: false } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.trueStringKey, false,
                     'trueStringKey: строка "true" не является boolean, должен вернуть фолбек');
@@ -131,11 +132,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'007'/**/} значение "" (falsy строка) — возвращает фолбек, не false`, function () {
 
-                const schema = Configuration.createSchema<{ emptyStringKey: boolean; }>({
-                    emptyStringKey: { from: '.', type: OptionType.Boolean, spec: { fallback: true } }
+                const schema = createSchema<{ emptyStringKey: boolean; }>({
+                    emptyStringKey: { section: '.', type: OptionType.Boolean, spec: { fallback: true } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.emptyStringKey, true,
                     'emptyStringKey: пустая строка не является boolean, должен вернуть фолбек');

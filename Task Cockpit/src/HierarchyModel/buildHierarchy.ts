@@ -1,14 +1,18 @@
-import createSpecs, { type CompressionBehavior } from './createSpecs';
+import createSpecs from './createSpecs';
 import Hierarchy from './Hierarchy';
+import type CompressionBehavior from './CompressionBehavior';
 import type HierarchyElement from './HierarchyElement';
-import type ScopedConf from '../Configuration/Scoped/Config';
-import type TaskName from '../type.d/TaskName';
-import TaskGroup from '../Scope/TaskSource/Definitions/Definition/TaskGroup';
+import type ScopedConf from '../Configuration/Resource/Config';
+import TaskGroup from '../Configuration/TaskGroup';
+import type TaskName from '../TaskName/TaskName';
 
 
 function buildHierarchy(
-    // @fixme Почему кортеж а не объект???
-    entries: ReadonlyArray<Readonly<[name: string, groupKind: TaskGroup | null, data: { readonly taskName: TaskName; }]>>,
+    entries: ReadonlyArray<Readonly<{
+        name: string;
+        groupKind: TaskGroup | null;
+        data: { readonly taskName: TaskName; };
+    }>>,
     hierarchyConfig: Readonly<ScopedConf['Hierarchy']>,
     pathCompression: CompressionBehavior,
 ): ReadonlyArray<HierarchyElement> {

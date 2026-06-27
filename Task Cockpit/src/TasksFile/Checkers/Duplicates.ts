@@ -3,7 +3,7 @@
 
 import * as vscode from 'vscode';
 import type * as TC from '../../types';
-import locateTask from '../LocateTask';
+import locateTask from '../locateTasks';
 import helpers from '../../helpers';
 
 

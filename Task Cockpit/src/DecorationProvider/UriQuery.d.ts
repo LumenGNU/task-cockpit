@@ -2,7 +2,7 @@ interface UriQuery {
     [k: string]: string;
     running: string;
     available: string;
-    color: string;
+    tintColor: string;
 }
 
 export default UriQuery;

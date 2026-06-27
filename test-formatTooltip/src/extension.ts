@@ -12,7 +12,7 @@
 
 
 import * as vscode from 'vscode';
-import formatTooltip from './TreeView/formatTooltip';
+import formatTooltip from './TreeDataProvider/formatTooltip';
 
 
 const CASES: ReadonlyArray<{

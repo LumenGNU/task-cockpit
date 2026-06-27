@@ -10,7 +10,7 @@ import {
 } from 'vscode';
 import type TaskSource from './TaskSource';
 import type Definitions from './Definitions/Definitions';
-import type TaskName from '../../type.d/TaskName';
+import type TaskName from '../../TaskName/TaskName';
 import type Definition from './Definitions/Definition/Definition';
 import type TaskGroup from './Definitions/Definition/TaskGroup';
 import type Group from './Definitions/Definition/Group';

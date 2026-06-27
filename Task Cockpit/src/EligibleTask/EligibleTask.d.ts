@@ -3,7 +3,7 @@ import type {
     TaskDefinition,
 } from 'vscode';
 import type DefinitionId from './DefinitionId';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 import type Scope from '../Scope/Scope';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

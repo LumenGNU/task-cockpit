@@ -9,7 +9,7 @@ import qualifies from './qualifies';
 import type EligibleTask from './EligibleTask';
 import type EligibleMap from './EligibleMap';
 import type ScopeKey from '../Scope/Key';
-import type TaskName from '../type.d/TaskName';
+import type TaskName from '../TaskName/TaskName';
 
 
 /** Строит индекс "подходящих" задач из списка, полученного

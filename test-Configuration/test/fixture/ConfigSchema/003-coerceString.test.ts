@@ -1,7 +1,7 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 
-import { Configuration, OptionType } from 'src/Configuration/Configuration';
+import { createSchema, OptionType, read } from 'src/Configuration/ConfigSchema';
 
 // В settings.json:
 // "stringConfig": {
@@ -13,16 +13,17 @@ import { Configuration, OptionType } from 'src/Configuration/Configuration';
 
 // `${/*N=0*/'000'/**/}`
 
-suite('Configuration', function () {
+suite('ConfigSchema', function () {
 
-    suite('get', function () {
+    suite('read', function () {
 
         suite('coerceString (валидация строк)', function () {
 
-            let workspaceConfiguration: vscode.WorkspaceConfiguration;
+            const baseSection = 'stringConfig';
+            const configurationScope = null;
 
             suiteSetup(function () {
-                workspaceConfiguration = vscode.workspace.getConfiguration('stringConfig');
+                const workspaceConfiguration = vscode.workspace.getConfiguration(baseSection);
 
                 assert.ok(!workspaceConfiguration.get('noExistKey'),
                     'pre: stringConfig.noExistKey не должно быть в конфигурации');
@@ -47,11 +48,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'001'/**/} отсутствующий ключ — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noExistKey: string; }>({
-                    noExistKey: { from: '.', type: OptionType.String, spec: { fallback: 'default-string' } }
+                const schema = createSchema<{ noExistKey: string; }>({
+                    noExistKey: { section: '.', type: OptionType.String, spec: { fallback: 'default-string' } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noExistKey, 'default-string',
                     'noExistKey: должен вернуть фолбек значение');
@@ -60,11 +61,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'002'/**/} значение является строкой, проверки нет — возвращает как есть`, function () {
 
-                const schema = Configuration.createSchema<{ stringKey: string; }>({
-                    stringKey: { from: '.', type: OptionType.String, spec: { fallback: 'default-string' } }
+                const schema = createSchema<{ stringKey: string; }>({
+                    stringKey: { section: '.', type: OptionType.String, spec: { fallback: 'default-string' } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.stringKey, 'string-value',
                     'stringKey: должен вернуть значение из конфигурации');
@@ -73,11 +74,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'003'/**/} значение не является строкой, проверки нет — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noStringKey: string; }>({
-                    noStringKey: { from: '.', type: OptionType.String, spec: { fallback: 'default-for-no-string' } }
+                const schema = createSchema<{ noStringKey: string; }>({
+                    noStringKey: { section: '.', type: OptionType.String, spec: { fallback: 'default-for-no-string' } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noStringKey, 'default-for-no-string',
                     'noStringKey: должен вернуть фолбек значение');
@@ -87,11 +88,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'004'/**/} значение не является строкой, проверка есть — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noStringKey: string; }>({
-                    noStringKey: { from: '.', type: OptionType.String, spec: { fallback: 'default-for-no-string', pattern: /.*/ } }
+                const schema = createSchema<{ noStringKey: string; }>({
+                    noStringKey: { section: '.', type: OptionType.String, spec: { fallback: 'default-for-no-string', pattern: /.*/ } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noStringKey, 'default-for-no-string',
                     'noStringKey: должен вернуть фолбек значение');
@@ -101,11 +102,11 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'005'/**/} строка проходит pattern — возвращает как есть`, function () {
 
-                const schema = Configuration.createSchema<{ ipAddress: string; }>({
-                    ipAddress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
+                const schema = createSchema<{ ipAddress: string; }>({
+                    ipAddress: { section: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.ipAddress, '196.167.0.100',
                     'ipAddress: должен вернуть значение из конфигурации');
@@ -114,17 +115,16 @@ suite('Configuration', function () {
 
             test(`${/*++N*/'006'/**/} строка не проходит pattern — возвращает фолбек`, function () {
 
-                const schema = Configuration.createSchema<{ noIpAddress: string; }>({
-                    noIpAddress: { from: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
+                const schema = createSchema<{ noIpAddress: string; }>({
+                    noIpAddress: { section: '.', type: OptionType.String, spec: { fallback: '127.0.0.0', pattern: /^((1?[\d]?[\d]|2([0-4][\d]|5[0-5]))[.]){3}(1?[\d]?[\d]|2([0-4][\d]|5[0-5]))$/ } }
                 });
 
-                const result = Configuration.get(schema, workspaceConfiguration);
+                const result = read({ baseSection, schema, configurationScope });
 
                 assert.equal(result.noIpAddress, '127.0.0.0',
                     'noIpAddress: не прошёл pattern, должен вернуть фолбек');
 
             });
-
 
         });
     });
