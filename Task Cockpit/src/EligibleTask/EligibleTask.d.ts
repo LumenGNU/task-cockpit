@@ -7,10 +7,10 @@ import type TaskName from '../TaskName/TaskName';
 import type Scope from '../Scope/Scope';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type qualifies from './qualifies';
+import type isEligibleTask from './isEligibleTask';
 
 
-/** Задача VS Code, прошедшая проверку {@linkcode qualifies}:
+/** Задача VS Code, прошедшая проверку {@linkcode isEligibleTask}:
  * `scope` определён и не глобальный, `name` — валидная, не пустая строка.
  *
  * Сужает {@linkcode Task}:

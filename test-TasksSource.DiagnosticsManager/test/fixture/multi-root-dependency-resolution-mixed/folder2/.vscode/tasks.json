@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "folder2 level task",
+            "type": "shell",
+            "command": "echo 'folder2 level task'",
+            "problemMatcher": []
+        },
+        {
+            "label": "existin task",
+            "type": "shell",
+            "command": "echo 'existin task from folder2'",
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'existin task'",
+            "dependsOn": "existin task", // уществует и доступна
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'folder1 level task'",
+            "dependsOn": "folder1 level task",
+            // существует в folder1/.vscode/tasks.json
+            // НО из folder2 scope не доступна
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'workspace level task'",
+            // существует в .code-workspace
+            // доступна ТОЛЬКО если folder2 первая в проекте
+            "dependsOn": "workspace level task",
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'user level task'",
+            // существует в .../User/tasks.json
+            // доступна ТОЛЬКО если folder2 первая в проекте
+            "dependsOn": "user level task",
+            "problemMatcher": []
+        }
+    ]
+}

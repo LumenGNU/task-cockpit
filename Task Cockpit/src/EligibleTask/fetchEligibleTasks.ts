@@ -5,7 +5,7 @@ import {
     CancellationError
 } from 'vscode';
 import getKey from '../Scope/getKey';
-import qualifies from './qualifies';
+import isEligibleTask from './isEligibleTask';
 import type EligibleTask from './EligibleTask';
 import type EligibleMap from './EligibleMap';
 import type ScopeKey from '../Scope/Key';
@@ -16,7 +16,7 @@ import type TaskName from '../TaskName/TaskName';
  * от VS Code.
  *
  * "Подходящими" считаются задачи, прошедшие проверку
- * {@linkcode qualifies}.
+ * {@linkcode isEligibleTask}.
  *
  * @remarks
  * `TaskScope.Global` в API присутствует, но задач с такой областью
@@ -28,7 +28,6 @@ import type TaskName from '../TaskName/TaskName';
  * @returns Индекс подходящих задач, сгруппированных по {@linkcode ScopeKey}.
  *   Если для конкретного `ScopeKey` задач нет — ключ в индексе отсутствует.
  *   Вызывающий не должен рассчитывать на наличие конкретного ключа.
- *   При отмене возвращает пустой индекс.
  *
  *   При ошибке `VscTasks.fetchTasks()` возвращает пустой или частичный индекс,
  *   не бросает.
@@ -42,26 +41,27 @@ async function fetchEligibleTasks(
         throw new CancellationError();
     }
 
-    let disposable: Disposable | undefined;
-
+    let dsp: Disposable | undefined;
     try {
 
         const fetched = await Promise.race([
-            // Контракт "не бросает ничего кроме CancellationError"
-            // согласуется с реальным поведением API, defensive try/catch не нужен.
-            // Может "висеть" для провайдерских задач. Внутри есть таймаут 5сек.
-            VscTasks.fetchTasks(),
-            // не ждем если сработала отмена
-            new Promise<never>(function (_resolve, reject) {
-                disposable = token.onCancellationRequested(function () { reject(new CancellationError()); });
+            new Promise<never>((_resolve, reject) => {
+                dsp = token.onCancellationRequested(() => {
+                    reject(new CancellationError());
+                });
                 if (token.isCancellationRequested) {
                     reject(new CancellationError());
                 }
-            })
+            }),
+            VscTasks.fetchTasks()
         ]);
 
+        if (token.isCancellationRequested) {
+            throw new CancellationError();
+        }
+
         return fetched.reduce(function (map, task) {
-            if (qualifies(task)) {
+            if (isEligibleTask(task)) {
                 // Отобрать "подходящие" задачи и проиндексировать по
                 // идентификаторам (ScopeKey, TaskName),
                 // пропуская "не подходящие"
@@ -69,7 +69,7 @@ async function fetchEligibleTasks(
                 const scopeKey = getKey(task.scope);
 
                 let taskMap = map.get(scopeKey);
-                if (taskMap === undefined) {
+                if (!taskMap) {
                     taskMap = new Map();
                     map.set(scopeKey, taskMap);
                 }
@@ -83,9 +83,10 @@ async function fetchEligibleTasks(
 
     }
     finally {
-        disposable?.dispose();
+        if (dsp) {
+            dsp.dispose();
+        }
     }
-
 }
 
 export default fetchEligibleTasks;

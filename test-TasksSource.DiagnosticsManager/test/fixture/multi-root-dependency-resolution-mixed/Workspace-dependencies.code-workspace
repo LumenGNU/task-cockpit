@@ -1,0 +1,68 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        },
+        {
+            "path": "folder3"
+        }
+    ],
+    "settings": {
+        "taskCockpit.validation.duplicates": true,
+        "taskCockpit.validation.dependencies": true
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "workspace level task",
+                "command": "echo 'workspace level task'",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": []
+            },
+            {
+                "label": "existin task",
+                "type": "shell",
+                "command": "echo 'existin task from workspace'",
+                "problemMatcher": [],
+            },
+            {
+                "label": "(workspace) depends on 'existin task'",
+                "dependsOn": "existin task", // существует и доступна
+                "problemMatcher": []
+            },
+            {
+                "label": "(workspace) depends on 'user level task'",
+                // существует в .../User/tasks.json
+                // но из  workspace scope НЕ доступна
+                "dependsOn": "user level task",
+                "problemMatcher": []
+            },
+            {
+                "label": "(workspace) depends on 'folder1 level task'",
+                // существует в folder1/.vscode/tasks.json
+                // но из workspace scope НЕ доступна
+                "dependsOn": "folder1 level task",
+                "problemMatcher": []
+            },
+            {
+                "label": "(workspace) depends on 'folder2 level task'",
+                // существует в folder2/.vscode/tasks.json
+                // но из workspace scope НЕ доступна
+                "dependsOn": "folder2 level task",
+                "problemMatcher": []
+            },
+            {
+                "label": "(workspace) depends on 'folder3 level task'",
+                // существует в folder3/.vscode/tasks.json
+                // но из workspace scope НЕ доступна
+                "dependsOn": "folder3 level task",
+                "problemMatcher": []
+            }
+        ]
+    }
+}

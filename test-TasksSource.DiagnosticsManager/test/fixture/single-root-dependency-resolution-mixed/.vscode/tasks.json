@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "existin task",
+            "type": "shell",
+            "command": "echo 'existin task'",
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'existin task'",
+            "dependsOn": "existin task", // существует
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'non-existin task'",
+            "dependsOn": "non-existin task", // не существует
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'user level task'",
+            // существует в .../User/tasks.json
+            // и доступна
+            "dependsOn": "user level task",
+            "problemMatcher": []
+        }
+    ]
+}

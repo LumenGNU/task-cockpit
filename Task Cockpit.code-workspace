@@ -45,6 +45,9 @@
         {
             "path": "_PROBA"
         },
+        {
+            "path": "test-TasksSource.DiagnosticsManager"
+        }
 
     ],
     "settings": {

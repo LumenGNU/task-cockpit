@@ -81,22 +81,22 @@ export function activate(context: vscode.ExtensionContext) {
                 ...(vscode.workspace.workspaceFolders ?? []) as Folder[]
             ] as const;
 
-            if (scopes) {
-                for (const scope of scopes) {
-                    outputChannel.appendLine(`\nTasks for ${getDisplayName(scope)}:`);
-                    const folderTasks = configuration.readTasks(scope);
+            // if (scopes) {
+            //     for (const scope of scopes) {
+            //         outputChannel.appendLine(`\nTasks for ${getDisplayName(scope)}:`);
+            //         const folderTasks = configuration.readTasks(scope);
 
-                    outputChannel.appendLine(`Count: ${folderTasks.size}`);
+            //         outputChannel.appendLine(`Count: ${folderTasks.size}`);
 
-                    let i = 0;
+            //         let i = 0;
 
-                    folderTasks.forEach((_taskDef, taskName) => {
-                        outputChannel.appendLine(` ${(++i).toString().padStart(3, ' ')}) ${taskName}`);
-                    });
+            //         folderTasks.forEach((_taskDef, taskName) => {
+            //             outputChannel.appendLine(` ${(++i).toString().padStart(3, ' ')}) ${taskName}`);
+            //         });
 
-                    outputChannel.appendLine('---------------------------------------------');
-                }
-            }
+            //         outputChannel.appendLine('---------------------------------------------');
+            //     }
+            // }
         })
     );
 

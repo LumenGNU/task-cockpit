@@ -1,0 +1,61 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "duplicated-label",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+        {
+            "label": "duplicated-label",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+        {
+            "label": "duplicated-label",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+                {
+            "label": "existing task",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on existing task (1)",
+            "dependsOn": "existing task"
+        },
+        {
+            "label": "depends on existing task (2)",
+            "dependsOn": [
+                "existing task"
+            ]
+        },
+        {
+            "label": "depends on non existing task (1)",
+            "dependsOn": "non existing task"
+        },
+        {
+            "label": "depends on non existing task (2)",
+            "dependsOn": [
+                "non existing task"
+            ]
+        },
+        {
+            "label": "depends on (non)existing tasks",
+            "dependsOn": [
+                "non existing task 1",
+                "non existing task 2",
+                "existing task"
+            ]
+        }
+    ]
+}

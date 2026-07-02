@@ -7,6 +7,7 @@
 - `excludeFolders` setting now also supports excluding the workspace scope
 - `excludeFolders` имеет эффект в сингл-воркспейсе
 - "taskCockpit.validation.duplicateLabels" -> "taskCockpit.validation.duplicates"
+- при выделении определения задачи - курсор в начале определения
 
 ## [1.1.0] - 2025-06-20
 

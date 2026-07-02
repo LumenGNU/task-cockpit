@@ -1,6 +1,7 @@
 
 import type Folder from './Folder/Folder';
 import type Workspace from './Workspace/Workspace';
+import type Global from './Global/Global';
 
 
 /** Scope — область-источник задач и их настроек.
@@ -12,6 +13,6 @@ import type Workspace from './Workspace/Workspace';
  * - Настройки (конфигурация области) также принадлежат scope
  *   и применяются только к его задачам.
  * */
-type Scope = Workspace | Folder;
+type Scope = Global | Workspace | Folder;
 
 export default Scope;

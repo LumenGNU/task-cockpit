@@ -14,7 +14,7 @@ import * as assert from 'node:assert/strict';
 import getKey from '../Scope/getKey';
 import getProcessId from './Terminals/getProcessId';
 import ProcessMonitor from './ProcessMonitor';
-import qualifies from '../EligibleTask/qualifies';
+import isEligibleTask from '../EligibleTask/isEligibleTask';
 import ProcessRegistry from './ProcessRegistry';
 import SnapshotCollector from './Terminals/SnapshotCollector';
 import type ProcessId from './ProcessId';
@@ -335,7 +335,7 @@ class Runtime implements Disposable {
         if (isValidPid(processId)) { // сразу отбрасываем сломанное
 
             // если задача "подходит"...
-            if (qualifies(execution.task)) { // task -> EligibleTask
+            if (isEligibleTask(execution.task)) { // task -> EligibleTask
 
                 const identifier = { scopeKey: getKey(execution.task.scope), taskName: execution.task.name };
 

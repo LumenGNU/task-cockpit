@@ -14,19 +14,25 @@ Configuration/RawTaskDefinition.d.ts
 Configuration/Icon.d.ts
 Configuration/Group.d.ts
 
+Configuration/TaskDefinitions.ts
+
 
 ## -----------------------------------------------------------
+HierarchyModel/CompressionBehavior.d.ts
+Scope/Folder/Folder.d.ts
+Scope/Folder/Key.d.ts
+Scope/Folder/Uri.d.ts
+Scope/getDisplayName.ts
+Scope/Global/Global.ts
+Scope/isFolder.ts
+Scope/isGlobal.ts
 Scope/isWorkspace.ts
 Scope/Scope.d.ts
-HierarchyModel/CompressionBehavior.d.ts
-Scope/Workspace/Workspace.d.ts
-Scope/Folder/Folder.d.ts
-Scope/Folder/Uri.d.ts
-Scope/Folder/Key.d.ts
-Scope/getDisplayName.ts
+Scope/Workspace/Workspace.ts
 
 ## ----------------------------------------------------------
 constants.ts
 
 ## ----------------------------------------------------------
-type.d/TaskName.d.ts
+TaskName/TaskName.d.ts
+TaskName/nameIsQualifies.ts
