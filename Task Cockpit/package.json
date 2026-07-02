@@ -332,7 +332,7 @@
       },
       {
         "title": "Tasks Files Diagnostics",
-        "markdownDescription": "Enable diagnostics to detect potential issues with task definitions. Changes require window reload.",
+        "markdownDescription": "Enable diagnostics to detect potential issues with task definitions.",
         "order": 3,
         "type": "object",
         "properties": {
@@ -340,14 +340,14 @@
             "type": "boolean",
             "scope": "window",
             "default": true,
-            "markdownDescription": "Check for tasks with duplicate labels and flag them as problematic.  \n(_Requires window reload to take effect._)",
+            "markdownDescription": "Check for tasks with duplicate labels and flag them as problematic.",
             "order": 12
           },
           "taskCockpit.validation.dependencies": {
             "type": "boolean",
             "scope": "window",
-            "default": false,
-            "markdownDescription": "[**Experimental**] Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems.  \n**Results may be inaccurate or incomplete**. Disable if you encounter incorrect diagnostics.  \n(_Requires window reload to take effect._)",
+            "default": true,
+            "markdownDescription": "Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems.",
             "order": 13
           }
         }

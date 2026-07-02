@@ -7,23 +7,19 @@ import Config from './Config';
 
 const SCHEMA = {
 
-    /** Enable diagnostics to detect potential issues with task definitions. Changes require window reload. */ // @todo все еще require?
+    /** Enable diagnostics to detect potential issues with task definitions. */
     ValidationConf: {
-        /** Check for tasks with duplicate labels and flag them as problematic.  \n
-         * (_Requires window reload to take effect._) */ // @todo все еще Requires?
+        /** Check for tasks with duplicate labels and flag them as problematic. */
         duplicates: {
             section: 'validation',
             type: OptionType.Boolean,
             spec: { fallback: true }
         },
-        /** [**Experimental**] Check that tasks referenced in `dependsOn` exist. Missing
-         * dependencies will be flagged as problems.  \n
-         * **Results may be inaccurate or incomplete**. Disable if you encounter incorrect diagnostics.  \n
-         * (_Requires window reload to take effect._) */
+        /** Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems. */
         dependencies: {
             section: 'validation',
             type: OptionType.Boolean,
-            spec: { fallback: false }
+            spec: { fallback: true }
         }
     },
 
