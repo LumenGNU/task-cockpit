@@ -1,0 +1,22 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "sourceMap": true,
+        "removeComments": false,
+        "outDir": "./~out-test",
+        "paths": {
+            "src/*": ["./~stripped/*"]
+        }
+    },
+    "exclude": [
+        "./test/**/~*",
+        "./~stripped/**/~*",
+        "./test/~*",
+        "./~stripped/~*"
+    ],
+    "include": [
+        "./test/unit/*.ts",
+        "./test/unit/**/*.ts",
+        "./~stripped/extension.ts"
+    ]
+}

@@ -274,7 +274,7 @@ const Hierarchy = {
                     currentChildren[segment] = node;
                 }
 
-                parentNode = node;
+                parentNode = node; // @todo хм... ?
 
                 if (i < path.length - 1) {
 
