@@ -4,11 +4,8 @@ import CompressionBehavior from './CompressionBehavior';
 
 
 interface Element {
-    /** Область, отображаемая этой веткой */
     branchKey: string;
-    /** Отображаемая метка */
     label: string;
-    /** Уникальный id узла в дереве */
     id: string;
     data?: AnyData;
     children: Dict | null;
@@ -45,7 +42,7 @@ const SEP = '\x00\x00\x1F';
  *
  * Три режима компрессии цепочек однодетных узлов:
  * - 'off' — без компрессии, каждый сегмент будет отдельным узлом
- * - 'on' — сжимает, если возможно, ветки-с-единственным-дитём, листья не трогает
+ * - 'on' — сжимает, если возможно, промежутки-с-единственным-дитём, листья не трогает
  * - 'on-aggressive' — сжимает, если возможно, и ветки-с-единственным-листом тоже.
  *   Максимальная экономия пространства по вертикали за счёт увеличения "ширины".
  *
@@ -66,8 +63,16 @@ const SEP = '\x00\x00\x1F';
  * @param pathCompression Режим сжатия цепочек однодетных узлов (см. выше).
  * @returns {@link HierarchyModel.Dict | Словарь (Map)} верхнего уровня,
  *   представляющий корневые узлы построенной иерархии.
- *   Ключами являются метки сегментов, значениями — объекты {@link Element}.
+ *   Ключами являются метки сегментов, значениями — объекты {@linkcode Element}.
  *   В зависимости от `pathCompression` дерево может быть оптимизировано.
+ *   Если применялось сжатие путей — ключи остаются равными исходным меткам первых
+ *   сегментов сжатой цепочки:
+ *   - Ключ по-прежнему точно идентифицирует первый сегмент исходного пути.
+ *   - Семантика ключа как «полного имени узла» — теряется. Теперь это «точки входа
+ *     в возможный сжатый путь».
+ *   - Ключ больше не отражает полную метку узла — он становится короткой формой
+ *     первого сегмента. Другими словами, разрушается инвариант `key ≡ label`,
+ *     который выполнялся до сжатия.
  *  */
 function buildHierarchy<D extends AnyData>(props: Readonly<{
     branchPrefix: string;
@@ -94,7 +99,7 @@ function buildHierarchy<D extends AnyData>(props: Readonly<{
         let currentChildren = topDict;
         let leafNode: Element | null = null;
 
-        // traverse segments
+        // обход сегментов
         for (let i = 0; i < path.length; i++) {
 
             const segment = path.at(i);
@@ -146,14 +151,15 @@ declare namespace HierarchyModel {
     export type Dict = ReadonlyMap<string, HierarchyModel.Element>;
 
     export interface Element {
-        // type: ElementType.RunnableNode;
-        /** (*) Область, отображаемая этой веткой */
+        /** Ветка, к которой принадлежит элемент */
         readonly branchKey: string;
-        /** (*) Отображаемая метка */
+        /** Отображаемая метка */
         readonly label: string;
-        /** (*) Уникальный id узла в дереве */
+        /** Уникальный id узла в дереве */
         readonly id: string;
+        /** Полезная нагрузка элемента */
         readonly data?: Readonly<AnyData>;
+        /** Дети. Не пустая карта, если есть. Если нет детей — null. */
         readonly children: HierarchyModel.Dict | null;
     }
 
@@ -187,9 +193,8 @@ function compressHierarchy(
         for (; ;) {
             chain.push(cur);
             if (
-                cur.data !== undefined ||      // промежуточный runnable — стоп
-                cur.children === null ||
-                cur.children.size !== 1        // branch point или лист — стоп
+                cur.data !== undefined || // промежуточный runnable — стоп
+                cur.children === null || cur.children.size !== 1 // branch point или лист — стоп
             ) {
                 break;
             }
