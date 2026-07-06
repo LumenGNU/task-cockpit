@@ -254,6 +254,82 @@ suite('HierarchyModel', function () {
 
             });
 
+            suite('Чередование данных в цепочке, плюс промежуточный уровень', function () {
+
+                const specs = [
+                    { segments: ['A', 'B'], data: {} },
+                    { segments: ['A', 'B', 'C', 'D', 'E'], data: {} },
+                ];
+
+                test('компрессия off', function () {
+
+                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
+                        {
+                            branchPrefix: 'pref',
+                            branchKey: 'key',
+                            specs
+                        },
+                        'off'
+                    );
+
+                    const lines = buildTree([...hierarchy.values()], '', true);
+
+                    assert.deepEqual(lines, [
+                        // ничего особенного не происходит
+                        '─ A',
+                        '  └─ ▶ B',
+                        '     └─ C',
+                        '        └─ D',
+                        '           └─ ▶ E'
+                    ], 'ascii дерево должно совпадать');
+                });
+
+                test('компрессия on', function () {
+                    //
+
+                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
+                        {
+                            branchPrefix: 'pref',
+                            branchKey: 'key',
+                            specs
+                        },
+                        'on'
+                    );
+
+                    const lines = buildTree([...hierarchy.values()], '', true);
+
+                    assert.deepEqual(lines, [
+                        // только "не значащий" промежуток C→D сжат
+                        '─ A',
+                        '  └─ ▶ B',
+                        '     └─ C › D',
+                        '        └─ ▶ E'
+                    ], 'ascii дерево должно совпадать');
+                });
+
+                test('компрессия on-aggressive', function () {
+                    //
+
+                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
+                        {
+                            branchPrefix: 'pref',
+                            branchKey: 'key',
+                            specs
+                        },
+                        'on-aggressive'
+                    );
+
+                    const lines = buildTree([...hierarchy.values()], '', true);
+
+                    assert.deepEqual(lines, [
+                        // все сжато до двух узлов
+                        '─ ▶ A › B',
+                        '  └─ ▶ C › D › E'
+                    ], 'ascii дерево должно совпадать');
+                });
+
+            });
+
             suite('Сегмент, содержащий пустую строку', function () {
                 // ничего особенного не происходит
 

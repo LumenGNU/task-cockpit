@@ -42,16 +42,17 @@ const SEP = '\x00\x00\x1F';
  *
  * Три режима компрессии цепочек однодетных узлов:
  * - 'off' — без компрессии, каждый сегмент будет отдельным узлом
- * - 'on' — сжимает, если возможно, промежутки-с-единственным-дитём, листья не трогает
- * - 'on-aggressive' — сжимает, если возможно, и ветки-с-единственным-листом тоже.
- *   Максимальная экономия пространства по вертикали за счёт увеличения "ширины".
+ * - 'on' — сжимает, если возможно, промежутки-без-данных-с-единственным-дитём.
+ *   Узлы с данныи не трогает — они всегда будут отдельными листьями.
+ * - 'on-aggressive' — сжимает, если возможно, и ветки-с-единственным-листом-с-данными
+ *   тоже. Максимальная экономия пространства по вертикали за счёт увеличения "ширины".
  *
  * @template D тип данных, записываемых в runnable-узлы.
  *
  * @param props.branchPrefix Префикс, используемый для формирования идентификаторов
  *   корневых узлов. Идентификатор корневого узла строится как
- *   `branchPrefix + SEP + segment`. Для дочерних узлов идентификатор
- *   строится на основе родительского: `id_родителя + SEP + segment`.
+ *   `branchPrefix + уникальный_сегмент`. Для дочерних узлов идентификатор
+ *   строится на основе родительского: `id_родителя + уникальный_сегмент`.
  *   Должен быть уникальным среди всех веток дерева чтобы гарантировать
  *   уникальность id узлов.
  * @param props.branchKey Уникальный ключ ветки. Каждый созданный узел
@@ -73,6 +74,9 @@ const SEP = '\x00\x00\x1F';
  *   - Ключ больше не отражает полную метку узла — он становится короткой формой
  *     первого сегмента. Другими словами, разрушается инвариант `key ≡ label`,
  *     который выполнялся до сжатия.
+ *   Id узлов: никаких структурных гарантий у назначаемого `id` нет. Гарантируется
+ *   только его уникальность для "нормальных" данных. Никаких проверок на коллизии
+ *   при формировании `id` не выполняется.
  *  */
 function buildHierarchy<D extends AnyData>(props: Readonly<{
     branchPrefix: string;
@@ -193,20 +197,17 @@ function compressHierarchy(
         for (; ;) {
             chain.push(cur);
             if (
-                cur.data !== undefined || // промежуточный runnable — стоп
-                cur.children === null || cur.children.size !== 1 // branch point или лист — стоп
+                cur.data != null || // промежуточный runnable — стоп
+                cur.children == null || cur.children.size !== 1 // branch point или лист — стоп
             ) {
                 break;
             }
             cur = cur.children.values().next().value!; // size === 1 проверена выше
         }
 
-        const last = chain[chain.length - 1]!;
+        const last = chain.at(-1)!;
 
-        const isRunnable = last.data != null;
-        // const isGroup = last.children != null && last.children.size > 0;
-
-        if (mode === 'on' && isRunnable && chain.length > 1) {
+        if (mode === 'on' && last.data != null && chain.length > 1) {
             // Терминальный узел не участвует в сжатии,
             // сжимаем только предшествующие узлы.
             // chain = [ ...intermediates, leaf ]
@@ -214,23 +215,33 @@ function compressHierarchy(
             // tail.children — это Map { leafKey → leaf } (size === 1 гарантирована
             // условием цикла: иначе мы бы остановились раньше).
             const body = chain.slice(0, -1);
-            const tail = body[body.length - 1]!;
+            const tail = body.at(-1)!;
+
+            // tail — это chain[chain.length - 2],
+            // то есть узел, мимо которого цикл уже прошёл.
+            // Значит, на момент прохождения сработало условие продолжения цикла:
+            // tail.data == null, tail.children != null, tail.children.size === 1.
+            // Ситуация tail.children → null недостижима, но tsc пох — он видит тип Element.children: Dict | null
+            assert.ok(tail.children != null, 'Invariant violated: tail.children must be non-null here');
+
             return {
                 branchKey: node.branchKey,
                 label: body.map(n => n.label).join(LABEL_SEP),
                 id: tail.id,
-                children: tail.children
+                children: compressDict(tail.children)
             };
         }
 
-        // on-aggressive или branch point — вся цепочка → один узел,
-        // дети last рекурсивно сжимаются.
+        // mode === 'on-aggressive' или
+        // mode === 'on', !isRunnable (branch point или лист) или
+        // mode === 'on', chain.length === 1 (один runnable-узел с несколькими детьми)
+        // тогда → дети last рекурсивно сжимаются.
         return {
             branchKey: node.branchKey,
             label: chain.map(n => n.label).join(LABEL_SEP),
             id: last.id,
             data: last.data,
-            children: last.children && last.children.size > 0
+            children: last.children != null
                 ? compressDict(last.children)
                 : null,
         };
