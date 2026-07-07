@@ -19,9 +19,9 @@ suite('HierarchyModel', function () {
                 suite('сначала лист, потом тот же узел — уже ветка', function () {
 
                     const specs = [
-                        { segments: ['aaa', 'subrunnable'], data: {} },
+                        { segments: ['aaa', 'subRunnable'], data: {} },
                         // bbb создан как лист, потом в него пытаются добавить ребёнка
-                        { segments: ['aaa', 'subrunnable', 'runnable'], data: {} },
+                        { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
                     ];
 
 
@@ -36,11 +36,11 @@ suite('HierarchyModel', function () {
                             'off'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
                             '─ aaa',
-                            '  └─ ▶ subrunnable',
+                            '  └─ ▶ subRunnable',
                             '     └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -56,13 +56,13 @@ suite('HierarchyModel', function () {
                             'on'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
                             // в "on" лист должен остаться отдельным
                             // узлом — сжимать нечего
                             '─ aaa',
-                            '  └─ ▶ subrunnable',
+                            '  └─ ▶ subRunnable',
                             '     └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -78,13 +78,13 @@ suite('HierarchyModel', function () {
                             'on-aggressive'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
                             // Сжать сильнее невозможно:
                             // должно быть минимум два узла (по числу листов) со своими данными,
                             // слить их в один узел без потери этих данных невозможно.
-                            '─ ▶ aaa › subrunnable',
+                            '─ ▶ aaa › subRunnable',
                             '  └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -94,9 +94,9 @@ suite('HierarchyModel', function () {
                 suite('сначала ветка — потом должна стать ещё и листом', function () {
 
                     const specs = [
-                        { segments: ['aaa', 'subrunnable', 'runnable'], data: {} },
+                        { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
                         // bbb уже существует как промежуточный узел без data, теперь надо добавить data
-                        { segments: ['aaa', 'subrunnable'], data: {} },
+                        { segments: ['aaa', 'subRunnable'], data: {} },
                     ];
 
                     test('компрессия off', function () {
@@ -110,11 +110,11 @@ suite('HierarchyModel', function () {
                             'off'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
                             '─ aaa',
-                            '  └─ ▶ subrunnable',
+                            '  └─ ▶ subRunnable',
                             '     └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -130,11 +130,11 @@ suite('HierarchyModel', function () {
                             'on'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
                             '─ aaa',
-                            '  └─ ▶ subrunnable',
+                            '  └─ ▶ subRunnable',
                             '     └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -150,10 +150,10 @@ suite('HierarchyModel', function () {
                             'on-aggressive'
                         );
 
-                        const lines = buildTree([...hierarchy.values()], '', true);
+                        const lines = buildTree(hierarchy.children, '', true);
 
                         assert.deepEqual(lines, [
-                            '─ ▶ aaa › subrunnable',
+                            '─ ▶ aaa › subRunnable',
                             '  └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
@@ -186,7 +186,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // структура "as is"
@@ -209,7 +209,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // все промежуточные узлы сжаты,
@@ -230,7 +230,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // все промежуточные узлы и
@@ -263,7 +263,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ aaa',
@@ -285,7 +285,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // сжимать нечего:
@@ -310,7 +310,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // можно сжать только bbb+runnable2
@@ -344,7 +344,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ root',
@@ -367,7 +367,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // "on" - сжимать нечего
@@ -391,7 +391,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // одинокие листы сжаты
@@ -421,7 +421,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ ▶ lone'
@@ -439,7 +439,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ ▶ lone'
@@ -457,7 +457,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ ▶ lone'

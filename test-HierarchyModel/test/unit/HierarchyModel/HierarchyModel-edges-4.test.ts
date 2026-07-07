@@ -30,7 +30,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ 3',
@@ -56,7 +56,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ 3',
@@ -81,7 +81,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ 3',
@@ -91,6 +91,7 @@ suite('HierarchyModel', function () {
                     ], 'ascii дерево должно совпадать');
                 });
             });
+
 
             suite('Дублирующиеся пути — последний выиграет', function () {
 
@@ -115,14 +116,16 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const runnable = hierarchy.get('aaa')?.children?.get('bbb')?.children?.get('runnable');
+                    const runnable = hierarchy.children[0]?.children?.[0]?.children?.[0];
                     assert.ok(runnable);
+                    assert.equal(runnable.label, 'runnable');
                     assert.ok(runnable.data);
                     assert.equal(winner, runnable.data.value);
 
                 });
 
             });
+
 
             suite('Повторяющиеся сегменты в одном пути', function () {
 
@@ -143,7 +146,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ aaa',
@@ -165,7 +168,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ aaa › aaa › bbb › aaa',
@@ -184,7 +187,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         '─ ▶ aaa › aaa › bbb › aaa › runnable'

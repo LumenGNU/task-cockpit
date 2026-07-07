@@ -25,7 +25,7 @@ suite('HierarchyModel', function () {
                         'off'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // ничего
@@ -43,7 +43,7 @@ suite('HierarchyModel', function () {
                         'on'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // ничего
@@ -61,7 +61,7 @@ suite('HierarchyModel', function () {
                         'on-aggressive'
                     );
 
-                    const lines = buildTree([...hierarchy.values()], '', true);
+                    const lines = buildTree(hierarchy.children, '', true);
 
                     assert.deepEqual(lines, [
                         // ничего

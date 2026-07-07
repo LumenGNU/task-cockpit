@@ -16,7 +16,7 @@ suite('HierarchyModel', function () {
         });
     });
 
-    this.slow(200); // буду считать что 200 ms это медленно
+    this.slow(200); // буду считать что 200 ms — это медленно
     // ------------
 
     suite('buildHierarchy', function () {

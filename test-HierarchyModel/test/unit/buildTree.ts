@@ -1,7 +1,7 @@
 import type HierarchyModel from 'src/HierarchyModel/HierarchyModel';
 
 function buildTree(
-    children: Array<HierarchyModel.Element>,
+    children: ReadonlyArray<Readonly<HierarchyModel.Element<any>>>,
     prefix: string,
     isRoot = false
 ): string[] {
@@ -17,9 +17,9 @@ function buildTree(
         const connector = isRoot ? '─ ' : (isLast ? '└─ ' : '├─ ');
         const childPrefix = isRoot ? '  ' : prefix + (isLast ? '   ' : '│  ');
 
-        const isrunnable = child.data != null;
+        const isRunnable = child.data != null;
 
-        lines.push(`${prefix}${connector}${isrunnable ? `▶ ${label}` : label}`);
+        lines.push(`${prefix}${connector}${isRunnable ? `▶ ${label}` : label}`);
 
         const subChildren = child.children;
 
