@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import HierarchyModel from 'src/HierarchyModel/HierarchyModel';
-import buildTree from '../buildTree';
+import buildAsciiTree from '../buildAsciiTree';
 
 
 suite('HierarchyModel', function () {
@@ -18,74 +18,67 @@ suite('HierarchyModel', function () {
 
                 suite('сначала лист, потом тот же узел — уже ветка', function () {
 
-                    const specs = [
-                        { segments: ['aaa', 'subRunnable'], data: {} },
-                        // bbb создан как лист, потом в него пытаются добавить ребёнка
-                        { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
-                    ];
+                    const specs = new Map([
+                        ['branch', [
+                            { segments: ['aaa', 'subRunnable'], data: {} },
+                            // bbb создан как лист, потом в него пытаются добавить ребёнка
+                            { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
+                        ]]
+                    ]);
 
 
                     test('компрессия off', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'off'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
-                            '─ aaa',
-                            '  └─ ▶ subRunnable',
-                            '     └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ aaa',
+                            '       └─ ▶ subRunnable',
+                            '          └─ ▶ runnable',
                         ], 'ascii дерево должно совпадать');
                     });
 
                     test('компрессия on', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'on'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
                             // в "on" лист должен остаться отдельным
                             // узлом — сжимать нечего
-                            '─ aaa',
-                            '  └─ ▶ subRunnable',
-                            '     └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ aaa',
+                            '       └─ ▶ subRunnable',
+                            '          └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
 
                     test('компрессия on-aggressive', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'on-aggressive'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
                             // Сжать сильнее невозможно:
                             // должно быть минимум два узла (по числу листов) со своими данными,
                             // слить их в один узел без потери этих данных невозможно.
-                            '─ ▶ aaa › subRunnable',
-                            '  └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ ▶ aaa › subRunnable',
+                            '       └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
 
@@ -93,68 +86,61 @@ suite('HierarchyModel', function () {
 
                 suite('сначала ветка — потом должна стать ещё и листом', function () {
 
-                    const specs = [
-                        { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
-                        // bbb уже существует как промежуточный узел без data, теперь надо добавить data
-                        { segments: ['aaa', 'subRunnable'], data: {} },
-                    ];
+                    const specs = new Map([
+                        ['branch', [
+                            { segments: ['aaa', 'subRunnable', 'runnable'], data: {} },
+                            // bbb уже существует как промежуточный узел без data, теперь надо добавить data
+                            { segments: ['aaa', 'subRunnable'], data: {} },
+                        ]]
+                    ]);
 
                     test('компрессия off', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'off'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
-                            '─ aaa',
-                            '  └─ ▶ subRunnable',
-                            '     └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ aaa',
+                            '       └─ ▶ subRunnable',
+                            '          └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
 
                     test('компрессия on', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'on'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
-                            '─ aaa',
-                            '  └─ ▶ subRunnable',
-                            '     └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ aaa',
+                            '       └─ ▶ subRunnable',
+                            '          └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
 
                     test('компрессия on-aggressive', function () {
 
-                        const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                            {
-                                branchPrefix: 'pref',
-                                branchKey: 'key',
-                                specs
-                            },
+                        const hierarchy = HierarchyModel.buildHierarchy(
+                            specs,
                             'on-aggressive'
                         );
 
-                        const lines = buildTree(hierarchy.children, '', true);
+                        const lines = buildAsciiTree(hierarchy);
 
                         assert.deepEqual(lines, [
-                            '─ ▶ aaa › subRunnable',
-                            '  └─ ▶ runnable'
+                            '─ [[branch]]',
+                            '    └─ ▶ aaa › subRunnable',
+                            '       └─ ▶ runnable'
                         ], 'ascii дерево должно совпадать');
                     });
                 });
@@ -171,71 +157,64 @@ suite('HierarchyModel', function () {
                 // on-aggressive —  сжимаются все узлы и лист —
                 // вся цепочка становится одним комбинированным узлом.
 
-                const specs = [
-                    { segments: ['a', 'b', 'c', 'd', 'runnable'], data: {} }
-                ];
+                const specs = new Map([
+                    ['branch', [
+                        { segments: ['a', 'b', 'c', 'd', 'runnable'], data: {} }
+                    ]]
+                ]);
 
                 test('компрессия off', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // структура "as is"
-                        '─ a',
-                        '  └─ b',
-                        '     └─ c',
-                        '        └─ d',
-                        '           └─ ▶ runnable'
+                        '─ [[branch]]',
+                        '    └─ a',
+                        '       └─ b',
+                        '          └─ c',
+                        '             └─ d',
+                        '                └─ ▶ runnable'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // все промежуточные узлы сжаты,
                         // лист - отдельный узел
-                        '─ a › b › c › d',
-                        '  └─ ▶ runnable'
+                        '─ [[branch]]',
+                        '    └─ a › b › c › d',
+                        '       └─ ▶ runnable'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on-aggressive', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // все промежуточные узлы и
                         // лист - сжаты
-                        '─ ▶ a › b › c › d › runnable'
+                        '─ [[branch]]',
+                        '    └─ ▶ a › b › c › d › runnable'
                     ], 'ascii дерево должно совпадать');
                 });
             });
@@ -246,78 +225,71 @@ suite('HierarchyModel', function () {
                 // Строятся независимые корневые поддеревья, порядок
                 // сохраняется по порядку первого добавления.
 
-                const specs = [
-                    { segments: ['aaa', 'runnable1'], data: {} },
-                    { segments: ['bbb', 'runnable2'], data: {} },
-                    { segments: ['aaa', 'runnable3'], data: {} },  // aaa уже существует
-                ];
+                const specs = new Map([
+                    ['branch', [
+                        { segments: ['aaa', 'runnable1'], data: {} },
+                        { segments: ['bbb', 'runnable2'], data: {} },
+                        { segments: ['aaa', 'runnable3'], data: {} },  // aaa уже существует
+                    ]]
+                ]);
 
                 test('компрессия off', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
-                        '─ aaa',
-                        '  ├─ ▶ runnable1',
-                        '  └─ ▶ runnable3',
-                        '─ bbb',
-                        '  └─ ▶ runnable2'
+                        '─ [[branch]]',
+                        '    ├─ aaa',
+                        '    │  ├─ ▶ runnable1',
+                        '    │  └─ ▶ runnable3',
+                        '    └─ bbb',
+                        '       └─ ▶ runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // сжимать нечего:
                         // aaa - несколько детей
                         // bbb - один ребенок, но он лист
-                        '─ aaa',
-                        '  ├─ ▶ runnable1',
-                        '  └─ ▶ runnable3',
-                        '─ bbb',
-                        '  └─ ▶ runnable2'
+                        '─ [[branch]]',
+                        '    ├─ aaa',
+                        '    │  ├─ ▶ runnable1',
+                        '    │  └─ ▶ runnable3',
+                        '    └─ bbb',
+                        '       └─ ▶ runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on-aggressive', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // можно сжать только bbb+runnable2
-                        '─ aaa',
-                        '  ├─ ▶ runnable1',
-                        '  └─ ▶ runnable3',
-                        '─ ▶ bbb › runnable2'
+                        '─ [[branch]]',
+                        '    ├─ aaa',
+                        '    │  ├─ ▶ runnable1',
+                        '    │  └─ ▶ runnable3',
+                        '    └─ ▶ bbb › runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
@@ -327,78 +299,71 @@ suite('HierarchyModel', function () {
 
                 // Порядок детей в выводе соответствует порядку спецификаций, ветки и листья корректно чередуются.
 
-                const specs = [
-                    { segments: ['root', 'branch1', 'runnable1'], data: {} },
-                    { segments: ['root', 'direct-runnable'], data: {} },      // лист между двух веток
-                    { segments: ['root', 'branch2', 'runnable2'], data: {} },
-                ];
+                const specs = new Map([
+                    ['branch', [
+                        { segments: ['root', 'branch1', 'runnable1'], data: {} },
+                        { segments: ['root', 'direct-runnable'], data: {} },      // лист между двух веток
+                        { segments: ['root', 'branch2', 'runnable2'], data: {} },
+                    ]]
+                ]);
 
                 test('компрессия off', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
-                        '─ root',
-                        '  ├─ branch1',
-                        '  │  └─ ▶ runnable1',
-                        '  ├─ ▶ direct-runnable',
-                        '  └─ branch2',
-                        '     └─ ▶ runnable2'
+                        '─ [[branch]]',
+                        '    └─ root',
+                        '       ├─ branch1',
+                        '       │  └─ ▶ runnable1',
+                        '       ├─ ▶ direct-runnable',
+                        '       └─ branch2',
+                        '          └─ ▶ runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // "on" - сжимать нечего
-                        '─ root',
-                        '  ├─ branch1',
-                        '  │  └─ ▶ runnable1',
-                        '  ├─ ▶ direct-runnable',
-                        '  └─ branch2',
-                        '     └─ ▶ runnable2'
+                        '─ [[branch]]',
+                        '    └─ root',
+                        '       ├─ branch1',
+                        '       │  └─ ▶ runnable1',
+                        '       ├─ ▶ direct-runnable',
+                        '       └─ branch2',
+                        '          └─ ▶ runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on-aggressive', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // одинокие листы сжаты
-                        '─ root',
-                        '  ├─ ▶ branch1 › runnable1',
-                        '  ├─ ▶ direct-runnable',
-                        '  └─ ▶ branch2 › runnable2'
+                        '─ [[branch]]',
+                        '    └─ root',
+                        '       ├─ ▶ branch1 › runnable1',
+                        '       ├─ ▶ direct-runnable',
+                        '       └─ ▶ branch2 › runnable2'
                     ], 'ascii дерево должно совпадать');
                 });
 
@@ -407,60 +372,54 @@ suite('HierarchyModel', function () {
 
             suite('Один элемент с одним сегментом', function () {
 
-                const specs = [
-                    { segments: ['lone'], data: {} }
-                ];
+                const specs = new Map([
+                    ['branch', [
+                        { segments: ['lone'], data: {} }
+                    ]]
+                ]);
+
                 test('компрессия off', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
-                        '─ ▶ lone'
+                        '─ [[branch]]',
+                        '    └─ ▶ lone'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
-                        '─ ▶ lone'
+                        '─ [[branch]]',
+                        '    └─ ▶ lone'
                     ], 'ascii дерево должно совпадать');
                 });
 
                 test('компрессия on-aggressive', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
-                        '─ ▶ lone'
+                        '─ [[branch]]',
+                        '    └─ ▶ lone'
                     ], 'ascii дерево должно совпадать');
                 });
 

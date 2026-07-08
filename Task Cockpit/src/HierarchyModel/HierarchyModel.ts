@@ -27,33 +27,37 @@ class InnerMap<K, V> extends Map<K, V> {
  * **RO-интерфейс (потребитель):** реализует {@linkcode HierarchyModel.Element}
  *  — геттеры `children` и `data` пробрасывают к символьным полям
  * только для чтения. */
-class Element<D extends AnyData> implements HierarchyModel.Element<D> {
+class Element<K extends string, D extends AnyData> implements HierarchyModel.Element<K, D> {
 
-    [INNER_MAP]: InnerMap<string, Element<D>> | null;
+    [INNER_MAP]: InnerMap<string, Element<K, D>> | null;
     [DATA]?: D;
 
-    readonly branchKey: string;
     readonly label: string;
+    // Никаких гарантий на структуру потребителю не даю.
+    // Реализация формирования не прозрачна.
+    // Реализация формирования может меняться.
     readonly id: string;
 
     constructor(
-        branchKey: string,
+        id: string,
         label: string,
-        id: string
     ) {
         this[INNER_MAP] = null;
-        this.branchKey = branchKey;
         this.label = label;
         this.id = id;
     }
 
-    get children(): ReadonlyArray<Element<D>> | null {
+    get children(): ReadonlyArray<Element<K, D>> | null {
         // @todo assert если INNER_MAP != null то INNER_MAP.size > 0
         return this[INNER_MAP]?.children ?? null;
     }
 
     get data(): Readonly<D> | null {
         return this[DATA] ?? null;
+    }
+
+    get branchKey(): K {
+        return this.id.split(SEP).at(0)! as K;
     }
 
 }
@@ -65,8 +69,9 @@ interface Spec<D extends AnyData> {
     readonly data: D;
 }
 
+
 /** Список спецификаций */
-type Specs<D extends AnyData> = ReadonlyArray<Readonly<Spec<D>>>;
+type Specs<K extends string, D extends AnyData> = ReadonlyMap<K, ReadonlyArray<Readonly<Spec<D>>>>;
 
 
 const SEP = '\x00\x00\x1F';
@@ -122,102 +127,90 @@ const SEP = '\x00\x00\x1F';
  *   Id узлов: никаких структурных гарантий у назначаемого `id` нет. Гарантируется
  *   только его уникальность для "нормальных" данных.
  *  */
-function buildHierarchy<D extends AnyData>(props: Readonly<{
-    // branchPrefix: string;
-    // branchKey: string;
-    specs: Specs<D>;
-}>,
+function buildHierarchy<K extends string, D extends AnyData>(
+    specs: Specs<K, D>,
     pathCompression: CompressionBehavior
-): HierarchyModel.Hierarchy<D> {
-    // Как "движок" алгоритма задействована Map. Что удобно и нет "подножек" с порядком,
-    // но:
-    // Если применялось сжатие путей — ключи остаются равными исходным меткам первых
-    // сегментов сжатой цепочки:
-    // - Ключ по-прежнему точно идентифицирует первый сегмент исходного пути.
-    // - Семантика ключа как «полного имени узла» — теряется. Теперь это «точки входа
-    //   в возможный сжатый путь».
-    // - Ключ больше не отражает полную метку узла — он становится короткой формой
-    //   первого сегмента. Другими словами, разрушается инвариант `key ≡ label`,
-    //   который выполнялся до сжатия.
-    // Вытекает: ключи для потребителя — бесполезный мусор.
-    // Из реального использования: потребителю нужны только дети:
-    // `[...map.values()]`
-    // Отсюда: Спрятать реализацию через Map за RO интерфейсом.
-    // Поскольку семантика ключей для потребителя теряется,
-    // да и он интересуется только значениями — спрятать карту за RO интерфейсом.
-    // (На претензию "из js все равно можно все сломать" я отвечаю:
-    // "этот код на ts, не js. ReadonlyMap — такая же фикция,
-    // как и модификатор private. И что? Перестать ими пользоваться?")
+): HierarchyModel.Hierarchy<K, D> {
 
-    const topDict = new InnerMap<string, Element<D>>();
 
-    if (props.specs.length < 1) {
+    const hierarchy = new Map();
+
+    if (specs.size < 1) {
         // нет структуры — пусто
-        return topDict;
+        return hierarchy;
     }
 
-    // Обрабатываем массив спецификаций
-    for (const { segments: path, data } of props.specs) {
+    // Обход карты, построение иерархии для каждой ветки
+    for (const [branchKey, specsList] of specs) {
 
-        // нет пути — ошибка входных данных
-        assert.ok(path.length > 0, 'Specification error: path must contain at least one segment.');
+        const topDict = new InnerMap<string, Element<K, D>>();
 
-        let currentChildren = topDict;
-        let leafNode: Element<D> | null = null;
+        // Обрабатываем массив спецификаций
+        for (const { segments, data } of specsList) {
 
-        // обход сегментов
-        for (let i = 0; i < path.length; i++) {
+            // нет пути — ошибка входных данных
+            assert.ok(segments.length > 0, 'Specification error: path must contain at least one segment.');
 
-            const segment = path.at(i);
-            assert.ok(segment != null, 'Internal error: path segment is null or undefined while traversing.');
-            let node = currentChildren.get(segment);
+            let currentChildren = topDict;
+            let leafNode: Element<K, D> | null = null;
 
-            if (!node) {
-                node = new Element<D>(
-                    /*branchKey*/ props.branchKey,
-                    /*label*/ segment,
+            // обход сегментов
+            for (let i = 0; i < segments.length; i++) {
+
+                const segment = segments.at(i);
+                assert.ok(segment != null, 'Internal error: path segment is null or undefined while traversing.');
+                let node = currentChildren.get(segment);
+
+                if (!node) {
+                    node = new Element<K, D>(
                     /*id*/ leafNode
-                        ? leafNode.id + SEP + segment
-                        : props.branchPrefix + SEP + segment
-                );
-                currentChildren.set(segment, node);
-            }
-
-            if (i < path.length - 1) {
-                let children = node[INNER_MAP];
-                if (!children) {
-                    children = new InnerMap();
-                    node[INNER_MAP] = children;
+                            ? leafNode.id + SEP + segment
+                            : branchKey + SEP + segment,
+                    /*label*/ segment,
+                    );
+                    currentChildren.set(segment, node);
                 }
-                currentChildren = children;
+
+                if (i < segments.length - 1) {
+                    let children = node[INNER_MAP];
+                    if (!children) {
+                        children = new InnerMap();
+                        node[INNER_MAP] = children;
+                    }
+                    currentChildren = children;
+                }
+
+                leafNode = node;
             }
 
-            leafNode = node;
+            // path.length ≥ 1, цикл for выполнился хотя бы раз:
+            // parentNode точно != null
+            assert.ok(leafNode, 'Internal error: failed to resolve leaf node after traversing path segments.');
+
+            leafNode[DATA] = data;
         }
 
-        // path.length ≥ 1, цикл for выполнился хотя бы раз:
-        // parentNode точно != null
-        assert.ok(leafNode, 'Internal error: failed to resolve leaf node after traversing path segments.');
-
-        leafNode[DATA] = data;
-
+        hierarchy.set(
+            branchKey,
+            pathCompression !== 'off'
+                ? compressHierarchy(topDict, pathCompression)
+                : topDict
+        );
     }
 
-    if (pathCompression === 'off') {
-        return topDict;
-    }
 
-    return compressHierarchy(topDict, pathCompression);
+    return hierarchy;
 }
 
 // Этот интерфейс отдается потребителю для использования.
 declare namespace HierarchyModel {
 
-    /** Иерархия, содержит узлы верхнего уровня (корень под-дерева).
+    /** Иерархия, содержит узлы верхнего уровня (корень под-дерева)
+     * сгруппированные по ключам веток.
      *  Объект с единственным полем `children` — массивом корневых узлов. */
-    export type Hierarchy<D extends AnyData> = Readonly<{
-        children: ReadonlyArray<Element<D>>;
-    }>;
+    export type Hierarchy<K extends string, D extends AnyData> = ReadonlyMap<K, Readonly<{
+        children: ReadonlyArray<Element<K, D>>;
+    }>>;
 
     /** Read-only представление узла дерева.
      *
@@ -227,14 +220,14 @@ declare namespace HierarchyModel {
      * - data: данные узла или null, если это чистый промежуточный узел;
      * - children: массив дочерних узлов или null, если это чистый листовой узел.
      *  */
-    export interface Element<D extends AnyData> {
-        readonly branchKey: string;
+    export interface Element<K extends string, D extends AnyData> {
+        readonly branchKey: K;
         readonly label: string;
         readonly id: string;
         /** Данные узла (null, если отсутствуют) */
         readonly data: Readonly<D> | null;
         /** Дочерние узлы, массив элементов. Или null */
-        readonly children: ReadonlyArray<Readonly<Element<D>>> | null;
+        readonly children: ReadonlyArray<Readonly<Element<K, D>>> | null;
     }
 
     export type Specs<D extends AnyData> = Array<Spec<D>>;
@@ -269,14 +262,14 @@ const LABEL_SEP = '\u2009›\u2009';
  *
  * В режиме 'on-aggressive' сжимаются и такие ветки.
  * */
-function compressHierarchy<D extends AnyData>(
-    dict: InnerMap<string, Element<D>>,
+function compressHierarchy<K extends string, D extends AnyData>(
+    dict: InnerMap<string, Element<K, D>>,
     mode: CompressionMode
-): InnerMap<string, Element<D>> {
+): InnerMap<string, Element<K, D>> {
 
-    function compress(node: Element<D>): Element<D> {
-        const chain: Element<D>[] = [];
-        let cur: Element<D> = node;
+    function compress(node: Element<K, D>): Element<K, D> {
+        const chain: Element<K, D>[] = [];
+        let cur: Element<K, D> = node;
 
         for (; ;) {
             chain.push(cur);
@@ -313,10 +306,9 @@ function compressHierarchy<D extends AnyData>(
             // Ситуация tail.children → null недостижима, но tsc пох — он видит тип InnerMap | null
             assert.ok(tail[INNER_MAP] != null, 'Invariant violated: tail.children must be non-null here');
 
-            const element = new Element<D>(
-                node.branchKey,
-                body.map(n => n.label).join(LABEL_SEP),
-                tail.id
+            const element = new Element<K, D>(
+                tail.id,
+                body.map(n => n.label).join(LABEL_SEP)
             );
             element[INNER_MAP] = compressDict(tail[INNER_MAP]);
 
@@ -328,10 +320,9 @@ function compressHierarchy<D extends AnyData>(
         // mode === 'on', chain.length === 1 (один runnable-узел с несколькими детьми)
         // тогда → дети last рекурсивно сжимаются.
 
-        const element = new Element<D>(
-            node.branchKey,
-            chain.map(n => n.label).join(LABEL_SEP),
-            last.id
+        const element = new Element<K, D>(
+            last.id,
+            chain.map(n => n.label).join(LABEL_SEP)
         );
 
         element[INNER_MAP] = last[INNER_MAP] != null
@@ -345,8 +336,8 @@ function compressHierarchy<D extends AnyData>(
         return element;
     }
 
-    function compressDict(d: InnerMap<string, Element<D>>): InnerMap<string, Element<D>> {
-        const result: InnerMap<string, Element<D>> = new InnerMap();
+    function compressDict(d: InnerMap<string, Element<K, D>>): InnerMap<string, Element<K, D>> {
+        const result: InnerMap<string, Element<K, D>> = new InnerMap();
         for (const [key, node] of d) {
             result.set(key, compress(node));
         }

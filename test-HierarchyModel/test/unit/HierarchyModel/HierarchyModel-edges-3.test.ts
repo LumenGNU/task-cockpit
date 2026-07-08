@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import HierarchyModel from 'src/HierarchyModel/HierarchyModel';
-import buildTree from '../buildTree';
+import buildAsciiTree from '../buildAsciiTree';
 
 
 suite('HierarchyModel', function () {
@@ -10,22 +10,18 @@ suite('HierarchyModel', function () {
         suite('Граничные случаи', function () {
 
 
-            suite('Пустой список specs (нет структуры)', function () {
+            suite('Пустая карта (ничего)', function () {
 
-                const specs: HierarchyModel.Specs<{}> = [];
+                const specs = new Map();
 
                 test('компрессия off', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // ничего
@@ -34,16 +30,12 @@ suite('HierarchyModel', function () {
 
                 test('компрессия on', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // ничего
@@ -52,16 +44,12 @@ suite('HierarchyModel', function () {
 
                 test('компрессия on-aggressive', function () {
 
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
-                    const lines = buildTree(hierarchy.children, '', true);
+                    const lines = buildAsciiTree(hierarchy);
 
                     assert.deepEqual(lines, [
                         // ничего
@@ -70,11 +58,65 @@ suite('HierarchyModel', function () {
 
             });
 
+
+            suite('Пустой specs (нет структуры)', function () {
+
+                const specs = new Map([['branch', []]]);
+
+                test('компрессия off', function () {
+
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
+                        'off'
+                    );
+
+                    const lines = buildAsciiTree(hierarchy);
+
+                    assert.deepEqual(lines, [
+                        '─ [[branch]]'
+                        // ничего
+                    ], 'ascii дерево должно совпадать');
+                });
+
+                test('компрессия on', function () {
+
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
+                        'on'
+                    );
+
+                    const lines = buildAsciiTree(hierarchy);
+
+                    assert.deepEqual(lines, [
+                        '─ [[branch]]'
+                        // ничего
+                    ], 'ascii дерево должно совпадать');
+                });
+
+                test('компрессия on-aggressive', function () {
+
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
+                        'on-aggressive'
+                    );
+
+                    const lines = buildAsciiTree(hierarchy);
+
+                    assert.deepEqual(lines, [
+                        '─ [[branch]]'
+                        // ничего
+                    ], 'ascii дерево должно совпадать');
+                });
+
+            });
+
             suite('Пустой массив сегментов (нет пути)', function () {
 
-                const specs = [
-                    { segments: [], data: {} }
-                ];
+                const specs = new Map([
+                    ['branch', [
+                        { segments: [], data: {} }
+                    ]]
+                ]);
 
                 test('компрессия off', function () {
 
@@ -82,7 +124,7 @@ suite('HierarchyModel', function () {
                         () => {
                             // выбросит исключение: ошибка входных данных
                             HierarchyModel.buildHierarchy(
-                                { branchPrefix: 'pref', branchKey: 'key', specs },
+                                specs,
                                 'off'
                             );
                         },

@@ -27,15 +27,13 @@ suite('HierarchyModel', function () {
             suite('Глубокая линейная цепочка', function () {
                 // Один путь из 100 000 сегментов
                 const deepSegments = Array.from({ length: 100_000 }, (_, i) => `node${i}`);
-                const specs = [{ segments: deepSegments, data: {} }];
+                const sub = [{ segments: deepSegments, data: {} }];
+
+                const specs = new Map([['branch', sub]]);
 
                 test('компрессия off', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
@@ -44,12 +42,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
@@ -57,12 +51,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on-aggressive', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
@@ -74,18 +64,16 @@ suite('HierarchyModel', function () {
                 // 100 000 спецификаций, каждая задаёт путь ['root', 'child_N']. Все они прямые потомки root.
 
                 const COUNT = 100_000;
-                const specs = Array.from({ length: COUNT }, (_, i) => ({
+                const sub = Array.from({ length: COUNT }, (_, i) => ({
                     segments: ['root', `child_${i}`],
                     data: { index: i }
                 }));
 
+                const specs = new Map([['branch', sub]]);
+
                 test('компрессия off', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
@@ -94,12 +82,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
@@ -107,12 +91,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on-aggressive', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
@@ -125,22 +105,20 @@ suite('HierarchyModel', function () {
                 // 1000 веток, каждая глубиной в 100 сегментов, все начинаются с общего корня.
                 const BRANCHES = 1000;
                 const DEPTH = 100;
-                const specs: HierarchyModel.Specs<{ b: number; }> = [];
+                const sub: HierarchyModel.Specs<{ b: number; }> = [];
                 for (let b = 0; b < BRANCHES; b++) {
                     const segments = ['root'];
                     for (let d = 1; d <= DEPTH; d++) {
                         segments.push(`branch${b}_level${d}`);
                     }
-                    specs.push({ segments, data: { b } });
+                    sub.push({ segments, data: { b } });
                 }
 
+                const specs = new Map([['branch', sub]]);
+
                 test('компрессия off', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'off'
                     );
 
@@ -149,12 +127,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on'
                     );
 
@@ -162,12 +136,8 @@ suite('HierarchyModel', function () {
                 });
 
                 test('компрессия on-aggressive', function () {
-                    const hierarchy = HierarchyModel.buildHierarchy<{}>(
-                        {
-                            branchPrefix: 'pref',
-                            branchKey: 'key',
-                            specs
-                        },
+                    const hierarchy = HierarchyModel.buildHierarchy(
+                        specs,
                         'on-aggressive'
                     );
 
