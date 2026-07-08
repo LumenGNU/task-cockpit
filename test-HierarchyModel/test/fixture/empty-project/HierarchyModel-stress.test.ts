@@ -177,4 +177,5 @@ suite('HierarchyModel', function () {
 
         });
     });
+
 });

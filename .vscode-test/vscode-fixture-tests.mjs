@@ -137,8 +137,8 @@ const TESTS = process.env.TESTS;
 
 const [FIXTURE_NAME, TEST_PREFIX] = (() => {
     if (!TESTS || TESTS.trim().length < 1) {
-        console.error(c.fail(`${c.bold('[Error]')}: FIXTURE environment variable is missing or empty.`));
-        console.error(c.warn('  Expected format: FIXTURE="<fixture>::<prefix>"  (e.g. "*::*" or "fixtureA::S1-")'));
+        console.error(c.fail(`${c.bold('[Error]')}: TESTS environment variable is missing or empty.`));
+        console.error(c.warn('  Expected format: TESTS="<fixture>::<prefix>"  (e.g. "*::*" or "fixtureA::S1-")'));
         process.exit(1);
     }
     const parts = TESTS.split('::');
@@ -299,7 +299,7 @@ const tests = [
                 // больше информации если TEST_PREFIX !== '*'
                 console.warn(c.warn(`${c.bold('[Warn]')}: no test files ('${TEST_PREFIX}*${TEST_FILE_SUFFIX}') found in '${path.relative(SUT_OUT, dir)}'. The fixture will be skipped.`));
             }
-            return null
+            return null;
         }
 
         const reporterOptions = undefined;
@@ -341,7 +341,7 @@ const tests = [
 ];
 
 
-const testsFiltered = tests.filter(t => t != null)
+const testsFiltered = tests.filter(t => t != null);
 
 if (testsFiltered.length < 1) {
     console.error(c.fail(`${c.bold('[Error]')}: No tests.`));

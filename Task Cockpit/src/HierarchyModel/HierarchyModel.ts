@@ -12,8 +12,9 @@ const DATA: unique symbol = Symbol('data');
 
 
 class InnerMap<K, V> extends Map<K, V> {
+    #children: ReadonlyArray<V> | null = null;
     public get children(): ReadonlyArray<V> {
-        return [...this.values()]; // @todo кешировать? или возвращать каждый раз новый?
+        return this.#children ??= [...this.values()]; // @todo или возвращать каждый раз новый?
     }
 }
 
@@ -23,10 +24,10 @@ class InnerMap<K, V> extends Map<K, V> {
  * {@linkcode INNER_MAP} и {@linkcode DATA}. Символы не экспортируются — за пределами модуля
  * недостижимы, что даёт de-facto module-private доступ.
  *
- * **RO-интерфейс (потребитель):** структурно удовлетворяет {@linkcode HierarchyModel.Element}
- * (без явного `implements`) — геттеры `children` и `data` пробрасывают к символьным полям
+ * **RO-интерфейс (потребитель):** реализует {@linkcode HierarchyModel.Element}
+ *  — геттеры `children` и `data` пробрасывают к символьным полям
  * только для чтения. */
-class Element<D extends AnyData> {
+class Element<D extends AnyData> implements HierarchyModel.Element<D> {
 
     [INNER_MAP]: InnerMap<string, Element<D>> | null;
     [DATA]?: D;
@@ -47,6 +48,7 @@ class Element<D extends AnyData> {
     }
 
     get children(): ReadonlyArray<Element<D>> | null {
+        // @todo assert если INNER_MAP != null то INNER_MAP.size > 0
         return this[INNER_MAP]?.children ?? null;
     }
 
@@ -99,18 +101,18 @@ const SEP = '\x00\x00\x1F';
  * @template D Тип данных, хранимых в runnable-узлах.
  *
  * @param props Объект с параметрами построения:
- * - `branchPrefix` Префикс, используемый для формирования идентификаторов
+ * - ~`branchPrefix` Префикс, используемый для формирования идентификаторов
  *     корневых узлов. Идентификатор корневого узла строится как
  *     `branchPrefix + уникальный_сегмент`. Для дочерних узлов идентификатор
  *     строится на основе родительского: `id_родителя + уникальный_сегмент`.
  *     Должен быть уникальным среди всех веток дерева чтобы гарантировать
- *     уникальность среди всех `id` узлов.
+ *     уникальность среди всех `id` узлов.~
  * - `branchKey` Уникальный ключ ветки. Каждый созданный узел
  *     получит этот ключ в свойство `branchKey` для идентификации принадлежности
- *     к данной ветке. *Не обязан* быть уникальным среди *всех* веток, в отличии от
+ *     к данной ветке. *~Не~ обязан* быть уникальным среди *всех* веток~, в отличии от
  *     `branchPrefix` — может быть одинаковым для «одинаковых» веток. (Как пример:
  *     полная ветка в основном дереве и структурно её часть в секции "закладки"
- *     того-же дерева).
+ *     того-же дерева).~
  * - `specs` Массив {@linkcode Spec | спецификаций} (путь + данные),
  *     из которых строится дерево. Порядок элементов определяет порядок
  *     создания узлов и перезаписи данных на листьях.
@@ -121,8 +123,8 @@ const SEP = '\x00\x00\x1F';
  *   только его уникальность для "нормальных" данных.
  *  */
 function buildHierarchy<D extends AnyData>(props: Readonly<{
-    branchPrefix: string;
-    branchKey: string;
+    // branchPrefix: string;
+    // branchKey: string;
     specs: Specs<D>;
 }>,
     pathCompression: CompressionBehavior
