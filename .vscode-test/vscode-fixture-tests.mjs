@@ -183,6 +183,8 @@ const defaults = {
         '--disable-telemetry',
         '--disable-crash-reporter',
         '--disable-extensions',
+                "--locale", "en-US",
+                "--log", "papio-dev.task-cockpit:trace",
         ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
         // '--disable-workspace-trust',
         // '--no-sandbox',
