@@ -1,4 +1,4 @@
-import {
+import type {
     WorkspaceFolder
 } from 'vscode';
 import type Uri from './Uri';

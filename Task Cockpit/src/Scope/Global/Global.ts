@@ -2,7 +2,7 @@ import {
     TaskScope
 } from 'vscode';
 
-type Global = TaskScope.Global;
 const Global = TaskScope.Global;
+type Global = typeof Global;
 
 export default Global;

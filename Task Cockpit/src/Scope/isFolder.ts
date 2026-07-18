@@ -1,8 +1,9 @@
-import type Folder from './Folder/Folder.d';
-import type Scope from './Scope.d';
+import type Folder from './Folder/Folder';
+import type Scope from './Scope';
+import type Immutable from '../utils/Immutable';
 
 
-function isFolder(scope: Scope): scope is Folder {
+function isFolder(scope: Immutable<Scope>): scope is Immutable<Folder> {
     return typeof scope !== 'number';
 }
 

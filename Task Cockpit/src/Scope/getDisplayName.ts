@@ -1,12 +1,14 @@
 import {
     workspace
 } from 'vscode';
-import Scope from './Scope';
-import isWorkspace from './isWorkspace';
 import isGlobal from './isGlobal';
+import isWorkspace from './isWorkspace';
+
+import type Immutable from '../utils/Immutable';
+import type Scope from './Scope';
 
 
-function getDisplayName(scope: Scope): string {
+function getDisplayName(scope: Immutable<Scope>): string {
 
     if (isGlobal(scope)) {
         return 'User'; // @todo Global?
