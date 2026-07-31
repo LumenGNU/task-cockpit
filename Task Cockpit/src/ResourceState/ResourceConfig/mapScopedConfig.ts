@@ -1,58 +1,45 @@
 import {
     workspace
 } from 'vscode';
-import {
-    coerce
-} from '../../ConfigSchema';
-
-import type {
-    ConfigSchema
-} from '../../ConfigSchema';
-import type ResourceConfig from './Config';
-import type { State } from '../State';
 import ScopeKey from '../../ScopeKey';
-// import type Immutable from '../../utils/Immutable';
+import Configuration from '../../Configuration';
+import type Immutable from '../../utils/Immutable';
+import type Scope from '../Scope';
 
 
-function mapScopedConfig(
-    scopeLayout: State.ScopeLayout,
-    baseConfigSection: string,
-    resourceConfigSchema: ConfigSchema<ResourceConfig>
-): Map<ScopeKey, ResourceConfig> {
+function mapScopedConfig<SchemaType extends object>(
+    scopeLayout: Immutable<Scope.ScopeLayout>,
+    resourceConfigSchema: Configuration.ConfigSchema<SchemaType>
+): Map<ScopeKey, SchemaType> {
 
 
-    const outMap = new Map<ScopeKey, ResourceConfig>();
+    const outMap = new Map<ScopeKey, SchemaType>();
 
-    outMap.set(ScopeKey.GLOBAL_KEY, coerce(getIsolatedGlobalConfig(baseConfigSection), resourceConfigSchema));
+    // global изолировано, остальное мержится (без изоляции)
+    outMap.set(ScopeKey.GLOBAL_KEY, Configuration.coerce(
+        workspace.getConfiguration(),
+        resourceConfigSchema,
+        Configuration.IsolationMode.GlobalOnly
+    ));
 
     if (scopeLayout[ScopeKey.WORKSPACE_KEY]) {
-        outMap.set(ScopeKey.WORKSPACE_KEY, coerce(getIsolatedWorkspaceTasks(baseConfigSection), resourceConfigSchema));
+        outMap.set(ScopeKey.WORKSPACE_KEY, Configuration.coerce(
+            workspace.getConfiguration(),
+            resourceConfigSchema
+        ));
     }
 
     if (scopeLayout.folders) {
         for (const [folderKey, folderScope] of Object.entries(scopeLayout.folders)) {
-            outMap.set(folderKey as ScopeKey.FolderKey, coerce(getIsolatedFolderTasks(baseConfigSection, folderScope), resourceConfigSchema));
+            outMap.set(folderKey as ScopeKey.FolderKey, Configuration.coerce(
+                workspace.getConfiguration('', folderScope),
+                resourceConfigSchema
+            ));
         }
     }
 
     return outMap;
 
 }
-
-
-function getIsolatedGlobalConfig(baseConfigSection: string): { [k: string]: unknown; } | undefined {
-    return workspace.getConfiguration().inspect<{ [k: string]: unknown; }>(baseConfigSection)?.globalValue;
-}
-
-
-function getIsolatedWorkspaceTasks(baseConfigSection: string): { [k: string]: unknown; } | undefined {
-    return workspace.getConfiguration(baseConfigSection, null);
-}
-
-
-function getIsolatedFolderTasks(baseConfigSection: string, scope: State.FolderScope): { [k: string]: unknown; } | undefined {
-    return workspace.getConfiguration(baseConfigSection, scope);
-}
-
 
 export default mapScopedConfig;

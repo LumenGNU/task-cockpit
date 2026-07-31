@@ -4,14 +4,15 @@ import {
 import * as assert from 'node:assert/strict';
 import TaskName from '../../TaskName';
 
-import type { State } from '../State';
+import type Scope from '../Scope';
 import type Group from './Group';
 import type Icon from './Icon';
-// import type Immutable from '../../utils/Immutable';
+import type Immutable from '../../utils/Immutable';
 import type RawTaskDefinition from './RawTaskDefinition';
 import ScopeKey from '../../ScopeKey';
 import type TaskDefinition from './TaskDefinition';
 import type TaskGroup from './TaskGroup';
+import Configuration from '../../Configuration';
 
 
 
@@ -30,10 +31,9 @@ import type TaskGroup from './TaskGroup';
  *
  * @param scope Область-источник определений задач
  *  */
-function mapTaskDefinitions(scopeLayout: State.ScopeLayout): Map<ScopeKey, Map<TaskName, TaskDefinition>> {
+function mapTaskDefinitions(scopeLayout: Immutable<Scope.ScopeLayout>): Map<ScopeKey, Map<TaskName, TaskDefinition>> {
 
     const outMap = new Map<ScopeKey, Map<TaskName, TaskDefinition>>();
-
 
     outMap.set(ScopeKey.GLOBAL_KEY, buildTaskDefinitionsMap(getIsolatedGlobalTasks()));
 
@@ -58,17 +58,20 @@ function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): Map<TaskName
 
 
 function getIsolatedGlobalTasks(): Array<RawTaskDefinition> {
-    return workspace.getConfiguration('tasks', null).inspect<Array<RawTaskDefinition>>('tasks')?.globalValue ?? [];
+    const wsConfig = workspace.getConfiguration('tasks', null);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.GlobalOnly) ?? [];
 }
 
 
 function getIsolatedWorkspaceTasks(): Array<RawTaskDefinition> {
-    return workspace.getConfiguration('tasks', null).inspect<Array<RawTaskDefinition>>('tasks')?.workspaceValue ?? [];
+    const wsConfig = workspace.getConfiguration('tasks', null);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.WorkspaceOnly) ?? [];
 }
 
 
-function getIsolatedFolderTasks(scope: State.FolderScope): Array<RawTaskDefinition> {
-    return workspace.getConfiguration('tasks', scope).inspect<Array<RawTaskDefinition>>('tasks')?.workspaceFolderValue ?? [];
+function getIsolatedFolderTasks(scope: Immutable<Scope.FolderScope>): Array<RawTaskDefinition> {
+    const wsConfig = workspace.getConfiguration('tasks', scope);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.FolderOnly) ?? [];
 }
 
 
