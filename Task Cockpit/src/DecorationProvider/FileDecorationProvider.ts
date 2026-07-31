@@ -1,23 +1,27 @@
 import {
     CancellationError,
     EventEmitter,
+    LogOutputChannel,
     ThemeColor,
-    type CancellationToken,
-    type Disposable,
-    type Event,
-    type FileDecoration,
-    type FileDecorationProvider as VscFileDecorationProvider,
-    type ProviderResult,
-    type Uri
 } from 'vscode';
-import * as assert from 'node:assert/strict';
-import type Config from '../Configuration/Window/Config';
+import { WindowConfiguration } from '../WindowConfiguration/WindowConfiguration';
+
+import type {
+    CancellationToken,
+    Disposable,
+    Event,
+    FileDecoration,
+    FileDecorationProvider as VscFileDecorationProvider,
+    ProviderResult,
+    Uri,
+} from 'vscode';
+import type Config from '../WindowConfiguration/Config';
+import type Safe from '../utils/Safe';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
-import ConfigurationProvider from '../Configuration/ConfigurationProvider';
 
 
-const CONFIGURATION_KEY = 'FileDecorationConf';
+const CONFIGURATION_KEY = 'FileDecoration' as const;
 type FileDecorationConf = Config[typeof CONFIGURATION_KEY];
 
 
@@ -48,7 +52,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     /** {@link VscFileDecorationProvider.onDidChangeFileDecorations Событие провайдера}, происходит при изменении конфигурации. */
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
-    #configuration: Readonly<ConfigurationProvider>;
+    readonly #configuration: Safe<WindowConfiguration>;
 
     #conf: FileDecorationConf;
 
@@ -56,11 +60,27 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
     #disposed: boolean;
 
+    #logOutputChannel: Safe<LogOutputChannel> | null;
+
+    // ---------------
+    readonly #themeColorCache: Map<string, ThemeColor>;
+
     /**Создаёт провайдер.
-     * @param configuration начальные значения конфигурации декораций. */
-    constructor(configuration: Readonly<ConfigurationProvider>) {
+     * @param configurationProvider начальные значения конфигурации декораций. */
+    constructor(
+        configuration: Safe<WindowConfiguration>,
+        logOutputChannel: Safe<LogOutputChannel> | null = null
+    ) {
         this.#disposed = false;
+
+        this.#logOutputChannel = logOutputChannel;
+
         this.#disposables = [];
+
+        this.#onDidChangeFileDecorations = new EventEmitter();
+        this.onDidChangeFileDecorations = this.#onDidChangeFileDecorations.event;
+
+        this.#themeColorCache = new Map();
 
         // conf ---
         this.#configuration = configuration;
@@ -70,17 +90,17 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
                 if (!affectedKeys.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+                this.#conf = this.#configuration.getConfig(CONFIGURATION_KEY);
+                this.#themeColorCache.clear(); // на всякий случай
                 this.#onDidChangeFileDecorations.fire(undefined);
-            })
+            }),
+
+            // event
+            this.#onDidChangeFileDecorations
         );
-        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+        this.#conf = this.#configuration.getConfig(CONFIGURATION_KEY);
         // ---
 
-        this.#disposables.push(
-            this.#onDidChangeFileDecorations = new EventEmitter()
-        );
-        this.onDidChangeFileDecorations = this.#onDidChangeFileDecorations.event;
     }
 
 
@@ -90,9 +110,12 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             return;
         }
         this.#disposed = true;
+        this.#themeColorCache.clear();
         this.#disposables.forEach(function (d) {
             d.dispose();
         });
+        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel = null;
     }
 
 
@@ -122,20 +145,21 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             throw new CancellationError();
         }
 
+
         // see: UriSchema.d.ts
         if (uri.scheme !== 'task-cockpit' satisfies UriSchema['scheme']
             || uri.authority !== 'Node' satisfies UriSchema['authority']) {
             return undefined;
         }
 
-        const query = new URLSearchParams(uri.query);
+        const query = new URLSearchParams(uri.query) as { get: (key: keyof UriQuery) => string | null; };
 
         const available: UriQuery['available'] = query.get('available') || '0';
         const running: UriQuery['running'] = query.get('running') || '0';
-        const color: UriQuery['tintColor'] = query.get('color') || '';
+        const color: UriQuery['tintColor'] = query.get('tintColor') || '';
 
-        if (`${available}${running}${color}` === '00') {
-            // нет ни бейджа, ни цвета
+        if (available === '0' && running === '0' && color === '') {
+            // не нужен ни бейдж, ни цвет
             return undefined;
         }
 
@@ -156,7 +180,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         }
 
         return {
-            color: color ? new ThemeColor(color) : undefined,
+            color: color ? this.#getOrCreateThemeColor(color) : undefined,
             // Большой `runningSymbol` если есть "активные", `availableSymbol` если нет, но есть "терминалы".
             // Цифра если running>1; знак `overflowSymbol` если running>9. (badge в VS Code — строго не более двух символов)
             badge: runningBadge || (available !== '0' ? this.#conf.availableSymbol : undefined),
@@ -164,12 +188,16 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         } as const;
     }
 
-    /** Обновляет конфигурацию декораций и испускает {@linkcode onDidChangeFileDecorations}.
-     *
-     * @fires FileDecorationProvider#onDidChangeFileDecorations */
-    #applyConf(conf: Readonly<FileDecorationConf>): Readonly<FileDecorationConf> {
-        return conf;
+
+    #getOrCreateThemeColor(id: string): ThemeColor {
+        let color = this.#themeColorCache.get(id);
+        if (color === undefined) {
+            color = new ThemeColor(id);
+            this.#themeColorCache.set(id, color);
+        }
+        return color;
     }
+
 }
 
 
