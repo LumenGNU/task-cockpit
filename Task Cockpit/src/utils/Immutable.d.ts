@@ -1,7 +1,5 @@
 
 import type * as vscode from 'vscode';
-import type FolderUri from '../Scope/Folder/Uri';
-import type Scope from '../Scope/Scope';
 
 type Immutable<T> =
     unknown extends T
@@ -21,11 +19,6 @@ type Immutable<T> =
 
     : T extends RegExp | Date
     ? T
-
-    : T extends
-    | Scope
-    | FolderUri
-    ? Readonly<T>
 
     : T extends
     | vscode.Uri
