@@ -1,0 +1,153 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Open as project",
+            "hide": true,
+            "icon": {
+                "id": "vscode",
+                "color": "terminal.ansiBlue"
+            },
+            "detail": "Open current workspace in a new Codium window",
+            "type": "shell",
+            "command": "setsid -f codium '${workspaceFolder}' && sleep 3",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "clear": true,
+                "echo": false,
+                "reveal": "never",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "close": true,
+                "group": "run-external"
+            }
+        },
+        {
+            "label": "Clear",
+            "detail": "Clear and recreate all output, test, and stripped directories",
+            "icon": {
+                "id": "eraser"
+            },
+            "dependsOn": [
+                "Clear|Clean/create '~out/'",
+            ],
+            "dependsOrder": "sequence",
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "revealProblems": "onProblem",
+                "group": "Clear"
+            }
+        },
+        {
+            "label": "Clear|Clean/create '~out/'",
+            "detail": "Ensure '~out' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "dev-scripts/create-empty-directory.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEST_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "revealProblems": "onProblem",
+                "close": true
+            }
+        },
+        // =========================================================================
+        // Build extension
+        { // Buid
+            "label": "Build extension|Buid",
+            "icon": {
+                "id": "build"
+            },
+            "detail": "Compile TypeScript sources into `~out/` for debug runner",
+            "dependsOn": [
+                "Clear|Clean/create '~out/'"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/transpile-typescript.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "WORK_DIR": ".",
+                    "DEST_DIR": "~out",
+                    "TSCONFIG": "debug.tsconfig.jsonc"
+                }
+            },
+            "problemMatcher": {
+                "applyTo": "allDocuments",
+                "base": "$tsc"
+            },
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "onProblem",
+                "group": "build"
+            }
+        },
+        { // Copy `package.json`
+            "label": "Build extension|Copy `package.json`",
+            "icon": {
+                "id": "copy"
+            },
+            "detail": "",
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "dev-scripts/copy-files.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "SOURCE_DIR": ".",
+                    "DEST_DIR": "~out",
+                    "INCLUDES": "package.json"
+                }
+            },
+            "presentation": {
+                "clear": false,
+                "echo": false,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "revealProblems": "onProblem",
+                "group": "build"
+            }
+        },
+        { // "Build extension"
+            "label": "Build extension",
+            "icon": {
+                "id": "debug"
+            },
+            "dependsOn": [
+                "Build extension|Buid",
+                "Build extension|Copy `package.json`"
+            ],
+            "dependsOrder": "sequence"
+        }
+    ]
+}
