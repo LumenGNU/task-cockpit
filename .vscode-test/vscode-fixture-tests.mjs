@@ -83,6 +83,7 @@
 //                  Примеры: "*::*", "fixtureA::*", "*::S1-", "fixtureA::S1-"
 // VSC_VERSION    — Версия VS Code для запуска тестов.
 //                  (default: 1.86.2)
+// VSC_DATA_DIR
 // REPORTER       — Репортер Mocha. Если не задана, используется репортер по умолчанию.
 //                  (default: не задан)
 // MOCHA_SLOW      — Порог «медленного» теста в Mocha(мс).    (750)
@@ -126,6 +127,7 @@ const OUT_DIR = path.join(process.cwd(), process.env.OUT_DIR || '~out-test');
 const SUT_TEST_REL = process.env.SUT_TEST || 'test';
 const SUT_TEST = path.join(process.cwd(), SUT_TEST_REL);
 const VSC_PROFILE = process.env.VSC_PROFILE;
+const VSC_DATA_DIR = process.env.VSC_DATA_DIR;
 
 const TEST_FILE_SUFFIX = 'test.js';
 
@@ -183,9 +185,10 @@ const defaults = {
         '--disable-telemetry',
         '--disable-crash-reporter',
         '--disable-extensions',
-                "--locale", "en-US",
-                "--log", "papio-dev.task-cockpit:trace",
+        "--locale", "en-US",
+        "--log", "papio-dev.task-cockpit:trace",
         ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
+        ...(VSC_DATA_DIR ? ['--user-data-dir', VSC_DATA_DIR] : []),
         // '--disable-workspace-trust',
         // '--no-sandbox',
     ],
