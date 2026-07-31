@@ -1,0 +1,79 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+	// --------------------------------------------------------
+	"files.exclude": {
+		"**/node_modules/": true,
+		"**/~f-icon.*": true
+	},
+	"search.exclude": {
+		"**/~*.*": true,
+		"**/~*/*": true,
+		"**/node_modules/**": true
+	},
+	"files.watcherExclude": {
+		"**/~*.*": true,
+		"**/~*/**": true
+	},
+	"workbench.localHistory.exclude": {
+		"**/~*.*": true,
+		"**/~*/**": true
+	},
+	// --------------------------------------------------------
+	"taskCockpit.display.segmentSeparator": "|",
+	"taskCockpit.display.tintLabel": true,
+	"taskCockpit.validation.dependencies": true,
+	"taskCockpit.display.defaultIconName": "target",
+	"taskCockpit.filtering.showHidden": true,
+	// --------------------------------------------------------
+	"files.trimTrailingWhitespace": true,
+	"files.autoSave": "afterDelay",
+	"files.autoSaveDelay": 660000,
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true,
+	"terminal.integrated.shellIntegration.enabled": false,
+	"cSpell.ignoreRandomStrings": false,
+	"cSpell.language": "en,ru",
+	"markdown.styles": [
+		".vscode/markdown.css"
+	],
+	"markdown.validate.enabled": true,
+	"files.associations": {
+		"CHANGELOG.md": "plaintext"
+	},
+	// --------------------------------------------------------
+	"js/ts.format.semicolons": "insert",
+	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+	"js/ts.tsc.autoDetect": "off",
+	"[typescript]": {
+		"editor.colorDecorators": false
+	},
+	"[javascript]": {
+		"editor.colorDecorators": false
+	},
+	// --------------------------------------------------------
+	"workbench.iconTheme": "symbols",
+	"symbols.hidesExplorerArrows": false,
+	"symbols.folders.associations": {
+		"/": "folder-purple"
+	},
+	"symbols.files.associations": {
+		"tsconfig.json": "tsconfig",
+		"test.unit.tsconfig.jsonc": "tsconfig",
+		"test.fixture.tsconfig.jsonc": "tsconfig",
+		"debug.tsconfig.jsonc": "tsconfig",
+		"tested-files.list": "csv"
+	},
+	// --------------------------------------------------------
+	"js/ts.preferences.importModuleSpecifierEnding": "minimal",
+	"js/ts.preferences.quoteStyle": "single",
+	"js/ts.workspaceSymbols.scope": "currentProject",
+	"js/ts.hover.maximumLength": 2500,
+	// --------------------------------------------------------
+	"notelets.notesFolder": "../notelets/",
+	"notelets.showStatusBar": false,
+	// --------------------------------------------------------
+	"cSpell.useGitignore": false,
+	"explorer.fileNesting.enabled": true,
+	"outline.collapseItems": "alwaysCollapse"
+	// --------------------------------------------------------
+}

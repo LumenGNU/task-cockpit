@@ -1,0 +1,196 @@
+{
+  "name": "task-cockpit",
+  "publisher": "papio-dev",
+  "displayName": "Task Cockpit test extension",
+  "description": "Task Cockpit test extension",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "extension.js",
+  "contributes": {
+    "configuration": [
+      {
+        "title": "Task Cockpit test extension",
+        "type": "object",
+        "properties": {
+          "taskCockpit.showGlobalTasksView": {
+            "type": "boolean",
+            "scope": "window",
+            "default": true,
+            "markdownDescription": "Show the \"Global Tasks\" view in the panel",
+            "order": 1
+          }
+        }
+      },
+      {
+        "title": "Display",
+        "description": "Visual appearance, hierarchy structure, and icon settings for tasks in the explorer.",
+        "order": 2,
+        "type": "object",
+        "properties": {
+          "taskCockpit.display.segmentSeparator": {
+            "type": "string",
+            "scope": "resource",
+            "default": "",
+            "pattern": "^$|^[^\\p{L}\\p{N}\\s]$|.{2,}",
+            "patternErrorMessage": "Must be a single non-alphanumeric, non-whitespace character (or empty to disable)",
+            "maxLength": 1,
+            "markdownDescription": "Character for splitting task labels into hierarchical segments. For example, `:` organizes `build:dev:watch` into a tree: `build` → `dev` → `watch`. The separator is ignored at the start/end of labels, in consecutive occurrences, or when adjacent to whitespace (e.g., `:build::dev : watch:` remains unsplit). Leave empty to disable hierarchy.  \nMust be a single non-alphanumeric, non-whitespace character or empty.  \nSee also `#taskCockpit.display.groupByTaskGroup#`.",
+            "order": 1
+          },
+          "taskCockpit.display.groupByTaskGroup": {
+            "type": "boolean",
+            "scope": "resource",
+            "default": false,
+            "markdownDescription": "Groups tasks by their `group` property. For example, tasks with `\"group\": \"build\"` or `\"group\": { kind: \"build\" }` will be placed under a `Build` folder (the group name will be capitalized). Works independently or combined with `#taskCockpit.display.segmentSeparator#`.  \n**Note:** When combined, both grouping and splitting apply: a task named `Build:dev:watch` with `\"group\": \"build\"` and separator `:` creates `Build` → `Build` → `dev` → `watch`.",
+            "order": 2
+          },
+          "taskCockpit.display.useFolderIcon": {
+            "type": "boolean",
+            "scope": "resource",
+            "default": false,
+            "description": "Display folder icon for intermediate segments in the task hierarchy. Otherwise, no icon is applied.",
+            "order": 3
+          },
+          "taskCockpit.display.defaultIconName": {
+            "type": "string",
+            "scope": "resource",
+            "default": "tools",
+            "enum": [
+              "account",
+              "activate-breakpoints",
+              "add",
+              "agent",
+              "alert",
+              "archive",
+              "array",
+              "arrow-both",
+              "arrow-circle-down",
+              "arrow-circle-left",
+              "arrow-circle-right",
+              "arrow-circle-up",
+              "arrow-down",
+              "arrow-left",
+              "arrow-right",
+              "arrow-small-down",
+              "arrow-small-left",
+              "arrow-small-right",
+              "arrow-small-up",
+              "arrow-swap",
+              "arrow-up",
+              "attach",
+              "azure",
+              "azure-devops",
+              "beaker",
+              "beaker-stop",
+              "bell"
+            ],
+            "markdownEnumDescriptions": [
+              "$(account)",
+              "$(activate-breakpoints)",
+              "$(add)",
+              "$(agent)",
+              "$(alert)",
+              "$(archive)",
+              "$(array)",
+              "$(arrow-both)",
+              "$(arrow-circle-down)",
+              "$(arrow-circle-left)",
+              "$(arrow-circle-right)",
+              "$(arrow-circle-up)",
+              "$(arrow-down)",
+              "$(arrow-left)",
+              "$(arrow-right)",
+              "$(arrow-small-down)",
+              "$(arrow-small-left)",
+              "$(arrow-small-right)",
+              "$(arrow-small-up)",
+              "$(arrow-swap)",
+              "$(arrow-up)",
+              "$(attach)",
+              "$(azure)",
+              "$(azure-devops)",
+              "$(beaker)",
+              "$(beaker-stop)",
+              "$(bell)"
+            ],
+            "markdownDescription": "Icon name for tasks without a custom icon in their definition. Defaults to `tools`. Tip: use `blank` for an empty icon.  \n[Available icons list](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing).",
+            "order": 4
+          },
+          "taskCockpit.display.tintLabel": {
+            "type": "boolean",
+            "scope": "resource",
+            "default": false,
+            "markdownDescription": "Apply the task icon color to the task label as well.",
+            "order": 5
+          }
+        }
+      },
+      {
+        "title": "Filtering",
+        "description": "Control which tasks and workspace folders are visible in the explorer.",
+        "order": 3,
+        "type": "object",
+        "properties": {
+          "taskCockpit.filtering.showHidden": {
+            "type": "boolean",
+            "scope": "resource",
+            "default": false,
+            "markdownDescription": "Show tasks marked with `\"hide\": true` in the task tree.",
+            "order": 1
+          },
+          "taskCockpit.filtering.excludeFolders": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "uniqueItems": true
+            },
+            "uniqueItems": true,
+            "scope": "window",
+            "default": [],
+            "markdownDescription": "Excludes specified workspace folders from the task explorer. Matches the display name as shown by VS Code, not the directory name. Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`).",
+            "order": 2
+          }
+        }
+      },
+      {
+        "title": "Tasks Files Diagnostics",
+        "markdownDescription": "Enable diagnostics to detect potential issues with task definitions.",
+        "order": 4,
+        "type": "object",
+        "properties": {
+          "taskCockpit.validation.duplicateLabels": {
+            "type": "boolean",
+            "scope": "window",
+            "default": true,
+            "markdownDescription": "Check for tasks with duplicate labels and flag them as problematic.",
+            "order": 1
+          },
+          "taskCockpit.validation.missingDependencies": {
+            "type": "boolean",
+            "scope": "window",
+            "default": true,
+            "markdownDescription": "Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems.",
+            "order": 2
+          }
+        }
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.20.1",
+    "@types/vscode": "^1.86.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "mocha": "^11.3.0",
+    "typescript": "^5.9.3"
+  }
+}

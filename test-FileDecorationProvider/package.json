@@ -10,9 +10,11 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "extension.js",
-    "contributes": {
+  "contributes": {
     "views": {
       "explorer": [
         {
@@ -22,12 +24,42 @@
         }
       ]
     },
-    "commands": [
-      {
-        "command": "decorationTest.toggleMode",
-        "title": "Decoration Test: Toggle URI mode (same ↔ unique)"
+    "commands": [],
+    "configuration": {
+      "title": "File Decoration",
+      "properties": {
+        "taskCockpit.display.badges.runningSymbol": {
+          "type": "string",
+          "default": "●",
+          "pattern": "^[^\\d\\s]$",
+          "markdownDescription": "..."
+        },
+        "taskCockpit.display.badges.overflowSymbol": {
+          "type": "string",
+          "default": "+",
+          "pattern": "^[^\\d\\s]$",
+          "markdownDescription": "..."
+        },
+        "taskCockpit.display.badges.badgeOrder": {
+          "type": "string",
+          "default": "symbolFirst",
+          "enum": [
+            "symbolFirst",
+            "countFirst"
+          ],
+          "enumDescriptions": [
+            "Symbol first",
+            "Count first"
+          ]
+        },
+        "taskCockpit.display.badges.availableSymbol": {
+          "type": "string",
+          "default": "•",
+          "pattern": "^[^\\d\\s]$",
+          "markdownDescription": "..."
+        }
       }
-    ]
+    }
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

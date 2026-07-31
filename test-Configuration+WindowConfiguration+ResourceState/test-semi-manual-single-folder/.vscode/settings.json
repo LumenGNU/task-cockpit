@@ -1,0 +1,14 @@
+{
+    // часть window-конфигурации
+    "taskCockpit.validation.duplicateLabels": false,
+    
+    // часть resource-конфигурации
+    "taskCockpit.display.defaultIconName": "account",
+    // "taskCockpit.display.segmentSeparator": ":",
+    
+    // часть window-конфигурации, но не в схемме
+    "taskCockpit.showGlobalTasksView": true,
+    
+    // не часть taskCockpit-конфигурации
+    "editor.minimap.enabled": false
+}

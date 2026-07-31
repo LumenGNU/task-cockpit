@@ -1,9 +1,14 @@
 
-
-
-## FileDecorationProvider
-## --------------------------------
 DecorationProvider/FileDecorationProvider.ts
-DecorationProvider/Conf.d.ts
 DecorationProvider/UriQuery.d.ts
 DecorationProvider/UriSchema.d.ts
+
+utils/Safe.d.ts
+utils/Immutable.d.ts
+
+WindowConfiguration/Config.d.ts
+WindowConfiguration/WindowConfiguration.ts
+WindowConfiguration/WindowConfigurationSchema.ts
+
+Configuration.ts
+common.ts

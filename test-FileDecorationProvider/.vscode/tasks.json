@@ -284,7 +284,8 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "DEST_DIR": "~out-test"
+                    "DEST_DIR": "~out-test",
+                    "EXTENSION_JS": "~stripped/extension-test.js"
                 }
             },
             "problemMatcher": [],
@@ -371,10 +372,8 @@
                 "color": "terminal.ansiMagenta"
             },
             "dependsOn": [
-                "Pretest|Clean/create '~stripped/'",
-                "Pretest|Clean/create '~out-test/'",
                 "Pretest|Strip DEBUG blocks",
-                "Pretest|Fixture|Compile Fixture Test .ts Files into '~out-test/'",
+                "Pretest|Fixture|Compile Fixture test ts files into '~out-test/'",
                 "Pretest|Prepare `package.json` for test runner"
             ],
             "dependsOrder": "sequence",
@@ -391,7 +390,7 @@
         },
         // Compile Fixture Test .ts Files into '~out-test/' ---------------------------------------------------------------
         {
-            "label": "Pretest|Fixture|Compile Fixture Test .ts Files into '~out-test/'",
+            "label": "Pretest|Fixture|Compile Fixture test ts files into '~out-test/'",
             "detail": "Compile test TypeScript sources into the '~out-test' directory",
             "icon": {
                 "id": "debug"
@@ -424,67 +423,15 @@
             }
         },
         // ============================================================================================
-        // == Unit Test
-        {
-            "label": "Run tests|Unit|ALL TESTS",
-            "detail": "Run the ALL Units Tests",
-            "icon": {
-                "id": "run-all"
-            },
-            "dependsOn": [
-                "Pretest|Unit"
-            ],
-            "dependsOrder": "sequence",
-            "type": "shell",
-            "command": "dev-scripts/run-tests.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "CONFIG_FILE": ".vscode-test/vscode-unit-tests.mjs",
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "~stripped",
-                    "SUT_TEST": "test",
-                    "REPORTER": "spec",
-                    "TESTS": "*::*"
-                }
-            },
-            "problemMatcher": {
-                "applyTo": "allDocuments",
-                "owner": "Test Failes",
-                "source": "vscode-test",
-                "severity": "error",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ],
-                "pattern": {
-                    "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                    "message": 0,
-                    "file": 1,
-                    "line": 2,
-                    "column": 3
-                }
-            },
-            "presentation": {
-                "clear": false,
-                "echo": false,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "revealProblems": "never",
-                "group": "Tests"
-            }
-        },
-        // ============================================================================================
         // == Fixture Test
         {
-            "label": "Run tests|Fixture|ALL TESTS",
-            "detail": "Run the ALL Fixtures Tests",
+            "label": "Run tests|Fixture|FileDecorationProvider",
+            "detail": "Run the FileDecorationProvider Fixtures Tests",
             "icon": {
                 "id": "run-all"
             },
             "dependsOn": [
+                "Prepare TEST environment",
                 "Pretest|Fixture"
             ],
             "dependsOrder": "sequence",
@@ -496,10 +443,12 @@
                     "CONFIG_FILE": ".vscode-test/vscode-fixture-tests.mjs",
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "~stripped",
-                    "SUT_TEST": "test",
-                    "REPORTER": "spec",
+                    "SUT_TEST": "test-FileDecorationProvider",
                     "TESTS": "*::*",
+                    "VSC_DATA_DIR": "~vsc-data-dir",
+                    "VSC_PROFILE": "Task Cockpit Test",
                     // "VSC_VERSION": "1.116.0", // "1.86.2"
+                    "REPORTER": "spec",
                 }
             },
             "problemMatcher": [

@@ -15,9 +15,13 @@ import * as vscode from 'vscode';
 import type UriSchema from './DecorationProvider/UriSchema';
 import type UriQuery from './DecorationProvider/UriQuery';
 import FileDecorationProvider from './DecorationProvider/FileDecorationProvider';
-import type Props from './DecorationProvider/Conf';
+import Config from './WindowConfiguration/Config';
+import { WindowConfiguration } from './WindowConfiguration/WindowConfiguration';
+import WindowConfigurationSchema from './WindowConfiguration/WindowConfigurationSchema';
 
-const logChannel = vscode.window.createOutputChannel('DecorationProvider TEST', { log: true });
+const logChannel = vscode.window.createOutputChannel('taskCockpit-DEBUG', { log: true });
+logChannel.show();
+
 
 // -----
 // Данные
@@ -40,7 +44,7 @@ function makeUri(state: NodeState): vscode.Uri {
         query: new URLSearchParams({
             available: state.available.toString(),
             running: state.running.toString(),
-            color: '' //state.color ?? ''
+            tintColor: '' //state.color ?? ''
         } satisfies UriQuery).toString()
     } satisfies UriSchema);
 }
@@ -79,7 +83,7 @@ class TestTreeProvider implements vscode.TreeDataProvider<NodeState> {
 // Скины
 // -----
 
-const skins: ReadonlyArray<Props & { readonly name: string; }> = [
+const skins: ReadonlyArray<Config['FileDecoration'] & { readonly name: string; }> = [
     { name: 'Dots', runningSymbol: '●', availableSymbol: '·', overflowSymbol: '+', badgeOrder: 'symbolFirst' },
     { name: 'Flags', runningSymbol: '⚑', availableSymbol: '⚐', overflowSymbol: '+', badgeOrder: 'symbolFirst' },
     { name: 'Rewind', runningSymbol: '▶', availableSymbol: '○', overflowSymbol: '…', badgeOrder: 'countFirst' },
@@ -88,13 +92,27 @@ const skins: ReadonlyArray<Props & { readonly name: string; }> = [
     { name: 'Toxic', runningSymbol: '😈', availableSymbol: '💤', overflowSymbol: '🤯', badgeOrder: 'symbolFirst' },
 ];
 
+async function updateConfig(value: Config['FileDecoration']): Promise<void> {
+    const fd = WindowConfigurationSchema.SCHEMA.FileDecoration;
+    const cfg = vscode.workspace.getConfiguration();
+    await Promise.all([
+        cfg.update(fd.runningSymbol.configKey, value.runningSymbol, vscode.ConfigurationTarget.Global),
+        cfg.update(fd.overflowSymbol.configKey, value.overflowSymbol, vscode.ConfigurationTarget.Global),
+        cfg.update(fd.badgeOrder.configKey, value.badgeOrder, vscode.ConfigurationTarget.Global),
+        cfg.update(fd.availableSymbol.configKey, value.availableSymbol, vscode.ConfigurationTarget.Global),
+    ]);
+    return void 0;
+}
+
 // -----
 // activate
 // -----
 
 export function activate(context: vscode.ExtensionContext) {
+
+    const windowConfiguration = new WindowConfiguration();
     const tree = new TestTreeProvider();
-    const decor = new FileDecorationProvider(skins[0]!);
+    const decor = new FileDecorationProvider(windowConfiguration);
 
     const treeView = vscode.window.createTreeView('decorationTest', { treeDataProvider: tree });
     const regDecor = vscode.window.registerFileDecorationProvider(decor);
@@ -106,11 +124,17 @@ export function activate(context: vscode.ExtensionContext) {
         tick++;
         const skin = skins[tick % skins.length]!;
         logChannel.debug(`skin → ${skin.name}`);
-        decor.setConf(skin);
+
+        void updateConfig({
+            availableSymbol: skin.availableSymbol,
+            badgeOrder: skin.badgeOrder,
+            overflowSymbol: skin.overflowSymbol,
+            runningSymbol: skin.runningSymbol
+        });
     }, 1500);
 
     context.subscriptions.push(
-        treeView, regDecor, decor, logChannel,
+        windowConfiguration, treeView, regDecor, decor, logChannel,
         { dispose: () => clearInterval(interval) }
     );
 

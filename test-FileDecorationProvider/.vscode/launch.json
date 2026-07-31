@@ -15,8 +15,10 @@
             "request": "launch",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}/~out",
-                "--profile=Clean",
-                "--locale=en"
+                // "--disable-extensions",
+                "--profile", "Task Cockpit Test",
+                "--locale", "en-US",
+                "--log", "papio-dev.task-cockpit:trace",
             ],
             "env": {
             }

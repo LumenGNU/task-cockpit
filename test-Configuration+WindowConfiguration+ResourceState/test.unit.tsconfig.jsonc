@@ -9,15 +9,14 @@
         }
     },
     "exclude": [
-        "./test-*/**/~*",
+        "./test/**/~*",
         "./~stripped/**/~*",
-        "./test-*/~*",
+        "./test/~*",
         "./~stripped/~*"
     ],
     "include": [
-        "./test-*/fixture/*.ts",
-        "./test-*/fixture/**/*.ts",
-        "./~stripped/extension-test.ts"
-        // "./~stripped/**/*.ts"
+        "./test/unit/*.ts",
+        "./test/unit/**/*.ts",
+        "./~stripped/extension.ts"
     ]
 }
