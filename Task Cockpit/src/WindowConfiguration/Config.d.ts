@@ -1,5 +1,5 @@
 
-type CompressionBehavior = "off" | "on" | "on-aggressive";
+// type CompressionBehavior = "off" | "on" | "on-aggressive";
 
 /** Глобальные настройки.
  * Читаются из конфигурации VS Code без привязки к scope ресурса.
@@ -7,7 +7,7 @@ type CompressionBehavior = "off" | "on" | "on-aggressive";
  * */
 interface Config {
 
-    ValidationConf: {
+    Validation: {
 
         /** выполнять поиск дубликатов лейблов в файлах задач */
         duplicates: boolean;
@@ -16,7 +16,7 @@ interface Config {
         dependencies: boolean;
     };
 
-    FileDecorationConf: {
+    FileDecoration: {
 
         /** Символ активного выполнения.
          * Отображается когда хотя бы одна задача запущена прямо сейчас.
@@ -42,16 +42,16 @@ interface Config {
         excludeFolders: Set<string>;
     };
 
-    Pins: {
+    // Pins: {
 
-        /** скрывает/показывает закреплённые задачи */
-        visibility: boolean;
+    //     /** скрывает/показывает закреплённые задачи */
+    //     visibility: boolean;
 
-        /** режим сжатия путей для закрепленных задач */
-        pathCompression: CompressionBehavior;
-    };
+    //     /** режим сжатия путей для закрепленных задач */
+    //     pathCompression: CompressionBehavior;
+    // };
 
-    ProcessMonitorConf: {
+    ProcessMonitor: {
 
         /** Параметры адаптивного поллинга опроса системы на работающие задачи */
         polling: {
@@ -66,7 +66,7 @@ interface Config {
         };
     };
 
-    TerminalsConf: {
+    Terminals: {
         timeout: number;
     };
 }

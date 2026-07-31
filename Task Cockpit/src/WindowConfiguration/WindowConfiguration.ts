@@ -3,21 +3,14 @@ import {
     workspace,
     LogOutputChannel,
 } from 'vscode';
-import {
-    collectSections,
-    createSchema
-} from '../ConfigSchema';
 import * as assert from 'node:assert/strict';
-import WINDOW_SCHEMA from './SCHEMA';
-import readWindowConfig from './readWindowConfig';
+import WindowConfigurationSchema from './WindowConfigurationSchema';
+import Configuration from '../Configuration';
 
 import type {
     Disposable,
     Event,
 } from 'vscode';
-import type {
-    ConfigSchema
-} from '../ConfigSchema';
 import type Immutable from '../utils/Immutable';
 import type Safe from '../utils/Safe';
 import type WindowConfig from './Config';
@@ -28,20 +21,12 @@ type AffectedKeys = WindowConfiguration.AffectedKeys;
 
 export declare namespace WindowConfiguration {
 
-    export type ConfigKey = keyof typeof WINDOW_SCHEMA;
+    export type ConfigKey = WindowConfigurationSchema.ConfigKey;
     export type AffectedKeys = Set<ConfigKey>;
 }
 
 export class WindowConfiguration implements Disposable {
 
-    /** Базовый ключ конфигурации */
-    readonly #baseConfigSection: string;
-
-    /** Схема валидации window-конфигурации */
-    readonly #windowConfigSchema: Immutable<ConfigSchema<WindowConfig>>;
-
-    /** Карта "ключ window-конфигурации" → все секции конфигурации, принадлежащие этому ключу. */
-    readonly #sectionsByKey: Immutable<Map<ConfigKey, Array<string>>>;
 
     readonly #onDidChange: EventEmitter<Immutable<AffectedKeys>>;
     readonly onDidChange: Event<Immutable<AffectedKeys>>;
@@ -49,7 +34,7 @@ export class WindowConfiguration implements Disposable {
     readonly #onDidDisposed: EventEmitter<void>;
     readonly onDidDisposed: Event<void>;
 
-    readonly #logOutputChannel: Safe<LogOutputChannel> | null;
+    #logOutputChannel: Safe<LogOutputChannel> | null;
 
     readonly #disposables: Disposable[];
     #disposed: boolean;
@@ -58,26 +43,30 @@ export class WindowConfiguration implements Disposable {
     #configuration!: Immutable<WindowConfig>;
 
 
+    #pendingChanges: Set<ConfigKey>;
+    #debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+
+    static readonly #DEBOUNCE_MS = 350;
+
     constructor(
-        baseConfigSection: string,
         logOutputChannel: Safe<LogOutputChannel> | null = null
     ) {
 
         this.#disposed = false;
 
-        this.#baseConfigSection = baseConfigSection;
         this.#logOutputChannel = logOutputChannel;
 
         this.#onDidChange = new EventEmitter();
         this.onDidChange = this.#onDidChange.event;
 
-        // Компиляция схем, получение карты секций window-конфигурации
-        this.#windowConfigSchema = createSchema<WindowConfig>(WINDOW_SCHEMA);
-        this.#sectionsByKey = collectSections<WindowConfig>(this.#windowConfigSchema);
 
         this.#onDidDisposed = new EventEmitter();
         this.onDidDisposed = this.#onDidDisposed.event;
 
+
+        this.#pendingChanges = new Set();
+        this.#debounceTimer = undefined;
 
         this.#disposables = [
             // events
@@ -92,21 +81,14 @@ export class WindowConfiguration implements Disposable {
 
                 logOutputChannel?.trace(`${this.constructor.name}: Configuration changed…`);
 
-                const baseSectionChanged = event.affectsConfiguration(this.#baseConfigSection);
-
-                if (!baseSectionChanged) {
-                    logOutputChannel?.trace('  Change does not affect extension settings. Ignoring.');
-                    return;
-                }
-
                 const changes = new Set<ConfigKey>();
 
                 // Гранулярный трекинг: для каждого WindowConfigKey определяем, затронула ли
                 // хоть одна из принадлежащих ему секций конфигурации текущее событие.
                 // Позволяет подписчикам фильтровать нерелевантные обновления window-конфигурации.
-                for (const [key, sectionSet] of this.#sectionsByKey) {
+                for (const [key, sectionSet] of WindowConfigurationSchema.SECTIONS_BY_KEY) {
                     for (const section of sectionSet) {
-                        if (event.affectsConfiguration(`${this.#baseConfigSection}.${section}`)) {
+                        if (event.affectsConfiguration(section)) {
                             changes.add(key);
                             break;
                         }
@@ -120,14 +102,39 @@ export class WindowConfiguration implements Disposable {
                     return;
                 }
 
-                this.#updateWindowConfiguration();
-                this.#onDidChange.fire(changes);
+                logOutputChannel?.trace(`  Affected keys: ${[...changes.keys()].map((k) => `"${k}"`).join(', ')}. Accumulating.`);
+
+                // каждое событие конфигурации аккумулирует ключи в #pendingChanges и перезапускает таймер.
+                // Когда поток событий прерывается на ≥DEBOUNCE_MS, один fire уходит со всем накопленным Set.
+                // #updateWindowConfiguration() при этом вызывается тоже один раз — в конце потока событий,
+                // не на каждое событие.
+                for (const key of changes) {
+                    this.#pendingChanges.add(key);
+                }
+
+                clearTimeout(this.#debounceTimer);
+                this.#debounceTimer = setTimeout(() => {
+
+                    if (this.#disposed) {
+                        return;
+                    }
+
+                    const accumulated = new Set(this.#pendingChanges);
+                    this.#pendingChanges.clear();
+                    this.#debounceTimer = undefined;
+
+                    logOutputChannel?.trace(`${this.constructor.name}: Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
+
+                    this.#updateWindowConfiguration();
+                    this.#onDidChange.fire(accumulated);
+
+                }, WindowConfiguration.#DEBOUNCE_MS);
             })
         ];
 
         this.#updateWindowConfiguration();
 
-        assert.ok(this.#configuration);
+        assert.ok(this.#configuration, '?????????????????????????????');
     }
 
 
@@ -139,13 +146,18 @@ export class WindowConfiguration implements Disposable {
 
         this.#disposed = true;
 
+        clearTimeout(this.#debounceTimer);
+        this.#debounceTimer = undefined;
+        this.#pendingChanges.clear();
+
+        this.#onDidDisposed.fire();
+
         this.#disposables.forEach(function (d) {
             d.dispose();
         });
 
-        this.#onDidDisposed.fire();
-
         this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel = null;
     }
 
     get disposed() {
@@ -159,15 +171,13 @@ export class WindowConfiguration implements Disposable {
     }
 
     public get availableKeys(): Immutable<Array<ConfigKey>> {
-        return [...this.#sectionsByKey.keys()];
+        assert.equal(this.#disposed, false, `${this.constructor.name}#availableKeys: has been disposed`);
+        return [...WindowConfigurationSchema.SECTIONS_BY_KEY.keys()];
     }
 
-
     #updateWindowConfiguration() {
-        this.#configuration = readWindowConfig(
-            this.#baseConfigSection,
-            this.#windowConfigSchema
-        );
+        const workspaceConfig = workspace.getConfiguration();
+        this.#configuration = Configuration.coerce(workspaceConfig, WindowConfigurationSchema.SCHEMA);
     }
 
 }
