@@ -1,21 +1,21 @@
 {
-	"compilerOptions": {
-		"module": "Node16",
-		"target": "ES2022",
-		"lib": [
-			"ES2022"
-		],
-		"incremental": false,
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true,
-		"removeComments": true,
-		"noUncheckedIndexedAccess": true,
-		"types": [
-			"node"
-		]
-	},
-	"exclude": [
-		"**/~*"
-	]
+    "compilerOptions": {
+        "module": "Node16",
+        "target": "ES2022",
+        "lib": [
+            "ES2022"
+        ],
+        "incremental": false,
+        "sourceMap": true,
+        "rootDir": ".",
+        "strict": true,
+        "removeComments": true,
+        "noUncheckedIndexedAccess": true,
+        "types": [
+            "node"
+        ]
+    },
+    "exclude": [
+        "**/~*"
+    ]
 }
