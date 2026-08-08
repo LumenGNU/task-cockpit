@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node
+#!/usr/bin/env -S bash -c 'NVM_DIR="${NVM_DIR:-$HOME/.nvm}"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; exec node "$1" "${@:2}"' --
 
 // @ts-check
 
@@ -61,7 +61,7 @@ sm.install();
 // │  │  ├─ fixtureB/
 // │  │  └─ ...
 // ...
-// └─ package.json    ← package.json расширени, не используется
+// └─ package.json    ← package.json расширения. не используется
 // ...
 
 // Данные из CWD/SUT_TEST/fixtureX/ — как запускать:
@@ -150,7 +150,6 @@ const TESTS = TESTS_RAW?.split(path.delimiter) ?? ['test-*/*'];
 
 const VSC_VERSION = process.env.VSC_VERSION ?? '1.86.2';
 const VSC_PROFILE = process.env.VSC_PROFILE;
-const VSC_DATA_DIR = process.env.VSC_DATA_DIR;
 
 const termCols = process.stdout.columns || 80;
 const hrLength = Math.max(0, termCols - 3);
@@ -321,7 +320,6 @@ async function runFixture(fixture, summaryFile) {
             '--disable-extensions',
             '--locale', 'en-US',
             ...(VSC_PROFILE ? ['--profile', VSC_PROFILE] : []),
-            ...(VSC_DATA_DIR ? ['--user-data-dir', VSC_DATA_DIR] : []),
         ],
         extensionTestsEnv: {
             MOCHA_TEST_FILES: fixture.testFiles.join(path.delimiter),
