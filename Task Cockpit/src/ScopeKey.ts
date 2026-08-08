@@ -1,8 +1,10 @@
 import {
     TaskScope as VscTaskScope,
-    type WorkspaceFolder
+    type WorkspaceFolder,
+    workspace
 } from 'vscode';
 import type Immutable from './utils/Immutable';
+import assert from 'node:assert/strict';
 
 declare const ___Folder: unique symbol;
 
@@ -25,6 +27,29 @@ function getScopeKey(scope: Immutable<VscTaskScope.Global | VscTaskScope.Workspa
 }
 
 
+function resolveScopeName(scopeKey: ScopeKey): string | null {
+
+    if (scopeKey === ScopeKey.GLOBAL_KEY) {
+        return 'User';
+    }
+    else if (scopeKey === ScopeKey.WORKSPACE_KEY) {
+        return workspace.name ?? null;
+    }
+
+    const idx = workspace.workspaceFolders?.findIndex((f) => f.uri.toString() === scopeKey);
+
+    if (idx == null || idx < 0) {
+        return null;
+    }
+
+    const name = workspace.workspaceFolders?.[idx]?.name;
+
+    assert.ok(name != null);
+
+    return name;
+
+}
+
 type ScopeKey = GlobalKey | WorkspaceKey | FolderKey;
 
 declare namespace ScopeKey {
@@ -46,7 +71,8 @@ declare namespace ScopeKey {
 const ScopeKey = {
     GLOBAL_KEY: '\x00\x00$Global' satisfies GlobalKey,
     WORKSPACE_KEY: '\x00\x00$Workspace' satisfies WorkspaceKey,
-    getScopeKey
+    getScopeKey,
+    resolveScopeName
 } as const;
 
 export default ScopeKey;
