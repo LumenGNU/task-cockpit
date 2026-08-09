@@ -39,10 +39,6 @@ export default defineConfig(
         rules: {
             curly: 'warn',
             eqeqeq: ['warn', 'always', { null: 'ignore' }],
-            '@typescript-eslint/naming-convention': ['warn', {
-                selector: 'import',
-                format: ['camelCase', 'PascalCase'],
-            }],
             '@typescript-eslint/consistent-type-definitions': ['warn', 'interface'],
             '@typescript-eslint/no-namespace': ['error', { allowDeclarations: true }],
             '@typescript-eslint/no-unused-vars': ['warn', {
