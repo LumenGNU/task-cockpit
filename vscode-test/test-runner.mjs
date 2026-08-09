@@ -136,7 +136,7 @@ const extensionDevelopmentPath = (() => {
     return developmentPath;
 })();
 
-const extensionTestsPath = path.resolve(CWD, path.join('.', '.vscode-test', 'mocha-tests.cjs'));
+const extensionTestsPath = path.resolve(CWD, path.join('.', '.vscode-test', 'mocha.cjs'));
 
 const TESTS_RAW = process.env.TESTS;
 const TESTS = TESTS_RAW?.split(path.delimiter) ?? ['test-*/*'];

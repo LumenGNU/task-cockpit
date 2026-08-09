@@ -7,4 +7,18 @@
 !package.json
 !color.mjs
 !test-runner.mjs
-!mocha-tests.cjs
+!mocha.cjs
+!probe-runner.mjs
+!probe.cjs
+
+
+# Разисключаем промежуточные каталоги
+!user-data/
+!user-data/User/
+!user-data/User/profiles/
+!user-data/User/profiles/*
+!user-data/User/profiles/*/settings.json
+!user-data/User/profiles/*/tasks.json
+!user-data/User/profiles/*/keybindings.json
+!user-data/User/globalStorage/
+!user-data/User/globalStorage/storage.json

@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "command": "echo 'user level My Task'",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "DependsOn 'My Task' in User",
+            "dependsOn": "My Task",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "tasks": [
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "u-1"
+            },
+            "command": "echo u-1",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}
