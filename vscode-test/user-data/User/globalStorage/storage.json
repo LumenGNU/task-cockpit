@@ -76,6 +76,14 @@
         {
             "location": "multi-root-combined-shadowing-c3",
             "name": "multi-root-combined-shadowing-c3"
+        },
+        {
+            "location": "test-ResourceState.ResourceConfig.mapScopedConfig",
+            "name": "test-ResourceState.ResourceConfig.mapScopedConfig"
+        },
+        {
+            "location": "test-Configuration",
+            "name": "test-Configuration"
         }
     ],
     "lastKnownMenubarData": {
