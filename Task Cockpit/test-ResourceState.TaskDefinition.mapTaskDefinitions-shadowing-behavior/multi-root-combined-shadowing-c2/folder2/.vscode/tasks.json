@@ -1,0 +1,22 @@
+{
+    "tasks": [
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "f2-1"
+            },
+            "command": "echo f2-1",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "f2-2"
+            },
+            "command": "echo f2-2",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}

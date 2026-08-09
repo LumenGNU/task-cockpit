@@ -1,0 +1,28 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        },
+        {
+            "path": "truly-empty"
+        }
+    ],
+    "settings": {
+            "extConfig.key": "value-from-workspace"
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "task-in-workspace",
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": [],
+            }
+        ]
+    }
+}

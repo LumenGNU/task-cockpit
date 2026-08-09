@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "task A",
+            "command": "echo task A from folder1",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}

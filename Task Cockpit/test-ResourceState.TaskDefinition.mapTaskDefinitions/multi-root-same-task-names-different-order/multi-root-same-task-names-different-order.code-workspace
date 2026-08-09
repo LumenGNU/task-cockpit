@@ -1,0 +1,52 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+    "settings": {},
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "task A",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "task B",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "task C",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "1",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "2",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "3",
+                "command": "true",
+                "type": "shell",
+                "problemMatcher": []
+            },
+        ]
+    }
+}

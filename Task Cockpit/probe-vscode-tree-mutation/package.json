@@ -1,0 +1,27 @@
+{
+  "name": "probe-vscode-tree-mutation",
+  "publisher": "papio-dev",
+  "displayName": "probe-vscode-tree-mutation",
+  "description": "probe-vscode-tree-mutation",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["onStartupFinished"],
+  "main": "extension.js",
+    "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "freezeTree.view", "name": "Freeze Tree",
+          "icon": "$(debug)"
+        }
+      ]
+    },
+    "commands": [
+    ]
+  }
+}

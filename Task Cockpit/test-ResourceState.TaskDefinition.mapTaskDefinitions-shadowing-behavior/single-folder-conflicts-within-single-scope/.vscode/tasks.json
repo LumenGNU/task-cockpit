@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "command": "echo 'My Task 1'",
+            "icon": {
+                "id": "pos-1"
+            },
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "command": "echo 'My Task 2'",
+            "icon": {
+                "id": "pos-2"
+            },
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "command": "echo 'My Task 3'",
+            "icon": {
+                "id": "pos-3"
+            },
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "DependsOn My Task",
+            "dependsOn": "My Task",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+    "settings": {},
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "My Task",
+                "icon": {
+                    "id": "w-1"
+                },
+                "command": "echo w-1",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "icon": {
+                    "id": "w-2"
+                },
+                "command": "echo w-2",
+                "type": "shell",
+                "problemMatcher": []
+            }
+        ]
+    }
+}
