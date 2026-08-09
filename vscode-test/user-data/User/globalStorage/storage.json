@@ -84,6 +84,10 @@
         {
             "location": "test-Configuration",
             "name": "test-Configuration"
+        },
+        {
+            "location": "test-FileDecorationProvider",
+            "name": "test-FileDecorationProvider"
         }
     ],
     "lastKnownMenubarData": {
@@ -1745,20 +1749,20 @@
             }
         }
     },
-    "theme": "vs",
-    "themeBackground": "#ffffff",
+    "theme": "vs-dark",
+    "themeBackground": "#1f1f1f",
     "windowSplash": {
         "zoomLevel": 0,
-        "baseTheme": "vs",
+        "baseTheme": "vs-dark",
         "colorInfo": {
-            "foreground": "#616161",
-            "background": "#ffffff",
-            "editorBackground": "#ffffff",
-            "titleBarBackground": "#dddddd",
-            "activityBarBackground": "#2c2c2c",
-            "sideBarBackground": "#f3f3f3",
-            "statusBarBackground": "#007acc",
-            "statusBarNoFolderBackground": "#68217a"
+            "foreground": "#cccccc",
+            "background": "#1f1f1f",
+            "editorBackground": "#1f1f1f",
+            "titleBarBackground": "#181818",
+            "activityBarBackground": "#181818",
+            "sideBarBackground": "#181818",
+            "statusBarBackground": "#181818",
+            "statusBarNoFolderBackground": "#1f1f1f"
         }
     },
     "windowsState": {

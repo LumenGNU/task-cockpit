@@ -7,7 +7,7 @@
         "git.openRepositoryInParentFolders",
         "workbench.secondarySideBar.defaultVisibility"
     ],
-    "workbench.colorTheme": "Default Light+",
+    // "workbench.colorTheme": "Default Light+",
     "git.openRepositoryInParentFolders": "never",
     "workbench.secondarySideBar.defaultVisibility": "hidden",
 }
