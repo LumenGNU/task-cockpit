@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Task-in-folder1",
+            "icon": {
+                "id": "package",
+                "color": "terminal.ansiGreen"
+            },
+            "detail": "df **dsf** dfgs gfhj gdsfhjg hjfg jkfhg dfhg dfjgh dfhjg dhj\n\n> dsfdfsdf  \n> dfgdsfgdsf\n\n# ffff \n\n$(sync~spin)Err!!!",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+        {
+            "label": "Task(2)-in-folder1",
+            "command": "true",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        }
+    ]
+}

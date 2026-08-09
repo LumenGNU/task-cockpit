@@ -884,6 +884,516 @@
             },
             "problemMatcher": []
         },
+        // ------------------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "Probes|PreProbe|Clean/create '~out-probe/'",
+            "detail": "Ensure '~out-probe' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "mkdir -p \"./~out-probe\" && find \"./~out-probe\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
+            "problemMatcher": [],
+        },
+        {
+            "label": "Probes|Custom-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/Custom-task",
+                    "VSC_OPEN": "probes/Custom-task/probe/READMT.md"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|ResourceStateCoordinator",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/ResourceStateCoordinator",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|Runtime",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/Runtime",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|probe-probe",
+            "icon": {
+                "id": "debug-console",
+                "color": "terminal.ansiCyan"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/probe-probe",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "VSC_VERSION": "1.111.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s1",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s1",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s2",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s2",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s3",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s3",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s4",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s4",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s5",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s5",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s6",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s6",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s7",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace",
+                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s7",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|single-folder-conflicts-between-user-level",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/single-folder-conflicts-between-user-level",
+                    "VSC_PROFILE": "single-folder-conflicts-between-user-level",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|single-folder-conflicts-within-single-scope",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/task-shadowing",
+                    "VSC_OPEN": "fixtures/task-shadowing/single-folder-conflicts-within-single-scope",
+                    "VSC_PROFILE": "single-folder-conflicts-within-single-scope",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|tree-panel|multi-root-project",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/tree-panel",
+                    "VSC_PROFILE": "probe-tree-panel",
+                    "VSC_OPEN": "probes/tree-panel/multi-root-project/project.code-workspace:probes/tree-panel/multi-root-project/folder1/project.code-workspace.jsonc:probes/tree-panel/multi-root-project/folder1/.vscode/tasks.json:probes/tree-panel/multi-root-project/folder2/.vscode/tasks.json",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|tree-panel|full-monty",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/tree-panel",
+                    "VSC_PROFILE": "probe-tree-panel",
+                    "VSC_OPEN": "probes/tree-panel/full-monty/full-monty.code-workspace",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-tree-mutation",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
+                "./.vscode-test/probe-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "SUT_PROBE": "probes/vscode-tree-mutation",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        //---------------------------------------------------------------------------------------------------------------------------------------------------------
         {
             "label": "Test|PreTest|Clean/create '~out-test/'",
             "detail": "Ensure '~out-test' directory exists and is empty",
@@ -895,7 +1405,7 @@
             "problemMatcher": [],
         },
         {
-            "label": "Test|test-Configuration",
+            "label": "Test|Configuration",
             "icon": {
                 "id": "beaker"
             },
@@ -913,7 +1423,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-Configuration",
+                    "SUT_TEST": "test/Configuration",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "test-Configuration",
                 }
@@ -960,7 +1470,7 @@
             ]
         },
         {
-            "label": "Test|test-FileDecorationProvider",
+            "label": "Test|FileDecorationProvider",
             "icon": {
                 "id": "beaker"
             },
@@ -978,7 +1488,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-FileDecorationProvider",
+                    "SUT_TEST": "test/FileDecorationProvider",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "test-FileDecorationProvider",
                 }
@@ -1025,7 +1535,7 @@
             ]
         },
         {
-            "label": "Test|test-HierarchyModel",
+            "label": "Test|HierarchyModel",
             "icon": {
                 "id": "beaker"
             },
@@ -1043,7 +1553,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-HierarchyModel",
+                    "SUT_TEST": "test/HierarchyModel",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "Task Cockpit Test",
                 }
@@ -1090,7 +1600,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.ResourceConfig.mapScopedConfig",
+            "label": "Test|ResourceState|ResourceConfig|mapScopedConfig",
             "icon": {
                 "id": "beaker"
             },
@@ -1108,7 +1618,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.ResourceConfig.mapScopedConfig",
+                    "SUT_TEST": "test/ResourceState/ResourceConfig/mapScopedConfig",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "test-ResourceState.ResourceConfig.mapScopedConfig",
                 }
@@ -1155,7 +1665,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.ScopeLayout",
+            "label": "Test|ResourceState|ScopeLayout",
             "icon": {
                 "id": "beaker"
             },
@@ -1173,7 +1683,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.ScopeLayout",
+                    "SUT_TEST": "test/ResourceState/ScopeLayout",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "Task Cockpit Test",
                 }
@@ -1220,7 +1730,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|base",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions",
             "icon": {
                 "id": "beaker"
             },
@@ -1238,7 +1748,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "test-ResourceState.TaskDefinition.mapTaskDefinitions",
                 }
@@ -1285,7 +1795,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
             "icon": {
                 "id": "beaker"
             },
@@ -1303,7 +1813,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-combined-shadowing-c1/*",
                     "VSC_PROFILE": "multi-root-combined-shadowing-c1",
                 }
@@ -1350,7 +1860,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
             "icon": {
                 "id": "beaker"
             },
@@ -1368,7 +1878,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-combined-shadowing-c2/*",
                     "VSC_PROFILE": "multi-root-combined-shadowing-c2",
                 }
@@ -1415,7 +1925,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
             "icon": {
                 "id": "beaker"
             },
@@ -1433,7 +1943,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-combined-shadowing-c3/*",
                     "VSC_PROFILE": "multi-root-combined-shadowing-c3",
                 }
@@ -1480,7 +1990,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
             "icon": {
                 "id": "beaker"
             },
@@ -1498,7 +2008,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s1/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s1",
                 }
@@ -1545,7 +2055,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
             "icon": {
                 "id": "beaker"
             },
@@ -1563,7 +2073,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s2/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s2",
                 }
@@ -1610,7 +2120,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
             "icon": {
                 "id": "beaker"
             },
@@ -1628,7 +2138,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s3/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s3",
                 }
@@ -1675,7 +2185,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
             "icon": {
                 "id": "beaker"
             },
@@ -1693,7 +2203,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s4/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s4",
                 }
@@ -1740,7 +2250,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
             "icon": {
                 "id": "beaker"
             },
@@ -1758,7 +2268,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s5/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s5",
                 }
@@ -1805,7 +2315,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
             "icon": {
                 "id": "beaker"
             },
@@ -1823,7 +2333,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s6/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s6",
                 }
@@ -1870,7 +2380,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
             "icon": {
                 "id": "beaker"
             },
@@ -1888,7 +2398,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "multi-root-conflicts-between-scopes-s7/*",
                     "VSC_PROFILE": "multi-root-conflicts-between-scopes-s7",
                 }
@@ -1935,7 +2445,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
             "icon": {
                 "id": "beaker"
             },
@@ -1953,7 +2463,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "single-folder-conflicts-between-user-level/*",
                     "VSC_PROFILE": "single-folder-conflicts-between-user-level",
                 }
@@ -2000,7 +2510,7 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope",
             "icon": {
                 "id": "beaker"
             },
@@ -2018,7 +2528,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-ResourceState.TaskDefinition.mapTaskDefinitions-shadowing-behavior",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
                     "TESTS": "single-folder-conflicts-within-single-scope/*",
                     "VSC_PROFILE": "single-folder-conflicts-within-single-scope",
                 }
@@ -2065,28 +2575,28 @@
             ]
         },
         {
-            "label": "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior",
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior",
             "icon": {
                 "id": "run-all"
             },
             "dependsOn": [
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
-                "Test|test-ResourceState.TaskDefinition.mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope"
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
+                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope"
             ],
             "dependsOrder": "sequence"
         },
         {
-            "label": "Test|test-units",
+            "label": "Test|units",
             "icon": {
                 "id": "beaker"
             },
@@ -2104,7 +2614,7 @@
                 "env": {
                     "OUT_DIR": "~out-test",
                     "SUT_EXT": "src",
-                    "SUT_TEST": "test-units",
+                    "SUT_TEST": "test/units",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "Task Cockpit Test",
                 }
@@ -2150,449 +2660,6 @@
                 },
             ]
         },
-        {
-            "label": "Probe|PreProbe|Clean/create '~out-probe/'",
-            "detail": "Ensure '~out-probe' directory exists and is empty",
-            "icon": {
-                "id": "new-folder"
-            },
-            "type": "shell",
-            "command": "mkdir -p \"./~out-probe\" && find \"./~out-probe\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
-            "problemMatcher": [],
-        },
-        {
-            "label": "Probe|probe-Custom-task",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-Custom-task",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|Probe-probe",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-probe",
-                    "VSC_PROFILE": "Task Cockpit Test",
-                    "VSC_VERSION": "1.111.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-ResourceStateCoordinator",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-ResourceStateCoordinator",
-                    "VSC_PROFILE": "Task Cockpit Test",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-Runtime",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-Runtime",
-                    "VSC_PROFILE": "Task Cockpit Test",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s1",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s1",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s2",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s2",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s3",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s3",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s4",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s4",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s5",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s5",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s6",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s6",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|multi-root-conflicts-between-scopes-s7",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s7",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|single-folder-conflicts-between-user-level",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/single-folder-conflicts-between-user-level",
-                    "VSC_PROFILE": "single-folder-conflicts-between-user-level",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-task-shadowing|single-folder-conflicts-within-single-scope",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-task-shadowing",
-                    "VSC_OPEN": "${workspaceFolder}/probe-task-shadowing/single-folder-conflicts-within-single-scope",
-                    "VSC_PROFILE": "single-folder-conflicts-within-single-scope",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
-                    // "VSC_VERSION": "1.110.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probe|probe-vscode-tree-mutation",
-            "icon": {
-                "id": "debug"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probe|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probe-vscode-tree-mutation",
-                    "VSC_PROFILE": "Task Cockpit Test",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-    ],
+        //---------------------------------------------------------------------------------------------------------------------------------------------------------
+    ]
 }

@@ -1,0 +1,22 @@
+{
+    "folders": [
+        {
+            "path": "backend"
+        },
+        {
+            "path": "frontend"
+        },
+        {
+            "path": "shared"
+        }
+    ],
+    "settings": {
+        "taskCockpit.display.segmentSeparator": ":",
+        "taskCockpit.display.useGroupKind": false,
+        "taskCockpit.display.tintLabel": true,
+        "taskCockpit.display.pins.visibility": true,
+        "taskCockpit.display.pins.pathCompression": "on-aggressive",
+        "taskCockpit.display.useFolderIcon": false,
+// "taskCockpit.validation.duplicates": false 
+    }
+}

@@ -1,0 +1,67 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2",//"name": "xxxxxxxxxxxxxxxxxxx"
+        },
+        {
+            "path": "truly-empty"
+        }
+    ],
+    "settings": {
+        "taskCockpit.terminals.timeout": 2700,
+        "taskCockpit.display.segmentSeparator": "+",
+        "taskCockpit.filtering.excludeFolders": [
+            // "test-semi-manual (рабочая область)",
+            // "folder1",
+            // "folder2",
+            // "truly-empty",
+            // "xxxxxxxxxxxxxxxxxxx"
+        ],
+        "taskCockpit.display.tintLabel": true
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Task-in-workspace",
+                "command": "true",
+                "type": "shell",
+                "args": [],
+                "problemMatcher": []
+            },
+            {
+                "label": "grp+sub-grp+Task-in-workspace",
+                "type": "shell",
+                "command": "echo 'user level task'",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "type": "shell",
+                "command": "echo Hello",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "type": "shell",
+                "command": "echo Hello",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "type": "shell",
+                "command": "echo Hello",
+                "problemMatcher": []
+            },
+            {
+                "label": "-no-My Task",
+                "type": "shell",
+                "command": "echo Hello",
+                "problemMatcher": []
+            }
+        ]
+    }
+}

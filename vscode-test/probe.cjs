@@ -7,7 +7,6 @@ require('source-map-support').install();
  */
 exports.run = async function run() {
 
-    return new Promise((_resolve, _reject) => {
-    });
+    return new Promise((_resolve, _reject) => { });
 
 };

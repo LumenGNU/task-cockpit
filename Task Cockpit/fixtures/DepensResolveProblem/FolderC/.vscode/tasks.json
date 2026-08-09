@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test-C",
+            "detail": "Depends on tasks from workspace, global user, and workspace user scopes (no local tasks)",
+            "type": "shell",
+            "command": "node",
+            "args": [
+                "-e",
+                "'console.log(`workspace task test-C done`)'",
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

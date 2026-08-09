@@ -86,41 +86,47 @@ const extensionTestsPath = (() => {
 
 
 async function main() {
-
-    return await runProbe();
-
+    await runProbe();
 }
 
 
 
 
 /**
- * @returns { Promise<number> }
+ * @returns { Promise<void> }
 */
 async function runProbe() {
 
-    return await runTests({
-        extensionDevelopmentPath,
-        extensionTestsPath,
-        version: VSC_VERSION,
-        launchArgs: [
-            ...VSC_OPEN,
-            '--disable-gpu',
-            '--disable-telemetry',
-            '--disable-crash-reporter',
-            '--disable-extensions',
-            '--locale', 'en-US',
-            '--profile', VSC_PROFILE,
-            ...(VSC_PARAM_LOG ? ['--log', VSC_PARAM_LOG] : [])
-        ],
-        extensionTestsEnv: {
+    let exitCode = -1;
 
-        }
-    });
+    try {
+        exitCode = await runTests({
+            extensionDevelopmentPath,
+            extensionTestsPath,
+            version: VSC_VERSION,
+            launchArgs: [
+                ...VSC_OPEN,
+                '--disable-gpu',
+                '--disable-telemetry',
+                '--disable-crash-reporter',
+                '--disable-extensions',
+                '--locale', 'en-US',
+                '--profile', VSC_PROFILE,
+                ...(VSC_PARAM_LOG ? ['--log', VSC_PARAM_LOG] : [])
+            ],
+            extensionTestsEnv: {
+
+            }
+        });
+    }
+    catch (error) {
+        // ожидаемо, не ошибка
+    }
+
+    process.stderr.write(`\nExtension host exited with code: ${exitCode}\n`);
 
 }
 
 
-process.exit(
-    await main()
-);
+await main();
+process.exit(0);

@@ -1,0 +1,164 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // Build
+        {
+            "label": "core:compile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "icon": {
+                "id": "package",
+                "color": "terminal.ansiGreen"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "core:compile:watch",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": true,
+            "icon": {
+                "id": "eye",
+                "color": "terminal.ansiGreen"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // Test
+        {
+            "label": "unit",
+            "group": {
+                "kind": "test"
+            },
+            "icon": {
+                "id": "beaker",
+                "color": "terminal.ansiYellow"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "integration:api",
+            "group": {
+                "kind": "test"
+            },
+            "icon": {
+                "id": "beaker",
+                "color": "terminal.ansiYellow"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "integration:db",
+            "group": {
+                "kind": "test"
+            },
+            "icon": {
+                "id": "beaker",
+                "color": "terminal.ansiYellow"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "e2e:smoke",
+            "group": {
+                "kind": "test"
+            },
+            "isBackground": true,
+            "icon": {
+                "id": "flame",
+                "color": "terminal.ansiRed"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // deploy (ungrouped — kind "deploy" невалиден)
+        {
+            "label": "infra:k8s:deploy-staging",
+            "icon": {
+                "id": "cloud-upload",
+                "color": "terminal.ansiBlue"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "infra:k8s:deploy-prod",
+            "hide": true,
+            "icon": {
+                "id": "cloud-upload",
+                "color": "terminal.ansiRed"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // ungrouped
+        {
+            "label": "db:migrate:run",
+            "icon": {
+                "id": "database",
+                "color": "terminal.ansiCyan"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "db:migrate:rollback",
+            "icon": {
+                "id": "database",
+                "color": "terminal.ansiCyan"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "db:migrate:seed",
+            "icon": {
+                "id": "database",
+                "color": "terminal.ansiMagenta"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "lint",
+            "icon": {
+                "id": "search"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // комбинация флагов
+        {
+            "label": "all-flags",
+            "hide": true,
+            "isBackground": true,
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}
