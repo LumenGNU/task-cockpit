@@ -1,5 +1,0 @@
-{
-    "scripts": {
-        "script": "node -e 'console.log(`[npm: script] done`); setTimeout(() => process.exit(0), 300)'"
-    }
-}
