@@ -21,15 +21,10 @@ import type {
 } from 'vscode';
 import type ResourceConfig from './ResourceConfig/Config';
 import type Safe from '../utils/Safe';
-import type TaskDefinition from './TaskDefinition/TaskDefinition';
 import type TaskName from '../TaskName';
 import type Immutable from '../utils/Immutable';
-import type Scope from './Scope';
-
-
-type TaskSource = Scope.TaskSource;
-type ScopeLayout = Scope.ScopeLayout;
-type SourceUri = Scope.SourceUri;
+import ScopeLayout from './ScopeLayout';
+import type TaskDefinitionEntry from './TaskDefinition/TaskDefinitionEntry';
 
 
 interface UpdatingPhase { changes: AffectedKeys; }
@@ -100,7 +95,7 @@ class ResourceStateCoordinator implements Disposable {
      * {@link isEligibleTask | соответствует критериям расширения}. */
     #eligibleTasks!: Immutable<Map<ScopeKey, Map<TaskName, EligibleTask>>>;
     /** Кеш определений задач, сгруппированных по областям */
-    #taskDefinitions!: Immutable<Map<ScopeKey, Map<TaskName, TaskDefinition>>>;
+    #taskDefinitions!: Immutable<Map<ScopeKey, Map<TaskName, TaskDefinitionEntry>>>;
     /** Кеш scope-специфичных конфигураций, сгруппированных по областям */
     #perScopeConfiguration!: Immutable<Map<ScopeKey, ResourceConfig>>;
     // --------------------------------------------------------
@@ -296,22 +291,26 @@ class ResourceStateCoordinator implements Disposable {
      */
     public getScopeLayout(): Immutable<ScopeLayout> {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getScopeLayout: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getScopeLayout: use after dispose`);
 
         return this.#scopeLayout;
 
     }
 
 
-    public getTaskSource(scopeKey: ScopeKey): Immutable<TaskSource> | null {
+    public getTaskSource(scopeKey: ScopeKey): Immutable<ScopeLayout.TaskSource> | null {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getTaskSource: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getTaskSource: use after dispose`);
 
-        return scopeKey === ScopeKey.GLOBAL_KEY
-            ? this.#scopeLayout[ScopeKey.GLOBAL_KEY].taskSource
-            : scopeKey === ScopeKey.WORKSPACE_KEY
-                ? this.#scopeLayout[ScopeKey.WORKSPACE_KEY]?.taskSource ?? null
-                : this.#scopeLayout.folders?.[scopeKey]?.taskSource ?? null;
+        if (scopeKey === ScopeKey.GLOBAL_KEY) {
+            return this.#scopeLayout.globalScope.taskSource;
+        }
+        else if (scopeKey === ScopeKey.WORKSPACE_KEY) {
+            return this.#scopeLayout.workspaceScope?.taskSource ?? null;
+        }
+
+        return this.#scopeLayout.folderScopes?.find((f) => f.key === scopeKey)?.taskSource ?? null;
+
     }
 
 
@@ -322,7 +321,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws {AssertionError} если координатор уже disposed. */
     public getResourceConfig(scopeKey: ScopeKey): Immutable<ResourceConfig> | null {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getResourceConfig: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getResourceConfig: use after dispose`);
 
         const config = this.#perScopeConfiguration.get(scopeKey);
 
@@ -335,14 +334,17 @@ class ResourceStateCoordinator implements Disposable {
 
 
     /** Возвращает все определения задач, найденные непосредственно в конфигурации
-     * указанной области (scope). Правила слияния областей VS Code **не** применяются.
+     * указанной области (scope).
+     *
+     * Правила слияния областей VS Code **не** применяются.
+     * Правила затенения имен **применяются**.
      *
      * @returns словарь {@link TaskDefinition} по {@link TaskName} или `null`,
      *          если область не существует.
      * @throws {AssertionError} если координатор disposed. */
-    public getTaskDefinitions(scopeKey: ScopeKey): Immutable<Map<TaskName, TaskDefinition>> | null {
+    public getTaskDefinitions(scopeKey: ScopeKey): Immutable<Map<TaskName, TaskDefinitionEntry>> | null {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getTaskDefinitions: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getTaskDefinitions: use after dispose`);
         const map = this.#taskDefinitions.get(scopeKey);
         return map ?? null;
     }
@@ -377,12 +379,12 @@ class ResourceStateCoordinator implements Disposable {
      */
     public getEligibleTasks(scopeKey: ScopeKey): Immutable<Map<TaskName, EligibleTask>> | null {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getEligibleTasks: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#getEligibleTasks: use after dispose`);
 
         // Иначе вернет глобальные рантайм-задачи
         // @todo нужно мне это поведение, или нет?
         if (scopeKey === ScopeKey.WORKSPACE_KEY) {
-            if (!this.#scopeLayout[scopeKey]) {
+            if (!this.#scopeLayout.workspaceScope) {
                 return null;
             }
         }
@@ -430,7 +432,7 @@ class ResourceStateCoordinator implements Disposable {
      */
     public forceFullRefresh(): Promise<void> {
 
-        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#forceFullRefresh: has been disposed`);
+        assert.notEqual(this.#phase, 'disposed', `${this.constructor.name}#forceFullRefresh: use after dispose`);
 
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
@@ -588,7 +590,7 @@ class ResourceStateCoordinator implements Disposable {
         // с изменением конфигурации, и мы не хотим полагаться только на
         // флаг withTasks (который мог быть false). Так мы гарантируем,
         // что структура областей всегда актуальна.
-        this.#scopeLayout = getScopes();
+        this.#scopeLayout = ScopeLayout.getLayout();
 
         // если получали рантайм-задачи
         if (vscTasks != null) {
@@ -697,45 +699,6 @@ async function fetchEligibleTasksUntilStable(
 }
 
 // -----
-
-/** Формирует снапшот всех активных областей: глобальной (User),
- * рабочей области (workspace) и папок (workspace folders).
- *
- * Глобальная область *не имеет sourceUri*.
- *
- * Workspace-область может быть null (нет открытого workspace),
- * папки — null, если workspaceFolders отсутствуют.
- */
-function getScopes(): ScopeLayout {
-    return {
-        [ScopeKey.GLOBAL_KEY]: {
-            name: 'User',
-            taskSource: null
-        },
-        [ScopeKey.WORKSPACE_KEY]:
-            (workspace.workspaceFile)
-                ? {
-                    name: workspace.name ?? '«untitled workspace»',
-                    taskSource: {
-                        uri: workspace.workspaceFile as SourceUri,
-                        JSONPath: ['tasks', 'tasks']
-                    }
-                }
-                : null,
-        folders:
-            (workspace.workspaceFolders && workspace.workspaceFolders.length > 0)
-                ? workspace.workspaceFolders.reduce((obj, scope) => {
-                    const key = scope.uri.toString() as ScopeKey.FolderKey;
-                    const taskSource = {
-                        uri: Uri.joinPath(scope.uri, '.vscode', 'tasks.json') as SourceUri,
-                        JSONPath: ['tasks']
-                    };
-                    obj[key] = { taskSource, ...scope };
-                    return obj;
-                }, {} as { [k: ScopeKey.FolderKey]: Scope.FolderScope; })
-                : null
-    } satisfies ScopeLayout;
-}
 
 
 export {

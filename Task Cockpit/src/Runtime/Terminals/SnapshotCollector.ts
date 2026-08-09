@@ -1,7 +1,4 @@
 import {
-    CancellationError,
-    CancellationToken,
-    CancellationTokenSource,
     EventEmitter,
     LogOutputChannel,
     type Disposable,
@@ -11,21 +8,24 @@ import {
 import * as assert from 'node:assert/strict';
 import getProcessId from './getProcessId';
 import type ProcessId from '../ProcessId';
-import type Config from '../../Configuration/Window/Config';
-import type Snapshot from './Snapshot';
-import ConfigurationProvider from '../../Configuration/ConfigurationProvider';
+import type Config from '../../WindowConfiguration/Config';
+import type OngoingSnapshot from './OngoingSnapshot';
+import type Safe from '../../utils/Safe';
+import WindowConfiguration from './../../WindowConfiguration/WindowConfiguration';
+import type Immutable from '../../utils/Immutable';
+import type RequestId from '../RequestId';
 
 
-const CONFIGURATION_KEY = 'TerminalsConf';
+const CONFIGURATION_KEY = 'Terminals';
 type TerminalsConf = Config[typeof CONFIGURATION_KEY];
 
 
-// Snapshot Dementia-based Event Machine (Latest-wins mod)
+// Snapshot Dementia-based Event Machine (Latest-pending-wins mod)
 /** Событийно-ориентированный сборщик атомарных снимков PID’ов
  * открытых терминалов VS Code.
  *
  * Возвращает атомарный снимок (snapshot) PID всех открытых терминалов.
- * Гарантирует целостность: либо все терминалы опрошены, либо запрос отменён.
+ * Гарантирует целостность: либо все терминалы опрошены, либо запрос отменён (dispose).
  *
  * ## API
  *
@@ -43,7 +43,7 @@ type TerminalsConf = Config[typeof CONFIGURATION_KEY];
  * - Выполняет не более одного запроса одновременно
  * - Новый запрос вытесняет ожидающий (pending), но никогда **не прерывает активный**
  * - Результат последнего запроса всегда будет обработан
- * - Результат всегда полный: либо snapshot собран полностью, либо запрос отменён (dispose/CancellationToken)
+ * - Результат всегда полный: либо snapshot собран полностью, либо запрос отменён (dispose)
  * - Результат отдаётся через событие `onDidCollectSnapshot`
  *
  * (Очередь запросов на сбор PID терминалов с вытеснением по последнему (Latest-wins))
@@ -61,32 +61,30 @@ type TerminalsConf = Config[typeof CONFIGURATION_KEY];
  *
  * ## Заметки
  *
- * «Глючный» терминал увеличивает время сбора снапшота врлоть до `timeout`,
+ * «Глючный» терминал увеличивает время сбора снапшота вплоть до `timeout`
  * а события `onDidCollectSnapshot` станут приходить c произвольной задержкой.
  *  */
 class SnapshotCollector implements Disposable {
 
-    readonly #onDidCollectSnapshot: EventEmitter<Snapshot>;
-    public readonly onDidCollectSnapshot: Event<Snapshot>;
+    readonly #onDidCollectSnapshot: EventEmitter<Immutable<OngoingSnapshot>>;
+    public readonly onDidCollectSnapshot: Event<Immutable<OngoingSnapshot>>;
 
     #disposed: boolean;
 
     #conf: TerminalsConf;
 
-    #pendingId: number | undefined;
+    #pendingId: RequestId | undefined;
     #running: boolean;
-    #activeCancel: CancellationTokenSource | null;
-
-    readonly #logOutputChannel: LogOutputChannel | null;
 
     #disposables: Disposable[];
 
-    #configuration: Readonly<ConfigurationProvider>;
+    readonly #windowConfiguration: Safe<WindowConfiguration>;
+    #logOutputChannel: Safe<LogOutputChannel> | null;
 
 
     constructor(
-        configuration: Readonly<ConfigurationProvider>,
-        logOutputChannel: LogOutputChannel | null = null
+        windowConfiguration: Safe<WindowConfiguration>,
+        logOutputChannel: Safe<LogOutputChannel> | null = null
     ) {
         this.#disposed = false;
         this.#disposables = [];
@@ -96,24 +94,23 @@ class SnapshotCollector implements Disposable {
         // подготовка очереди
         this.#pendingId = undefined;
         this.#running = false;
-        this.#activeCancel = null;
 
         // conf ---
-        this.#configuration = configuration;
+        this.#windowConfiguration = windowConfiguration;
 
         this.#disposables.push(
-            this.#configuration.onDidChange((affectedKey) => {
+            this.#windowConfiguration.onDidChange((affectedKey) => {
                 if (!affectedKey.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+                this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+        this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
         // ---
 
         this.#disposables.push(
-            this.#onDidCollectSnapshot = new EventEmitter<Snapshot>()
+            this.#onDidCollectSnapshot = new EventEmitter<OngoingSnapshot>()
         );
         this.onDidCollectSnapshot = this.#onDidCollectSnapshot.event;
 
@@ -134,10 +131,8 @@ class SnapshotCollector implements Disposable {
         // отмена очереди
         this.#pendingId = undefined;
 
-        // Прерывание текущего запроса
-        // Не dispose(), не = null. Ресурс принадлежит #runLoop он и
-        // отвечает за жизненный цикл. Тут только прерывание работы
-        this.#activeCancel?.cancel();
+        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel = null;
     }
 
 
@@ -161,9 +156,11 @@ class SnapshotCollector implements Disposable {
      *   Типичное использование: монотонно возрастающая временная метка,
      *   позволяющая потребителю игнорировать устаревшие результаты
      *   (непрозрачный идентификатор корреляции).
+     *   Результаты отдаются строго в порядке завершения активных запросов,
+     *   перестановки невозможны. Но возможен пропуск некоторых "промежуточных" запросов.
      *
      * @fire Terminals#onDidCollectSnapshot после успешного сбора всех PID */
-    public enqueueRequest(requestId: number): void {
+    public enqueueRequest(requestId: RequestId): void {
 
         assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
 
@@ -194,16 +191,11 @@ class SnapshotCollector implements Disposable {
                 const requestId = this.#pendingId;
                 this.#pendingId = undefined;
 
-                const cancelSource = new CancellationTokenSource(); // локальная ссылка
-                this.#activeCancel = cancelSource;                  // для dispose() чтобы cancel()
-
-
                 try {
 
                     const snapshot = await SnapshotCollector.#collectProcessIds(
                         requestId,
                         this.#conf.timeout,
-                        cancelSource.token
                     );
 
                     if (!this.#disposed) {
@@ -212,19 +204,12 @@ class SnapshotCollector implements Disposable {
                     }
                 }
                 catch (error) {
-                    // Ожидается только CancellationError отменой из dispose.
-                    // Других ошибок согласно контракту getProcessId быть не должно.
-                    if (!(error instanceof CancellationError)) {
-                        // Нарушение контракта! Защищаться нельзя — исправлять.
-                        this.#logOutputChannel?.error(
-                            `SnapshotCollector: an unexpected exception in #collectProcessIds, errorType=${error?.constructor?.name ?? typeof error}`
-                        );
-                    }
+                    // Нарушение контракта! Защищаться нельзя — исправлять.
+                    this.#logOutputChannel?.error(
+                        `SnapshotCollector: an unexpected exception in #collectProcessIds, errorType=${error?.constructor?.name ?? typeof error}`
+                    );
+
                     continue;
-                }
-                finally {
-                    cancelSource.dispose(); // локальная, независимо от dispose()
-                    this.#activeCancel = null;
                 }
 
                 // цикл продолжится, если за время выполнения появился новый pendingId
@@ -243,52 +228,32 @@ class SnapshotCollector implements Disposable {
 
     /** Собирает PID’ы терминалов через параллельный
      * запуск getProcessId для каждого терминал.
-     * @returns Снапшот, содержащий только валидные PID процессов терминалов.
-     * @throws { CancellationError } при отмене через token */
+     * @returns Снапшот, содержащий только валидные PID процессов терминалов. */
     static async #collectProcessIds(
-        requestId: number,
-        timeout: number,
-        token: CancellationToken
-    ): Promise<Readonly<Snapshot>> {
+        requestId: RequestId,
+        timeoutMs: number,
+    ): Promise<Readonly<OngoingSnapshot>> {
 
-        if (token.isCancellationRequested) {
-            throw new CancellationError();
-        }
 
         const terminals = window.terminals;
 
         if (terminals.length === 0) {
-            return { requestId, processIds: new Set() };
+            return { requestId, ongoingProcesses: new Set() };
         }
 
         // Запускаем опрос.
 
-        const promises = terminals.map(function (terminal) {
+        const results = await Promise.all(terminals.map(function (terminal) {
             // Гарантии:
-            // - CancellationError бросается только при отмене через token.
-            //   Других ошибок не бросает. Пры любых проблемах возвращает `undefined`.
+            // - Пры любых проблемах возвращает `undefined`.
             // - По достижении timeout обязательно разрешится в `undefined`
             // - В остальных случаях вернет PID процесса терминала (number|undefined)
-            return getProcessId(terminal, timeout, token);
-        });
-
-        promises.forEach(function (p) {
-            p.catch(function (e) {
-                if (!(e instanceof CancellationError)) {
-                    // @todo log
-                };
-            });
-        });
-
-        const results = await Promise.all(promises);
-
-        if (token.isCancellationRequested) {
-            throw new CancellationError();
-        }
+            return getProcessId(terminal, timeoutMs);
+        }));
 
         return {
             requestId,
-            processIds: results.reduce(function (acc, processId) {
+            ongoingProcesses: results.reduce(function (acc, processId) {
                 // Фильтруем закрытые/зависшие/без процесса (undefined|null)
                 if (processId != null) { acc.add(processId); }
                 return acc;
@@ -296,13 +261,7 @@ class SnapshotCollector implements Disposable {
         };
     }
 
-    // #endregion
 
-    #applyConf(conf: Readonly<TerminalsConf>): Readonly<TerminalsConf> {
-        return conf;
-    }
-
-    // #endregion Private
 
 }
 

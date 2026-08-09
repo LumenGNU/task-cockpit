@@ -1,10 +1,11 @@
 import {
+    Uri,
     workspace,
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import TaskName from '../../TaskName';
 
-import type Scope from '../Scope';
+
 import type Group from './Group';
 import type Icon from './Icon';
 import type Immutable from '../../utils/Immutable';
@@ -13,8 +14,11 @@ import ScopeKey from '../../ScopeKey';
 import type TaskDefinition from './TaskDefinition';
 import type TaskGroup from './TaskGroup';
 import Configuration from '../../Configuration';
+import ScopeLayout from '../ScopeLayout';
+import type TaskDefinitionEntry from './TaskDefinitionEntry';
 
 
+type TaskMap = Map<TaskName, TaskDefinitionEntry>;
 
 /** Читает конфигурацию и возвращает карту определений задач, проиндексированных
  *  по имени задачи ({@link TaskName}).
@@ -25,77 +29,131 @@ import Configuration from '../../Configuration';
  *
  * Особенности:
  * - Порядок записей соответствует порядку в исходном файле (точнее в порядке из VS Code)
- * - При наличии дубликатов ключей последние определения перезаписывают предыдущие.
  * - Карта является `ReadonlyMap`, не предполагается модификация
  *   после построения.
  *
+ * Почему:
+ * VS Code при прямом запуске не запускает конкретный экземпляр из пикера — он разрешает
+ * задачу заново по имени {@see probe-task-shadowing/task-shadowing.md}.
+ *
+ * Два уровня затенения:
+ * Уровень 1 — внутри скоупа:
+ * Для каждого скоупа — обход в порядке файла, last-wins по имени. Одно активное определение
+ * на имя, затенённые сохраняются.
+ *
+ * Уровень 2 — между скоупами ({User, Workspace, Prima}):
+ * User, Workspace и Prima участвуют в глобальном приоритете User > Workspace > Prima. Если в
+ * User есть активное определение с именем X — оно затеняет активное определение X в Workspace
+ * и Prima. Если в Workspace есть, но нет в User — затеняет Prima.
+ *
+ * folder[1+] в этом не участвуют — они изолированы и никого не затеняют и не затеняются.
+ *
+ * Карта должна отражать то, что реально запустится при прямом вызове. Для {User, Workspace, Prima}
+ * реальный победитель определяется глобально, поэтому эти три скоупа — не три независимые карты,
+ * а одна иерархия с одним активным на вершине. folder[1+] — действительно отдельные независимые карты.
+ *
  * @param scope Область-источник определений задач
  *  */
-function mapTaskDefinitions(scopeLayout: Immutable<Scope.ScopeLayout>): Map<ScopeKey, Map<TaskName, TaskDefinition>> {
+function mapTaskDefinitions(scopeLayout: Immutable<ScopeLayout>): Immutable<Map<ScopeKey, TaskMap>> {
 
-    const outMap = new Map<ScopeKey, Map<TaskName, TaskDefinition>>();
+    const resultMap = new Map<ScopeKey, TaskMap>();
 
-    outMap.set(ScopeKey.GLOBAL_KEY, buildTaskDefinitionsMap(getIsolatedGlobalTasks()));
+    const globalDefinitions = buildTaskDefinitionsMap(getIsolatedGlobalTasks());
 
-    if (scopeLayout[ScopeKey.WORKSPACE_KEY]) {
-        outMap.set(ScopeKey.WORKSPACE_KEY, buildTaskDefinitionsMap(getIsolatedWorkspaceTasks()));
+    resultMap.set(ScopeKey.GLOBAL_KEY, globalDefinitions);
+
+    const workspaceDefinitions =
+        scopeLayout.isMultiRoot
+            ? buildTaskDefinitionsMap(getIsolatedWorkspaceTasks())
+            : null;
+
+    if (workspaceDefinitions) {
+        for (const [taskName, taskDefinitionEntry] of workspaceDefinitions) {
+            if (globalDefinitions.has(taskName)) {
+                assert.ok(taskDefinitionEntry.active);
+                (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.active);
+                taskDefinitionEntry.active = null;
+            }
+        }
+
+        resultMap.set(ScopeKey.WORKSPACE_KEY, workspaceDefinitions);
     }
 
-    if (scopeLayout.folders) {
-        for (const [folderKey, folderScope] of Object.entries(scopeLayout.folders)) {
-            outMap.set(folderKey as ScopeKey.FolderKey, buildTaskDefinitionsMap(getIsolatedFolderTasks(folderScope)));
+
+    if (scopeLayout.folderScopes) {
+
+        for (const folderScope of scopeLayout.folderScopes) {
+            const folderDefinitions = buildTaskDefinitionsMap(getIsolatedFolderTasks(folderScope.uri));
+
+            if (folderScope.isPrima) {
+                for (const [taskName, taskDefinitionEntry] of folderDefinitions) {
+                    if (globalDefinitions.has(taskName) || workspaceDefinitions?.has(taskName)) {
+                        assert.ok(taskDefinitionEntry.active);
+                        (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.active);
+                        taskDefinitionEntry.active = null;
+                    }
+                }
+            }
+
+            resultMap.set(folderScope.key, folderDefinitions);
         }
     }
 
-    return outMap;
+    return resultMap;
 
 }
 
 
-function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): Map<TaskName, TaskDefinition> {
-    return rawArr.reduce(addDefinitionToMap, new Map<TaskName, TaskDefinition>());
+function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): TaskMap {
+
+    const map: TaskMap = new Map();
+    for (const raw of rawArr) {
+
+        if (!TaskName.nameIsQualifies(raw.label)) {
+            continue;
+        }
+
+        const definition: TaskDefinition = {
+            hidden: parseHiddenFlag(raw.hide),
+            isBackground: parseBackgroundFlag(raw.isBackground),
+            icon: parseTaskIcon(raw.icon),
+            group: parseTaskGroup(raw.group),
+            taskName: raw.label,
+        };
+
+        // При совпадении имён определения не теряются: все складываются в массив,
+        // последнее встреченное оказывается первым.
+        const existing = map.get(raw.label);
+
+        if (existing === undefined) {
+            map.set(raw.label, { active: definition });
+        }
+        else {
+            assert.ok(existing.active);
+            (existing.shadowed ??= []).push(existing.active); // текущий active → в архив
+            existing.active = definition;            // новый побеждает
+        }
+    }
+
+    return map;
 }
 
 
 function getIsolatedGlobalTasks(): Array<RawTaskDefinition> {
-    const wsConfig = workspace.getConfiguration('tasks', null);
-    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.GlobalOnly) ?? [];
+    const configObj = workspace.getConfiguration('tasks', null);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(configObj, 'tasks', Configuration.IsolationMode.GlobalOnly) ?? [];
 }
 
 
 function getIsolatedWorkspaceTasks(): Array<RawTaskDefinition> {
-    const wsConfig = workspace.getConfiguration('tasks', null);
-    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.WorkspaceOnly) ?? [];
+    const configObj = workspace.getConfiguration('tasks', null);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(configObj, 'tasks', Configuration.IsolationMode.WorkspaceOnly) ?? [];
 }
 
 
-function getIsolatedFolderTasks(scope: Immutable<Scope.FolderScope>): Array<RawTaskDefinition> {
-    const wsConfig = workspace.getConfiguration('tasks', scope);
-    return Configuration.readRaw<Array<RawTaskDefinition>>(wsConfig, 'tasks', Configuration.IsolationMode.FolderOnly) ?? [];
-}
-
-
-function addDefinitionToMap(
-    map: Map<TaskName, TaskDefinition>,
-    raw: RawTaskDefinition,
-): Map<TaskName, TaskDefinition> {
-
-    // Пропускаем записи без- или с невалидным названием.
-    if (!TaskName.nameIsQualifies(raw.label)) {
-        return map;
-    }
-
-    const definition: TaskDefinition = {
-        hidden: parseHiddenFlag(raw.hide),
-        isBackground: parseBackgroundFlag(raw.isBackground),
-        icon: parseTaskIcon(raw.icon),
-        group: parseTaskGroup(raw.group),
-        taskName: raw.label,
-    };
-
-    // (дубликаты label'ов возможны, но будут поглощены)
-    map.set(raw.label, definition);
-    return map;
+function getIsolatedFolderTasks(scopeUri: Immutable<Uri>): Array<RawTaskDefinition> {
+    const configObj = workspace.getConfiguration('tasks', scopeUri);
+    return Configuration.readRaw<Array<RawTaskDefinition>>(configObj, 'tasks', Configuration.IsolationMode.FolderOnly) ?? [];
 }
 
 

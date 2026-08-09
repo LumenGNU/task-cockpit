@@ -4,11 +4,11 @@ import {
 import ScopeKey from '../../ScopeKey';
 import Configuration from '../../Configuration';
 import type Immutable from '../../utils/Immutable';
-import type Scope from '../Scope';
+import type ScopeLayout from '../ScopeLayout';
 
 
 function mapScopedConfig<SchemaType extends object>(
-    scopeLayout: Immutable<Scope.ScopeLayout>,
+    scopeLayout: Immutable<ScopeLayout>,
     resourceConfigSchema: Configuration.ConfigSchema<SchemaType>
 ): Map<ScopeKey, SchemaType> {
 
@@ -22,19 +22,21 @@ function mapScopedConfig<SchemaType extends object>(
         Configuration.IsolationMode.GlobalOnly
     ));
 
-    if (scopeLayout[ScopeKey.WORKSPACE_KEY]) {
+    if (scopeLayout.isMultiRoot) {
         outMap.set(ScopeKey.WORKSPACE_KEY, Configuration.coerce(
             workspace.getConfiguration(),
             resourceConfigSchema
         ));
     }
 
-    if (scopeLayout.folders) {
-        for (const [folderKey, folderScope] of Object.entries(scopeLayout.folders)) {
-            outMap.set(folderKey as ScopeKey.FolderKey, Configuration.coerce(
-                workspace.getConfiguration('', folderScope),
-                resourceConfigSchema
-            ));
+    if (scopeLayout.folderScopes) {
+        for (const folderScope of scopeLayout.folderScopes) {
+            outMap.set(folderScope.key,
+                Configuration.coerce(
+                    workspace.getConfiguration('', folderScope.uri),
+                    resourceConfigSchema
+                )
+            );
         }
     }
 

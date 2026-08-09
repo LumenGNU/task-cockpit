@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 // import type Immutable from './utils/Immutable';
 import type { WorkspaceConfiguration } from 'vscode';
-import Immutable from './utils/Immutable';
+import Immutable from './utils/Immutable'; // @fixme
 
 
 // ---

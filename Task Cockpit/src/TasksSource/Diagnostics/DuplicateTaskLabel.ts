@@ -1,14 +1,9 @@
 
 import * as JSONC from 'jsonc-parser';
-import {
-    type Diagnostic,
-    type Range as VscRange,
-    DiagnosticSeverity
-} from 'vscode';
+import type RawDiagnostic from './RawDiagnostic';
 
 
 type TaskLabel = string;
-interface Range { start: number; end: number; }
 
 
 /** Находит в JSON-массиве определений задач метки, которые повторяются.
@@ -18,12 +13,11 @@ interface Range { start: number; end: number; }
  * @throws { never }  функция никогда не выбрасывает исключений.
  * */
 function collectDiagnostics(
-    taskNodes: ReadonlyArray<Readonly<JSONC.Node>>,
-    rangeMapper: (range: Range) => VscRange
-): ReadonlyArray<Readonly<Diagnostic>> {
+    taskNodes: Array<JSONC.Node>
+): Array<RawDiagnostic> {
 
     // Все метки, встреченные в массиве (включая неповторяющиеся)
-    const rangesByLabel = new Map<TaskLabel, Array<Range>>();
+    const positionsByLabel = new Map<TaskLabel, Array<RawDiagnostic['position']>>();
 
     for (const taskNode of taskNodes) {
 
@@ -37,33 +31,30 @@ function collectDiagnostics(
         const label = labelNode.value as string;
 
         // Запоминаем позицию только самого значения label
-        const range = {
-            start: labelNode.offset,
-            end: labelNode.offset + labelNode.length
+        const position = {
+            offset: labelNode.offset,
+            length: labelNode.length
         };
 
         // Группируем все вхождения одной метки
-        const ranges = rangesByLabel.get(label);
-        if (ranges) {
-            ranges.push(range);
+        const positions = positionsByLabel.get(label);
+        if (positions) {
+            positions.push(position);
         } else {
-            rangesByLabel.set(label, [range]);
+            positionsByLabel.set(label, [position]);
         }
-
     }
 
-    const diagnostics: Diagnostic[] = [];
+    const diagnostics: RawDiagnostic[] = [];
 
-    for (const [taskLabel, ranges] of rangesByLabel) {
-        if (ranges.length > 1) {
-            for (const range of ranges) {
-                diagnostics.push(
-                    buildDiagnostic(
-                        taskLabel,
-                        ranges.length,
-                        rangeMapper(range)
-                    )
-                );
+    for (const [taskLabel, positions] of positionsByLabel) {
+        if (positions.length > 1) {
+            for (const position of positions) {
+                diagnostics.push({
+                    code: 'duplicate labels',
+                    message: `Task "${taskLabel}" defined ${positions.length} times.`,
+                    position
+                });
             }
         }
     }
@@ -72,19 +63,19 @@ function collectDiagnostics(
 }
 
 
-function buildDiagnostic(
-    dupLabel: TaskLabel,
-    count: number,
-    range: VscRange
-): Diagnostic {
-    return {
-        message: `Task "${dupLabel}" defined ${count} times.`,
-        range,
-        severity: DiagnosticSeverity.Warning,
-        source: 'task-cockpit',
-        code: 'duplicate labels'
-    };
-}
+// function buildRawDiagnostic(
+//     dupLabel: TaskLabel,
+//     count: number,
+//     range: RawDiagnostic['absoluteRange']
+// ): RawDiagnostic {
+//     return {
+//         message: `Task "${dupLabel}" defined ${count} times.`,
+//         absoluteRange: range,
+//         severity: DiagnosticSeverity.Warning,
+//         source: 'task-cockpit',
+//         code: 'duplicate labels'
+//     };
+// }
 
 
 export default collectDiagnostics;

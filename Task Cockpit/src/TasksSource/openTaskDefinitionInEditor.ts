@@ -3,11 +3,18 @@ import {
     window,
     Selection,
     TextEditorRevealType,
-    type TextEditor
+    type TextEditor,
+    Uri
 } from 'vscode';
 import * as JSONC from 'jsonc-parser';
-import type TaskName from '../TaskName/TaskName';
-import type TaskSource from './TaskSource';
+import TaskName from '../TaskName';
+import type Immutable from '../utils/Immutable';
+
+
+interface TaskSource {
+    uri: Uri;
+    JSONPath: Array<string>;
+}
 
 
 // "Фиксировать нарушения формата":
@@ -34,7 +41,7 @@ import type TaskSource from './TaskSource';
  * Ошибки выброшенные `openTaskDefinitionInEditor` должны быть показаны пользователю.
  * Другой реакции на них не предполагается.
  *  */
-async function openTaskDefinitionInEditor(taskSource: TaskSource, taskName: TaskName): Promise<void> {
+async function openTaskDefinitionInEditor(taskSource: Immutable<TaskSource>, taskName: TaskName): Promise<void> {
 
     let editor: TextEditor;
     try {
@@ -44,7 +51,8 @@ async function openTaskDefinitionInEditor(taskSource: TaskSource, taskName: Task
             {
                 preserveFocus: false,
                 preview: false
-            });
+            }
+        );
     }
     catch (error) {
         throw new Error(`Cannot open file "${workspace.asRelativePath(taskSource.uri)}"`, { cause: error });
@@ -57,7 +65,7 @@ async function openTaskDefinitionInEditor(taskSource: TaskSource, taskName: Task
             editor.document.getText(),
             taskSource.JSONPath,
             taskName
-        ).at(-1);
+        );
 
 
     //@reject: Сейчас не достижимо. Нужно будет если появится await выше.
@@ -78,25 +86,22 @@ async function openTaskDefinitionInEditor(taskSource: TaskSource, taskName: Task
     }
 
     // Выделяем задачу и центрируем в редакторе
-    editor.revealRange(
-        editor.selection = new Selection(
-            editor.document.positionAt(selectedRange.end), // выделение от конца к началу
-            editor.document.positionAt(selectedRange.start) // active position (курсор) будет в начале определения
-        ),
-        TextEditorRevealType.InCenter
+    editor.selection = new Selection(
+        editor.document.positionAt(selectedRange.end),
+        editor.document.positionAt(selectedRange.start)
     );
+    editor.revealRange(editor.selection, TextEditorRevealType.InCenter);
 
 }
 
 
-/** Находит все диапазоны (offset/length) узлов задач, у которых поле 'label' равно `targetLabel`.
- * Возвращает массив диапазонов в порядке обхода (порядок в документе).
+/** Находит диапазон (offset/length) последнего встреченного узла задачи, у которого поле 'label' равно `targetName`.
  * */
 function findTaskDefinitionRanges(
     content: string,
-    JSONPath: ReadonlyArray<JSONC.Segment>,
-    targetName: TaskName
-): ReadonlyArray<Readonly<{ start: number; end: number; }>> {
+    JSONPath: Immutable<Array<JSONC.Segment>>,
+    targetName: string
+): Immutable<{ start: number; end: number; }> | null {
 
     // Строим JSON-дерево для навигации по структуре документа и получения позиций узлов
     const jsoncTree = JSONC.parseTree(content, undefined, {
@@ -104,18 +109,20 @@ function findTaskDefinitionRanges(
         allowTrailingComma: true
     });
 
-    const ranges: Array<Readonly<{ start: number; end: number; }>> = [];
+    let range: { start: number; end: number; } | null = null;
 
     if (!jsoncTree) {
-        return ranges;
+        return range;
     }
 
     const tasksArrayNode = JSONC.findNodeAtLocation(jsoncTree, [...JSONPath]);
 
     if (!tasksArrayNode?.children) {
-        return ranges;
+        return range;
     }
 
+    // одна метка может встречаться несколько раз (дубликаты)
+    // ищем последнюю
     for (const taskNode of tasksArrayNode.children) {
 
         // Обрабатываем каждую задачу и собираем позиции для совпадающих меток
@@ -131,18 +138,17 @@ function findTaskDefinitionRanges(
 
         const label = labelNode.value as unknown;
 
-        // Метка совпадает
+        // Метка совпадает.
         if (label === targetName) {
 
-            // Накапливаем: одна метка может встречаться несколько раз (дубликаты)
-            ranges.push({
+            range = {
                 start: taskNode.offset,
                 end: taskNode.offset + taskNode.length
-            });
+            };
         }
     }
 
-    return ranges;
+    return range;
 }
 
 

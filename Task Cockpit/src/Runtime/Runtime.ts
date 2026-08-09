@@ -11,23 +11,30 @@ import {
     LogOutputChannel
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import getKey from '../Scope/getKey';
+
 import getProcessId from './Terminals/getProcessId';
 import ProcessMonitor from './ProcessMonitor';
-import isEligibleTask from '../EligibleTask/isEligibleTask';
-import ProcessRegistry from './ProcessRegistry';
+
 import SnapshotCollector from './Terminals/SnapshotCollector';
 import type ProcessId from './ProcessId';
-import type ScopeKey from '../Scope/Key';
-import type Snapshot from './Terminals/Snapshot';
+
+import type OngoingSnapshot from './Terminals/OngoingSnapshot';
 import type TaskIdentifier from './TaskIdentifier';
-import type TaskName from '../TaskName/TaskName';
-import type RuntimeRegistry from './RuntimeRegistry';
-import ConfigurationProvider from '../Configuration/ConfigurationProvider';
-import type Config from '../Configuration/Window/Config';
 
 
-const CONFIGURATION_KEY = 'TerminalsConf';
+import Config from '../WindowConfiguration/Config';
+import Safe from '../utils/Safe';
+import WindowConfiguration from '../WindowConfiguration/WindowConfiguration';
+import EligibleTask from '../EligibleTask';
+import ScopeKey from '../ScopeKey';
+import TaskName from '../TaskName';
+import type Immutable from '../utils/Immutable';
+import { ProcessRegistry } from './ProcessRegistry';
+import type RequestId from './RequestId';
+import Snapshot from './Snapshot';
+
+
+const CONFIGURATION_KEY = 'Terminals' as const;
 type TerminalsConf = Config[typeof CONFIGURATION_KEY];
 
 
@@ -61,21 +68,8 @@ type TerminalsConf = Config[typeof CONFIGURATION_KEY];
 class Runtime implements Disposable {
 
 
-    // #region Events
-
-    readonly #onDidChange: EventEmitter<TaskIdentifier>;
-    /** Изменение состояния процессов.
-     *
-     * Срабатывает при любом изменении состояния процессов задачи:
-     * запуск, завершение, удаление из реестра.
-     *
-     * Payload — идентификатор затронутой задачи. */
-    readonly onDidChange: Event<TaskIdentifier>;
-
-    // #endregion Events
-
     /** {@link ProcessRegistry | Реестр процессов} */
-    readonly #registry: ProcessRegistry;
+    // readonly #registry: ProcessRegistry;
 
     readonly #disposables: Disposable[];
 
@@ -89,41 +83,41 @@ class Runtime implements Disposable {
 
     // #region Lifecycle
 
-    #configuration: Readonly<ConfigurationProvider>;
-    readonly #logOutputChannel: LogOutputChannel | null;
+    readonly #windowConfiguration: Safe<WindowConfiguration>;
+    #logOutputChannel: Safe<LogOutputChannel> | null;
 
     #conf: TerminalsConf;
 
+    readonly #processRegistry: Safe<ProcessRegistry>;
+
     constructor(
-        configuration: Readonly<ConfigurationProvider>,
-        logOutputChannel: LogOutputChannel | null = null
+        windowConfiguration: Safe<WindowConfiguration>,
+        processRegistry: Safe<ProcessRegistry>,
+        logOutputChannel: Safe<LogOutputChannel> | null = null
     ) {
 
         this.#disposed = false;
         this.#disposables = [];
 
-        this.#registry = ProcessRegistry.create();
-
-        this.#onDidChange = new EventEmitter();
-        this.onDidChange = this.#onDidChange.event;
+        this.#processRegistry = processRegistry;
 
         this.#logOutputChannel = logOutputChannel;
 
-        this.#monitor = new ProcessMonitor(configuration, logOutputChannel);
-        this.#terminalSnapshot = new SnapshotCollector(configuration, logOutputChannel);
+        this.#monitor = new ProcessMonitor(windowConfiguration, logOutputChannel);
+        this.#terminalSnapshot = new SnapshotCollector(windowConfiguration, logOutputChannel);
 
         // conf ---
-        this.#configuration = configuration;
+        this.#windowConfiguration = windowConfiguration;
 
         this.#disposables.push(
-            this.#configuration.onDidChange((affectedKey) => {
+            this.#windowConfiguration.onDidChange((affectedKey) => {
                 if (!affectedKey.has(CONFIGURATION_KEY)) {
                     return;
                 }
-                this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+                this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
             })
         );
-        this.#conf = this.#applyConf(this.#configuration.readWindowConfig(CONFIGURATION_KEY));
+        this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
         // ---
 
         this.#disposables.push(
@@ -164,8 +158,6 @@ class Runtime implements Disposable {
             this.#monitor,
             this.#terminalSnapshot,
             // -----
-            // эмиттер
-            this.#onDidChange
 
         );
     }
@@ -186,7 +178,7 @@ class Runtime implements Disposable {
         this.#disposables.forEach(function (d) {
             d.dispose();
         });
-        this.#registry.clear();
+        this.#processRegistry.clear();
 
     }
 
@@ -194,16 +186,6 @@ class Runtime implements Disposable {
 
 
     // #region Public
-
-
-    /** Доступ к реестру процессов (только чтение).
-     * */
-    get registry(): Readonly<RuntimeRegistry> {
-
-        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
-
-        return this.#registry;
-    }
 
 
     /** Снимок зарегистрированных процессов задачи с привязкой к терминалам.
@@ -221,22 +203,17 @@ class Runtime implements Disposable {
      *   закрыт, переиспользован или уничтожен. Гарантировано только что на момент `timestamp`
      *   Terminal содержал (выполнял) `processId`.
      * @throws { CancellationError } */
-    async getSnapshot({ scopeKey, taskName }: TaskIdentifier, token: CancellationToken): Promise<
-        ReadonlyArray<Readonly<{
-            // Terminal (виджет) продолжает жить своею жизнью: закрывается,
-            // пере используется, диспозится...
-            terminalRef: WeakRef<Terminal>;
-            processId: ProcessId;
-            running: boolean;
-            timestamp: number;
-        }>>
+    async getSnapshot({ scopeKey, taskName }: TaskIdentifier): Promise<
+        // Terminal (виджет) продолжает жить своею жизнью: закрывается,
+        // пере используется, диспозится...
+        ReadonlyArray<Readonly<Snapshot>>
     > {
 
-        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
+        assert.equal(this.#disposed, false, `${this.constructor.name}#getSnapshot: use after dispose`);
 
-        const pids = this.#registry.getProcessId(scopeKey, taskName);
+        const taskState = this.#processRegistry.getState(scopeKey, taskName);
 
-        if (!pids || pids.size < 1) {
+        if (!taskState || taskState.size < 1) {
             return [];
         }
 
@@ -244,48 +221,39 @@ class Runtime implements Disposable {
 
             // Терминал может быть диспознут в процессе.
             // Сопоставление processId -> Terminal как 1:1 гарантировать не возможно.
-            // getTerminalPid выбрасывает только CancellationError.
-            // Пры любых проблемах вернет `undefined`.
+            // getTerminalPid пры любых проблемах вернет `undefined`.
             // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
-            const processId = await getProcessId(terminal, this.#conf.timeout, token);
+            const processId = await getProcessId(terminal, this.#conf.timeout);
 
             if (!processId) {
                 return undefined;
             }
 
-            if (!pids.has(processId)) {
-                return undefined;
-            }
+            const processState = taskState.get(processId);
 
-            const process = this.#registry.getProcess(processId);
-
-            if (!process) { // состояние реестра могло измениться после await
+            if (!processState) {
                 return undefined;
             }
 
             return {
                 terminalRef: new WeakRef(terminal),
                 processId,
-                ...process
-            } as const;
+                timestamp: processState.registerTimestamp,
+                running: processState.running
+            } satisfies Snapshot;
         });
 
-        promises.forEach((p) => {
-            p.catch((error) => {
-                if (!(error instanceof CancellationError)) {
-                    this.#logOutputChannel?.error(`getSnapshot: an unexpected exception in getProcessId, errorType=${error?.constructor?.name ?? typeof error}`);
-                };
-            });
-        });
+        // promises.forEach((p) => {
+        //     p.catch((error) => {
+        //         if (!(error instanceof CancellationError)) {
+        //             this.#logOutputChannel?.error(`getSnapshot: an unexpected exception in getProcessId, errorType=${error?.constructor?.name ?? typeof error}`);
+        //         };
+        //     });
+        // });
 
         return (await Promise.all(promises))
             .filter(
-                function (entry): entry is {
-                    terminalRef: WeakRef<Terminal>;
-                    processId: ProcessId;
-                    running: boolean;
-                    timestamp: number;
-                } { return entry != null; }
+                function (entry): entry is Snapshot { return entry != null; }
             ).sort( // Старый первым
                 function (a, b) { return a.timestamp - b.timestamp; }
             );
@@ -300,16 +268,16 @@ class Runtime implements Disposable {
      * @param taskIdentifier Идентификатор задачи */
     abortAll({ scopeKey, taskName }: TaskIdentifier): void {
 
-        assert.equal(this.#disposed, false, 'Runtime: use after dispose');
+        assert.equal(this.#disposed, false, `${this.constructor.name}#abortAll: use after dispose`);
 
-        const processes = this.#registry.getProcessId(scopeKey, taskName);
+        const taskState = this.#processRegistry.getState(scopeKey, taskName);
 
-        if (!processes || processes.size < 1) {
+        if (!taskState || taskState.size < 1) {
             return;
         }
 
-        for (const processId of processes) {
-            if (this.#registry.getProcess(processId)?.running) {
+        for (const [processId, processState] of taskState) {
+            if (processState.running) {
                 this.#killProcess(processId);
             }
         }
@@ -335,16 +303,16 @@ class Runtime implements Disposable {
         if (isValidPid(processId)) { // сразу отбрасываем сломанное
 
             // если задача "подходит"...
-            if (isEligibleTask(execution.task)) { // task -> EligibleTask
+            if (EligibleTask.isEligibleTask(execution.task)) { // task -> EligibleTask
 
-                const identifier = { scopeKey: getKey(execution.task.scope), taskName: execution.task.name };
-
-                this.#registry.register(identifier, processId, this.#eventCounter());
-
-                this.#onDidChange.fire(identifier);
+                this.#processRegistry.register(
+                    this.#requestId.next(),
+                    EligibleTask.getScopeKey(execution.task),
+                    execution.task.name,
+                    processId
+                );
 
                 this.#monitor.addTaskProcess(processId);
-
             }
         }
 
@@ -360,7 +328,7 @@ class Runtime implements Disposable {
         // Наличие таких «глючных» терминалов увеличивает время сбора снапшота
         // вплоть до `timeout`, и `onDidCollectSnapshot` станут приходить с
         // непредсказуемой задержкой.
-        this.#terminalSnapshot.enqueueRequest(this.#eventCounter());
+        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
     }
 
 
@@ -376,14 +344,14 @@ class Runtime implements Disposable {
             return;
         }
 
-        const toNotify = this.#registry.markCompleted(completed);
+        this.#processRegistry.markCompleted(
+            this.#requestId.next(),
+            completed
+        );
 
-        if (toNotify.size > 0) {
-            this.#notify(toNotify);
-        }
 
         // в любом случае — пересмотр терминалов
-        this.#terminalSnapshot.enqueueRequest(this.#eventCounter());
+        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
     }
 
 
@@ -392,19 +360,13 @@ class Runtime implements Disposable {
      * - Сообщает о каждой задаче, затронутой удалением
      *
      * @fires Runtime#onDidChange На каждую затронутую задачу */
-    #terminalsReconciledHandler(snapshot: Snapshot) {
+    #terminalsReconciledHandler(snapshot: Immutable<OngoingSnapshot>) {
 
         if (this.#disposed) {
             return;
         }
 
-        const toNotify = this.#registry.reconcile(snapshot);
-
-        if (toNotify.size < 1) {
-            return;
-        }
-
-        this.#notify(toNotify);
+        this.#processRegistry.reconcile(snapshot.requestId, snapshot.ongoingProcesses);
     }
 
 
@@ -416,7 +378,7 @@ class Runtime implements Disposable {
             return;
         }
 
-        this.#terminalSnapshot.enqueueRequest(this.#eventCounter());
+        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
         // @todo: для оптимизации тут можно проверять и удалять конкретный процесс,
         // а не проверять все терминалы.
         // Оставлю пока так для "а вдруг что-то пропускаю - почистит"
@@ -478,29 +440,12 @@ class Runtime implements Disposable {
         }
     }
 
-    /** Испускает {@linkcode onDidChange} для каждой задачи из `toNotify` */
-    #notify(toNotify: ReadonlyMap<ScopeKey, ReadonlySet<TaskName>>) {
-        for (const [scopeKey, taskNames] of toNotify) {
-            for (const taskName of taskNames) {
-                this.#onDidChange.fire({ scopeKey, taskName });
+
+    #requestId = (function (start: number) {
+        return {
+            next() {
+                return ++start as RequestId;
             }
-        }
-    }
-
-
-    #applyConf(conf: Readonly<TerminalsConf>): Readonly<TerminalsConf> {
-        return conf;
-    }
-
-
-    // Сейчас
-    // - монотонный счетчик. теряем информацию о времени
-    // Варианты:
-    // - Date.now()
-    // - performance.now()
-    #eventCounter = (function (start: number) {
-        return function () {
-            return ++start;
         };
     })(0);
 

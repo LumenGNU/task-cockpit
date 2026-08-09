@@ -1,23 +1,17 @@
 import * as JSONC from 'jsonc-parser';
+import type RawDiagnostic from './RawDiagnostic';
 // import * as assert from 'node:assert/strict';
-import {
-    DiagnosticSeverity,
-    type Diagnostic,
-    type Range as VscRange,
-} from 'vscode';
 
 
 type TaskLabel = string;
-interface Range { start: number, end: number; }
 
 
 function collectDiagnostics(
-    taskNodes: ReadonlyArray<Readonly<JSONC.Node>>,
-    availableNames: Readonly<{ has(key: string): boolean; }>,
-    rangeMapper: (range: Range) => VscRange
-): ReadonlyArray<Readonly<Diagnostic>> {
+    taskNodes: Array<JSONC.Node>,
+    availableNames: { has(key: string): boolean; },
+): Array<RawDiagnostic> {
 
-    const diagnostics: Diagnostic[] = [];
+    const diagnostics: RawDiagnostic[] = [];
 
     for (const taskNode of taskNodes) {
 
@@ -32,6 +26,7 @@ function collectDiagnostics(
             : [dependsOnNode];
 
         for (const depNode of depNodes) {
+
             if (depNode.type !== 'string') {
                 // non-string узлы — это невалидный tasks.json, молча пропускаем
                 continue;
@@ -49,10 +44,11 @@ function collectDiagnostics(
                 continue;
             }
 
-            diagnostics.push(buildDiagnostic(
-                depNode.value || '<empty label>',
-                rangeMapper({ start: depNode.offset, end: depNode.offset + depNode.length })
-            ));
+            diagnostics.push({
+                code: 'missing dependency',
+                message: `Task definition with label "${depNode.value || '«empty label»'}" was not found.`,
+                position: { offset: depNode.offset, length: depNode.length }
+            });
         }
     }
 
@@ -60,25 +56,24 @@ function collectDiagnostics(
 }
 
 
-/** Строит одну VS Code диагностику для отсутствующей зависимости.
- *
- * @param taskLabel label задачи, у которой объявлена зависимость
- * @param depLabel label зависимости, которая не найдена
- * @param range диапазон в документе, соответствующий depLabel
- * */
-function buildDiagnostic(
-    // taskLabel: TaskLabel,
-    depLabel: TaskLabel,
-    range: VscRange,
-): Diagnostic {
-    return {
-        message: `Task definition with label "${depLabel}" was not found.`,
-        range,
-        severity: DiagnosticSeverity.Warning,
-        source: 'task-cockpit',
-        code: 'missing dependency'
-    };
-}
+// /** Строит одну VS Code диагностику для отсутствующей зависимости.
+//  *
+//  * @param taskLabel label задачи, у которой объявлена зависимость
+//  * @param depLabel label зависимости, которая не найдена
+//  * @param range диапазон в документе, соответствующий depLabel
+//  * */
+// function buildDiagnostic(
+//     depLabel: TaskLabel,
+//     absoluteRange: RawDiagnostic['absoluteRange']
+// ): RawDiagnostic {
+//     return {
+//         message: `Task definition with label "${depLabel}" was not found.`,
+//         absoluteRange,
+//         severity: DiagnosticSeverity.Warning,
+//         source: 'task-cockpit',
+//         code: 'missing dependency'
+//     };
+// }
 
 
 export default collectDiagnostics;

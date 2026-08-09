@@ -9,6 +9,8 @@ import type Immutable from '../utils/Immutable';
 
 // type Scope = GlobalScope | WorkspaceScope | FolderScope;
 
+
+
 interface GlobalScope {
     key: ScopeKey.GlobalKey;
     name: 'User',
@@ -18,10 +20,7 @@ interface GlobalScope {
 interface WorkspaceScope {
     key: ScopeKey.WorkspaceKey;
     name: string;
-    taskSource: {
-        uri: Uri,
-        JSONPath: readonly ['tasks', 'tasks'];
-    };
+    taskSource: ScopeLayout.TaskSource;
 }
 
 interface FolderScope {
@@ -29,10 +28,7 @@ interface FolderScope {
     name: string;
     isPrima: boolean;
     uri: Uri,
-    taskSource: {
-        uri: Uri,
-        JSONPath: readonly ['tasks'];
-    };
+    taskSource: ScopeLayout.TaskSource;
 }
 
 interface ScopeLayout {
@@ -43,6 +39,12 @@ interface ScopeLayout {
 }
 
 
+/** Формирует снапшот всех активных областей: глобальной (User),
+ * рабочей области (workspace) и папок (workspace folders).
+ *
+ * Глобальная область *не имеет sourceUri*.
+ *
+ * Workspace-область может быть null (нет открытого workspace). */
 function getLayout(): Immutable<ScopeLayout> {
 
     const isMultiRoot = workspace.workspaceFile != null;
@@ -85,5 +87,14 @@ function getLayout(): Immutable<ScopeLayout> {
 const ScopeLayout = {
     getLayout
 };
+
+declare namespace ScopeLayout {
+
+    interface TaskSource {
+        uri: Uri;
+        JSONPath: readonly ['tasks'] | ['tasks', 'tasks'];
+    }
+
+}
 
 export default ScopeLayout;

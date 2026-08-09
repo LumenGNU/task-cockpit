@@ -19,13 +19,13 @@ import type WindowConfig from './Config';
 type ConfigKey = WindowConfiguration.ConfigKey;
 type AffectedKeys = WindowConfiguration.AffectedKeys;
 
-export declare namespace WindowConfiguration {
+declare namespace WindowConfiguration {
 
     export type ConfigKey = WindowConfigurationSchema.ConfigKey;
     export type AffectedKeys = Set<ConfigKey>;
 }
 
-export class WindowConfiguration implements Disposable {
+class WindowConfiguration implements Disposable {
 
 
     readonly #onDidChange: EventEmitter<Immutable<AffectedKeys>>;
@@ -166,12 +166,12 @@ export class WindowConfiguration implements Disposable {
 
     /** Получить "общих" настроек (для суб-модулей). */
     public getConfig<K extends ConfigKey>(key: K): Immutable<WindowConfig[K]> {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#getConfig: has been disposed`);
+        assert.equal(this.#disposed, false, `${this.constructor.name}#getConfig: use after dispose`);
         return this.#configuration[key];
     }
 
     public get availableKeys(): Immutable<Array<ConfigKey>> {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#availableKeys: has been disposed`);
+        assert.equal(this.#disposed, false, `${this.constructor.name}#availableKeys: use after dispose`);
         return [...WindowConfigurationSchema.SECTIONS_BY_KEY.keys()];
     }
 
@@ -181,3 +181,6 @@ export class WindowConfiguration implements Disposable {
     }
 
 }
+
+
+export default WindowConfiguration;

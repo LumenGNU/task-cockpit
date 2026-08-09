@@ -4,7 +4,7 @@ import {
     LogOutputChannel,
     ThemeColor,
 } from 'vscode';
-import { WindowConfiguration } from '../WindowConfiguration/WindowConfiguration';
+import WindowConfiguration from '../WindowConfiguration/WindowConfiguration';
 
 import type {
     CancellationToken,
