@@ -22,40 +22,40 @@
             "name": "ProbeProfile"
         },
         {
-            "location": "single-folder-conflicts-within-single-scope",
-            "name": "single-folder-conflicts-within-single-scope"
+            "location": "test-single-folder-conflicts-within-single-scope",
+            "name": "test-single-folder-conflicts-within-single-scope"
         },
         {
-            "location": "single-folder-conflicts-between-user-level",
-            "name": "single-folder-conflicts-between-user-level"
+            "location": "test-single-folder-conflicts-between-user-level",
+            "name": "test-single-folder-conflicts-between-user-level"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s1",
-            "name": "multi-root-conflicts-between-scopes-s1"
+            "location": "test-multi-root-conflicts-between-scopes-s1",
+            "name": "test-multi-root-conflicts-between-scopes-s1"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s2",
-            "name": "multi-root-conflicts-between-scopes-s2"
+            "location": "test-multi-root-conflicts-between-scopes-s2",
+            "name": "test-multi-root-conflicts-between-scopes-s2"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s3",
-            "name": "multi-root-conflicts-between-scopes-s3"
+            "location": "test-multi-root-conflicts-between-scopes-s3",
+            "name": "test-multi-root-conflicts-between-scopes-s3"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s4",
-            "name": "multi-root-conflicts-between-scopes-s4"
+            "location": "test-multi-root-conflicts-between-scopes-s4",
+            "name": "test-multi-root-conflicts-between-scopes-s4"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s5",
-            "name": "multi-root-conflicts-between-scopes-s5"
+            "location": "test-multi-root-conflicts-between-scopes-s5",
+            "name": "test-multi-root-conflicts-between-scopes-s5"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s6",
-            "name": "multi-root-conflicts-between-scopes-s6"
+            "location": "test-multi-root-conflicts-between-scopes-s6",
+            "name": "test-multi-root-conflicts-between-scopes-s6"
         },
         {
-            "location": "multi-root-conflicts-between-scopes-s7",
-            "name": "multi-root-conflicts-between-scopes-s7"
+            "location": "test-multi-root-conflicts-between-scopes-s7",
+            "name": "test-multi-root-conflicts-between-scopes-s7"
         },
         {
             "location": "Task Cockpit Test",
@@ -66,16 +66,16 @@
             "name": "test-ResourceState.TaskDefinition.mapTaskDefinitions"
         },
         {
-            "location": "multi-root-combined-shadowing-c1",
-            "name": "multi-root-combined-shadowing-c1"
+            "location": "test-multi-root-combined-shadowing-c1",
+            "name": "test-multi-root-combined-shadowing-c1"
         },
         {
-            "location": "multi-root-combined-shadowing-c2",
-            "name": "multi-root-combined-shadowing-c2"
+            "location": "test-multi-root-combined-shadowing-c2",
+            "name": "test-multi-root-combined-shadowing-c2"
         },
         {
-            "location": "multi-root-combined-shadowing-c3",
-            "name": "multi-root-combined-shadowing-c3"
+            "location": "test-multi-root-combined-shadowing-c3",
+            "name": "test-multi-root-combined-shadowing-c3"
         },
         {
             "location": "test-ResourceState.ResourceConfig.mapScopedConfig",
@@ -92,6 +92,50 @@
         {
             "location": "probe-tree-panel",
             "name": "probe-tree-panel"
+        },
+        {
+            "location": "prob-probe",
+            "name": "prob-probe"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s1",
+            "name": "probe-multi-root-conflicts-between-scopes-s1"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s2",
+            "name": "probe-multi-root-conflicts-between-scopes-s2"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s3",
+            "name": "probe-multi-root-conflicts-between-scopes-s3"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s4",
+            "name": "probe-multi-root-conflicts-between-scopes-s4"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s5",
+            "name": "probe-multi-root-conflicts-between-scopes-s5"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s6",
+            "name": "probe-multi-root-conflicts-between-scopes-s6"
+        },
+        {
+            "location": "probe-multi-root-conflicts-between-scopes-s7",
+            "name": "probe-multi-root-conflicts-between-scopes-s7"
+        },
+        {
+            "location": "probe-single-folder-conflicts-between-user-level",
+            "name": "probe-single-folder-conflicts-between-user-level"
+        },
+        {
+            "location": "probe-single-folder-conflicts-within-single-scope",
+            "name": "probe-single-folder-conflicts-within-single-scope"
+        },
+        {
+            "location": "probe-ResourceStateCoordinator",
+            "name": "probe-ResourceStateCoordinator"
         }
     ],
     "lastKnownMenubarData": {
@@ -1771,14 +1815,11 @@
     },
     "windowsState": {
         "lastActiveWindow": {
-            "workspaceIdentifier": {
-                "id": "ef7adc74cd79e7310601a726017fcb77",
-                "configURIPath": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/probes/tree-panel/full-monty/full-monty.code-workspace"
-            },
+            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/probes/ResourceStateCoordinator/single-folder",
             "uiState": {
                 "mode": 1,
-                "x": 448,
-                "y": 172,
+                "x": 671,
+                "y": 79,
                 "width": 1024,
                 "height": 768
             }

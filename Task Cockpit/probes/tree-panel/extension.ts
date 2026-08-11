@@ -45,7 +45,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const collect = (scopeKey: ScopeKey, scopeName: string) => {
             const taskSource = stateCoordinator.getTaskSource(scopeKey);
             if (taskSource === null) return;
-            const definitions = stateCoordinator.getTaskDefinitions(scopeKey);
+            const definitions = stateCoordinator.getTaskDefinitionEntries(scopeKey);
             if (definitions === null) return;
             for (const [taskName] of definitions) {
                 items.push({ label: `${scopeName} › ${taskName}`, taskSource, taskName });

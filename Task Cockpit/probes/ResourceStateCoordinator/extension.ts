@@ -1,15 +1,10 @@
+/** @file extension.ts */
+
 import * as vscode from 'vscode';
-import assert from 'node:assert/strict';
-import WindowConfiguration from '../../src/WindowConfiguration/WindowConfiguration';
-import { ResourceStateCoordinator } from '../../src/ResourceState/ResourceStateCoordinator';
-import Safe from '../../src/utils/Safe';
+import ResourceStateCoordinator from '../../src/ResourceState/ResourceStateCoordinator';
 import ScopeKey from '../../src/ScopeKey';
-import Immutable from '../../src/utils/Immutable';
 import TaskName from '../../src/TaskName';
-import TaskDefinition from '../../src/TaskDefinition';
-import ResourceConfig from '../../src/ResourceState/ResourceConfig/Config';
-import EligibleTask from '../../src/EligibleTask';
-import TaskDefinitionEntry from '../../src/TaskDefinitionEntry';
+import type ResourceConfig from '../../src/ResourceState/ResourceConfig/Config';
 
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -17,123 +12,182 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const ext = context.extension;
     const extName = ext.packageJSON['displayName'];
 
-    const logChannel = vscode.window.createOutputChannel(extName);
-    const traceChannel = vscode.window.createOutputChannel(`${extName} - trace`, { log: true });
-    context.subscriptions.push(logChannel, traceChannel);
+    const log = vscode.window.createOutputChannel(extName);
+    const trace = vscode.window.createOutputChannel(`${extName} - trace`, { log: true });
+    context.subscriptions.push(log, trace);
 
-    logChannel.appendLine(`extension: ${ext.id} ${ext.packageJSON['version']}`);
-    logChannel.appendLine(`mode: ${vscode.ExtensionMode[context.extensionMode]}`);
-    logChannel.appendLine(`vscode: ${vscode.version}`);
-    logChannel.appendLine(`node: ${process.version} ${process.platform} ${process.arch}`);
-    logChannel.appendLine(`log level: ${vscode.LogLevel[traceChannel.logLevel]}`);
-    logChannel.appendLine(`workspace: ${vscode.workspace.name ?? vscode.workspace.workspaceFolders?.[0] ? `"${vscode.workspace.workspaceFolders![0]?.name}"` : '(none)'}`);
+    log.appendLine(section('ACTIVATED'));
+    log.appendLine(`  id:        ${ext.id} ${ext.packageJSON['version']}`);
+    log.appendLine(`  mode:      ${vscode.ExtensionMode[context.extensionMode]}`);
+    log.appendLine(`  vscode:    ${vscode.version}`);
+    log.appendLine(`  node:      ${process.version} ${process.platform} ${process.arch}`);
+    log.appendLine(`  log level: ${vscode.LogLevel[trace.logLevel]}`);
+    log.appendLine(`  workspace: ${workspaceName()}`);
+    log.show();
 
-    void vscode.window.showInformationMessage(`"${extName}" activated`);
-    logChannel.show();
-
-    await run(context.subscriptions, logChannel, traceChannel);
+    await run(context.subscriptions, log, trace);
 }
+
 
 async function run(
-    subscriptions: { dispose(): any; }[],
-    logChannel: vscode.OutputChannel,
-    traceChannel: vscode.LogOutputChannel
+    subscriptions: { dispose(): void; }[],
+    log: vscode.OutputChannel,
+    trace: vscode.LogOutputChannel,
 ) {
+    let changeCount = 0;
+    let coordinator = await initCoordinator(log, trace);
+    let changeListener = subscribeChanges();
 
-    logChannel.appendLine('-'.repeat(80));
+    // changeListener управляется вручную (recreate), поэтому — прокси
+    subscriptions.push({ dispose: () => { changeListener.dispose(); } });
 
-    const windowConfiguration = new WindowConfiguration(traceChannel);
-    const coordinator = await ResourceStateCoordinator.create(10_000, traceChannel);
-
-    const listener1 = windowConfiguration.onDidChange((affectedKeys) => {
-        logChannel.appendLine(`Window configuration changed. Changes in: ${[...affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
-        for (const key of affectedKeys) {
-            logChannel.appendLine(`  • ${key}: ${JSON.stringify(windowConfiguration.getConfig(key))}`);
-        }
-    });
-
-    const listener2 = coordinator.onDidChange((affectedKeys) => {
-        logChannel.appendLine(`Scoped configuration changed. Changes in: ${[...affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
-        logChannel.appendLine('New per scope state:');
-        printPerScopeState(coordinator, logChannel);
-    });
-
-    subscriptions.push(listener1);
-    subscriptions.push(listener2);
-    subscriptions.push(windowConfiguration);
-
-    logChannel.appendLine('Initial window configuration:');
-    windowConfiguration.availableKeys.forEach((k) => {
-        logChannel.appendLine(`  • ${k}: ${JSON.stringify(windowConfiguration.getConfig(k))}`);
-    });
-    logChannel.appendLine('Initial per scope state:');
-    printPerScopeState(coordinator, logChannel);
-
-}
-
-function printPerScopeState(coordinator: Safe<ResourceStateCoordinator>, logChannel: vscode.OutputChannel) {
-
-    function pprint(
-        name: string,
-        configObj: ResourceConfig | null,
-        taskDefinitions: Immutable<Map<TaskName, TaskDefinitionEntry>> | null,
-        getEligibleTasks: Immutable<Map<TaskName, EligibleTask>> | null
-    ) {
-
-        assert.ok(configObj);
-        assert.ok(taskDefinitions);
-
-
-        logChannel.appendLine(`  "${name}"`);
-        logChannel.appendLine(`    Configuration:`);
-        for (const [k, v] of Object.entries(configObj)) {
-            logChannel.appendLine(`      • ${k}:${JSON.stringify(v)}`);
-        }
-        logChannel.appendLine(`    Tasks:`);
-        if (taskDefinitions.size < 1) {
-            logChannel.appendLine(`      « no tasks in this scope »`);
-        }
-        for (const [taskName, _definition] of taskDefinitions) {
-            const hasRuntimeTask = getEligibleTasks?.has(taskName) ?? false;
-            logChannel.appendLine(`      ${hasRuntimeTask ? '•' : '‼'} ${TaskName.formatTaskName(taskName, configObj.Hierarchy.segmentSeparator)}`);
-        }
-
+    function subscribeChanges(): vscode.Disposable {
+        return coordinator.onDidChange(async (affectedKeys) => {
+            changeCount++;
+            log.appendLine(section(`CHANGE #${changeCount}  ${ts()}  keys: ${[...affectedKeys].join(', ')}`));
+            await printState(coordinator, log);
+        });
     }
 
+    function reg(id: string, fn: () => void | Promise<void>): vscode.Disposable {
+        return vscode.commands.registerCommand(id, fn);
+    }
 
-    const scopeLayout = coordinator.getScopeLayout();
+    subscriptions.push(
 
-    const globalLayout = scopeLayout.globalScope;
-    pprint(
-        globalLayout.name,
-        coordinator.getResourceConfig(ScopeKey.GLOBAL_KEY),
-        coordinator.getTaskDefinitions(ScopeKey.GLOBAL_KEY),
-        coordinator.getEligibleTasks(ScopeKey.GLOBAL_KEY)
+        reg('_debug.printState', async () => {
+            log.appendLine(section(`MANUAL PRINT  ${ts()}`));
+            await printState(coordinator, log);
+        }),
+
+        reg('_debug.forceFullRefresh', async () => {
+            log.appendLine(rule(`force-full-refresh  ${ts()}`));
+            await coordinator.forceFullRefresh();
+        }),
+
+        reg('_debug.recreate', async () => {
+            changeListener.dispose();
+            coordinator.dispose();
+            log.appendLine(section(`RECREATE  ${ts()}`));
+            coordinator = await initCoordinator(log, trace);
+            await printState(coordinator, log);
+            changeListener = subscribeChanges();
+        }),
+
     );
 
-    const workspaceLayout = scopeLayout.workspaceScope;
-    if (workspaceLayout) {
-        pprint(
-            workspaceLayout.name,
-            coordinator.getResourceConfig(ScopeKey.WORKSPACE_KEY),
-            coordinator.getTaskDefinitions(ScopeKey.WORKSPACE_KEY),
-            coordinator.getEligibleTasks(ScopeKey.WORKSPACE_KEY)
-        );
+    log.appendLine('');
+    log.appendLine('  commands:');
+    log.appendLine('    _debug.printState          print current state');
+    log.appendLine('    _debug.forceFullRefresh    force full refresh');
+    log.appendLine('    _debug.recreate            dispose and recreate coordinator');
+
+    log.appendLine(section(`INITIAL STATE  ${ts()}`));
+    await printState(coordinator, log);
+}
+
+
+async function initCoordinator(
+    log: vscode.OutputChannel,
+    trace: vscode.LogOutputChannel,
+): Promise<ResourceStateCoordinator> {
+    log.appendLine('  creating coordinator...');
+    const coordinator = await ResourceStateCoordinator.create(10_000, trace);
+    log.appendLine('  coordinator ready');
+    return coordinator;
+}
+
+
+async function printState(coordinator: ResourceStateCoordinator, log: vscode.OutputChannel) {
+    const layout = await coordinator.getScopeLayout();
+
+    await printScope(coordinator, log, 'User', 'global', ScopeKey.GLOBAL_KEY);
+
+    if (layout.workspaceScope) {
+        await printScope(coordinator, log, layout.workspaceScope.name, 'workspace', ScopeKey.WORKSPACE_KEY);
     }
 
-    const folders = scopeLayout.folderScopes;
-    if (folders) {
-        for (const folderScope of scopeLayout.folderScopes) {
-            pprint(
-                folderScope.name,
-                coordinator.getResourceConfig(folderScope.key),
-                coordinator.getTaskDefinitions(folderScope.key),
-                coordinator.getEligibleTasks(folderScope.key)
-            );
+    for (const folder of layout.folderScopes ?? []) {
+        await printScope(coordinator, log, folder.name, 'folder', folder.key);
+    }
+}
+
+
+async function printScope(
+    coordinator: ResourceStateCoordinator,
+    log: vscode.OutputChannel,
+    name: string,
+    kind: string,
+    key: ScopeKey,
+) {
+    const config = await coordinator.getResourceConfig(key);
+    const definitions = await coordinator.getTaskDefinitionEntries(key);
+    const eligible = await coordinator.getEligibleTasks(key);
+
+    log.appendLine('');
+    log.appendLine(`  -- ${name}  [${kind}]`);
+
+    if (!config) {
+        log.appendLine('    config: (null — scope does not exist)');
+        return;
+    }
+
+    log.appendLine('    config:');
+    printConfig(config, log);
+
+    log.appendLine('    tasks:');
+
+    if (!definitions || definitions.size === 0) {
+        log.appendLine('      (none)');
+        return;
+    }
+
+    for (const [taskName] of definitions) {
+        const displayName = TaskName.formatTaskName(taskName, config.Hierarchy.segmentSeparator);
+        const mark = eligible?.has(taskName) ? '•' : '‼';
+        log.appendLine(`      ${mark}  ${displayName}`);
+    }
+}
+
+
+function printConfig(config: ResourceConfig, log: vscode.OutputChannel) {
+    for (const [grp, value] of Object.entries(config)) {
+        if (value !== null && typeof value === 'object') {
+            for (const [field, fieldValue] of Object.entries(value as Record<string, unknown>)) {
+                log.appendLine(`      ${`${grp}.${field}`.padEnd(32)}${JSON.stringify(fieldValue)}`);
+            }
+        } else {
+            log.appendLine(`      ${String(grp).padEnd(32)}${JSON.stringify(value)}`);
         }
     }
 }
 
-export function deactivate(): void {
 
+// --- утилиты ---
+
+const SEP = '='.repeat(72);
+const RULE = '-'.repeat(72);
+
+function section(title: string): string {
+    return `\n${SEP}\n  ${title}\n${SEP}`;
 }
+
+function rule(title: string): string {
+    return `${RULE}\n  ${title}\n${RULE}`;
+}
+
+function ts(): string {
+    const d = new Date();
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    const p3 = (n: number) => String(n).padStart(3, '0');
+    return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}.${p3(d.getMilliseconds())}`;
+}
+
+function workspaceName(): string {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders?.length) return '(none)';
+    return vscode.workspace.name ? `"${vscode.workspace.name}"` : `"${folders[0]!.name}"`;
+}
+
+
+export function deactivate(): void { }

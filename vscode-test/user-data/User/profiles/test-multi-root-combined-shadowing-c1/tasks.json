@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "u-1"
+            },
+            "command": "run-user-level-task",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}

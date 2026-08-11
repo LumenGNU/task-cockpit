@@ -15,5 +15,19 @@
   ],
   "main": "extension.js",
   "contributes": {
+    "commands": [
+      {
+        "title": "-DEBUG- print state",
+        "command": "_debug.printState"
+      },
+      {
+        "title": "-DEBUG- force full refresh",
+        "command": "_debug.forceFullRefresh"
+      },
+      {
+        "title": "-DEBUG- recreate",
+        "command": "_debug.recreate"
+      }
+    ]
   }
 }

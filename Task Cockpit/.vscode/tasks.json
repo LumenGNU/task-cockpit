@@ -943,7 +943,8 @@
                 "env": {
                     "OUT_DIR": "~out-probe",
                     "SUT_PROBE": "probes/ResourceStateCoordinator",
-                    "VSC_PROFILE": "Task Cockpit Test",
+                    "VSC_OPEN": "probes/ResourceStateCoordinator/single-folder",
+                    "VSC_PROFILE": "probe-ResourceStateCoordinator",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
                 }
             },
@@ -1003,8 +1004,9 @@
                 "env": {
                     "OUT_DIR": "~out-probe",
                     "SUT_PROBE": "probes/probe-probe",
-                    "VSC_PROFILE": "Task Cockpit Test",
-                    "VSC_VERSION": "1.111.0"
+                    "VSC_PROFILE": "prob-probe",
+                    "VSC_VERSION": "1.111.0",
+                    "VSC_OPEN": "probes/probe-probe/prj"
                 }
             },
             "problemMatcher": [
@@ -1015,7 +1017,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s1",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s1",
             "icon": {
                 "id": "debug-console"
             },
@@ -1032,9 +1034,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s1",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s1",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1047,7 +1049,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s2",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s2",
             "icon": {
                 "id": "debug-console"
             },
@@ -1064,9 +1066,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s2",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s2",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1079,7 +1081,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s3",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s3",
             "icon": {
                 "id": "debug-console"
             },
@@ -1096,9 +1098,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s3",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s3",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1111,7 +1113,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s4",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s4",
             "icon": {
                 "id": "debug-console"
             },
@@ -1128,9 +1130,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s4",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s4",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1143,7 +1145,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s5",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s5",
             "icon": {
                 "id": "debug-console"
             },
@@ -1160,9 +1162,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s5",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s5",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1175,7 +1177,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s6",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s6",
             "icon": {
                 "id": "debug-console"
             },
@@ -1192,9 +1194,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s6",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s6",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1207,7 +1209,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|multi-root-conflicts-between-scopes-s7",
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s7",
             "icon": {
                 "id": "debug-console"
             },
@@ -1224,9 +1226,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s7",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s7",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1239,7 +1241,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|single-folder-conflicts-between-user-level",
+            "label": "Probes|task-shadowing|behavioral research|single-folder-conflicts-between-user-level",
             "icon": {
                 "id": "debug-console"
             },
@@ -1256,9 +1258,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/single-folder-conflicts-between-user-level",
-                    "VSC_PROFILE": "single-folder-conflicts-between-user-level",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-between-user-level:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-single-folder-conflicts-between-user-level",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1271,7 +1273,7 @@
             ]
         },
         {
-            "label": "Probes|task-shadowing|single-folder-conflicts-within-single-scope",
+            "label": "Probes|task-shadowing|behavioral research|single-folder-conflicts-within-single-scope",
             "icon": {
                 "id": "debug-console"
             },
@@ -1288,9 +1290,9 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing",
-                    "VSC_OPEN": "fixtures/task-shadowing/single-folder-conflicts-within-single-scope",
-                    "VSC_PROFILE": "single-folder-conflicts-within-single-scope",
+                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-within-single-scope:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-single-folder-conflicts-within-single-scope",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
                     // "VSC_VERSION": "1.110.0"
                 }
@@ -1303,7 +1305,7 @@
             ]
         },
         {
-            "label": "Probes|tree-panel|multi-root-project",
+            "label": "Probes|tree-panel|semi-manual",
             "icon": {
                 "id": "debug-console"
             },
@@ -1322,7 +1324,7 @@
                     "OUT_DIR": "~out-probe",
                     "SUT_PROBE": "probes/tree-panel",
                     "VSC_PROFILE": "probe-tree-panel",
-                    "VSC_OPEN": "probes/tree-panel/multi-root-project/project.code-workspace:probes/tree-panel/multi-root-project/folder1/project.code-workspace.jsonc:probes/tree-panel/multi-root-project/folder1/.vscode/tasks.json:probes/tree-panel/multi-root-project/folder2/.vscode/tasks.json",
+                    "VSC_OPEN": "probes/tree-panel/semi-manual/project.code-workspace:probes/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:probes/tree-panel/semi-manual/folder1/.vscode/tasks.json:probes/tree-panel/semi-manual/folder2/.vscode/tasks.json",
                     // "VSC_VERSION": "1.131.0"
                 }
             },
@@ -1794,807 +1796,810 @@
                 },
             ]
         },
+        // -----------------------------------------------------------------------------------------------------------------------------------
+        // shadowing-behavior
         {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-combined-shadowing-c1/*",
-                    "VSC_PROFILE": "multi-root-combined-shadowing-c1",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-combined-shadowing-c2/*",
-                    "VSC_PROFILE": "multi-root-combined-shadowing-c2",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-combined-shadowing-c3/*",
-                    "VSC_PROFILE": "multi-root-combined-shadowing-c3",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s1/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s1",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s2/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s2",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s3/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s3",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s4/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s4",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s5/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s5",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s6/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s6",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "multi-root-conflicts-between-scopes-s7/*",
-                    "VSC_PROFILE": "multi-root-conflicts-between-scopes-s7",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "single-folder-conflicts-between-user-level/*",
-                    "VSC_PROFILE": "single-folder-conflicts-between-user-level",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope",
-            "icon": {
-                "id": "beaker"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Test|PreTest|Clean/create '~out-test/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
-                "./.vscode-test/test-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-test",
-                    "SUT_EXT": "src",
-                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions-shadowing-behavior",
-                    "TESTS": "single-folder-conflicts-within-single-scope/*",
-                    "VSC_PROFILE": "single-folder-conflicts-within-single-scope",
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    }
-                },
-                {
-                    "applyTo": "allDocuments",
-                    "owner": "Test Failes",
-                    "source": "vscode-test",
-                    "severity": "error",
-                    "fileLocation": [
-                        "autoDetect",
-                        "${workspaceFolder}"
-                    ],
-                    "pattern": {
-                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
-                        "message": 0,
-                        "file": 1,
-                        "line": 2,
-                        "column": 3
-                    },
-                },
-            ]
-        },
-        {
-            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior",
+            "label": "Test|shadowing-behavior",
             "icon": {
                 "id": "run-all"
             },
             "dependsOn": [
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c1",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c2",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-combined-shadowing-c3",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-between-user-level",
-                "Test|ResourceState|TaskDefinition|mapTaskDefinitions|shadowing-behavior|single-folder-conflicts-within-single-scope"
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c1",
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c2",
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c3",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+                "Test|shadowing-behavior|single-folder-conflicts-between-user-level",
+                "Test|shadowing-behavior|single-folder-conflicts-within-single-scope"
             ],
             "dependsOrder": "sequence"
         },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c1",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c1/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c1",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c2",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c2/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c2",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c3",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c3/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c3",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s1/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s1",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s2/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s2",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s3/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s3",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s4/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s4",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s5/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s5",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s6/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s6",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s7/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s7",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|single-folder-conflicts-between-user-level",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "single-folder-conflicts-between-user-level/*",
+                    "VSC_PROFILE": "test-single-folder-conflicts-between-user-level",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|single-folder-conflicts-within-single-scope",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "single-folder-conflicts-within-single-scope/*",
+                    "VSC_PROFILE": "test-single-folder-conflicts-within-single-scope",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        // ------------------------------------------------------------------------------------------------------------------------------------
         {
             "label": "Test|units",
             "icon": {
