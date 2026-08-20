@@ -9,7 +9,7 @@ import {
     workspace
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import EligibleTask from '../EligibleTask';
+import EligibleTask from './EligibleTask/EligibleTask';
 import groupResourceConfig from './ResourceConfig/groupResourceConfig';
 import groupTaskDefinitions from './TaskDefinition/groupTaskDefinitions';
 import OriginKey from '../OriginKey';
@@ -19,19 +19,19 @@ import type {
     ConfigurationChangeEvent,
     Disposable,
     Event,
+    Task,
     WorkspaceFoldersChangeEvent
 } from 'vscode';
-import type EligibleTasksMap from '../EligibleTasksMap';
+import type EligibleTasksMap from './EligibleTask/EligibleTasksMap';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type OriginEntriesSnapshot from './OriginEntriesSnapshot';
 import type OriginEntry from './OriginEntry';
 import type ResourceConfig from './ResourceConfig/ResourceConfig';
 import type ResourceStructure from './ResourceStructure';
-import type TaskDefinitionEntry from '../TaskDefinitionEntry';
-import type TaskDefinitionMap from '../TaskDefinitionMap';
+import type TaskDefinitionEntry from './TaskDefinition/TaskDefinitionEntry';
+import type TaskDefinitionMap from './TaskDefinition/TaskDefinitionMap';
 import type TaskName from '../TaskName';
-// import type TaskSource from './TaskSource';
 import type TaskBundle from './TaskBundle';
 
 
@@ -129,7 +129,9 @@ class ResourceStateCoordinator implements Disposable {
     // -------------------------------------------------------
     /** Deferred, который резолвится при переходе UpdatePhase → idle.
      * Публичные геттеры через #waitForIdle() ждут именно его, чтобы
-     * вернуть согласованный снимок. */
+     * вернуть согласованный снимок.
+     *
+     * Устанавливается в {@linkcode #waitForIdle} */
     #idleDeferred: {
         readonly promise: Promise<void>;
         readonly resolve: (value: void | PromiseLike<void>) => void;
@@ -160,11 +162,14 @@ class ResourceStateCoordinator implements Disposable {
             this.#onDidStateChange
         ];
 
+        // по всей видимости, единственный случай когда срабатывает самостоятельно,
+        // без сопутствующего `onDidChangeConfiguration` — это переименование
+        // директорий в .code-workspace
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        workspace.onDidChangeWorkspaceFolders(this.#onDidChangeWorkspaceFoldersHandler, this, this.#disposables);
+        workspace.onDidChangeWorkspaceFolders(this.#changeWorkspaceFoldersHandler, this, this.#disposables);
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        workspace.onDidChangeConfiguration(this.#onDidChangeConfigurationHandler, this, this.#disposables);
+        workspace.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
 
         // ----------------------------------------------
         // Первичное заполнение кешей
@@ -213,9 +218,7 @@ class ResourceStateCoordinator implements Disposable {
      * Повторный вызов безопасен. */
     public dispose() {
 
-        if (this.#phase === 'disposed') {
-            return;
-        }
+        if (this.#isDisposed()) { return; }
 
         this.#phase = 'disposed';
 
@@ -226,7 +229,7 @@ class ResourceStateCoordinator implements Disposable {
         }
 
         if (this.#idleDeferred) {
-            this.#idleDeferred.reject(new Error(`[${this.constructor.name}] was disposed while waiting for an update to complete`));
+            this.#idleDeferred.reject(new Error(`${this.constructor.name} was disposed while waiting`));
             this.#idleDeferred = null;
         }
 
@@ -241,9 +244,9 @@ class ResourceStateCoordinator implements Disposable {
 
     // #region Handlers
 
-    #onDidChangeWorkspaceFoldersHandler(_event: WorkspaceFoldersChangeEvent) {
+    #changeWorkspaceFoldersHandler(_event: WorkspaceFoldersChangeEvent) {
 
-        if (this.#phase === 'disposed') { return; }
+        if (this.#isDisposed()) { return; }
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}]: Workspace folders changed. Scheduling update (with task).`);
 
@@ -252,11 +255,11 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    #onDidChangeConfigurationHandler(event: ConfigurationChangeEvent) {
+    #changeConfigurationHandler(event: ConfigurationChangeEvent) {
 
-        if (this.#phase === 'disposed') { return; }
+        if (this.#isDisposed()) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: Configuration changed…`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}#changeConfigurationHandler]: Configuration changed…`);
 
         const changes: AffectedKeys =
             // @todo или просто "tasks"? в чем разница?
@@ -296,24 +299,28 @@ class ResourceStateCoordinator implements Disposable {
 
     /** Возвращает `true`, если координатор уничтожен и больше не должен использоваться.
      *
-     * После вызова {@link dispose} любые обращения к публичному API, кроме этого геттера,
+     * После вызова {@linkcode dispose} любые обращения к публичному API, кроме этого геттера,
      * завершаются ошибкой.
      *
      * @returns {boolean} `true`, если текущая фаза координатора — `'disposed'`. */
     public get disposed(): boolean {
-        return this.#phase === 'disposed';
+        return this.#isDisposed();
     }
 
 
     /** Получить ресурсную конфигурацию для заданной области-источника.
      *
-     * @returns {@link ResourceConfig} или `null`, если область-источник не существует
+     * @returns {@linkcode ResourceConfig} или `null`, если область-источник не существует
      *          (например, была удалена, а ссылка на неё сохранилась в истории).
      * @throws { Error } если координатор disposed на момент запроса.
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getResourceConfig(originKey: OriginKey): Promise<Immutable<ResourceConfig> | null> {
 
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getResourceConfig]: use after dispose`); }
+
         await this.#waitForIdle();
+
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getResourceConfig]: was disposed while waiting`); }
 
         // если состояние согласовано то для существующей области-источника
         // есть результат (возможно пустой).
@@ -325,16 +332,29 @@ class ResourceStateCoordinator implements Disposable {
 
     /** Восстанавливает происхождение рантайм-задачи (OriginKey)
      *
-     * @param eligibleTask  Рантайм-задача, чьё происхождение нужно установить.
+     * @param task  Рантайм-задача, чьё происхождение нужно установить.
      * @returns `OriginKey` если задачу удалось сопоставить определению, иначе `null`.
      *
      * @throws { Error } если координатор disposed на момент запроса.
      * @throws { Error } если координатор disposed во время ожидания. */
-    public async resolveTaskOrigin(eligibleTask: Immutable<EligibleTask>): Promise<OriginKey | null> {
+    public async resolveTaskOrigin(task: Immutable<Task>): Promise<Immutable<{ originKey: OriginKey; taskName: TaskName; }> | null> {
+
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#resolveTaskOrigin]: use after dispose`); }
 
         await this.#waitForIdle();
 
-        return lookupTaskOrigin(eligibleTask, this.#taskDefinitions);
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#resolveTaskOrigin]: was disposed while waiting`); }
+
+        if (!EligibleTask.isEligibleTask(task)) { return null; }
+
+        const originKey = lookupTaskOrigin(task, this.#taskDefinitions);
+
+        if (!originKey) { return null; }
+
+        return {
+            originKey,
+            taskName: task.name
+        };
 
     }
 
@@ -356,13 +376,18 @@ class ResourceStateCoordinator implements Disposable {
      * Снимок соответствует последнему завершённому циклу обновления и согласован
      * со всеми внутренними кешами координатора.
      *
-     * @returns Неизменяемый снимок {@link OriginEntriesSnapshot}.
+     * @returns Неизменяемый снимок {@linkcode OriginEntriesSnapshot}.
      *
      * @throws { Error } если координатор disposed на момент запроса.
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getOriginEntries(): Promise<Immutable<OriginEntriesSnapshot>> {
 
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getOriginEntries]: use after dispose`); }
+
         await this.#waitForIdle();
+
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getOriginEntries]: was disposed while waiting`); }
+
 
         const folders: OriginEntry[] =
             this.#resourceStructure.folders
@@ -413,13 +438,17 @@ class ResourceStateCoordinator implements Disposable {
      *
      * @param originKey  Ключ области-источника.
      * @param taskName   Имя задачи.
-     * @returns Неизменяемый {@link TaskBundle} с данными задачи.
+     * @returns Неизменяемый {@linkcode TaskBundle} с данными задачи.
      *
      * @throws { Error } если координатор disposed на момент запроса.
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getTaskBundle(originKey: OriginKey, taskName: TaskName): Promise<Immutable<TaskBundle>> {
 
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getTaskBundle]: use after dispose`); }
+
         await this.#waitForIdle();
+
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getTaskBundle]: was disposed while waiting`); }
 
         return {
             nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
@@ -452,7 +481,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed на момент запроса.  */
     public forceFullRefresh(): Promise<void> {
 
-        if (this.#phase === 'disposed') {
+        if (this.#isDisposed()) {
             return Promise.reject(new Error(`[${this.constructor.name}#forceFullRefresh]: use after dispose`));
         }
 
@@ -473,7 +502,7 @@ class ResourceStateCoordinator implements Disposable {
     /** Ждёт завершения текущего цикла обновления.
      *
      * После возврата фаза координатора гарантированно равна `'idle'`, а все кеши
-     * соответствуют последнему завершённому {@link #performUpdate}.
+     * соответствуют последнему завершённому {@linkcode #performUpdate}.
      *
      * @returns Промис, резолвящийся при переходе фазы в `'idle'`.
      *
@@ -481,17 +510,9 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     #waitForIdle(): Promise<void> {
 
-        if (this.#phase === 'disposed') {
-            return Promise.reject(new Error(`[${this.constructor.name}]: use after dispose`));
-        }
+        if (this.#phase === 'idle') { return Promise.resolve(); }
 
-        if (this.#phase === 'idle') {
-            return Promise.resolve();
-        }
-
-        if (this.#idleDeferred) {
-            return this.#idleDeferred.promise;
-        }
+        if (this.#idleDeferred) { return this.#idleDeferred.promise; }
 
         let resolve!: (value: void | PromiseLike<void>) => void;
         let reject!: (reason?: unknown) => void;
@@ -501,25 +522,25 @@ class ResourceStateCoordinator implements Disposable {
             reject = rej;
         });
 
-        assert.ok(resolve);
-        assert.ok(reject);
+        // assert.ok(resolve);
+        // assert.ok(reject);
 
         this.#idleDeferred = { promise, resolve, reject };
 
-        return promise;
+        return this.#idleDeferred.promise;
     }
 
 
     /** Объединяет изменения в `#pendingAffectedKeys` и (пере)запускает дебаунс-таймер.
      *
-     * Вызовы в течение {@link ResourceStateCoordinator.#DEBOUNCE_DELAY} мс схлопываются
+     * Вызовы в течение {@linkcode ResourceStateCoordinator.#DEBOUNCE_DELAY} мс схлопываются
      * в один запуск `#performUpdate`, предотвращая спам от одновременных
      * `onDidChangeWorkspaceFolders` и `onDidChangeConfiguration`.
      *
      * @param changes  Ключи ресурсов, затронутых текущим изменением. */
     #scheduleUpdate(changes: AffectedKeys): void {
 
-        if (this.#phase === 'disposed') { return; }
+        if (this.#isDisposed()) { return; }
 
         this.#pendingAffectedKeys ??= new Set();
         for (const key of changes) {
@@ -535,9 +556,7 @@ class ResourceStateCoordinator implements Disposable {
 
             this.#debounceTimer = null;
 
-            if (this.#phase === 'disposed') {
-                return;
-            }
+            if (this.#phase === 'disposed') { return; }
 
             if (!this.#pendingAffectedKeys) {
                 // потенциально может обогнать forceFullRefresh
@@ -693,6 +712,12 @@ class ResourceStateCoordinator implements Disposable {
             this.#resourceStructure,
             ResourceConfigurationSchema.SCHEMA
         );
+    }
+
+
+    // ----------------------------------------------
+    #isDisposed(): boolean {
+        return this.#phase === 'disposed';
     }
 
 }
