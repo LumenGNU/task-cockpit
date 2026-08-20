@@ -1,0 +1,1023 @@
+/** @file ResourceStateCoordinator/ResourceStateCoordinator.ts */
+/** @module ResourceStateCoordinator */
+
+import {
+    EventEmitter,
+    LogOutputChannel,
+    TaskScope,
+    Uri,
+    workspace
+} from 'vscode';
+import * as assert from 'node:assert/strict';
+import EligibleTask from '../EligibleTask';
+import groupResourceConfig from './ResourceConfig/groupResourceConfig';
+import groupTaskDefinitions from './TaskDefinition/groupTaskDefinitions';
+import OriginKey from '../OriginKey';
+import ResourceConfigurationSchema from './ResourceConfig/ResourceConfigurationSchema';
+
+import type {
+    ConfigurationChangeEvent,
+    Disposable,
+    Event,
+    WorkspaceFoldersChangeEvent
+} from 'vscode';
+import type EligibleTasksMap from '../EligibleTasksMap';
+import type Immutable from '../utils/Immutable';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type OriginEntriesSnapshot from './OriginEntriesSnapshot';
+import type OriginEntry from './OriginEntry';
+import type ResourceConfig from './ResourceConfig/ResourceConfig';
+import type ResourceStructure from './ResourceStructure';
+import type TaskDefinitionEntry from '../TaskDefinitionEntry';
+import type TaskDefinitionMap from '../TaskDefinitionMap';
+import type TaskName from '../TaskName';
+// import type TaskSource from './TaskSource';
+import type TaskBundle from './TaskBundle';
+
+
+interface ActiveUpdatePhase { affectedKeys: Immutable<AffectedKeys>; }
+type Phase = 'idle' | 'disposed' | Immutable<ActiveUpdatePhase>;
+
+// 'TASKS' — специальный маркер «пересчитать задачи»,
+// а остальные ключи — ключи ресурсной конфигурации.
+type AffectedKeys = Set<ResourceConfigurationSchema.ConfigKey | 'TASKS'>;
+
+
+/** Единственный источник согласованного, актуального состояния *ресурсов*.
+ * («какие задачи есть» + «по каким правилам из них строить дерево»,
+ * сопоставление «рантайм-задача» → «ее определение»)
+ *
+ * Управляет оперативным состоянием расширения:
+ * областями-источниками, определениями и рантайм-задачами, ресурсными конфигурациями.
+ *
+ * Это центральный координатор состояния. Он собирает, кеширует и синхронизирует
+ * все динамические данные: список областей (scopes), ресурсные конфигурации,
+ * определения задач (TaskDefinition) и построенные VS Code рантайм-задачи (EligibleTask).
+ *
+ * В основе лежит конечный автомат с фазами:
+ * - 'idle'            — согласованное состояние готово, обновление не выполняется.
+ * - `UpdatePhase` — активное обновление.
+ * - 'disposed'        — координатор уничтожен, любое обращение к публичному API — ошибка.
+ *
+ * Это единственный источник правды для всего, что может измениться в рантайме.
+ *
+ * Сам следит за изменениями конфигурации и держит себя в актуальном виде,
+ * оповещая подписчиков через onDidStateChange.
+ *
+ * onDidStateChange происходит только после актуализации состояния что
+ * важно при изменении в конфигурации "tasks" — нужно дождаться
+ * когда vs code перестроит задачи.
+ *
+ * - Консистентность – событие onDidStateChange должно отправляться только после
+ *     того, как состояние действительно актуализировано (соответствует
+ *     последней версии конфигурации).
+ * - Не терять изменения
+ * - Отзывчивость – **тут** *не* в приоритете.
+ * */
+class ResourceStateCoordinator implements Disposable {
+
+
+    readonly #onDidStateChange: EventEmitter<Immutable<AffectedKeys>>;
+
+    /** Срабатывает после завершения полного цикла обновления состояния,
+     * вызванного изменениями в конфигурации, разделе задач (`tasks`) или
+     * структуре рабочих областей.
+     *
+     * На момент срабатывания все публичные геттеры возвращают согласованный снимок. */
+    readonly onDidStateChange: Event<Immutable<AffectedKeys>>;
+
+    // --------------------------------------------------------
+
+    // Снимок состояния (всегда внутренне согласованный набор кешей)
+    // #resourceStructure обновляется безусловно на каждом цикле #performUpdate.
+    // #eligibleTasks и #taskDefinitions — только при наличии изменений в задачах.
+    // Расхождения не возникает: единственный источник изменений #resourceStructure —
+    // workspace.workspaceFolders, а обработчик onDidChangeWorkspaceFolders
+    // всегда планирует обновление с Set(['TASKS'] (см. конструктор).
+    // Таким образом при изменении структуры папок задачи также пересчитываются.
+    // --------------------------------------------------------
+    #resourceStructure!: Immutable<ResourceStructure>;
+    /** Кеш eligible-задач — "подходящих" рантайм-задач, те что
+     * VS Code успешно построила из определений и которые
+     * {@link EligibleTask.isEligibleTask | соответствует критериям расширения}. */
+    #eligibleTasks!: Immutable<Map<OriginKey, Map<TaskName, EligibleTask>>>;
+    /** Кеш определений задач, сгруппированных по областям */
+    #taskDefinitions!: Immutable<Map<OriginKey, Map<TaskName, TaskDefinitionEntry>>>;
+    /** Кеш origin-специфичных конфигураций, сгруппированных по областям-источникам */
+    #perOriginConfig!: Immutable<Map<OriginKey, ResourceConfig>>;
+    // --------------------------------------------------------
+
+    // Защита от дребезга между onDidChangeWorkspaceFolders и onDidChangeConfiguration
+    // --------------------------------------------------------
+    #debounceTimer: NodeJS.Timeout | null;
+    #pendingAffectedKeys: AffectedKeys | null;
+    static readonly #DEBOUNCE_DELAY: number = 100;
+    // --------------------------------------------------------
+
+    /** Текущая фаза координатора.
+     *
+     * "чем сейчас занят координатор"
+     *
+     * Сессия обновления: период пока координатор находится в фазе updating.
+     * Начинается при первом переходе idle → UpdatePhase, заканчивается переходом
+     * UpdatePhase → idle + нотификацией.
+     * Внутри сессии возможны перезапуски #performUpdate (UpdatePhase → UpdatePhase).
+     *
+     *  */
+    #phase: Phase;
+
+    // -------------------------------------------------------
+    /** Deferred, который резолвится при переходе UpdatePhase → idle.
+     * Публичные геттеры через #waitForIdle() ждут именно его, чтобы
+     * вернуть согласованный снимок. */
+    #idleDeferred: {
+        readonly promise: Promise<void>;
+        readonly resolve: (value: void | PromiseLike<void>) => void;
+        readonly reject: (reason: Error) => void;
+    } | null;
+
+    // инфраструктура
+    // --------------------------------------------------------
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+
+    readonly #disposables: Disposable[];
+
+    private constructor(
+        eligibleTasks: Immutable<Array<EligibleTask>>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+    ) {
+
+        this.#logOutputChannel = logOutputChannel;
+
+        this.#onDidStateChange = new EventEmitter();
+        this.onDidStateChange = this.#onDidStateChange.event;
+
+        this.#debounceTimer = null;
+        this.#pendingAffectedKeys = null;
+        this.#idleDeferred = null;
+
+        this.#disposables = [
+            this.#onDidStateChange
+        ];
+
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        workspace.onDidChangeWorkspaceFolders(this.#onDidChangeWorkspaceFoldersHandler, this, this.#disposables);
+
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        workspace.onDidChangeConfiguration(this.#onDidChangeConfigurationHandler, this, this.#disposables);
+
+        // ----------------------------------------------
+        // Первичное заполнение кешей
+        this.#updateCaches(eligibleTasks);
+
+        // кеш должен быть полностью обновлен перед началом
+        // assert.ok(this.#resourceStructure);
+        // assert.ok(this.#eligibleTasks);
+        // assert.ok(this.#taskDefinitions);
+        // assert.ok(this.#perOriginConfig);
+
+        // начинаем в 'idle' — полное состояние, работа не выполняется
+        this.#phase = 'idle';
+    }
+
+
+    /** Фабрика.
+     *
+     * Асинхронно собирает рантайм-задачи (устойчиво к гонке с
+     * изменением конфигурации прямо во время запроса) и только потом
+     * возвращает готовый, согласованный экземпляр.
+     *
+     * @throws { Error } Выбрасывает наверх ошибки fetchTasks .
+     * @throws { Error } Если система не стабилизировалась, а `deadlineMs` вышел.
+     *
+     *  */
+    static async create(
+        deadlineMs: number,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+    ): Promise<ResourceStateCoordinator> {
+
+        const initialEligibleTasks = await fetchEligibleTasksUntilStable(deadlineMs, logOutputChannel);
+
+        const stateCoordinator = new ResourceStateCoordinator(
+            initialEligibleTasks,
+            logOutputChannel
+        );
+
+        return stateCoordinator;
+    }
+
+
+    /** Уничтожает координатор: уведомляет подписчиков через {@linkcode onDidDispose},
+     * отключает все слушатели, очищает таймеры и переводит фазу в `'disposed'`.
+     *
+     * Повторный вызов безопасен. */
+    public dispose() {
+
+        if (this.#phase === 'disposed') {
+            return;
+        }
+
+        this.#phase = 'disposed';
+
+        // Остановка дебонс-механизма
+        if (this.#debounceTimer) {
+            clearTimeout(this.#debounceTimer);
+            this.#debounceTimer = null;
+        }
+
+        if (this.#idleDeferred) {
+            this.#idleDeferred.reject(new Error(`[${this.constructor.name}] was disposed while waiting for an update to complete`));
+            this.#idleDeferred = null;
+        }
+
+        this.#disposables.forEach(function (d) {
+            d.dispose();
+        });
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel = null;
+    }
+
+
+    // #region Handlers
+
+    #onDidChangeWorkspaceFoldersHandler(_event: WorkspaceFoldersChangeEvent) {
+
+        if (this.#phase === 'disposed') { return; }
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: Workspace folders changed. Scheduling update (with task).`);
+
+        this.#scheduleUpdate(new Set(['TASKS']));
+
+    }
+
+
+    #onDidChangeConfigurationHandler(event: ConfigurationChangeEvent) {
+
+        if (this.#phase === 'disposed') { return; }
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: Configuration changed…`);
+
+        const changes: AffectedKeys =
+            // @todo или просто "tasks"? в чем разница?
+            // ключ 'tasks.tasks' реагирует только на изменения в самом массиве задач.
+            // Однако другие изменения внутри раздела tasks (например, tasks.verification,
+            // tasks.version и пр.) тоже могут требовать пересчёта.
+            // Но сейчас нам нужен только список определений и рантайм-задач.
+            // Что-то может изменится в списке рантайм-задач при изменении
+            // в разделе tasks, но не в массиве определений?
+            // @decision: Сознательно используем tasks.tasks
+            event.affectsConfiguration('tasks.tasks')
+                ? new Set(['TASKS'])
+                : new Set();
+
+        for (const [key, sectionSet] of ResourceConfigurationSchema.SECTIONS_BY_KEY) {
+            for (const section of sectionSet) {
+                if (event.affectsConfiguration(section)) {
+                    changes.add(key);
+                    break;
+                }
+            }
+        }
+
+        if (changes.size < 1) {
+            this.#logOutputChannel?.trace('  Change does not affect any resource settings or tasks. Ignoring.');
+            return;
+        }
+
+        this.#logOutputChannel?.trace(`  Scheduling update with ${[...changes.keys()].map((k) => `"${k}"`).join(', ')}`);
+
+        this.#scheduleUpdate(changes);
+
+    }
+
+    // #endregion Handlers
+
+
+    /** Возвращает `true`, если координатор уничтожен и больше не должен использоваться.
+     *
+     * После вызова {@link dispose} любые обращения к публичному API, кроме этого геттера,
+     * завершаются ошибкой.
+     *
+     * @returns {boolean} `true`, если текущая фаза координатора — `'disposed'`. */
+    public get disposed(): boolean {
+        return this.#phase === 'disposed';
+    }
+
+
+    // /** Возвращает актуальный снимок структуры областей-источников (origins) — глобальной,
+    //  * рабочей области и папок — в виде {@link ResourceStructure}.
+    //  *
+    //  * Снимок соответствует последнему завершённому циклу обновления и внутренне
+    //  * согласован с всеми кешами (задачи, конфигурации).
+    //  *
+    //  * @returns Неизменяемый {@link ResourceStructure}. `Workspace` может быть null, если нет
+    //  *    открытого workspace; `folders` всегда массив, пустой при отсутствии папок.
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getResourceStructure(): Promise<Immutable<ResourceStructure>> {
+    //
+    //     await this.#waitForIdle();
+    //     return this.#resourceStructure;
+    // }
+
+    // /** Возвращает актуальный источник задач (`TaskSource`) для указанной области-источника.
+    //  *
+    //  * Файл-источник-задач — это условный файл конфигурации (`tasks.json` или `.code-workspace`),
+    //  * из которого VS Code читает определения задач для указанного OriginKey.
+    //  *
+    //  * Файл может не существовать физически.
+    //  *
+    //  * Для глобальной пользовательской области (`OriginKey.USER`) определять источник я не умею,
+    //  * поэтому метод всегда возвращает `null`.
+    //  *
+    //  * @param originKey Ключ области-источника.
+    //  * @returns Источник задач для указанной области или `null` для `OriginKey.USER` или
+    //  *    если originKey-область не существует.
+    //  *
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getTaskSource(originKey: OriginKey): Promise<Immutable<TaskSource> | null> {
+    //
+    //     await this.#waitForIdle();
+    //
+    //     if (originKey === OriginKey.USER) {
+    //         return this.#resourceStructure.User.taskSource;
+    //     }
+    //     else if (originKey === OriginKey.WORKSPACE) {
+    //         return this.#resourceStructure.Workspace?.taskSource ?? null;
+    //     }
+    //
+    //     return this.#resourceStructure.folders?.find((f) => f.originKey === originKey)?.taskSource ?? null;
+    //
+    // }
+
+
+    /** Получить ресурсную конфигурацию для заданной области-источника.
+     *
+     * @returns {@link ResourceConfig} или `null`, если область-источник не существует
+     *          (например, была удалена, а ссылка на неё сохранилась в истории).
+     * @throws { Error } если координатор disposed на момент запроса.
+     * @throws { Error } если координатор disposed во время ожидания. */
+    public async getResourceConfig(originKey: OriginKey): Promise<Immutable<ResourceConfig> | null> {
+
+        await this.#waitForIdle();
+
+        // если состояние согласовано то для существующей области-источника
+        // есть результат (возможно пустой).
+        // но если состояние где-то сохраняется (история, пины...) возможен
+        // запрос к не существующей.
+        return this.#perOriginConfig.get(originKey) ?? null;
+    }
+
+
+    // /** Возвращает все определения задач, найденные непосредственно в конфигурации
+    //  * указанной области-источника (origin).
+    //  *
+    //  * - Правила слияния областей VS Code **не** применяются.
+    //  * - Правила затенения имен **применяются**.
+    //  *
+    //  * @returns словарь {@link TaskDefinition} по {@link TaskName} или `null`,
+    //  *          если область не существует.
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getOriginTaskDefinitions(originKey: OriginKey): Promise<Immutable<Map<TaskName, TaskDefinitionEntry>> | null> {
+    //
+    //     await this.#waitForIdle();
+    //
+    //     return this.#taskDefinitions.get(originKey) ?? null;
+    // }
+
+
+    // /** Возвращает все закешированные определения задач, сгруппированные по областям-источникам.
+    //  *
+    //  * Возвращается внутренний неизменяемый кеш `#taskDefinitions`, соответствующий
+    //  * последнему завершённому циклу обновления. Для каждой области-источника хранятся
+    //  * определения, найденные непосредственно в её конфигурации.
+    //  *
+    //  * Правила слияния областей VS Code здесь не применяются.
+    //  *
+    //  * @returns Неизменяемый словарь:
+    //  *          `Map<OriginKey, Map<TaskName, TaskDefinitionEntry>>`.
+    //  *
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getAllTaskDefinitions(): Promise<Immutable<Map<OriginKey, Map<TaskName, TaskDefinitionEntry>>>> {
+    //
+    //     await this.#waitForIdle();
+    //
+    //     return this.#taskDefinitions;
+    //
+    // }
+
+
+    // /** Возвращает подходящие-рантайм-задачи (EligibleTask), построенные VS Code из определений
+    //  * и доступные для указанной области-источника. Правила слияния областей VS Code уже применены.
+    //  *
+    //  * @param originKey  Ключ интересующей области-источника.
+    //  * @returns Словарь {@link EligibleTask} по {@link TaskName} или `null`, если
+    //  *          область-источник не существует, не содержит рантайм-задач или VS Code
+    //  *          не смогла их построить.
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getEligibleTasks(originKey: OriginKey): Promise<Immutable<Map<TaskName, EligibleTask>> | null> {
+    //
+    //     await this.#waitForIdle();
+    //
+    //     // даже если состояние согласовано система могла не создавать
+    //     // часть рантайм-задач из определений (есть ошибки в определении).
+    //     // И "пустые" области-источники не попадают в eligibleTasks.
+    //     return this.#eligibleTasks.get(originKey) ?? null;
+    // }
+
+
+    /** Восстанавливает происхождение рантайм-задачи (OriginKey)
+     *
+     * @throws { Error } если координатор disposed на момент запроса.
+     * @throws { Error } если координатор disposed во время ожидания. */
+    public async resolveTaskOrigin(eligibleTask: Immutable<EligibleTask>): Promise<OriginKey | null> {
+
+        await this.#waitForIdle();
+
+        return lookupTaskOrigin(eligibleTask, this.#taskDefinitions);
+
+    }
+
+    /** Формирует снимок всех областей-источников в виде записей `OriginEntry`.
+     *
+     * Снимок содержит:
+     * - `user` — глобальную пользовательскую область; её `taskSourceUri` всегда `null`;
+     * - `project` — список проектных областей. При наличии workspace первой идёт
+     *   workspace-область, затем folder-области; если workspace отсутствует —
+     *   только folder-область.
+     *
+     * Каждая запись включает:
+     * - `originKey`;
+     * - `name`;
+     * - `taskSourceUri` — файл-источник-задач ассоциированныи с данным originKey;
+     * - `hierarchyConfig`;
+     * - `definitionEntries` — определения задач для этой области.
+     *
+     * Снимок соответствует последнему завершённому циклу обновления и согласован
+     * со всеми внутренними кешами координатора.
+     *
+     * @returns Неизменяемый снимок {@link OriginEntriesSnapshot}.
+     *
+     * @throws { Error } если координатор disposed на момент запроса.
+     * @throws { Error } если координатор disposed во время ожидания. */
+    public async getOriginEntries(): Promise<Immutable<OriginEntriesSnapshot>> {
+
+        await this.#waitForIdle();
+
+        const folders: OriginEntry[] =
+            this.#resourceStructure.folders
+                ? this.#resourceStructure.folders.map(({ originKey, name, taskSource }) => ({
+                    originKey,
+                    name,
+                    taskSourceUri: taskSource.uri,
+                    hierarchyConfig: this.#perOriginConfig.get(originKey)!.Hierarchy,
+                    definitionEntries: [...this.#taskDefinitions.get(originKey)!.entries()]
+                }))
+                : [];
+
+        const projectOrigins: OriginEntry[] =
+            this.#resourceStructure.Workspace
+                ? [
+                    {
+                        originKey: OriginKey.WORKSPACE,
+                        name: this.#resourceStructure.Workspace.name,
+                        taskSourceUri: this.#resourceStructure.Workspace.taskSource.uri,
+                        hierarchyConfig: this.#perOriginConfig.get(OriginKey.WORKSPACE)!.Hierarchy,
+                        definitionEntries: [...this.#taskDefinitions.get(OriginKey.WORKSPACE)!.entries()]
+                    },
+                    ...folders
+                ]
+                : folders;
+
+
+        return {
+            user: {
+                originKey: OriginKey.USER,
+                name: 'User',
+                taskSourceUri: null,
+                hierarchyConfig: this.#perOriginConfig.get(OriginKey.USER)!.Hierarchy,
+                definitionEntries: [...this.#taskDefinitions.get(OriginKey.USER)!.entries()]
+            },
+            project: projectOrigins
+        };
+
+    }
+
+
+    // /** Возвращает агрегированные данные для указанной области-источника.
+    //  *
+    //  * Возвращаемый `OriginCacheBundle` содержит:
+    //  * - `nodeConfig` — ресурсную конфигурацию `Node` для origin;
+    //  * - `taskDefinitionsMap` — определения задач из origin;
+    //  * - `eligibleTasksMap` — подходящие-рантайм-задачи для которых удалось
+    //  *      установить происхождение как origin.
+    //  *
+    //  * Значения полей могут быть `null` если origin отсутствует или данных нет.
+    //  *
+    //  * @param originKey Ключ области-источника.
+    //  * @returns Неизменяемый {@link OriginCacheBundle} с данными origin.
+    //  *
+    //  * @throws { Error } если координатор disposed на момент запроса.
+    //  * @throws { Error } если координатор disposed во время ожидания. */
+    // public async getOriginData(originKey: OriginKey): Promise<Immutable<OriginCacheBundle>> {
+    //
+    //     await this.#waitForIdle();
+    //
+    //     return {
+    //         nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
+    //         taskDefinitionsMap: this.#taskDefinitions.get(originKey) ?? null,
+    //         eligibleTasksMap: this.#eligibleTasks.get(originKey) ?? null,
+    //     };
+    // }
+
+
+    public async getTaskBundle(originKey: OriginKey, taskName: TaskName): Promise<Immutable<TaskBundle>> {
+
+        await this.#waitForIdle();
+
+        return {
+            nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
+            taskDefinition: this.#taskDefinitions.get(originKey)?.get(taskName)?.active ?? null,
+            eligibleTask: this.#eligibleTasks.get(originKey)?.get(taskName) ?? null
+        };
+    }
+
+
+    /** Принудительный полный пересбор состояния.
+     * Может использоваться для выхода из ситуации, когда предыдущий цикл обновления
+     * не завершился (например, из-за невозможного исключения, оставившего фазу в <UpdatePhase>),
+     * или когда пользователь вручную запрашивает обновление.
+     *
+     * Сбрасывает отложенный дебаунс-таймер, немедленно запускает
+     * `#performUpdate()` с полным пересчётом задач.
+     *
+     * Ошибка, возникшая в процессе, пробрасывается вызывающей стороне;
+     * координатор при этом может остаться в несогласованном состоянии,
+     * поэтому вызывающий код должен предусмотреть восстановление/показать ошибку пользователю.
+     *
+     * При конкуренции метод не гарантирует ожидание окончательного состояния.
+     *
+     * @returns {Promise<void>} Завершается после полного цикла обновления.
+     *
+     * @remark Это не recovery, а «пни ещё раз, вдруг повезёт». Он не обязан (и не может)
+     * чинить то, что уже сломано.
+     *
+     * @throws { Error } Если `#performUpdate()` завершился с ошибкой.
+     * @throws { Error } если координатор disposed на момент запроса.  */
+    public forceFullRefresh(): Promise<void> {
+
+        if (this.#phase === 'disposed') {
+            return Promise.reject(new Error(`[${this.constructor.name}#forceFullRefresh]: use after dispose`));
+        }
+
+        if (this.#debounceTimer) {
+            clearTimeout(this.#debounceTimer);
+            this.#debounceTimer = null;
+        }
+
+        this.#pendingAffectedKeys = null;
+        this.#phase = {
+            affectedKeys: new Set(['TASKS', ...ResourceConfigurationSchema.SECTIONS_BY_KEY.keys()])
+        };
+
+        return this.#performUpdate();
+    }
+
+
+    // Метод #waitForIdle() должен гарантировать, что любой публичный геттер дождётся
+    // завершения текущего цикла обновления и будет читать согласованный снимок кешей.
+    //
+    // После возврата из await this.#waitForIdle() фаза координатора гарантированно
+    // равна 'idle', и все кеши соответствуют
+    // последнему завершённому циклу #performUpdate.
+    #waitForIdle(): Promise<void> {
+
+        if (this.#phase === 'disposed') {
+            return Promise.reject(new Error(`[${this.constructor.name}]: use after dispose`));
+        }
+
+        if (this.#phase === 'idle') {
+            return Promise.resolve();
+        }
+
+        if (this.#idleDeferred) {
+            return this.#idleDeferred.promise;
+        }
+
+        let resolve!: (value: void | PromiseLike<void>) => void;
+        let reject!: (reason?: unknown) => void;
+
+        const promise = new Promise<void>((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+
+        assert.ok(resolve);
+        assert.ok(reject);
+
+        this.#idleDeferred = { promise, resolve, reject };
+
+        return promise;
+    }
+
+
+    // дебонс между onDidChangeWorkspaceFolders и onDidChangeConfiguration
+    // для предотвращения спама и возможных, лишних запусков fetchTasks()
+    #scheduleUpdate(changes: AffectedKeys): void {
+
+        if (this.#phase === 'disposed') { return; }
+
+        this.#pendingAffectedKeys ??= new Set();
+        for (const key of changes) {
+            this.#pendingAffectedKeys.add(key);
+        }
+
+        // Перезапускаем таймер
+        if (this.#debounceTimer) {
+            clearTimeout(this.#debounceTimer);
+        }
+
+        this.#debounceTimer = setTimeout(() => {
+
+            this.#debounceTimer = null;
+
+            if (this.#phase === 'disposed') {
+                return;
+            }
+
+            if (!this.#pendingAffectedKeys) {
+                // потенциально может обогнать forceFullRefresh
+                return;
+            }
+
+            const pendingChanges =
+                this.#phase === 'idle'
+                    ? new Set(this.#pendingAffectedKeys)
+                    : new Set([...this.#pendingAffectedKeys, ...this.#phase.affectedKeys]);
+            this.#pendingAffectedKeys = null;
+
+            this.#phase = { affectedKeys: pendingChanges };
+
+            // Запускаем новую работу
+            void this.#performUpdate().catch((error) => {
+
+                this.#logOutputChannel?.error(`[${this.constructor.name}#performUpdate]: unexpected error`, error);
+                // @todo форс-переход? но куда? и с каким обоснованием?
+                // @reject это состояние недостижимо при соблюдении контрактов нижележащих функций,
+                // и если оно достигнуто — чинить нужно контракт, а не добавлять сюда recovery-логику.
+                // Координатору некуда переходить и продолжать работу, его инструментарий сломан:
+                // теперь любое состояние не может считаться ни актуальным, ни согласованным.
+                // "Не бросало раньше" — не значит "соблюдало контракт раньше": не-throw — лишь
+                // часть контракта, а не весь. Раз здесь он доказано нарушен, нет оснований
+                // доверять и тем результатам того же кода, что были построены ранее без исключений.
+                //
+                // Это осознанный отказ от ложных восстановлений:
+                // Попадание сюда означает нарушение контракта нижележащих функций.
+                // Восстановление не предусмотрено: кеши могут быть несогласованы.
+                // Ошибка логируется как баг, а не как ожидаемое состояние.
+                // Поэтому попадание в эту ветку — это баг кода.
+                // Эту ветку нельзя правильно обработать не исправляя код.
+                // Как и нет "правильной" реакции на такое поведение.
+                // Переход в idle или disposed будет маскировкой а не "восстановлением".
+                // Чинить контракт того, что бросило. Всё остальное — самообман.
+            });
+        }, ResourceStateCoordinator.#DEBOUNCE_DELAY);
+
+    }
+
+
+    async #performUpdate(): Promise<void> {
+
+        assert.ok(typeof this.#phase !== 'string', 'must only be called when an update phase');
+
+        const capturedPhase = this.#phase;
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}#performUpdate]: Updating caches for ${[...capturedPhase.affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
+
+        let eligibleTasks: Immutable<EligibleTask[]> | null = null;
+
+        if (capturedPhase.affectedKeys.has('TASKS')) {
+            // ---------------------------
+            // Асинхронный блок, получение рантайм-задач
+            try {
+                eligibleTasks = await EligibleTask.fetchTasks();
+            }
+            catch (error) {
+                // Логируем и рассматриваем список задач как пустой.
+                // Если среда стабилизируется, следующее обновление (по изменению
+                // конфигурации или ручному refresh) подхватит актуальный список, если сможет.
+                // Сохранять старый кеш когда VS Code явно сигнализирует что среда сломана —
+                // нельзя, это ложная картина мира для пользователя.
+                // Раз VS Code не может доставить рантайм-задачи, а другого источника не
+                // существует — показываем пусто.
+                this.#logOutputChannel?.error(`[${this.constructor.name}#performUpdate]: Tasks.fetchTasks() threw unexpectedly — treating task list as empty.`, error);
+                // Сбой в VS Code API — расширение не может и *не должно* восстанавливать что-либо.
+                eligibleTasks = []; // не null, иначе updateCaches пропустит обновление taskDefinitions
+            }
+        }
+
+        // Сверить фазу, в которой начали, с фактической текущей
+        // Результат нужен, только если фаза строго равна текущей (не менялась).
+        if (this.#phase !== capturedPhase) {
+            // Могли перейти в dispose, или нас обогнали:
+            // результат нашей работы уже никому не нужен — отбрасываем
+
+            const reason =
+                typeof this.#phase === 'string'
+                    ? `phase changed to '${this.#phase}'`
+                    : 'newer update cycle started';
+            this.#logOutputChannel?.trace(
+                `[${this.constructor.name}#performUpdate]: stale — ${reason}, discarding results`
+            );
+            return;
+        }
+        // -----
+        // Только если дошли сюда — обновляем кеши.
+        // Иначе все результаты выбрасываются — геттеры продолжать
+        // отдавать, возможно, старое но согласованное состояние.
+        // Так и задумано:
+        // - кеши могут устаревать, но в таком случае гарантируется
+        //     повторный запуск и onDidChange.
+        // - между onDidChange — кеши взаимно согласованы.
+        // ------------------------
+
+        // если выше получали рантайм-задачи (успешно или нет)
+        // будет обновление и кеша задач, иначе только конфигурации
+
+        // Вызываемые функции **обязаны** не бросать исключений
+        // и всегда возвращать результат (возможно, пустой). Их контракт —
+        // их ответственность.
+        this.#updateCaches(eligibleTasks);
+
+        // Снапшот получен
+        this.#phase = 'idle';
+        if (this.#idleDeferred) {
+            this.#idleDeferred.resolve();
+            this.#idleDeferred = null;
+        }
+        this.#onDidStateChange.fire(capturedPhase.affectedKeys);
+    }
+
+
+    #updateCaches(eligibleTasks: Immutable<Array<EligibleTask>> | null) {
+
+        // resourceStructure пересчитывается безусловно на каждом обновлении,
+        // потому что изменение workspaceFolders могло произойти одновременно
+        // с изменением конфигурации. Так мы гарантируем,
+        // что структура всегда актуальна.
+        this.#resourceStructure = buildResourceStructure();
+
+        // если получали рантайм-задачи
+        if (eligibleTasks != null) {
+            this.#taskDefinitions = groupTaskDefinitions(this.#resourceStructure);
+            this.#eligibleTasks = groupEligibleTasksByOrigin(eligibleTasks, this.#taskDefinitions);
+        }
+
+        this.#perOriginConfig = groupResourceConfig(
+            this.#resourceStructure,
+            ResourceConfigurationSchema.SCHEMA
+        );
+    }
+
+}
+
+
+// -----
+
+
+/** Тянет рантайм-задачи, перезапускаясь, если конфигурация задач поменялась
+ * прямо во время запроса — иначе есть риск получить уже устаревший результат.
+ * Используется только на этапе {@linkcode ResourceStateCoordinator.create}, пока
+ * экземпляра ещё нет и полагаться на обработчик `onDidChangeConfiguration`
+ * нельзя.
+ *
+ * Есть защита от ухода в бесконечный цикл, если система постоянно в нестабильном
+ * состоянии.
+ * Внимание: "защита **от ухода в бесконечный цикл**", а не "защита от медленного fetchTasks".
+ * Дедлайн на **повторы**, не на **текущую проверку**.
+ *
+ * @param deadlineMs
+ * @param logOutputChannel
+ *
+ * @throws { Error } Выбрасывает наверх ошибки {@linkcode EligibleTask.fetchTasks}.
+ * @throws { Error } Если система не стабилизировалась за `deadlineMs`. */
+async function fetchEligibleTasksUntilStable(
+    deadlineMs: number,
+    logOutputChannel: LifecycleOmitted<LogOutputChannel> | null
+): Promise<Immutable<Array<EligibleTask>>> {
+
+    let isTimedOut = false;
+    // Маркер, что состояние изменилось **пока идет** fetchTasks()
+    let taskEnvChanged = false;
+
+    // Общий таймаут на весь процесс запуска.
+    // НЕ race между fetchTasks и таймаутом — никаких утверждений
+    // о состоянии системы, не дождавшись ответа, делать нельзя.
+    // Если fetchTasks висит 3 часа - мы ждем три часа. Если потом
+    // isDirty поднят - мы просто не делаем следующую попытку.
+    // Если бросить ждать через deadlineMs - где гарантия что
+    // fetchTasks не зарезолвился бы через deadlineMs+1 ?
+    const timeoutHandle = setTimeout(() => {
+        isTimedOut = true;
+    }, deadlineMs);
+
+    const disposables: Disposable[] = [];
+
+    // Начинаем следить за изменениями в задачах.
+    workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('tasks.tasks')) {
+            // изменение в задачах поднимет dirtyFlag
+            taskEnvChanged = true;
+        }
+    }, undefined, disposables);
+
+    workspace.onDidChangeWorkspaceFolders((_event) => {
+        // изменение в структуре проекта поднимет dirtyFlag
+        taskEnvChanged = true;
+    }, undefined, disposables);
+
+
+    try {
+
+        while (!isTimedOut) { // можно перезапускать только пока время не вышло
+
+            // перед попыткой опускаем флаг
+            taskEnvChanged = false;
+
+            // ...и фетчим задачи
+            const eligibleTasks = await EligibleTask.fetchTasks();
+
+            // после попытки смотрим на флаг
+            if (taskEnvChanged === false) {
+                // если успели — возвращаем
+                return eligibleTasks;
+            }
+
+            // если не успели — уходим на следующий круг
+
+            logOutputChannel?.trace(
+                `[fetchEligibleTasksUntilStable]: task environment changed mid-request. ${isTimedOut ? 'Deadline expired, will throw.' : 'Retrying.'}`
+            );
+
+        }
+
+        // если вывалились за цикл — значит время, выделенное на попытки, вышло
+        throw new Error('[fetchEligibleTasksUntilStable]: stabilization attempts aborted — allotted time expired while configuration was still changing');
+
+    }
+    finally {
+        disposables.forEach((d) => void d.dispose());
+        clearTimeout(timeoutHandle);
+    }
+}
+
+// -----
+
+
+/**  Восстанавливает происхождение рантайм-задачи (OriginKey) по контексту её выполнения
+ * и карте доступных определений.
+ *
+ * @remarks
+ * Поле `scope` (`vscode.Task.scope`, `EligibleTask.scope`) — это *контекст выполнения* рантайм-задачи, а не её происхождение.
+ * VS Code не поддерживает виртуальный или глобальный контекст: каждая задача
+ * выполняется либо в контексте рабочего пространства, либо в контексте
+ * конкретной папки проекта. В VS Code API нет концепции "область-происхождения".
+ * @remarks
+ * Поле `source` — это *механизм, породивший задачу*. Тоже не про "откуда".
+ * @remarks
+ * Рантайм-задачи порожденные из User-настроек и из code-workspace-файлов получают одинаковый
+ * `scope === TaskScope.Workspace` — обе привязываются к *первой папке проекта*
+ * как к synthetic execution context. Поэтому значение поля `scope` само по себе не раскрывает происхождение задачи;
+ * оно восстанавливается через `taskDefinitions` по эмпирически подтверждённому порядку затенения: USER → WORKSPACE.
+ * @remarks
+ * `TaskScope.Global` (= 1) зарезервирован в API, но реально не используется —
+ * задач с таким execution scope VS Code не порождает (расширения могут — но нам не интересно).
+ * @remarks
+ * Для folder-задач контекст выполнения совпадает с происхождением:
+ * поле `scope` содержит `WorkspaceFolder`, URI которой и является OriginKey.
+ *
+ * @returns
+ * `OriginKey` если задачу удалось сопоставить определению.
+ *  null — не удалось установить происхождение.
+ * */
+function lookupTaskOrigin(
+    eligibleTask: Immutable<EligibleTask>,
+    taskDefinitions: Immutable<Map<OriginKey, TaskDefinitionMap>>
+): OriginKey | null {
+
+    const scope = eligibleTask.scope;
+
+    if (scope === TaskScope.Global) { return null; }
+
+    if (scope === TaskScope.Workspace) {
+
+        if (taskDefinitions.get(OriginKey.USER)?.get(eligibleTask.name)?.active) {
+            return OriginKey.USER;
+        }
+        else if (taskDefinitions.get(OriginKey.WORKSPACE)?.get(eligibleTask.name)?.active) {
+            return OriginKey.WORKSPACE;
+        }
+
+        return null;
+    }
+
+    const folderKey = scope.uri.toString() as OriginKey.FolderKey;
+
+    if (taskDefinitions.get(folderKey)?.get(eligibleTask.name)?.active) {
+        return folderKey;
+    }
+
+    return null;
+}
+
+// -----
+
+/** Группирует рантайм-задачи по источникам их определений через resolveTaskOrigin()
+ * и строит Map<OriginKey, Map<TaskName, EligibleTask>>.
+ *
+ * Последняя задача с тем же именем перезаписывает предыдущую, что
+ * соответствует поведению VS Code.
+ * */
+function groupEligibleTasksByOrigin(
+    eligibleTasks: Immutable<Array<EligibleTask>>,
+    taskDefinitions: Immutable<Map<OriginKey, TaskDefinitionMap>>
+): Immutable<Map<OriginKey, EligibleTasksMap>> {
+
+    const map = new Map<OriginKey, Map<TaskName, Immutable<EligibleTask>>>();
+
+    for (const eligibleTask of eligibleTasks) {
+
+        const originKey = lookupTaskOrigin(eligibleTask, taskDefinitions);
+
+        if (!originKey) {
+            continue;
+        }
+
+        let taskMap = map.get(originKey);
+        if (!taskMap) {
+            taskMap = new Map();
+            map.set(originKey, taskMap);
+        }
+        taskMap.set(eligibleTask.name, eligibleTask);
+
+    }
+
+    return map;
+}
+
+// -----
+
+/** Формирует снапшот всех активных областей: глобальной (User),
+ * рабочей области (workspace) и папок (workspace folders).
+ *
+ * Глобальная область *не имеет taskSource*.
+ *
+ * Workspace-область может быть null (нет открытого workspace). */
+function buildResourceStructure(): Immutable<ResourceStructure> {
+
+    const isMultiRoot = workspace.workspaceFile != null;
+
+    return {
+        User: {
+            originKey: OriginKey.USER,
+            name: 'User',
+            taskSource: null
+        },
+        Workspace:
+            isMultiRoot
+                ? {
+                    originKey: OriginKey.WORKSPACE,
+                    name: workspace.name!,
+                    taskSource: {
+                        uri: workspace.workspaceFile!,
+                        JSONPath: ['tasks', 'tasks'] as const
+                    }
+                }
+                : null,
+        folders: workspace.workspaceFolders?.map((folder) => {
+            const originKey = folder.uri.toString() as OriginKey.FolderKey;
+            const taskSource = {
+                uri: Uri.joinPath(folder.uri, '.vscode', 'tasks.json'),
+                JSONPath: ['tasks'] as const
+            };
+            return {
+                originKey,
+                name: folder.name,
+                uri: folder.uri,
+                taskSource,
+                isPrima: folder.index === 0
+            };
+        }) ?? []
+    };
+}
+
+// -----
+
+export default ResourceStateCoordinator;
+
+// -----------
