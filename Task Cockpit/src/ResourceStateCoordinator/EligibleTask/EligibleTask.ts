@@ -1,3 +1,5 @@
+/** @file ResourceStateCoordinator/EligibleTask/EligibleTask.ts */
+
 import {
     Task as VscTask,
     TaskDefinition,

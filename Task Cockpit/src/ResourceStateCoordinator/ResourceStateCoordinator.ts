@@ -1,5 +1,4 @@
 /** @file ResourceStateCoordinator/ResourceStateCoordinator.ts */
-/** @module ResourceStateCoordinator */
 
 import {
     EventEmitter,

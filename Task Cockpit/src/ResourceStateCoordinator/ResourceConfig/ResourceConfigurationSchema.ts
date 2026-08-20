@@ -1,3 +1,4 @@
+/** @file ResourceStateCoordinator/ResourceConfig/ResourceConfigurationSchema.ts */
 
 import { SETTING_IDS } from '../../common';
 import Configuration from '../../Configuration';

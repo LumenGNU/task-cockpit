@@ -1,3 +1,5 @@
+/** @file ResourceStateCoordinator/ResourceConfig/groupResourceConfig.ts */
+
 import {
     workspace
 } from 'vscode';
