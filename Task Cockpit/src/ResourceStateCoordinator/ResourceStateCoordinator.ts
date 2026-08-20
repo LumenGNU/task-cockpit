@@ -170,11 +170,11 @@ class ResourceStateCoordinator implements Disposable {
         // Первичное заполнение кешей
         this.#updateCaches(eligibleTasks);
 
-        // кеш должен быть полностью обновлен перед началом
-        // assert.ok(this.#resourceStructure);
-        // assert.ok(this.#eligibleTasks);
-        // assert.ok(this.#taskDefinitions);
-        // assert.ok(this.#perOriginConfig);
+        // кеш должен быть полностью обновлен перед началом;
+        assert.ok(this.#resourceStructure);
+        assert.ok(this.#eligibleTasks);
+        assert.ok(this.#taskDefinitions);
+        assert.ok(this.#perOriginConfig);
 
         // начинаем в 'idle' — полное состояние, работа не выполняется
         this.#phase = 'idle';
@@ -305,54 +305,6 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    // /** Возвращает актуальный снимок структуры областей-источников (origins) — глобальной,
-    //  * рабочей области и папок — в виде {@link ResourceStructure}.
-    //  *
-    //  * Снимок соответствует последнему завершённому циклу обновления и внутренне
-    //  * согласован с всеми кешами (задачи, конфигурации).
-    //  *
-    //  * @returns Неизменяемый {@link ResourceStructure}. `Workspace` может быть null, если нет
-    //  *    открытого workspace; `folders` всегда массив, пустой при отсутствии папок.
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getResourceStructure(): Promise<Immutable<ResourceStructure>> {
-    //
-    //     await this.#waitForIdle();
-    //     return this.#resourceStructure;
-    // }
-
-    // /** Возвращает актуальный источник задач (`TaskSource`) для указанной области-источника.
-    //  *
-    //  * Файл-источник-задач — это условный файл конфигурации (`tasks.json` или `.code-workspace`),
-    //  * из которого VS Code читает определения задач для указанного OriginKey.
-    //  *
-    //  * Файл может не существовать физически.
-    //  *
-    //  * Для глобальной пользовательской области (`OriginKey.USER`) определять источник я не умею,
-    //  * поэтому метод всегда возвращает `null`.
-    //  *
-    //  * @param originKey Ключ области-источника.
-    //  * @returns Источник задач для указанной области или `null` для `OriginKey.USER` или
-    //  *    если originKey-область не существует.
-    //  *
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getTaskSource(originKey: OriginKey): Promise<Immutable<TaskSource> | null> {
-    //
-    //     await this.#waitForIdle();
-    //
-    //     if (originKey === OriginKey.USER) {
-    //         return this.#resourceStructure.User.taskSource;
-    //     }
-    //     else if (originKey === OriginKey.WORKSPACE) {
-    //         return this.#resourceStructure.Workspace?.taskSource ?? null;
-    //     }
-    //
-    //     return this.#resourceStructure.folders?.find((f) => f.originKey === originKey)?.taskSource ?? null;
-    //
-    // }
-
-
     /** Получить ресурсную конфигурацию для заданной области-источника.
      *
      * @returns {@link ResourceConfig} или `null`, если область-источник не существует
@@ -371,67 +323,10 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    // /** Возвращает все определения задач, найденные непосредственно в конфигурации
-    //  * указанной области-источника (origin).
-    //  *
-    //  * - Правила слияния областей VS Code **не** применяются.
-    //  * - Правила затенения имен **применяются**.
-    //  *
-    //  * @returns словарь {@link TaskDefinition} по {@link TaskName} или `null`,
-    //  *          если область не существует.
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getOriginTaskDefinitions(originKey: OriginKey): Promise<Immutable<Map<TaskName, TaskDefinitionEntry>> | null> {
-    //
-    //     await this.#waitForIdle();
-    //
-    //     return this.#taskDefinitions.get(originKey) ?? null;
-    // }
-
-
-    // /** Возвращает все закешированные определения задач, сгруппированные по областям-источникам.
-    //  *
-    //  * Возвращается внутренний неизменяемый кеш `#taskDefinitions`, соответствующий
-    //  * последнему завершённому циклу обновления. Для каждой области-источника хранятся
-    //  * определения, найденные непосредственно в её конфигурации.
-    //  *
-    //  * Правила слияния областей VS Code здесь не применяются.
-    //  *
-    //  * @returns Неизменяемый словарь:
-    //  *          `Map<OriginKey, Map<TaskName, TaskDefinitionEntry>>`.
-    //  *
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getAllTaskDefinitions(): Promise<Immutable<Map<OriginKey, Map<TaskName, TaskDefinitionEntry>>>> {
-    //
-    //     await this.#waitForIdle();
-    //
-    //     return this.#taskDefinitions;
-    //
-    // }
-
-
-    // /** Возвращает подходящие-рантайм-задачи (EligibleTask), построенные VS Code из определений
-    //  * и доступные для указанной области-источника. Правила слияния областей VS Code уже применены.
-    //  *
-    //  * @param originKey  Ключ интересующей области-источника.
-    //  * @returns Словарь {@link EligibleTask} по {@link TaskName} или `null`, если
-    //  *          область-источник не существует, не содержит рантайм-задач или VS Code
-    //  *          не смогла их построить.
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getEligibleTasks(originKey: OriginKey): Promise<Immutable<Map<TaskName, EligibleTask>> | null> {
-    //
-    //     await this.#waitForIdle();
-    //
-    //     // даже если состояние согласовано система могла не создавать
-    //     // часть рантайм-задач из определений (есть ошибки в определении).
-    //     // И "пустые" области-источники не попадают в eligibleTasks.
-    //     return this.#eligibleTasks.get(originKey) ?? null;
-    // }
-
-
     /** Восстанавливает происхождение рантайм-задачи (OriginKey)
+     *
+     * @param eligibleTask  Рантайм-задача, чьё происхождение нужно установить.
+     * @returns `OriginKey` если задачу удалось сопоставить определению, иначе `null`.
      *
      * @throws { Error } если координатор disposed на момент запроса.
      * @throws { Error } если координатор disposed во время ожидания. */
@@ -509,33 +404,19 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    // /** Возвращает агрегированные данные для указанной области-источника.
-    //  *
-    //  * Возвращаемый `OriginCacheBundle` содержит:
-    //  * - `nodeConfig` — ресурсную конфигурацию `Node` для origin;
-    //  * - `taskDefinitionsMap` — определения задач из origin;
-    //  * - `eligibleTasksMap` — подходящие-рантайм-задачи для которых удалось
-    //  *      установить происхождение как origin.
-    //  *
-    //  * Значения полей могут быть `null` если origin отсутствует или данных нет.
-    //  *
-    //  * @param originKey Ключ области-источника.
-    //  * @returns Неизменяемый {@link OriginCacheBundle} с данными origin.
-    //  *
-    //  * @throws { Error } если координатор disposed на момент запроса.
-    //  * @throws { Error } если координатор disposed во время ожидания. */
-    // public async getOriginData(originKey: OriginKey): Promise<Immutable<OriginCacheBundle>> {
-    //
-    //     await this.#waitForIdle();
-    //
-    //     return {
-    //         nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
-    //         taskDefinitionsMap: this.#taskDefinitions.get(originKey) ?? null,
-    //         eligibleTasksMap: this.#eligibleTasks.get(originKey) ?? null,
-    //     };
-    // }
-
-
+    /** Возвращает агрегированный набор данных для конкретной задачи указанной области-источника.
+     *
+     * `TaskBundle` содержит:
+     * - `nodeConfig` — конфигурацию отображения узла для origin или `null`;
+     * - `taskDefinition` — активное определение задачи или `null`, если отсутствует;
+     * - `eligibleTask` — рантайм-задачу или `null`, если VS Code не смогла её построить.
+     *
+     * @param originKey  Ключ области-источника.
+     * @param taskName   Имя задачи.
+     * @returns Неизменяемый {@link TaskBundle} с данными задачи.
+     *
+     * @throws { Error } если координатор disposed на момент запроса.
+     * @throws { Error } если координатор disposed во время ожидания. */
     public async getTaskBundle(originKey: OriginKey, taskName: TaskName): Promise<Immutable<TaskBundle>> {
 
         await this.#waitForIdle();
@@ -589,12 +470,15 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    // Метод #waitForIdle() должен гарантировать, что любой публичный геттер дождётся
-    // завершения текущего цикла обновления и будет читать согласованный снимок кешей.
-    //
-    // После возврата из await this.#waitForIdle() фаза координатора гарантированно
-    // равна 'idle', и все кеши соответствуют
-    // последнему завершённому циклу #performUpdate.
+    /** Ждёт завершения текущего цикла обновления.
+     *
+     * После возврата фаза координатора гарантированно равна `'idle'`, а все кеши
+     * соответствуют последнему завершённому {@link #performUpdate}.
+     *
+     * @returns Промис, резолвящийся при переходе фазы в `'idle'`.
+     *
+     * @throws { Error } если координатор disposed на момент вызова.
+     * @throws { Error } если координатор disposed во время ожидания. */
     #waitForIdle(): Promise<void> {
 
         if (this.#phase === 'disposed') {
@@ -626,8 +510,13 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    // дебонс между onDidChangeWorkspaceFolders и onDidChangeConfiguration
-    // для предотвращения спама и возможных, лишних запусков fetchTasks()
+    /** Объединяет изменения в `#pendingAffectedKeys` и (пере)запускает дебаунс-таймер.
+     *
+     * Вызовы в течение {@link ResourceStateCoordinator.#DEBOUNCE_DELAY} мс схлопываются
+     * в один запуск `#performUpdate`, предотвращая спам от одновременных
+     * `onDidChangeWorkspaceFolders` и `onDidChangeConfiguration`.
+     *
+     * @param changes  Ключи ресурсов, затронутых текущим изменением. */
     #scheduleUpdate(changes: AffectedKeys): void {
 
         if (this.#phase === 'disposed') { return; }
@@ -691,6 +580,19 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
+    /** Выполняет один цикл обновления кешей.
+     *
+     * Если затронуты задачи (`'TASKS'`), вызывает `EligibleTask.fetchTasks()`;
+     * ошибка трактуется как пустой список. Затем обновляет кеши через `#updateCaches`.
+     *
+     * Stale-check: если фаза изменилась за время асинхронного ожидания —
+     * результаты отбрасываются, кеши не трогаются.
+     *
+     * По завершении переводит фазу в `'idle'`, резолвит `#idleDeferred`
+     * и испускает `onDidStateChange`.
+     *
+     * @throws { never } Не должен бросать — ошибки `fetchTasks()` перехватываются внутри.
+     *    Контракт синхронных функций (`#updateCaches` и др.) — не бросать. */
     async #performUpdate(): Promise<void> {
 
         assert.ok(typeof this.#phase !== 'string', 'must only be called when an update phase');
@@ -764,6 +666,15 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
+    /** Синхронно пересобирает внутренние кеши.
+     *
+     * `#resourceStructure` пересчитывается безусловно на каждом вызове.
+     * `#taskDefinitions` и `#eligibleTasks` — только если `eligibleTasks != null`
+     * (т.е. в этом цикле запрашивались рантайм-задачи).
+     * `#perOriginConfig` пересчитывается безусловно.
+     *
+     * @param eligibleTasks  Свежий список рантайм-задач или `null`,
+     *    если текущий цикл не затрагивал задачи (только конфигурация). */
     #updateCaches(eligibleTasks: Immutable<Array<EligibleTask>> | null) {
 
         // resourceStructure пересчитывается безусловно на каждом обновлении,
