@@ -1,3 +1,4 @@
+/** @file WindowConfiguration/WindowConfigurationSchema.ts */
 
 import { SETTING_IDS } from '../common';
 import Configuration from '../Configuration';
