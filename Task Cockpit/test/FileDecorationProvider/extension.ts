@@ -22,7 +22,7 @@ async function updateConfig(
     const cfg = vscode.workspace.getConfiguration();
 
     function isSatisfied(): boolean {
-        const current = windowConfiguration.getConfig(CONFIGURATION_KEY);
+        const current = windowConfiguration.getConfiguration(CONFIGURATION_KEY);
         return JSON.stringify(current) === JSON.stringify(value);
     }
 
@@ -33,7 +33,7 @@ async function updateConfig(
 
     // Подписка ДО отправки обновлений — чтобы не пропустить событие
     const settled = new Promise<void>((resolve) => {
-        const disposable = windowConfiguration.onDidChange(async () => {
+        const disposable = windowConfiguration.onDidChangeConfiguration(async () => {
             if (isSatisfied()) {
                 disposable.dispose();
                 await new Promise<void>(resolve => setTimeout(resolve, 550));
@@ -56,7 +56,7 @@ async function updateConfig(
 
 export function activate(context: vscode.ExtensionContext): IFixture {
 
-    const fileDecorationProvider = new FileDecorationProvider(windowConfiguration);
+    const fileDecorationProvider = new FileDecorationProvider({ windowConfiguration });
 
     return {
         fileDecorationProvider,

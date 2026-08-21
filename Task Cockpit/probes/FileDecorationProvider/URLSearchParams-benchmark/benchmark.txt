@@ -1,0 +1,19 @@
+extension: papio-dev.task-cockpit 0.0.0
+mode: Test
+vscode: 1.86.2
+node: v18.17.1 linux x64
+log level: Info
+workspace: URLSearchParams-benchmark
+--------------------------------------------------------------------------------
+URLSearchParams: 120.61223999410868 ms
+manual: 28.388402998447418 ms
+URLSearchParams: 78.91ms | GC runs: 0 | GC time: 0.00ms
+manual: 26.23ms | GC runs: 0 | GC time: 0.00ms
+
+
+
+67мс разница на 100к итераций — это 0.67 микросекунды на один вызов.
+При 100 узлах в дереве — 67 микросекунд суммарно за refresh.
+
+Вывод: оптимизация сработает, но, скорее всего, не имеет измеримого эффекта для пользователя
+ — менять смысла нет.
