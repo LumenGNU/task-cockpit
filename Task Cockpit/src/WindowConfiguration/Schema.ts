@@ -1,4 +1,5 @@
 /** @file WindowConfiguration/WindowConfigurationSchema.ts */
+/** @internal */
 
 import { SETTING_IDS } from '../common';
 import Configuration from '../Configuration';
@@ -149,14 +150,4 @@ const SCHEMA = Configuration.createSchema<Config>({
 } as const);
 
 
-declare namespace WindowConfigurationSchema {
-    type SCHEMA = typeof SCHEMA;
-    type ConfigKey = keyof Config;
-}
-
-const WindowConfigurationSchema = {
-    SCHEMA,
-    SECTIONS_BY_KEY: Configuration.collectSections(SCHEMA)
-};
-
-export default WindowConfigurationSchema;
+export default SCHEMA;
