@@ -3,9 +3,9 @@
 
 import { SETTING_IDS } from '../common';
 import Configuration from '../Configuration';
-import Config from './Config';
+import WindowConfiguration from './Configuration';
 
-const SCHEMA = Configuration.createSchema<Config>({
+const SCHEMA = Configuration.createSchema<WindowConfiguration>({
 
     /** Enable diagnostics to detect potential issues with task definitions. */
     Validation: {

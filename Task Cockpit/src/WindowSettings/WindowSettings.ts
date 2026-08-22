@@ -6,7 +6,7 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import Configuration from '../Configuration';
-import WindowConfigurationSchema from './WindowConfigurationSchema';
+import SCHEMA from './Schema';
 
 import type {
     ConfigurationChangeEvent,
@@ -16,19 +16,26 @@ import type {
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
-import type WindowConfig from './Config';
+import type WindowConfiguration from './Configuration';
 
 
-type ConfigKey = WindowConfiguration.ConfigKey;
-type AffectedKeys = WindowConfiguration.AffectedKeys;
+type ConfigKey = WindowSettings.ConfigKey;
+type AffectedKeys = WindowSettings.AffectedKeys;
 
-declare namespace WindowConfiguration {
 
-    export type ConfigKey = WindowConfigurationSchema.ConfigKey;
+declare namespace WindowSettings {
+
+    export type ConfigKey = keyof WindowConfiguration;
     export type AffectedKeys = Set<ConfigKey>;
+
+    export type Configuration = WindowConfiguration;
+
 }
 
-class WindowConfiguration implements Disposable {
+class WindowSettings implements Disposable {
+
+
+    static readonly SECTIONS_BY_KEY = Configuration.collectSections(SCHEMA);
 
 
     readonly #onDidChangeConfiguration: EventEmitter<Immutable<AffectedKeys>>;
@@ -40,7 +47,7 @@ class WindowConfiguration implements Disposable {
     #disposed: boolean;
 
     /** Кеш window-конфигурации */
-    #configuration!: Immutable<WindowConfig>;
+    #configuration!: Immutable<WindowConfiguration>;
 
 
     #pendingChanges: Set<ConfigKey>;
@@ -114,7 +121,7 @@ class WindowConfiguration implements Disposable {
         // Гранулярный трекинг: для каждого WindowConfigKey определяем, затронула ли
         // хоть одна из принадлежащих ему секций конфигурации текущее событие.
         // Позволяет подписчикам фильтровать нерелевантные обновления window-конфигурации.
-        for (const [key, sectionSet] of WindowConfigurationSchema.SECTIONS_BY_KEY) {
+        for (const [key, sectionSet] of WindowSettings.SECTIONS_BY_KEY) {
             for (const section of sectionSet) {
                 if (event.affectsConfiguration(section)) {
                     changes.add(key);
@@ -147,7 +154,7 @@ class WindowConfiguration implements Disposable {
     // #endregion Handlers
 
     /** Получить "общих" настроек (для суб-модулей). */
-    public getConfiguration<K extends ConfigKey>(key: K): Immutable<WindowConfig[K]> {
+    public getConfiguration<K extends ConfigKey>(key: K): Immutable<WindowConfiguration[K]> {
 
         if (this.#disposed) {
             throw new Error(`[${this.constructor.name}#getConfiguration]: use after dispose`);
@@ -162,7 +169,7 @@ class WindowConfiguration implements Disposable {
             throw new Error(`[${this.constructor.name}#availableKeys]: use after dispose`);
         }
 
-        return [...WindowConfigurationSchema.SECTIONS_BY_KEY.keys()];
+        return [...WindowSettings.SECTIONS_BY_KEY.keys()];
     }
 
 
@@ -188,15 +195,15 @@ class WindowConfiguration implements Disposable {
             this.#updateCache();
             this.#onDidChangeConfiguration.fire(accumulated);
 
-        }, WindowConfiguration.#DEBOUNCE_MS);
+        }, WindowSettings.#DEBOUNCE_MS);
     }
 
     #updateCache() {
         const workspaceConfig = workspace.getConfiguration();
-        this.#configuration = Configuration.coerce(workspaceConfig, WindowConfigurationSchema.SCHEMA);
+        this.#configuration = Configuration.coerce(workspaceConfig, SCHEMA);
     }
 
 }
 
 
-export default WindowConfiguration;
+export default WindowSettings;
