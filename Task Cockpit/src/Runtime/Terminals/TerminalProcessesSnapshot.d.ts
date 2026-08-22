@@ -1,7 +1,7 @@
 import type ProcessId from '../ProcessId';
 import type RequestId from '../RequestId';
 
-interface OngoingSnapshot {
+interface TerminalProcessesSnapshot {
     /** Идентификатор запроса, задаваемый вызывающей стороной.
      *
      * Монотонно возрастает: каждый новый снапшот обязан иметь
@@ -10,8 +10,8 @@ interface OngoingSnapshot {
      * */
     requestId: RequestId;
     /** Список процессов, реально присутствующих в системе */
-    ongoingProcesses: Set<ProcessId>;
+    terminalProcesses: Array<ProcessId>;
 }
 
 
-export default OngoingSnapshot;
+export default TerminalProcessesSnapshot;
