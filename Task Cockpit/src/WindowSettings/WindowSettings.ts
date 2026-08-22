@@ -157,7 +157,7 @@ class WindowSettings implements Disposable {
     public getConfiguration<K extends ConfigKey>(key: K): Immutable<WindowConfiguration[K]> {
 
         if (this.#disposed) {
-            throw new Error(`[${this.constructor.name}#getConfiguration]: use after dispose`);
+            assert.fail(`[${this.constructor.name}#getConfiguration]: use after dispose`);
         }
 
         return this.#configuration[key];
@@ -166,7 +166,7 @@ class WindowSettings implements Disposable {
     public get availableKeys(): Immutable<Array<ConfigKey>> {
 
         if (this.#disposed) {
-            throw new Error(`[${this.constructor.name}#availableKeys]: use after dispose`);
+            assert.fail(`[${this.constructor.name}#availableKeys]: use after dispose`);
         }
 
         return [...WindowSettings.SECTIONS_BY_KEY.keys()];
