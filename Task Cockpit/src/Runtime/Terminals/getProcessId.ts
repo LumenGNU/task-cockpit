@@ -67,13 +67,12 @@ async function getProcessId(
             // Закрытие терминала
             // ..................
             new Promise<undefined>((resolve) => {
-                disposables.push(
-                    window.onDidCloseTerminal((t) => {
-                        if (t === terminal) { // проверяемый терминал посылает событие о закрытии...
-                            resolve(undefined);
-                        };
-                    })
-                );
+
+                window.onDidCloseTerminal((t) => {
+                    if (t === terminal) { // проверяемый терминал посылает событие о закрытии...
+                        resolve(undefined);
+                    };
+                }, undefined, disposables);
 
                 if (terminal.exitStatus) { // ...или уже закрыт
                     resolve(undefined);
@@ -82,9 +81,7 @@ async function getProcessId(
             //----------------------------------------------------------------------
             // Успешный исход
             // ..............
-            terminal.processId.then((pid) => {
-                return pid ? pid as ProcessId : undefined;
-            })
+            terminal.processId as Thenable<ProcessId | undefined>
             //----------------------------------------------------------------------
         ];
 
