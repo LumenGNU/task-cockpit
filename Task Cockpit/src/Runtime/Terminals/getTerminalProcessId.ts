@@ -34,7 +34,7 @@ import type ProcessId from '../ProcessId';
  *   (`terminal.processId` не бросает. По ее контракту всегда разрешается в
  *   `number` | `undefined` или "никогда")
  *  */
-async function getProcessId(
+async function getTerminalProcessId(
     terminal: Readonly<Terminal>,
     timeoutMs: number
 ): Promise<ProcessId | undefined> {
@@ -94,7 +94,7 @@ async function getProcessId(
 }
 
 
-export default getProcessId;
+export default getTerminalProcessId;
 
 // https://raw.githubusercontent.com/microsoft/vscode/refs/heads/main/src/vs/workbench/api/common/extHostTerminalService.ts
 //
