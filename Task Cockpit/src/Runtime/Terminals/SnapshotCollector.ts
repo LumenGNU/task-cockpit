@@ -179,7 +179,7 @@ class SnapshotCollector implements Disposable {
                 // либо, если нового не будет, зависнет навсегда.
                 this.#logOutputChannel?.error(
                     `[${this.constructor.name}#enqueueRequest]: Unexpected error while collecting terminal process IDs for request ${requestId}`,
-                    error,
+                    error
                 );
                 // Перебрасываем, чтобы привела к остановке выполнения.
                 setImmediate(() => { throw error; });
@@ -220,7 +220,7 @@ class SnapshotCollector implements Disposable {
 
                 const snapshot = await collectTerminalProcessIds(
                     requestId,
-                    this.#configuration.timeout,
+                    this.#configuration.timeout
                 ).catch((error: unknown) => {
                     // нарушение контракта collectTerminalProcessIds — происходить не должно
                     assert.fail(`[${this.constructor.name}]: Unexpected error while collecting terminal process: ${String(error)}`);
