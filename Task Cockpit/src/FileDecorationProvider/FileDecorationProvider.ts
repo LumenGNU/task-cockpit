@@ -4,9 +4,10 @@ import {
     LogOutputChannel,
     ThemeColor
 } from 'vscode';
-import WindowConfiguration from '../WindowConfiguration/WindowConfiguration';
+import * as assert from 'node:assert/strict';
+import WindowSettings from '../WindowSettings/WindowSettings';
 
-import type {
+import {
     CancellationToken,
     Disposable,
     Event,
@@ -15,15 +16,10 @@ import type {
     ProviderResult,
     Uri
 } from 'vscode';
-import type Config from '../WindowConfiguration/Config';
+import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
-import * as assert from 'node:assert/strict';
-
-
-const CONFIGURATION_KEY = 'FileDecoration' as const;
-type FileDecorationConf = Config[typeof CONFIGURATION_KEY];
 
 
 /** Провайдер декораций (бейдж, цвет) для VS Code.
@@ -48,12 +44,14 @@ type FileDecorationConf = Config[typeof CONFIGURATION_KEY];
  * */
 class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
+    static readonly CONFIGURATION_KEY = 'FileDecoration' as const;;
+
     readonly #onDidChangeFileDecorations: EventEmitter<undefined>;
 
     /** {@link VscFileDecorationProvider.onDidChangeFileDecorations Событие провайдера}, происходит при изменении конфигурации. */
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
-    #conf: FileDecorationConf;
+    #configuration: WindowSettings.Configuration[typeof FileDecorationProvider.CONFIGURATION_KEY];
 
     #disposables: Disposable[];
 
@@ -65,14 +63,14 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     readonly #themeColorCache: Map<string, ThemeColor>;
 
     readonly #dependencies: Readonly<{
-        windowConfiguration: LifecycleOmitted<WindowConfiguration>;
+        windowConfiguration: LifecycleOmitted<WindowSettings>;
     }>;
 
     /**Создаёт провайдер.
      * @param configurationProvider начальные значения конфигурации декораций. */
     constructor(
         dependencies: Readonly<{
-            windowConfiguration: LifecycleOmitted<WindowConfiguration>;
+            windowConfiguration: LifecycleOmitted<WindowSettings>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
@@ -96,7 +94,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
 
-        this.#conf = this.#dependencies.windowConfiguration.getConfiguration(CONFIGURATION_KEY);
+        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(FileDecorationProvider.CONFIGURATION_KEY);
         // ---
 
     }
@@ -115,11 +113,11 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     }
 
 
-    #changeConfigurationHandler(affectedKeys: ReadonlySet<keyof Config>) {
-        if (!affectedKeys.has(CONFIGURATION_KEY)) {
+    #changeConfigurationHandler(affectedKeys: Immutable<WindowSettings.AffectedKeys>) {
+        if (!affectedKeys.has(FileDecorationProvider.CONFIGURATION_KEY)) {
             return;
         }
-        this.#conf = this.#dependencies.windowConfiguration.getConfiguration(CONFIGURATION_KEY);
+        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(FileDecorationProvider.CONFIGURATION_KEY);
         this.#themeColorCache.clear(); // на всякий случай
         this.#onDidChangeFileDecorations.fire(undefined);
     }
@@ -205,26 +203,26 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         if (running !== '0') {
             if (running === '1') {
                 // один активный — только символ
-                return this.#conf.runningSymbol;
+                return this.#configuration.runningSymbol;
             }
 
             // Если длина > 1, число гарантированно ≥ 10 (overflow)
             // (предполагаем отсутствие ведущих нулей вроде "01")
             if (running.length > 1) {
-                return this.#conf.badgeOrder === 'countFirst'
-                    ? `${this.#conf.overflowSymbol}${this.#conf.runningSymbol}`
-                    : `${this.#conf.runningSymbol}${this.#conf.overflowSymbol}`;
+                return this.#configuration.badgeOrder === 'countFirst'
+                    ? `${this.#configuration.overflowSymbol}${this.#configuration.runningSymbol}`
+                    : `${this.#configuration.runningSymbol}${this.#configuration.overflowSymbol}`;
             }
 
             // running в диапазоне '2'..'9' — символ + цифра или наоборот
-            return this.#conf.badgeOrder === 'countFirst'
-                ? `${running}${this.#conf.runningSymbol}`
-                : `${this.#conf.runningSymbol}${running}`;
+            return this.#configuration.badgeOrder === 'countFirst'
+                ? `${running}${this.#configuration.runningSymbol}`
+                : `${this.#configuration.runningSymbol}${running}`;
         }
 
         // running === '0'
         if (available !== '0') {
-            return this.#conf.availableSymbol;
+            return this.#configuration.availableSymbol;
         }
 
         // Оба нулевые — бейдж не нужен
