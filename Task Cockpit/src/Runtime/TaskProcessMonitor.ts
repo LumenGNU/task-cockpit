@@ -1,27 +1,30 @@
+/** @file Runtime/TaskProcessMonitor.ts */
+/** @internal */
+
 import {
     EventEmitter,
-    LogOutputChannel,
-    type Disposable,
-    type Event
+    LogOutputChannel
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import WindowConfiguration from './../WindowConfiguration/WindowConfiguration';
+import WindowSettings from '../WindowSettings/WindowSettings';
 
-
+import type {
+    Disposable,
+    Event
+} from 'vscode';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type ProcessId from './ProcessId';
-import type Safe from '../utils/Safe';
-import type Config from '../WindowConfiguration/Config';
-import type Immutable from '../utils/Immutable';
 
 
-const CONFIGURATION_KEY = 'ProcessMonitor';
-type ProcessMonitorConf = Config[typeof CONFIGURATION_KEY];
+type ModuleConfig = WindowSettings.Configuration[typeof TaskProcessMonitor.CONFIGURATION_KEY];
 
 
 /** Мониторинг процессов задач VS Code (адаптивный интервал опроса).
  *
  * Класс для отслеживания состояния запущенных процессов задач VS Code.
  * Автоматически определяет завершившиеся процессы и уведомляет подписчиков.
+ *
+ * (не произвольные процессы ОС, а процессы рантайм-задач VS Code)
  *
  * Интервал проверки растёт по квадратичной формуле: `min + acceleration×n²` мс,
  * в зависимости от количества отслеживаемых процессов, но не более `cap` мс — что обеспечивает
@@ -31,9 +34,10 @@ type ProcessMonitorConf = Config[typeof CONFIGURATION_KEY];
  * Использует `process.kill(pid, 0)` для проверки жизни процесса.
  *
  * */
-class ProcessMonitor implements Disposable {
+class TaskProcessMonitor implements Disposable {
 
-    #disposed: boolean;
+    static readonly CONFIGURATION_KEY = 'ProcessMonitor' as const;
+    #config: ModuleConfig;
 
     /** Событие: процесс(ы) завершился.
      * Вызывается при обнаружении завершенных процессов среди
@@ -46,48 +50,46 @@ class ProcessMonitor implements Disposable {
 
     /** Таймер периодической проверки процессов.
      *
-     * Undefined когда мониторинг остановлен (нет активных процессов). */
-    #checkInterval: NodeJS.Timeout | undefined;
+     * null когда мониторинг остановлен (нет активных процессов). */
+    #checkInterval: NodeJS.Timeout | null;
+
+    #disposed: boolean;
     #disposables: Disposable[];
 
-    // #region Lifecycle
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
-    readonly #windowConfiguration: Safe<WindowConfiguration>;
-    #logOutputChannel: Safe<LogOutputChannel> | null;
-
-    #conf: ProcessMonitorConf;
-
+    readonly #dependencies: Readonly<{
+        windowConfiguration: LifecycleOmitted<WindowSettings>;
+    }>;
 
     /** Создать экземпляр монитора. */
     constructor(
-        windowConfiguration: Safe<WindowConfiguration>,
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        dependencies: Readonly<{
+            windowConfiguration: LifecycleOmitted<WindowSettings>;
+        }>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
-        this.#disposed = false;
-        this.#disposables = [];
 
+        this.#disposed = false;
         this.#logOutputChannel = logOutputChannel;
 
+        this.#onProcessesCompleted = new EventEmitter();
+        this.onProcessesCompleted = this.#onProcessesCompleted.event;
+
+        this.#disposables = [
+            this.#onProcessesCompleted
+        ];
+
+        this.#checkInterval = null;
         this.#processes = new Set();
 
-        // conf ---
-        this.#windowConfiguration = windowConfiguration;
+        this.#dependencies = dependencies;
 
-        this.#disposables.push(
-            this.#windowConfiguration.onDidChange((affectedKey) => {
-                if (!affectedKey.has(CONFIGURATION_KEY)) {
-                    return;
-                }
-                this.#conf = this.#applyConf(this.#windowConfiguration.getConfig(CONFIGURATION_KEY));
-            })
-        );
-        this.#conf = this.#applyConf(this.#windowConfiguration.getConfig(CONFIGURATION_KEY));
-        // ---
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
 
-        this.#disposables.push(
-            this.#onProcessesCompleted = new EventEmitter<ReadonlySet<ProcessId>>()
-        );
-        this.onProcessesCompleted = this.#onProcessesCompleted.event;
+        this.#config = this.#applyConf(this.#dependencies.windowConfiguration.getConfiguration(TaskProcessMonitor.CONFIGURATION_KEY));
+
     }
 
 
@@ -98,27 +100,31 @@ class ProcessMonitor implements Disposable {
      * @affects `checkInterval` Таймер будет остановлен
      * @affects `processes` Будет очищен  */
     public dispose() {
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#disposed) { return; }
         this.#disposed = true;
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
+
+        this.#disposables.forEach((d) => void d.dispose());
 
         if (this.#checkInterval) {
             clearTimeout(this.#checkInterval);
-            this.#checkInterval = undefined;
+            this.#checkInterval = null;
         }
 
         this.#processes.clear();
 
-        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
         this.#logOutputChannel = null;
     }
 
 
-    // #endregion Lifecycle
+    // #region Handlers
+
+    #changeConfigurationHandler(affectedKey: WindowSettings.AffectedKeys) {
+        if (!affectedKey.has(TaskProcessMonitor.CONFIGURATION_KEY)) { return; }
+        this.#config = this.#applyConf(this.#dependencies.windowConfiguration.getConfiguration(TaskProcessMonitor.CONFIGURATION_KEY));
+    }
+
+    // #endregion Handlers
 
 
     // #region Public
@@ -126,7 +132,10 @@ class ProcessMonitor implements Disposable {
 
     /** Добавить процесс в мониторинг.
      *
-     * @param processId - PID процесса для отслеживания
+     * @param processId - PID процесса задачи из
+     *   {@link vscode.TaskProcessStartEvent.processId}.
+     *   ProcessMonitor не делает предположений о природе этого процесса —
+     *   его внутренняя иерархия вне зоны ответственности монитора.
      *
      * @affects
      * - Игнорирует дубликаты (если PID уже отслеживается)
@@ -135,12 +144,14 @@ class ProcessMonitor implements Disposable {
      * */
     public addTaskProcess(processId: ProcessId) {
 
-        assert.equal(this.#disposed, false, `${this.constructor.name}#addTaskProcess: use after dispose`);
+        if (this.#disposed) {
+            assert.fail(`[${this.constructor.name}#addTaskProcess]: use after dispose`);
+        }
 
         this.#processes.add(processId);
 
         // Не проверяем жив-ли процесс сразу — даем UI время
-        // отдышаться — он побудет какое-то время "живим" в UI
+        // отдышаться — пусть он побудет какое-то время "живим" в UI
         // даже если моментально завершился.
 
         // Не пересчитываем интервал если таймаут уже работает.
@@ -166,21 +177,23 @@ class ProcessMonitor implements Disposable {
      * */
     #scheduleCheck(): void {
 
-        assert.equal(this.#disposed, false, `${this.constructor.name}#scheduleCheck: use after dispose`);
-        assert.equal(this.#checkInterval, undefined, `${this.constructor.name}#scheduleCheck: called with active timer — duplicate timer would be scheduled`);
+        if (this.#disposed) { return; }
+
+        assert.equal(this.#checkInterval, null, `[${this.constructor.name}#scheduleCheck]: called with active timer — duplicate timer would be scheduled`);
 
         const timeoutMs = this.#pollingInterval();
         // если pollingInterval возвращает undefined (0 отслеживаемых
         // процессов) — останавливаемся.
-        if (timeoutMs !== undefined) {
+        if (timeoutMs != null) {
+
+            let checkInterval: NodeJS.Timeout;
+
             // иначе планируем новый цикл-проверку через timeoutMs
-            this.#checkInterval = setTimeout(() => {
+            this.#checkInterval = checkInterval = setTimeout(() => {
 
-                if (this.#disposed) {
-                    return;
-                }
-
-                this.#checkInterval = undefined;
+                if (this.#disposed) { return; }
+                if (checkInterval !== this.#checkInterval) { return; }
+                this.#checkInterval = null;
 
                 const completed = this.#pruneDead();
 
@@ -190,9 +203,15 @@ class ProcessMonitor implements Disposable {
 
                 // кто-то мог вызвать addTaskProcess в обработчик onProcessesCompleted
                 // кто-то мог вызвать dispose в обработчик onProcessesCompleted
-                if (!this.#disposed && !this.#checkInterval) {
-                    this.#scheduleCheck(); // и по новой, пока this.#processes.size > 0
+                // Проверка !this.#checkInterval гарантирует, что мы не создадим
+                // второй таймер, если подписчик уже сделал это во время обработки события.
+                if (this.#disposed || this.#checkInterval) {
+                    return;
                 }
+
+                // #scheduleCheck() вызывается только когда монитор не уничтожен и
+                // таймер не активен.
+                this.#scheduleCheck(); // и по новой, пока this.#processes.size > 0
 
 
             }, timeoutMs);
@@ -203,17 +222,15 @@ class ProcessMonitor implements Disposable {
     /** Вычислить интервал опроса на основе количества
      * отслеживаемых процессов.
      *
-     * Формула: `polling.min + polling.acceleration × #processes.size` мс, но не дольше `polling.cap` мс.
+     * Формула: `polling.min + polling.acceleration × #processes.size²` мс, но не дольше `polling.cap` мс.
      *
      * @returns Интервал в миллисекундах, или `undefined` если нет процессов —
      *   что остановит опрос до появления новых процессов */
     #pollingInterval(): number | undefined {
 
-        if (this.#processes.size < 1) {
-            return undefined;
-        }
+        if (this.#processes.size < 1) { return undefined; }
 
-        const { min, acceleration, cap } = this.#conf.polling;
+        const { min, acceleration, cap } = this.#config.polling;
 
         // При увеличении count: медленный рост вначале → резкое ускорение → cap
         return Math.min(min + acceleration * this.#processes.size * this.#processes.size, cap);
@@ -223,14 +240,12 @@ class ProcessMonitor implements Disposable {
     /** Проверить все отслеживаемые процессы и удалить завершившиеся.
      *
      * Вызывается таймером согласно адаптивному интервалу.
-     * Проверяет каждый PID через `#isAlive` и удаляет мёртвые.
+     * Проверяет каждый PID через `#isAlive` и удаляет завершенные (и не доступные).
      *
      * @fires onProcessesCompleted — один раз с набором завершённых процессов (если есть).
      *
      *  */
     #pruneDead(): ReadonlySet<ProcessId> {
-
-        assert.equal(this.#disposed, false, `${this.constructor.name}#pruneDead: use after dispose`);
 
         const completed = new Set<ProcessId>();
 
@@ -254,15 +269,17 @@ class ProcessMonitor implements Disposable {
      *
      * Clamp polling.cap >= polling.min * 1.7
      *
-     * Смотри: src/WindowConfiguration/WindowConfigurationSchema.ts — границы и значения по умолчанию
+     * Смотри: src/WindowSettings/Schema.ts — границы и значения по умолчанию
      *
-     * @param conf {@linkcode Conf} */
+     * @param config
+     *
+     * */
     // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
     // скорректировать оставшееся время.
     // Для этого нужно хранить метку запуска таймера и в applyConf вычислять
     // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
     // Важность — Низкая. Пока просто ждем нового тика.
-    #applyConf(conf: Immutable<ProcessMonitorConf>): ProcessMonitorConf {
+    #applyConf(config: ModuleConfig): ModuleConfig {
 
         // Clamp polling.cap >= polling.min * 1.7
         // Остальные значения и их границы должны проверятся
@@ -270,12 +287,12 @@ class ProcessMonitor implements Disposable {
 
         return {
             polling: {
-                min: conf.polling.min,
+                min: config.polling.min,
                 cap: Math.max(
-                    conf.polling.min * 1.7,
-                    conf.polling.cap
+                    config.polling.min * 1.7,
+                    config.polling.cap
                 ),
-                acceleration: conf.polling.acceleration
+                acceleration: config.polling.acceleration
             }
         } as const;
     }
@@ -284,43 +301,25 @@ class ProcessMonitor implements Disposable {
 // #endregion
 
 
-/** Проверить существование процесса.
+/** Проверить существование процесса рантайм-задачи.
  *
  * Использует `process.kill(pid, 0)` для проверки доступности процесса.
  *
  * @param processId PID процесса
  * @returns true если процесс жив и доступен для проверки
  *
- * @remarks
- * Обработка ошибок:
- * - ESRCH → процесс не существует (мёртв) → false
- * - Любая другая ошибка (включая EPERM) → неожиданная ситуация,
- *   процесс исключается из мониторинга (return false).
  *
- * EPERM: "процесс задачи" = тот PID, который VS Code породила как задачу
- * (оболочка, реализующая PTY для команды). Именно этот PID
- * отслеживается и управляется монитором.
+ * Появление EPERM тут невозможно VS Code никогда не отдаст PID
+ * процесса с чужим ruid (Linux).
  *
- * - Для процесса задачи всегда доступны проверки через `kill(pid, 0)`.
- *   Ошибка EPERM здесь невозможна: оболочка принадлежит тому же пользователю,
- *   что и VS Code, и права на сигнал гарантированы.
- * - Внутренние дочерние процессы (например, `sleep`, `sudo`, `su`, `docker run`)
- *   не являются "процессами задачи" — это уже «дети» процесса задачи, и они не
- *   входят в модель мониторинга. Даже если они принадлежат другому пользователю
- *   и недоступны для сигналов, это не влияет на корректность работы —
- *   ProcessMonitor не посылает им сигналы.
+ * @todo ??? На Windows: VS Code запущен без elevation (Medium IL), задача через UAC порождает
+ * elevated-процесс (High IL).
+ * VS Code отдаёт этот PID в onDidStartTaskProcess → process.kill(pid, 0) → EPERM
  *
- * Таким образом, ProcessMonitor никогда не сталкивается с EPERM при проверке
- * процессов задач. Завершение задачи фиксируется по PID оболочки, а её
- * внутренности остаются вне зоны ответственности.
- *
- * EPERM не должно происходить — мы проверяем только **дочерние процессы задач**,
- * запущенных самим VS Code. VS Code никогда не передаст ProcessMonitor PID,
- * которым не владеет.
- *
- * Появление EPERM сигнализирует о нештатной ситуации (чужой PID,
- * изменение прав, race condition, антивирус, я х.з). Продолжать мониторинг
- * невалидируемого процесса бессмысленно. Процесс **для нас** мертв.
+ * VS Code просто владеет терминалом, который сам создал. PID который выдаётся
+ * в onDidStartTaskProcess — это процесс внутри терминала, которым VS Code
+ * владеет как parent process через PTY.
+ * (https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/tasks/browser/terminalTaskSystem.ts)
  *
  * @throws { never } */
 function isAlive(processId: ProcessId): boolean {
@@ -334,4 +333,4 @@ function isAlive(processId: ProcessId): boolean {
 }
 
 
-export default ProcessMonitor;
+export default TaskProcessMonitor;
