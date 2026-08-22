@@ -1,23 +1,23 @@
+/** @file Runtime/Terminals/SnapshotCollector.ts */
+/** @internal */
+
 import {
     EventEmitter,
-    LogOutputChannel,
-    type Disposable,
-    type Event,
-    window,
+    LogOutputChannel
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-import getProcessId from './getProcessId';
-import type ProcessId from '../ProcessId';
-import type Config from '../../WindowConfiguration/Config';
-import type OngoingSnapshot from './OngoingSnapshot';
-import type Safe from '../../utils/Safe';
-import WindowConfiguration from './../../WindowConfiguration/WindowConfiguration';
+import collectTerminalProcessIds from './collectTerminalProcessIds';
+import WindowSettings from '../../WindowSettings/WindowSettings';
+
+
+import type {
+    Disposable,
+    Event
+} from 'vscode';
 import type Immutable from '../../utils/Immutable';
+import type LifecycleOmitted from '../../utils/LifecycleOmitted';
 import type RequestId from '../RequestId';
-
-
-const CONFIGURATION_KEY = 'Terminals';
-type TerminalsConf = Config[typeof CONFIGURATION_KEY];
+import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
 
 
 // Snapshot Dementia-based Event Machine (Latest-pending-wins mod)
@@ -66,75 +66,78 @@ type TerminalsConf = Config[typeof CONFIGURATION_KEY];
  *  */
 class SnapshotCollector implements Disposable {
 
-    readonly #onDidCollectSnapshot: EventEmitter<Immutable<OngoingSnapshot>>;
-    public readonly onDidCollectSnapshot: Event<Immutable<OngoingSnapshot>>;
+    static readonly CONFIGURATION_KEY = 'Terminals';
 
-    #disposed: boolean;
+    readonly #onDidCollectSnapshot: EventEmitter<Immutable<TerminalProcessesSnapshot>>;
+    public readonly onDidCollectSnapshot: Event<Immutable<TerminalProcessesSnapshot>>;
 
-    #conf: TerminalsConf;
+    #configuration: WindowSettings.Configuration[typeof SnapshotCollector.CONFIGURATION_KEY];
 
     #pendingId: RequestId | undefined;
     #running: boolean;
 
     #disposables: Disposable[];
+    #disposed: boolean;
 
-    readonly #windowConfiguration: Safe<WindowConfiguration>;
-    #logOutputChannel: Safe<LogOutputChannel> | null;
+    readonly #dependencies: Readonly<{
+        windowConfiguration: LifecycleOmitted<WindowSettings>;
+    }>;
 
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
     constructor(
-        windowConfiguration: Safe<WindowConfiguration>,
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        dependencies: Readonly<{
+            windowConfiguration: LifecycleOmitted<WindowSettings>;
+        }>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
-        this.#disposed = false;
-        this.#disposables = [];
-
-        this.#logOutputChannel = logOutputChannel;
 
         // подготовка очереди
         this.#pendingId = undefined;
         this.#running = false;
 
-        // conf ---
-        this.#windowConfiguration = windowConfiguration;
+        this.#logOutputChannel = logOutputChannel;
+        this.#dependencies = dependencies;
 
-        this.#disposables.push(
-            this.#windowConfiguration.onDidChange((affectedKey) => {
-                if (!affectedKey.has(CONFIGURATION_KEY)) {
-                    return;
-                }
-                this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
-            })
-        );
-        this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
-        // ---
-
-        this.#disposables.push(
-            this.#onDidCollectSnapshot = new EventEmitter<OngoingSnapshot>()
-        );
+        this.#onDidCollectSnapshot = new EventEmitter<TerminalProcessesSnapshot>();
         this.onDidCollectSnapshot = this.#onDidCollectSnapshot.event;
 
+        this.#disposed = false;
+        this.#disposables = [
+            this.#onDidCollectSnapshot
+        ];
+
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+
+
+        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(SnapshotCollector.CONFIGURATION_KEY);
     }
 
 
     public dispose(): void {
 
-        if (this.#disposed) {
-            return;
-        }
-
+        if (this.#disposed) { return; }
         this.#disposed = true;
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
+
+        this.#disposables.forEach((d) => void d.dispose());
 
         // отмена очереди
         this.#pendingId = undefined;
 
-        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
         this.#logOutputChannel = null;
     }
 
+
+    // #region Handlers
+
+    #changeConfigurationHandler(affectedKey: Immutable<WindowSettings.AffectedKeys>) {
+        if (!affectedKey.has(SnapshotCollector.CONFIGURATION_KEY)) { return; }
+        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(SnapshotCollector.CONFIGURATION_KEY);
+    }
+
+    // #endregion Handlers
 
     // #region Public
 
@@ -162,14 +165,25 @@ class SnapshotCollector implements Disposable {
      * @fire Terminals#onDidCollectSnapshot после успешного сбора всех PID */
     public enqueueRequest(requestId: RequestId): void {
 
-        assert.equal(this.#disposed, false, 'SnapshotCollector: use after dispose');
+        if (this.#disposed) { assert.fail(`[${this.constructor.name}#enqueueRequest]: use after dispose`); }
 
         this.#pendingId = requestId;
 
-        if (!this.#running) {
-            this.#running = true;
-            void this.#runLoop();
-        }
+        void this.#runLoop()
+            .catch((error) => {
+                // Этого не должно, и не будет происходить пока нижележащие
+                // ф-ции выполняют свой контракт "@throws { never } Ничего и никогда"
+                //
+                // Следующий enqueueRequest запустит новый цикл,
+                // но старый pending-запрос будет потерян (перезаписан новым),
+                // либо, если нового не будет, зависнет навсегда.
+                this.#logOutputChannel?.error(
+                    `[${this.constructor.name}#enqueueRequest]: Unexpected error while collecting terminal process IDs for request ${requestId}`,
+                    error,
+                );
+                // Перебрасываем, чтобы привела к остановке выполнения.
+                setImmediate(() => { throw error; });
+            });
     }
 
 
@@ -185,31 +199,36 @@ class SnapshotCollector implements Disposable {
      * @throws { never } Ничего и никогда */
     async #runLoop(): Promise<void> {
 
+        // Новые запросы во время выполнения активного
+        // Если во время await collectTerminalProcessIds(...) приходит новый enqueueRequest,
+        // он выставляет #pendingId, но #running в этот момент true,
+        // поэтому повторный запуск #runLoop не происходит.
+        // После завершения await цикл продолжает работу, проверяет условие while
+        // и видит установленный #pendingId — цикл не выходит, а сразу обрабатывает новый запрос.
+        // Если запрос приходит после finally, то #running уже false, и #runLoop из
+        // enqueueRequest запускается нормально.
+
+        if (this.#running) { return; }
+        this.#running = true;
+
         try {
+
             while (this.#pendingId != null && !this.#disposed) {
 
                 const requestId = this.#pendingId;
                 this.#pendingId = undefined;
 
-                try {
+                const snapshot = await collectTerminalProcessIds(
+                    requestId,
+                    this.#configuration.timeout,
+                ).catch((error: unknown) => {
+                    // нарушение контракта collectTerminalProcessIds — происходить не должно
+                    assert.fail(`[${this.constructor.name}]: Unexpected error while collecting terminal process: ${String(error)}`);
+                });
 
-                    const snapshot = await SnapshotCollector.#collectProcessIds(
-                        requestId,
-                        this.#conf.timeout,
-                    );
-
-                    if (!this.#disposed) {
-                        // Если не disposed — эмитим
-                        this.#onDidCollectSnapshot.fire(snapshot);
-                    }
-                }
-                catch (error) {
-                    // Нарушение контракта! Защищаться нельзя — исправлять.
-                    this.#logOutputChannel?.error(
-                        `SnapshotCollector: an unexpected exception in #collectProcessIds, errorType=${error?.constructor?.name ?? typeof error}`
-                    );
-
-                    continue;
+                if (!this.#disposed) {
+                    // Если не disposed — эмитим
+                    this.#onDidCollectSnapshot.fire(snapshot);
                 }
 
                 // цикл продолжится, если за время выполнения появился новый pendingId
@@ -225,42 +244,6 @@ class SnapshotCollector implements Disposable {
 
 
     // #region Резолвинг
-
-    /** Собирает PID’ы терминалов через параллельный
-     * запуск getProcessId для каждого терминал.
-     * @returns Снапшот, содержащий только валидные PID процессов терминалов. */
-    static async #collectProcessIds(
-        requestId: RequestId,
-        timeoutMs: number,
-    ): Promise<Readonly<OngoingSnapshot>> {
-
-
-        const terminals = window.terminals;
-
-        if (terminals.length === 0) {
-            return { requestId, ongoingProcesses: new Set() };
-        }
-
-        // Запускаем опрос.
-
-        const results = await Promise.all(terminals.map(function (terminal) {
-            // Гарантии:
-            // - Пры любых проблемах возвращает `undefined`.
-            // - По достижении timeout обязательно разрешится в `undefined`
-            // - В остальных случаях вернет PID процесса терминала (number|undefined)
-            return getProcessId(terminal, timeoutMs);
-        }));
-
-        return {
-            requestId,
-            ongoingProcesses: results.reduce(function (acc, processId) {
-                // Фильтруем закрытые/зависшие/без процесса (undefined|null)
-                if (processId != null) { acc.add(processId); }
-                return acc;
-            }, new Set<ProcessId>())
-        };
-    }
-
 
 
 }

@@ -1,12 +1,15 @@
+/** @file Runtime/Terminals/collectTerminalProcessIds.ts */
+/** @internal */
+
 import {
     window
 } from 'vscode';
 import getTerminalProcessId from './getTerminalProcessId';
 
 import type Immutable from '../../utils/Immutable';
-import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
 import type ProcessId from '../ProcessId';
 import type RequestId from '../RequestId';
+import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
 
 
 /** Снапшот PID'ов, сообщённых терминалами на момент опроса.
@@ -17,7 +20,7 @@ import type RequestId from '../RequestId';
  * @param timeoutMs Максимальное время ожидания PID от каждого терминала.
  *   Передаётся в каждый вызов {@linkcode getTerminalProcessId} независимо —
  *   вся операция завершится не более чем за `timeoutMs` миллисекунд.
- *   Терминал не ответивший за это время будет расценен как
+ *   Терминал, не ответивший за это время будет расценен как
  *   терминал без процесса.
  *
  * @returns Снапшот, содержащий только валидные PID процессов терминалов (`ProcessId`).
@@ -25,7 +28,7 @@ import type RequestId from '../RequestId';
  * @throws { never } */
 async function collectTerminalProcessIds(
     requestId: RequestId,
-    timeoutMs: number,
+    timeoutMs: number
 ): Promise<Immutable<TerminalProcessesSnapshot>> {
 
 
@@ -38,7 +41,7 @@ async function collectTerminalProcessIds(
     // Запускаем опрос.
 
     // Гарантии getProcessId:
-    // - Пры любых проблемах возвращает `undefined`.
+    // - При любых проблемах возвращает `undefined`.
     // - По достижении timeout обязательно разрешится в `undefined`
     // - В остальных случаях вернет PID процесса терминала (number|undefined)
     const results = await Promise.all(terminals.map((terminal) => getTerminalProcessId(terminal, timeoutMs)));

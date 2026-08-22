@@ -1,3 +1,6 @@
+/** @file Runtime/Terminals/getTerminalProcessId.ts */
+/** @internal */
+
 import {
     Terminal,
     type Disposable,
@@ -20,7 +23,7 @@ import type ProcessId from '../ProcessId';
  * - терминал был закрыт до получения processId;
  * - terminal.processId вернул 0/null/undefined.
  *
- * Таким образом закрытый терминал или терминал не ответивший
+ * Таким образом закрытый терминал или терминал, не ответивший
  * за время `timeout` будет расценен как терминал без процесса.
  *
  * @param terminal терминал, у которого запрашивается `processId`
@@ -71,7 +74,7 @@ async function getTerminalProcessId(
                 window.onDidCloseTerminal((t) => {
                     if (t === terminal) { // проверяемый терминал посылает событие о закрытии...
                         resolve(undefined);
-                    };
+                    }
                 }, undefined, disposables);
 
                 if (terminal.exitStatus) { // ...или уже закрыт
