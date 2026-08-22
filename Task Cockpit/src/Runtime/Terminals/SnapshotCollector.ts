@@ -221,10 +221,7 @@ class SnapshotCollector implements Disposable {
                 const snapshot = await collectTerminalProcessIds(
                     requestId,
                     this.#configuration.timeout
-                ).catch((error: unknown) => {
-                    // нарушение контракта collectTerminalProcessIds — происходить не должно
-                    assert.fail(`[${this.constructor.name}]: Unexpected error while collecting terminal process: ${String(error)}`);
-                });
+                );
 
                 if (!this.#disposed) {
                     // Если не disposed — эмитим
