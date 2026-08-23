@@ -8,10 +8,13 @@ declare const ___TaskName: unique symbol;
 type TaskName = string & { readonly [___TaskName]: never; };
 
 
-function formatTaskName(taskName: TaskName, segmentSeparator: string | false = false): string {
-    const splitter = Splitter.create(segmentSeparator);
+function formatTaskName(taskName: TaskName, formatData?: { readonly segmentSeparator: string, readonly displaySeparator: string; } | null | undefined): string {
+    if (!formatData) {
+        return taskName;
+    }
+    const splitter = Splitter.create(formatData.segmentSeparator);
     const segments = splitter.split(taskName);
-    return segments.join('・');
+    return segments.join(formatData.displaySeparator);//('・');
 }
 
 

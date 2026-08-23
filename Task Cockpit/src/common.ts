@@ -7,8 +7,26 @@ export const ID = 'task-cockpit';
 export const ID_PREFIX = ID;
 
 export const VIEW_CONTAINER_ID = `${ID_PREFIX}_view-container`;
-export const GLOBAL_TREE_VIEW_ID = `${VIEW_CONTAINER_ID}_global-task-view`;
-export const WORKSPACE_TREE_VIEW_ID = `${VIEW_CONTAINER_ID}_workspace-task-view`;
+
+
+export const GLOBAL_TREE_VIEW = {
+    ID: `${VIEW_CONTAINER_ID}_global-task-view`,
+    NAME: 'Global Tasks'
+} as const;
+
+
+export const PROJECT_TREE_VIEW = {
+    ID: `${VIEW_CONTAINER_ID}_project-task-view`,
+    NAME: 'Project Tasks'
+} as const;
+
+
+export const CONTEXT_KEY = {
+    PANEL_ACTIVE: `${VIEW_CONTAINER_ID}.active`,
+    GLOBAL_TREE_VIEW_HAS_ITEMS: `${GLOBAL_TREE_VIEW.ID}.hasItems`,
+    PROJECT_TREE_VIEW_HAS_ITEMS: `${PROJECT_TREE_VIEW.ID}.hasItems`
+} as const;
+
 
 export const COMMAND_CATEGORY = 'Task Cockpit';
 
@@ -25,9 +43,9 @@ export const COMMAND_IDS = {
     VIEW_REFRESH                     /**/: `${ID_PREFIX}.view.refresh`,
 
     // Развернуть все узлы в global-task-view представлении
-    GLOBAL_TASK_VIEW_EXPAND_ALL      /**/: `${ID_PREFIX}.view-container.global-task-view.expand-all`,
-    // Развернуть все узлы в workspace-task-view представлении
-    WORKSPACE_TASK_VIEW_EXPAND_ALL   /**/: `${ID_PREFIX}.view-container.workspace-task-view.expand-all`,
+    GLOBAL_TASK_VIEW_EXPAND_ALL      /**/: `${ID_PREFIX}.view-container.${GLOBAL_TREE_VIEW.ID}.expand-all`,
+    // Развернуть все узлы в project-task-view представлении
+    PROJECT_TASK_VIEW_EXPAND_ALL   /**/: `${ID_PREFIX}.view-container.${PROJECT_TREE_VIEW.ID}.expand-all`,
 
     // Открыть в редакторе файл-источник задач, и выделить определение
     // конкретной задачи

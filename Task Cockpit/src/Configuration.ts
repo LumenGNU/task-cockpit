@@ -4,9 +4,8 @@
  */
 
 import assert from 'node:assert/strict';
-// import type Immutable from './utils/Immutable';
 import type { WorkspaceConfiguration } from 'vscode';
-import Immutable from './utils/Immutable'; // @fixme
+// import Immutable from './utils/Immutable'; // @fixme
 
 
 // ---
@@ -125,131 +124,125 @@ function createSchema<SchemaType extends object>(schema: ConfigSchema<SchemaType
 
     function walkSchema(entry: unknown, path: string[] = []) {
 
-        if (isAnyEntry(entry)) {
+        assert.ok(isAnyEntry(entry), `Invalid schema structure at ${path.slice(0, -1).join('.')} expected object`);
 
-            if (isSpec(entry)) {
+        if (isSpec(entry)) {
 
-                // ---
-                assert.ok(entry.configKey.length > 0, `Empty configKey at ${path.join('.')}`);
+            // ---
+            assert.ok(entry.configKey.length > 0, `Empty configKey at ${path.join('.')}`);
 
-                switch (entry.type) {
+            switch (entry.type) {
 
-                    case BOOLEAN_SPEC_TYPE: {
-                        assert.ok(typeof entry.fallback === 'boolean',
-                            `Invalid fallback type at ${path.join('.')}: expected "boolean" got "${typeof entry.fallback}"`);
-                        break;
-                    }
-
-                    case STRING_SPEC_TYPE: {
-
-                        assert.ok(typeof entry.fallback === 'string',
-                            `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.fallback}"`);
-
-                        const { fallback, pattern } = entry;
-                        if (pattern) {
-                            assert.ok(pattern instanceof RegExp,
-                                `Invalid pattern at ${path.join('.')}: expected "RegExp" got "${typeof pattern}"`);
-
-                            // @reject: new RegExp('').source → '(?:)'
-                            // - assert.ok(pattern.source.length > 0, // не достижимо?
-                            // -    `Empty RegExp pattern at ${path.join('.')}`);
-
-                            // если есть паттерн —
-                            // прогоняем fallback через проверку
-                            assert.ok(pattern.test(fallback),
-                                `Default value "${fallback}" does not match pattern at ${path.join('.')}`);
-                        }
-                        break;
-                    }
-
-                    case NUMBER_SPEC_TYPE: {
-
-                        assert.ok(typeof entry.fallback === 'number',
-                            `Invalid fallback type at ${path.join('.')}: expected "number" got "${typeof entry.fallback}"`);
-
-                        assert.ok(Number.isFinite(entry.fallback),
-                            `Invalid fallback value at ${path.join('.')}: expected finite number, got ${entry.fallback}`);
-
-                        const { min, fallback, max } = entry;
-
-                        if (min != null) {
-                            assert.ok(typeof min === 'number',
-                                `Min is not a number at ${path.join('.')}`);
-                            assert.ok(Number.isFinite(min),
-                                `Min is not a finite number at ${path.join('.')}`);
-                        }
-
-                        if (max != null) {
-                            assert.ok(typeof max === 'number',
-                                `Max is not a number at ${path.join('.')}`);
-                            assert.ok(Number.isFinite(max),
-                                `Max is not a finite number at ${path.join('.')}`);
-                        }
-
-                        if ((min != null) && (max != null)) {
-                            assert.ok(min <= max,
-                                `Min (${min}) is greater than max (${max}) at ${path.join('.')}`);
-                        }
-                        if (min != null) {
-                            assert.ok(fallback >= min,
-                                `Fallback (${fallback}) is less than min (${min}) at ${path.join('.')}`);
-                        }
-                        if (max != null) {
-                            assert.ok(fallback <= max,
-                                `Fallback (${fallback}) is greater than max (${max}) at ${path.join('.')}`);
-                        }
-                        break;
-                    }
-
-                    case STRING_SET_SPEC_TYPE: {
-
-                        assert.ok(Array.isArray(entry.fallback),
-                            `Invalid fallback type at ${path.join('.')}: expected "Array" got "${typeof entry.fallback}"`);
-
-                        const badIdx = entry.fallback.findIndex(item => typeof item !== 'string');
-
-                        assert.ok(badIdx === -1,
-                            `Invalid fallback item at ${path.join('.')}[${badIdx}]: expected "string" got "${typeof entry.fallback[badIdx]}"`);
-
-                        break;
-                    }
-
-                    case STRING_LITERAL_SPEC_TYPE: {
-
-                        // spec должен содержать values: readonly string[] и fallback: string
-                        assert.ok(Array.isArray(entry.values),
-                            `Invalid values at ${path.join('.')}: expected Array of strings`);
-                        const badIdx = entry.values.findIndex(v => typeof v !== 'string' || v.length === 0);
-                        assert.ok(badIdx === -1,
-                            `Invalid literal value at ${path.join('.')}[${badIdx}]: expected non-empty string`);
-                        assert.ok(typeof entry.fallback === 'string',
-                            `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.fallback}"`);
-                        assert.ok((entry.values as readonly string[]).includes(entry.fallback),
-                            `Fallback "${entry.fallback}" is not included in values at ${path.join('.')}`);
-                        break;
-                    }
-
-                    default: {
-                        const _: never = entry;
-                        assert.fail(`Unhandled option type at ${path.join('.')}`); // @fixme "неожиданное поле type типа символ"
-                    }
+                case BOOLEAN_SPEC_TYPE: {
+                    assert.ok(typeof entry.fallback === 'boolean',
+                        `Invalid fallback type at ${path.join('.')}: expected "boolean" got "${typeof entry.fallback}"`);
+                    break;
                 }
 
-            }
-            else {
-                const keys = Object.keys(entry);
+                case STRING_SPEC_TYPE: {
 
-                if (keys.length === 0 && path.length > 0) {
-                    assert.fail(`Invalid schema structure at ${path.join('.')}: empty object`);
+                    assert.ok(typeof entry.fallback === 'string',
+                        `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.fallback}"`);
+
+                    const { fallback, pattern } = entry;
+                    if (pattern) {
+                        assert.ok(pattern instanceof RegExp,
+                            `Invalid pattern at ${path.join('.')}: expected "RegExp" got "${typeof pattern}"`);
+
+                        // @reject: new RegExp('').source → '(?:)'
+                        // - assert.ok(pattern.source.length > 0, // не достижимо?
+                        // -    `Empty RegExp pattern at ${path.join('.')}`);
+
+                        // если есть паттерн —
+                        // прогоняем fallback через проверку
+                        assert.ok(pattern.test(fallback),
+                            `Default value "${fallback}" does not match pattern at ${path.join('.')}`);
+                    }
+                    break;
                 }
 
-                for (const key of keys) {
-                    walkSchema(entry[key], [...path, key]);
+                case NUMBER_SPEC_TYPE: {
+
+                    assert.ok(typeof entry.fallback === 'number',
+                        `Invalid fallback type at ${path.join('.')}: expected "number" got "${typeof entry.fallback}"`);
+
+                    assert.ok(Number.isFinite(entry.fallback),
+                        `Invalid fallback value at ${path.join('.')}: expected finite number, got ${entry.fallback}`);
+
+                    const { min, fallback, max } = entry;
+
+                    if (min != null) {
+                        assert.ok(typeof min === 'number',
+                            `Min is not a number at ${path.join('.')}`);
+                        assert.ok(Number.isFinite(min),
+                            `Min is not a finite number at ${path.join('.')}`);
+                    }
+
+                    if (max != null) {
+                        assert.ok(typeof max === 'number',
+                            `Max is not a number at ${path.join('.')}`);
+                        assert.ok(Number.isFinite(max),
+                            `Max is not a finite number at ${path.join('.')}`);
+                    }
+
+                    if ((min != null) && (max != null)) {
+                        assert.ok(min <= max,
+                            `Min (${min}) is greater than max (${max}) at ${path.join('.')}`);
+                    }
+                    if (min != null) {
+                        assert.ok(fallback >= min,
+                            `Fallback (${fallback}) is less than min (${min}) at ${path.join('.')}`);
+                    }
+                    if (max != null) {
+                        assert.ok(fallback <= max,
+                            `Fallback (${fallback}) is greater than max (${max}) at ${path.join('.')}`);
+                    }
+                    break;
+                }
+
+                case STRING_SET_SPEC_TYPE: {
+
+                    assert.ok(Array.isArray(entry.fallback),
+                        `Invalid fallback type at ${path.join('.')}: expected "Array" got "${typeof entry.fallback}"`);
+
+                    const badIdx = entry.fallback.findIndex(item => typeof item !== 'string');
+
+                    assert.ok(badIdx === -1,
+                        `Invalid fallback item at ${path.join('.')}[${badIdx}]: expected "string" got "${typeof entry.fallback[badIdx]}"`);
+
+                    break;
+                }
+
+                case STRING_LITERAL_SPEC_TYPE: {
+
+                    // spec должен содержать values: readonly string[] и fallback: string
+                    assert.ok(Array.isArray(entry.values),
+                        `Invalid values at ${path.join('.')}: expected Array of strings`);
+                    const badIdx = entry.values.findIndex(v => typeof v !== 'string' || v.length === 0);
+                    assert.ok(badIdx === -1,
+                        `Invalid literal value at ${path.join('.')}[${badIdx}]: expected non-empty string`);
+                    assert.ok(typeof entry.fallback === 'string',
+                        `Invalid fallback type at ${path.join('.')}: expected "string" got "${typeof entry.fallback}"`);
+                    assert.ok((entry.values as readonly string[]).includes(entry.fallback),
+                        `Fallback "${entry.fallback}" is not included in values at ${path.join('.')}`);
+                    break;
+                }
+
+                default: {
+                    const _: never = entry;
+                    assert.fail(`Unhandled option type at ${path.join('.')}`); // @fixme "неожиданное поле type типа символ"
                 }
             }
+
         }
         else {
-            assert.fail(`Invalid schema structure at ${path.slice(0, -1).join('.')} expected object`);
+            const keys = Object.keys(entry);
+
+            assert.equal((keys.length === 0 && path.length > 0), false, `Invalid schema structure at ${path.join('.')}: empty object`);
+
+            for (const key of keys) {
+                walkSchema(entry[key], [...path, key]);
+            }
         }
 
     }
@@ -340,7 +333,7 @@ enum IsolationMode {
     None,               // полное слияние (по умолчанию)
     FolderOnly,  // только настройки папки, без подъёма к workspace/user
     WorkspaceOnly,
-    GlobalOnly
+    UserOnly
 }
 
 /**  Извлекает значение из .
@@ -352,7 +345,7 @@ function resolveFieldValue(
 ) {
 
     const input =
-        isolated === IsolationMode.GlobalOnly
+        isolated === IsolationMode.UserOnly
             ? configObj.inspect(spec.configKey)?.globalValue
             : isolated === IsolationMode.WorkspaceOnly
                 ? configObj.inspect(spec.configKey)?.workspaceValue
@@ -429,7 +422,7 @@ function readRaw<T>(
     isolated?: IsolationMode
 ): T | undefined {
 
-    return isolated === IsolationMode.GlobalOnly
+    return isolated === IsolationMode.UserOnly
         ? configObj.inspect<T>(configKey)?.globalValue
         : isolated === IsolationMode.WorkspaceOnly
             ? configObj.inspect<T>(configKey)?.workspaceValue
