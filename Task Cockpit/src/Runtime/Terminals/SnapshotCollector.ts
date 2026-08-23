@@ -66,12 +66,12 @@ import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
  *  */
 class SnapshotCollector implements Disposable {
 
-    static readonly CONFIGURATION_KEY = 'Terminals';
+    static readonly CONFIGURATION_SECTION = 'Terminals';
 
     readonly #onDidCollectSnapshot: EventEmitter<Immutable<TerminalProcessesSnapshot>>;
     public readonly onDidCollectSnapshot: Event<Immutable<TerminalProcessesSnapshot>>;
 
-    #configuration: WindowSettings.Configuration[typeof SnapshotCollector.CONFIGURATION_KEY];
+    #configuration: WindowSettings.Configuration[typeof SnapshotCollector.CONFIGURATION_SECTION];
 
     #pendingId: RequestId | undefined;
     #running: boolean;
@@ -80,14 +80,14 @@ class SnapshotCollector implements Disposable {
     #disposed: boolean;
 
     readonly #dependencies: Readonly<{
-        windowConfiguration: LifecycleOmitted<WindowSettings>;
+        windowSettings: LifecycleOmitted<WindowSettings>;
     }>;
 
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
     constructor(
         dependencies: Readonly<{
-            windowConfiguration: LifecycleOmitted<WindowSettings>;
+            windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
@@ -108,10 +108,10 @@ class SnapshotCollector implements Disposable {
         ];
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
 
-        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(SnapshotCollector.CONFIGURATION_KEY);
+        this.#configuration = this.#dependencies.windowSettings.getConfiguration(SnapshotCollector.CONFIGURATION_SECTION);
     }
 
 
@@ -132,9 +132,9 @@ class SnapshotCollector implements Disposable {
 
     // #region Handlers
 
-    #changeConfigurationHandler(affectedKey: Immutable<WindowSettings.AffectedKeys>) {
-        if (!affectedKey.has(SnapshotCollector.CONFIGURATION_KEY)) { return; }
-        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(SnapshotCollector.CONFIGURATION_KEY);
+    #handleConfigurationChange(affectedKeys: WindowSettings.AffectedKeys) {
+        if (!affectedKeys.has(SnapshotCollector.CONFIGURATION_SECTION)) { return; }
+        this.#configuration = this.#dependencies.windowSettings.getConfiguration(SnapshotCollector.CONFIGURATION_SECTION);
     }
 
     // #endregion Handlers
@@ -165,7 +165,7 @@ class SnapshotCollector implements Disposable {
      * @fire Terminals#onDidCollectSnapshot после успешного сбора всех PID */
     public enqueueRequest(requestId: RequestId): void {
 
-        if (this.#disposed) { assert.fail(`[${this.constructor.name}#enqueueRequest]: use after dispose`); }
+        assert.ok(!this.#disposed, `[${this.constructor.name}#enqueueRequest]: use after dispose`);
 
         this.#pendingId = requestId;
 
@@ -238,11 +238,6 @@ class SnapshotCollector implements Disposable {
     }
 
     // #endregion Управление очередью
-
-
-    // #region Резолвинг
-
-
 }
 
 

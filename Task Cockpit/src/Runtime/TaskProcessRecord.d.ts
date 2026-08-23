@@ -1,12 +1,12 @@
 import type { Terminal } from 'vscode';
-import type ProcessId from './ProcessId';
+import type TaskProcessId from './TaskProcessId';
 import type Timestamp from './Timestamp';
 
-interface Snapshot {
+interface TaskProcessRecord {
     terminalRef: WeakRef<Terminal>;
-    processId: ProcessId;
+    taskProcessId: TaskProcessId;
     running: boolean;
     timestamp: Timestamp;
 }
 
-export default Snapshot;
+export default TaskProcessRecord;

@@ -1,4 +1,4 @@
-import type ProcessId from '../ProcessId';
+import type TaskProcessId from '../TaskProcessId';
 import type RequestId from '../RequestId';
 
 interface TerminalProcessesSnapshot {
@@ -10,7 +10,7 @@ interface TerminalProcessesSnapshot {
      * */
     requestId: RequestId;
     /** Список процессов, реально присутствующих в системе */
-    terminalProcesses: Array<ProcessId>;
+    terminalProcesses: Array<TaskProcessId>;
 }
 
 

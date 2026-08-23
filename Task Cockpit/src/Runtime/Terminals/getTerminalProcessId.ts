@@ -6,7 +6,7 @@ import {
     type Disposable,
     window
 } from 'vscode';
-import type ProcessId from '../ProcessId';
+import type TaskProcessId from '../TaskProcessId';
 
 
 /** Надёжно получить PID терминала с поддержкой таймаута.
@@ -31,7 +31,7 @@ import type ProcessId from '../ProcessId';
  *   терминал не вернул PID за это время терминал считается
  *   терминалом без процесса.
  *
- * @returns Возвращает {@linkcode ProcessId} или `undefined` при таймауте/закрытии/отсутствии pid
+ * @returns Возвращает {@linkcode TaskProcessId} или `undefined` при таймауте/закрытии/отсутствии pid
  *
  * @throws { never } не бросает исключений, всегда возвращает результат или undefined.
  *   (`terminal.processId` не бросает. По ее контракту всегда разрешается в
@@ -40,14 +40,14 @@ import type ProcessId from '../ProcessId';
 async function getTerminalProcessId(
     terminal: Readonly<Terminal>,
     timeoutMs: number
-): Promise<ProcessId | undefined> {
+): Promise<TaskProcessId | undefined> {
 
 
     const disposables: Disposable[] = [];
 
     try {
 
-        const racers: PromiseLike<ProcessId | undefined>[] = [
+        const racers: PromiseLike<TaskProcessId | undefined>[] = [
             // Тайм-аут
             // ........
             // Workaround для багов #91905 (2020) и #236869 (2024) и т.д.:
@@ -84,7 +84,7 @@ async function getTerminalProcessId(
             //----------------------------------------------------------------------
             // Успешный исход
             // ..............
-            terminal.processId as Thenable<ProcessId | undefined>
+            terminal.processId as Thenable<TaskProcessId | undefined>
             //----------------------------------------------------------------------
         ];
 

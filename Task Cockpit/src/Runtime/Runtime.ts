@@ -1,48 +1,43 @@
 import {
-    Disposable,
-    EventEmitter,
-    type Event,
-    tasks as VscTasks,
-    window,
-    type CancellationToken,
-    type Terminal,
-    type TaskProcessStartEvent,
-    CancellationError,
-    LogOutputChannel
+    tasks,
+    window
 } from 'vscode';
 import * as assert from 'node:assert/strict';
-
-import getProcessId from './Terminals/getProcessId';
-import ProcessMonitor from './ProcessMonitor';
-
+import getTerminalProcessId from './Terminals/getTerminalProcessId';
+import ProcessRegistry from './ProcessRegistry';
+import ResourceStateCoordinator from '../ResourceStateCoordinator/ResourceStateCoordinator';
 import SnapshotCollector from './Terminals/SnapshotCollector';
-import type ProcessId from './ProcessId';
+import TaskProcessMonitor from './TaskProcessMonitor';
+import WindowSettings from '../WindowSettings/WindowSettings';
 
-import type OngoingSnapshot from './Terminals/OngoingSnapshot';
-import type TaskIdentifier from './TaskIdentifier';
-
-
-import Config from '../WindowConfiguration/Config';
-import Safe from '../utils/Safe';
-import WindowConfiguration from '../WindowConfiguration/WindowConfiguration';
-import EligibleTask from '../EligibleTask';
-import ScopeKey from '../ScopeKey';
-import TaskName from '../TaskName';
+import type {
+    Disposable,
+    LogOutputChannel,
+    TaskProcessStartEvent,
+    Terminal
+} from 'vscode';
 import type Immutable from '../utils/Immutable';
-import { ProcessRegistry } from './ProcessRegistry';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type OriginKey from '../OriginKey';
 import type RequestId from './RequestId';
-import Snapshot from './Snapshot';
+import type TaskName from '../TaskName';
+import type TaskProcessId from './TaskProcessId';
+import type TaskProcessRecord from './TaskProcessRecord';
+import type TerminalProcessesSnapshot from './Terminals/TerminalProcessesSnapshot';
 
 
-const CONFIGURATION_KEY = 'Terminals' as const;
-type TerminalsConf = Config[typeof CONFIGURATION_KEY];
+/** Публичный интерфейс реестра только для чтения.
+ * Скрывает мутирующие методы оставляя только запросы и события. */
+type ProcessRegistryView =
+    LifecycleOmitted<Omit<ProcessRegistry, 'register' | 'markCompleted' | 'reconcile'>>;
+
 
 
 /** Отслеживает жизненный цикл процессов, порождённых задачами VS Code.
  *
  * Реагирует на события запуска/завершения процессов и закрытия терминалов,
- * поддерживает реестр процессов,
- * и уведомляет подписчиков об изменениях через {@linkcode onDidChange}.
+ * поддерживает реестр процессов предоставляющий доступ к событию изменения
+ * состояния через {@linkcode ProcessRegistry.onDidChangeTaskProcesses}.
  *
  * Процесс остаётся в реестре до тех пор, пока виден в терминале,
  * даже после завершения.
@@ -52,133 +47,117 @@ type TerminalsConf = Config[typeof CONFIGURATION_KEY];
  * ### API
  *
  * #### Параметры конструктора:
- * - `monitor` — настройки мониторинга процессов
- * - `terminals` — настройки управления терминалами
- *
- * #### События:
- * - `onDidChange` — изменение состояния процессов задачи
+ * - `dependencies` — внешние зависимости (`WindowSettings`, `ResourceStateCoordinator`)
+ * - `logOutputChannel` — канал логирования (может быть `null`)
  *
  * #### Свойства:
- * - `registry` — доступ к реестру процессов (только чтение)
+ * - `processRegistry` — доступ к реестру процессов (только чтение)
  *
  * #### Методы:
- * - `getSnapshot` — снимок процессов задачи с привязкой к терминалам
- * - `abortAll` — запрос на остановку всех живых процессов задачи
- * - `dispose` — деактивация и освобождение ресурсов */
+ * - `getTaskProcessRecords` — снимок процессов задачи с привязкой к терминалам
+ * - `terminateAll` — запрос на остановку всех живых процессов задачи
+ * - `dispose` — деактивация и освобождение ресурсов
+ */
 class Runtime implements Disposable {
 
-
-    /** {@link ProcessRegistry | Реестр процессов} */
-    // readonly #registry: ProcessRegistry;
+    static readonly CONFIGURATION_SECTION = 'Terminals' as const;
+    #terminalsConfig: WindowSettings.Configuration[typeof Runtime.CONFIGURATION_SECTION];
 
     readonly #disposables: Disposable[];
-
-    /** {@link ProcessMonitor | Мониторинг процессов} */
-    readonly #monitor: ProcessMonitor;
-
-    /** {@link SnapshotCollector | Сборщик атомарных снимков PID’ов открытых терминалов} */
-    readonly #terminalSnapshot: SnapshotCollector;
 
     #disposed: boolean;
 
     // #region Lifecycle
 
-    readonly #windowConfiguration: Safe<WindowConfiguration>;
-    #logOutputChannel: Safe<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
-    #conf: TerminalsConf;
+    readonly #dependencies: Readonly<{
+        windowSettings: LifecycleOmitted<WindowSettings>;
+        resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+    }>;
 
-    readonly #processRegistry: Safe<ProcessRegistry>;
+    /** {@link ProcessRegistry | Реестр процессов} */
+    readonly #processRegistry: ProcessRegistry;
+
+    /** {@link TaskProcessMonitor | Мониторинг процессов} */
+    readonly #processMonitor: TaskProcessMonitor;
+
+    /** {@link SnapshotCollector | Сборщик атомарных снимков PID’ов открытых терминалов} */
+    readonly #snapshotCollector: SnapshotCollector;
 
     constructor(
-        windowConfiguration: Safe<WindowConfiguration>,
-        processRegistry: Safe<ProcessRegistry>,
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        dependencies: Readonly<{
+            windowSettings: LifecycleOmitted<WindowSettings>;
+            resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+        }>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
-        this.#disposed = false;
-        this.#disposables = [];
-
-        this.#processRegistry = processRegistry;
-
+        this.#dependencies = dependencies;
         this.#logOutputChannel = logOutputChannel;
 
-        this.#monitor = new ProcessMonitor(windowConfiguration, logOutputChannel);
-        this.#terminalSnapshot = new SnapshotCollector(windowConfiguration, logOutputChannel);
+        this.#processRegistry = new ProcessRegistry(logOutputChannel);
+        this.#processMonitor = new TaskProcessMonitor(this.#dependencies, logOutputChannel);
+        this.#snapshotCollector = new SnapshotCollector(this.#dependencies, logOutputChannel);
 
-        // conf ---
-        this.#windowConfiguration = windowConfiguration;
+        this.#disposed = false;
+        this.#disposables = [
+            this.#processRegistry,
+            this.#processMonitor,
+            this.#snapshotCollector,
+        ];
 
-        this.#disposables.push(
-            this.#windowConfiguration.onDidChange((affectedKey) => {
-                if (!affectedKey.has(CONFIGURATION_KEY)) {
-                    return;
-                }
-                this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
-            })
-        );
-        this.#conf = this.#windowConfiguration.getConfig(CONFIGURATION_KEY);
-        // ---
+        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
 
-        this.#disposables.push(
+        this.#terminalsConfig = this.#dependencies.windowSettings.getConfiguration(Runtime.CONFIGURATION_SECTION);
 
-            // Задача породила процесс
-            // eslint-disable-next-line @typescript-eslint/unbound-method
-            VscTasks.onDidStartTaskProcess(this.#processStartedHandler, this),
+        // Задача породила процесс
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        tasks.onDidStartTaskProcess(this.#processStartedHandler, this, this.#disposables);
 
-            // @todo возможно vscode.window.onDidEndTerminalShellExecution лучше? @reject
-            // @reject - Bug:
-            // Этот подход не работает для задач с "showReuseMessage": false -
-            // {
-            //     "label": "Test Task 1",
-            //     "type": "shell",
-            //     "command": "true",
-            //     "presentation": {
-            //         "showReuseMessage": false,
-            //     },
-            //     "problemMatcher": []
-            // }
-            // для таких задач не приходит onDidEndTerminalShellExecution
-            // что делает не возможным отследить завершение процесса у задачи.
-            // С событием vscode.tasks.onDidEndTaskProcess - то же есть проблемы.
-            // -----
-            // Процесс(ы) задач(и) сдох(ли)
-            // eslint-disable-next-line @typescript-eslint/unbound-method
-            this.#monitor.onProcessesCompleted(this.#processCompletedHandler, this),
+        // @todo возможно vscode.window.onDidEndTerminalShellExecution лучше? @reject
+        // @reject - Bug:
+        // Этот подход не работает для задач с "showReuseMessage": false -
+        // {
+        //     "label": "Test Task 1",
+        //     "type": "shell",
+        //     "command": "true",
+        //     "presentation": {
+        //         "showReuseMessage": false,
+        //     },
+        //     "problemMatcher": []
+        // }
+        // для таких задач не приходит onDidEndTerminalShellExecution
+        // что делает не возможным отследить завершение процесса у задачи.
+        // С событием vscode.tasks.onDidEndTaskProcess - то же есть проблемы.
+        // -----
+        // Процесс(ы) задач(и) сдох(ли)
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#processMonitor.onTaskProcessesCompleted(this.#processCompletedHandler, this, this.#disposables);
 
-            // любой терминал закрылся
-            // eslint-disable-next-line @typescript-eslint/unbound-method
-            window.onDidCloseTerminal(this.#terminalClosedHandler, this),
+        // любой терминал закрылся
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        window.onDidCloseTerminal(this.#closeTerminalHandler, this, this.#disposables);
 
-            // наконец-то обновилось состояние терминалов (возможно протухшее)
-            // eslint-disable-next-line @typescript-eslint/unbound-method
-            this.#terminalSnapshot.onDidCollectSnapshot(this.#terminalsReconciledHandler, this),
+        // наконец-то обновилось состояние терминалов (возможно протухшее)
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#snapshotCollector.onDidCollectSnapshot(this.#collectSnapshotHandler, this, this.#disposables);
 
-            // -----
-            this.#monitor,
-            this.#terminalSnapshot,
-            // -----
-
-        );
     }
 
 
-    /** Деактивирует Runtime и освобождает все ресурсы.
+    /** Деактивирует {@linkcode Runtime} и освобождает все ресурсы.
      * Останавливает мониторинг, отключает все обработчики событий.
-     * Повторный вызов — no-op.
-     *
-     * @affects onDidChange Больше не будет срабатывать */
+     * Повторный вызов — no-op. */
     dispose() {
 
-        if (this.#disposed) {
-            return;
-        }
-
+        if (this.#disposed) { return; }
         this.#disposed = true;
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
-        this.#processRegistry.clear();
+
+        this.#disposables.forEach((d) => void d.dispose());
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel = null;
 
     }
 
@@ -186,6 +165,10 @@ class Runtime implements Disposable {
 
 
     // #region Public
+
+    public get processRegistry(): ProcessRegistryView {
+        return this.#processRegistry;
+    }
 
 
     /** Снимок зарегистрированных процессов задачи с привязкой к терминалам.
@@ -197,39 +180,34 @@ class Runtime implements Disposable {
      * Сопоставление processId → Terminal не гарантировано как 1:1 :
      * повисший терминал не вернёт PID, будет пропущен — запись с этим PID не попадет в результат.
      *
-     * @param taskIdentifier Идентификатор задачи
-     * @returns Записи `{ processId, terminalRef, running, timestamp }`, отсортированные по `timestamp`.
+     * @param originKey Идентификатор источника задачи
+     * @param taskName Имя задачи
+     *
+     * @returns Записи {@linkcode TaskProcessRecord}, отсортированные по `timestamp`.
      *   `terminalRef` — слабая ссылка: к моменту использования терминал может быть
-     *   закрыт, переиспользован или уничтожен. Гарантировано только что на момент `timestamp`
-     *   Terminal содержал (выполнял) `processId`.
-     * @throws { CancellationError } */
-    async getSnapshot({ scopeKey, taskName }: TaskIdentifier): Promise<
-        // Terminal (виджет) продолжает жить своею жизнью: закрывается,
-        // пере используется, диспозится...
-        ReadonlyArray<Readonly<Snapshot>>
-    > {
+     *    закрыт, переиспользован или уничтожен.
+     *    Гарантировано только что на момент `timestamp` терминал содержал (выполнял) `taskProcessId`. */
+    public async getTaskProcessRecords(originKey: OriginKey, taskName: TaskName): Promise<Immutable<Array<TaskProcessRecord>>> {
 
-        assert.equal(this.#disposed, false, `${this.constructor.name}#getSnapshot: use after dispose`);
+        assert.equal(this.#disposed, false, `[${this.constructor.name}#getSnapshot]: use after dispose`);
 
-        const taskState = this.#processRegistry.getState(scopeKey, taskName);
+        const processStates = this.#processRegistry.getTaskProcessStates(originKey, taskName);
 
-        if (!taskState || taskState.size < 1) {
+        if (!processStates || processStates.size < 1) {
             return [];
         }
 
         const promises = window.terminals.map(async (terminal) => {
 
-            // Терминал может быть диспознут в процессе.
+            // Терминал может быть уничтожен в процессе опроса.
             // Сопоставление processId -> Terminal как 1:1 гарантировать не возможно.
             // getTerminalPid пры любых проблемах вернет `undefined`.
             // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
-            const processId = await getProcessId(terminal, this.#conf.timeout);
+            const processId = await getTerminalProcessId(terminal, this.#terminalsConfig.timeout);
 
-            if (!processId) {
-                return undefined;
-            }
+            if (!processId) { return undefined; }
 
-            const processState = taskState.get(processId);
+            const processState = processStates.get(processId);
 
             if (!processState) {
                 return undefined;
@@ -237,48 +215,42 @@ class Runtime implements Disposable {
 
             return {
                 terminalRef: new WeakRef(terminal),
-                processId,
+                taskProcessId: processId,
                 timestamp: processState.registerTimestamp,
                 running: processState.running
-            } satisfies Snapshot;
+            } satisfies TaskProcessRecord;
         });
-
-        // promises.forEach((p) => {
-        //     p.catch((error) => {
-        //         if (!(error instanceof CancellationError)) {
-        //             this.#logOutputChannel?.error(`getSnapshot: an unexpected exception in getProcessId, errorType=${error?.constructor?.name ?? typeof error}`);
-        //         };
-        //     });
-        // });
 
         return (await Promise.all(promises))
             .filter(
-                function (entry): entry is Snapshot { return entry != null; }
+                (entry): entry is TaskProcessRecord => entry != null
             ).sort( // Старый первым
-                function (a, b) { return a.timestamp - b.timestamp; }
+                (a, b) => a.timestamp - b.timestamp
             );
     }
 
 
     /** Запрос на остановку всех живых процессов задачи.
      *
-     * Отправляет `SIGTERM` каждому живому процессу.
+     * Отправляет `SIGTERM` каждому живому процессу задачи.
      * Мгновенная остановка, как и остановка вообще — не гарантируется.
      *
-     * @param taskIdentifier Идентификатор задачи */
-    abortAll({ scopeKey, taskName }: TaskIdentifier): void {
+     * @param originKey Идентификатор источника задачи
+     * @param taskName Имя задачи
+     *
+     * @fires ProcessRegistry#onDidChangeTaskProcesses Со всеми затронутыми задачами
+     * */
+    public terminateAll(originKey: OriginKey, taskName: TaskName): void {
 
-        assert.equal(this.#disposed, false, `${this.constructor.name}#abortAll: use after dispose`);
+        assert.ok(!this.#disposed, `[${this.constructor.name}#abortAll]: use after dispose`);
 
-        const taskState = this.#processRegistry.getState(scopeKey, taskName);
+        const processStates = this.#processRegistry.getTaskProcessStates(originKey, taskName);
 
-        if (!taskState || taskState.size < 1) {
-            return;
-        }
+        if (!processStates || processStates.size < 1) { return; }
 
-        for (const [processId, processState] of taskState) {
+        for (const [processId, processState] of processStates) {
             if (processState.running) {
-                this.#killProcess(processId);
+                terminateProcess(processId);
             }
         }
     }
@@ -292,31 +264,43 @@ class Runtime implements Disposable {
      * Регистрирует процесс, если PID валиден и задача в поддерживаемом scope,
      * затем инициирует пересмотр терминалов.
      *
-     * @fires Runtime#onDidChange При успешной регистрации процесса */
-    #processStartedHandler({ execution, processId }: TaskProcessStartEvent) {
+     * @fires ProcessRegistry#onDidChangeTaskProcesses Со всеми затронутыми задачами
+     * */
+    async #processStartedHandler({ execution, processId }: TaskProcessStartEvent): Promise<void> {
 
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#isUnusable) { return; }
 
         // начинаем следить, если "подходящая"
         if (isValidPid(processId)) { // сразу отбрасываем сломанное
 
-            // если задача "подходит"...
-            if (EligibleTask.isEligibleTask(execution.task)) { // task -> EligibleTask
+            try {
+                const taskOriginInfo = await this.#dependencies.resourceStateCoordinator.resolveTaskOrigin(execution.task);
 
+                if (!taskOriginInfo) {
+                    // @todo log
+                    return;
+                }
+
+                // регистрируем процесс
                 this.#processRegistry.register(
-                    this.#requestId.next(),
-                    EligibleTask.getScopeKey(execution.task),
-                    execution.task.name,
+                    this.#requestIdCounter.next(),
+                    taskOriginInfo.originKey,
+                    taskOriginInfo.taskName,
                     processId
                 );
 
-                this.#monitor.addTaskProcess(processId);
+                // начинаем следить за процессом
+                this.#processMonitor.addTaskProcessId(processId);
             }
+            catch (err) {
+                // @todo log
+            }
+
         }
 
-        // В любом случае — пересмотр терминалов.
+        if (this.#disposed) { return; }
+
+        // При успешной регистрации процесса — пересмотр терминалов.
         //
         // Замечание: Реализация getProcessId используемая в SnapshotCollector
         // расценивает закрытый терминал (норм.) или терминал не ответивший
@@ -328,126 +312,95 @@ class Runtime implements Disposable {
         // Наличие таких «глючных» терминалов увеличивает время сбора снапшота
         // вплоть до `timeout`, и `onDidCollectSnapshot` станут приходить с
         // непредсказуемой задержкой.
-        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
+        this.#snapshotCollector.enqueueRequest(this.#requestIdCounter.next());
     }
 
 
-    /** Обработка завершённых процессов от {@linkcode ProcessMonitor}.
+    /** Обработка завершённых процессов от {@linkcode TaskProcessMonitor}.
      * - Помечает процессы как завершённые
      * - Сообщает о каждой задаче, затронутой изменением
      * - Инициирует пересмотр терминалов
      *
-     * @fires Runtime#onDidChange На каждую затронутую задачу */
-    #processCompletedHandler(completed: ReadonlySet<ProcessId>) {
+     * @fires ProcessRegistry#onDidChangeTaskProcesses Со всеми затронутыми задачами
+     * */
+    #processCompletedHandler(completedProcessIds: ReadonlySet<TaskProcessId>) {
 
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#disposed) { return; }
 
+        // помечаем процессы как завершенные
         this.#processRegistry.markCompleted(
-            this.#requestId.next(),
-            completed
+            this.#requestIdCounter.next(),
+            completedProcessIds
         );
 
-
         // в любом случае — пересмотр терминалов
-        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
+        this.#snapshotCollector.enqueueRequest(this.#requestIdCounter.next());
     }
 
 
-    /** Обработка результата сверки терминалов от {@linkcode Terminals}.
-     * - Удаляет из реестра процессы, которых больше нет ни в одном терминале
-     * - Сообщает о каждой задаче, затронутой удалением
+    /** Обработка результата сверки терминалов от {@linkcode SnapshotCollector}.
      *
-     * @fires Runtime#onDidChange На каждую затронутую задачу */
-    #terminalsReconciledHandler(snapshot: Immutable<OngoingSnapshot>) {
+     * Удаляет из реестра процессы, которых больше нет ни в одном терминале
+     *
+     * @fires ProcessRegistry#onDidChangeTaskProcesses Со всеми затронутыми задачами
+     * */
+    #collectSnapshotHandler(snapshot: Immutable<TerminalProcessesSnapshot>) {
 
         if (this.#disposed) {
             return;
         }
 
-        this.#processRegistry.reconcile(snapshot.requestId, snapshot.ongoingProcesses);
+        // сопоставить реестр со снимком. Процессы, отсутствующие в снимке будут удалены
+        this.#processRegistry.reconcile(snapshot.requestId, new Set(snapshot.terminalProcesses));
     }
 
 
     /** Обработка закрытия любого терминала.
-     * - Инициирует пересмотр всех терминалов. */
-    #terminalClosedHandler(_terminal: Terminal) {
+     * Инициирует пересмотр всех терминалов.
+     *
+     * @fires ProcessRegistry#onDidChangeTaskProcesses Со всеми затронутыми задачами*/
+    #closeTerminalHandler(_terminal: Terminal) {
 
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#disposed) { return; }
 
-        this.#terminalSnapshot.enqueueRequest(this.#requestId.next());
+        this.#snapshotCollector.enqueueRequest(this.#requestIdCounter.next());
         // @todo: для оптимизации тут можно проверять и удалять конкретный процесс,
         // а не проверять все терминалы.
         // Оставлю пока так для "а вдруг что-то пропускаю - почистит"
 
     }
 
-    // #endregion Handlers
-
-
-
-
-
-    /** Отправка SIGTERM процессу.
-     *
-     * На Unix — сначала пытается убить группу процессов (`-pid`),
-     * при неудаче — fallback на прямой kill.
-     * На Windows — только прямой kill.
-     *
-     * ESRCH (процесс уже мёртв) — не ошибка. Прочие ошибки не пробрасываются — kill не фатален. */
-    #killProcess(pid: ProcessId): void {
-        try {
-
-            // NO Win: попытка убить группу, fallback на сам процесс
-            // Win: попытка убить только сам процесс
-            try {
-                if (process.platform === 'win32') {
-                    process.kill(pid, 'SIGTERM');
-                }
-                else {
-                    process.kill(-(pid as number), 'SIGTERM');
-                }
-            }
-            catch (error) {
-
-                if (error instanceof Error && 'code' in error) {
-                    if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
-                        return;
-                    }
-                }
-
-                // для windows тут все
-                if (process.platform === 'win32') {
-                    return;
-                }
-
-                process.kill(pid, 'SIGTERM');
-            }
-
-        }
-        catch (error) {
-            // ESRCH — уже мёртв
-            if (error instanceof Error && 'code' in error) {
-                if ((error as NodeJS.ErrnoException).code === 'ESRCH') {
-                    return;
-                }
-            }
-            // не фатально
+    #changeConfigurationHandler(affectedKeys: WindowSettings.AffectedKeys) {
+        if (!affectedKeys.has(Runtime.CONFIGURATION_SECTION)) {
             return;
         }
+        this.#terminalsConfig = this.#dependencies.windowSettings.getConfiguration(Runtime.CONFIGURATION_SECTION);
     }
 
+    // #endregion Handlers
 
-    #requestId = (function (start: number) {
+    #requestIdCounter = (function (start: number) {
         return {
             next() {
                 return ++start as RequestId;
             }
         };
     })(0);
+
+    // ---------------------------------------------------------------------------
+
+    get #isUnusable(): boolean {
+
+        const dependenciesDisposed =
+            this.#dependencies.resourceStateCoordinator.disposed ||
+            this.#dependencies.windowSettings.disposed;
+
+        if (dependenciesDisposed) {
+            this.#logOutputChannel?.warn(`[${this.constructor.name}]: External dependencies are disposed`);
+        }
+
+        return this.#disposed || dependenciesDisposed;
+    }
 
 }
 
@@ -459,8 +412,45 @@ class Runtime implements Disposable {
  *
  * @param pid PID для проверки
  * @returns true если PID является валидным числом > 0, false иначе */
-function isValidPid(pid: number | undefined): pid is ProcessId {
+function isValidPid(pid: number | undefined): pid is TaskProcessId {
     return (pid !== undefined && pid > 0);
+}
+
+
+/** Отправка SIGTERM процессу.
+ *
+ * На Unix — сначала пытается убить группу процессов (`-pid`),
+ * при неудаче — fallback на прямой kill.
+ * На Windows — только прямой kill.
+ *
+ * ESRCH (процесс уже мёртв) — не ошибка. Прочие ошибки не пробрасываются — kill не фатален. */
+function terminateProcess(pid: TaskProcessId): void {
+
+    // NO Win: попытка убить группу, fallback на сам процесс
+    // Win: попытка убить только сам процесс
+
+    if (process.platform === 'win32') {
+        try {
+            process.kill(pid, 'SIGTERM');
+        }
+        catch {
+            return;
+        }
+    }
+    else {
+        try {
+            process.kill(-(pid as number), 'SIGTERM');
+        }
+        catch {
+            // группы нет или процесс не лидер — пробуем напрямую
+            try {
+                process.kill(pid, 'SIGTERM');
+            }
+            catch {
+                return;
+            }
+        }
+    }
 }
 
 

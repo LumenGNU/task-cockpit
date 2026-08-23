@@ -1,5 +1,5 @@
 import type RequestId from './RequestId';
-import Timestamp from './Timestamp';
+import type Timestamp from './Timestamp';
 
 
 /** Состояние процесса задачи в реестре процессов. */

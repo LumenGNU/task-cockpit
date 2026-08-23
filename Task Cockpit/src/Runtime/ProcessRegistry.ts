@@ -1,79 +1,73 @@
+/** @file Runtime/ProcessRegistry.ts */
+/** @internal */
+
 import {
     EventEmitter,
 } from 'vscode';
-import assert from 'node:assert/strict';
+import * as assert from 'node:assert/strict';
+
 import type {
     Disposable,
     LogOutputChannel,
     Event,
 } from 'vscode';
-import type ScopeKey from '../ScopeKey';
-import type TaskName from '../TaskName';
 import type Immutable from '../utils/Immutable';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type OriginKey from '../OriginKey';
+import type TaskProcessId from './TaskProcessId';
 import type ProcessState from './ProcessState';
-import type ProcessId from './ProcessId';
 import type RequestId from './RequestId';
-import type Safe from '../utils/Safe';
+import type TaskName from '../TaskName';
 import type Timestamp from './Timestamp';
 
 
-/** `Map<ProcessId, ProcessState>` — состояния всех процессов одной задачи. */
-type TaskProcesses = Map<ProcessId, ProcessState>;
+/** Карта состояния всех процессов одной задачи. */
+type TaskProcesses = Map<TaskProcessId, ProcessState>;
 
 
 /** Полезная нагрузка события `onDidChangeTaskProcesses`:
- * область задач → имена задач, в которых изменилось состояние процессов. */
-type EventPayload = Map<ScopeKey, Set<TaskName>>;
-
-
-/** Публичный интерфейс реестра только для чтения.
- * Скрывает мутирующие методы оставляя только запросы и события. */
-type ReadonlyProcessRegistry =
-    Safe<Omit<ProcessRegistry, 'register' | 'markCompleted' | 'reconcile' | 'clear'>>;
+ * область происхождения → имена задач, в которых изменилось состояние процессов. */
+type EventPayload = Map<OriginKey, Set<TaskName>>;
 
 
 /** Хранит сопоставления задача → рантайм-состояние её процессов.
  *
  * Внутри три взаимно синхронизированных индекса:
  * - `#processStateById` — первичный: `processId → ProcessState`
- * - `#processesByTask` — прямой: `scopeKey → taskName → Set<processId>`
- * - `#taskIdentifierById` — обратный: `processId → { scopeKey, taskName }`
+ * - `#processesByTask` — прямой: `originKey → taskName → Set<processId>`
+ * - `#taskIdentifierById` — обратный: `processId → { originKey, taskName }`
  *
  * #### Управление:
- * - `register` — регистрация нового процесса в состоянии "выполняется"
+ * - `register` — регистрация нового процесса задачи в состоянии "выполняется"
  * - `markCompleted` — перевод процессов в состояние "выполнен"
  * - `reconcile` — удаление процессов, отсутствующих в системе
- * - `clear` — полная очистка реестра
  *
  * #### Запросы:
- * - `getState(scopeKey, taskName)` — состояния всех процессов задачи
+ * - `getTaskProcessStates(originKey, taskName)` — состояния всех процессов задачи
  * - `disposed` — признак уничтоженного экземпляра
  *
  * #### Уведомления:
  * - `onDidChangeTaskProcesses` — изменилось состояние процессов;
- *   полезная нагрузка — `Map<ScopeKey, Set<TaskName>>` с затронутыми задачами
+ *   полезная нагрузка — `Map<originKey, Set<TaskName>>` с затронутыми задачами
  * */
 class ProcessRegistry implements Disposable {
 
     readonly #onDidChangeTaskProcesses: EventEmitter<Immutable<EventPayload>>;
     readonly onDidChangeTaskProcesses: Event<Immutable<EventPayload>>;
 
-    readonly #onDidDisposed: EventEmitter<void>;
-    readonly onDidDisposed: Event<void>;
-
     // Первичный индекс: processId → состояние процесса.
-    readonly #processStateById: Map<ProcessId, ProcessState>;
+    readonly #processStateById: Map<TaskProcessId, ProcessState>;
 
-    // Прямой индекс: scopeKey → taskName → множество processId.
+    // Прямой индекс: область происхождения → имя задачи → множество идентификаторов процессов задачи.
     // Синхронизирован с #processStateById и #taskIdentifierById.
-    readonly #processesByTask: Map<ScopeKey, Map<TaskName, Set<ProcessId>>>;
+    readonly #processesByTask: Map<OriginKey, Map<TaskName, Set<TaskProcessId>>>;
 
     // Обратный индекс: processId → идентификатор задачи.
     // Нужен для O(1)-определения владельца процесса при формировании
     // полезной нагрузки событий. Синхронизирован с двумя другими индексами.
-    readonly #taskIdentifierById: Map<ProcessId, { readonly scopeKey: ScopeKey; readonly taskName: TaskName; }>;
+    readonly #taskIdentifierById: Map<TaskProcessId, { readonly originKey: OriginKey; readonly taskName: TaskName; }>;
 
-    #logOutputChannel: Safe<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
     readonly #disposables: Disposable[];
     #disposed: boolean;
@@ -83,7 +77,7 @@ class ProcessRegistry implements Disposable {
      * @param logOutputChannel Канал для трассировки (необязателен).
      */
     constructor(
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
         this.#disposed = false;
@@ -93,16 +87,12 @@ class ProcessRegistry implements Disposable {
         this.#onDidChangeTaskProcesses = new EventEmitter();
         this.onDidChangeTaskProcesses = this.#onDidChangeTaskProcesses.event;
 
-        this.#onDidDisposed = new EventEmitter();
-        this.onDidDisposed = this.#onDidDisposed.event;
-
         this.#processStateById = new Map();
         this.#processesByTask = new Map();
         this.#taskIdentifierById = new Map();
 
         this.#disposables = [
-            this.#onDidChangeTaskProcesses,
-            this.#onDidDisposed
+            this.#onDidChangeTaskProcesses
         ];
     }
 
@@ -111,47 +101,41 @@ class ProcessRegistry implements Disposable {
      * Повторный вызов — no-op. */
     dispose() {
 
-        if (this.#disposed) {
-            return;
-        }
-
+        if (this.#disposed) { return; }
         this.#disposed = true;
 
-        this.#onDidDisposed.fire();
+        this.#disposables.forEach((d) => void d.dispose());
 
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
-
-        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
         this.#logOutputChannel = null;
     }
 
 
     /** `true` после вызова `dispose()`. Вызов любого метода в этом состоянии — ошибка. */
-    get disposed() {
+    get disposed(): boolean {
         return this.#disposed;
     }
 
 
-    /** Регистрирует один новый процесс задачи. Дубликат `processId` — ошибка.
+    /** Регистрирует один новый процесс задачи. Дубликат `taskProcessId` — ошибка.
      *
      * @param requestId Идентификатор запроса, породившего процесс.
      *   Сохраняется в `ProcessState.requestId` и используется
      *   `markCompleted` / `reconcile` для контроля порядка операций.
-     * @param scopeKey Ключ области задач, которой принадлежит задача
+     * @param originKey Ключ области происхождения задач, которой принадлежит задача
      * @param taskName Имя задачи
-     * @param processId Id регистрируемого процесса
+     * @param taskProcessId Id регистрируемого процесса
      *
-     * @fires onDidChangeTaskProcesses `Map { scopeKey → Set { taskName } }` */
+     * @fires onDidChangeTaskProcesses `Map { originKey → Set { taskName } }` */
     register(
         requestId: RequestId,
-        scopeKey: ScopeKey,
+        originKey: OriginKey,
         taskName: TaskName,
-        processId: ProcessId,
+        taskProcessId: TaskProcessId,
     ): void {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#register: use after dispose`);
-        assert.ok(!this.#processStateById.has(processId), `Duplicate process registration attempt: "${processId}" for ${taskName}`);
+
+        assert.ok(!this.#disposed, `[${this.constructor.name}#register]: use after dispose`);
+        assert.ok(!this.#processStateById.has(taskProcessId), `Duplicate process registration attempt: "${taskProcessId}" for ${taskName}`);
 
         const processState: ProcessState = {
             registerTimestamp: Date.now() as Timestamp,
@@ -161,28 +145,29 @@ class ProcessRegistry implements Disposable {
             running: true,
         };
 
-        this.#processStateById.set(processId, processState);
+        this.#processStateById.set(taskProcessId, processState);
 
-        let processesByTaskName = this.#processesByTask.get(scopeKey);
+        let processesByTaskName = this.#processesByTask.get(originKey);
         if (!processesByTaskName) {
             processesByTaskName = new Map();
-            this.#processesByTask.set(scopeKey, processesByTaskName);
+            this.#processesByTask.set(originKey, processesByTaskName);
         }
         let processIds = processesByTaskName.get(taskName);
         if (!processIds) {
             processIds = new Set();
             processesByTaskName.set(taskName, processIds);
         }
-        processIds.add(processId);
+        processIds.add(taskProcessId);
 
-        this.#taskIdentifierById.set(processId, { scopeKey, taskName });
+        this.#taskIdentifierById.set(taskProcessId, { originKey, taskName });
 
-        this.#onDidChangeTaskProcesses.fire(new Map([[scopeKey, new Set([taskName])]]));
+        this.#onDidChangeTaskProcesses.fire(new Map([[originKey, new Set([taskName])]]));
     }
 
 
-    /** Переводит указанные процессы в состояние "выполнен".
-     * Принимает только зарегистрированные и работающие процессы.
+    /** Помечает процессы с указанными идентификаторами как выполненные.
+     *
+     * Принимает только зарегистрированные идентификаторы работающих процессов.
      *
      * Завершение уже завершённого процесса — ошибка.
      * `requestId` должен быть строго больше, чем тот, с которым процесс
@@ -190,26 +175,28 @@ class ProcessRegistry implements Disposable {
      *
      * @param requestId Идентификатор запроса, фиксирующего завершение.
      *   Сохраняется в `ProcessState.requestId`.
-     * @param processes Множество id завершившихся процессов
+     * @param taskProcessesIds Множество идентификаторов завершившихся процессов
      *
-     * @fires onDidChangeTaskProcesses `Map { scopeKey → Set { taskName } }` — задачи, затронутые изменением */
+     * @fires onDidChangeTaskProcesses `Map { originKey → Set { taskName } }` — задачи, затронутые изменением */
     markCompleted(
         requestId: RequestId,
-        processes: ReadonlySet<ProcessId>,
+        taskProcessesIds: ReadonlySet<TaskProcessId>,
     ): void {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#markCompleted: use after dispose`);
+
+        assert.ok(!this.#disposed, `[${this.constructor.name}#markCompleted]: use after dispose`);
+        assert.ok(taskProcessesIds.size > 0, `[${this.constructor.name}#markCompleted]: taskProcessesIds must not be empty`);
 
         const affectedByChanges: EventPayload = new Map();
 
-        for (const processId of processes) {
+        for (const processId of taskProcessesIds) {
 
             const processState = this.#processStateById.get(processId);
 
-            assert.ok(processState, `${this.constructor.name}#markCompleted: unregistered process "${processId}"`);
-            assert.equal(processState.running, true, `${this.constructor.name}#markCompleted: process "${processId}" is already completed`);
+            assert.ok(processState, `[${this.constructor.name}#markCompleted]: unregistered process "${processId}"`);
+            assert.equal(processState.running, true, `[${this.constructor.name}#markCompleted]: process "${processId}" is already completed`);
             // requestId монотонно возрастает — завершение с тем же или более старым
             // requestId нарушало бы порядок операций
-            assert.ok(processState.requestId < requestId, `${this.constructor.name}#markCompleted: requestId(${requestId}) must be strictly greater than stored requestId(${processState.requestId}) for process "${processId}"`);
+            assert.ok(processState.requestId < requestId, `[${this.constructor.name}#markCompleted]: requestId(${requestId}) must be strictly greater than stored requestId(${processState.requestId}) for process "${processId}"`);
 
             processState.running = false;
             processState.requestId = requestId;
@@ -217,12 +204,12 @@ class ProcessRegistry implements Disposable {
             const identifier = this.#taskIdentifierById.get(processId);
 
             // Инвариант: запись есть в #processStateById ↔ есть в #taskIdentifierById
-            assert.ok(identifier, `${this.constructor.name}#markCompleted: processState exists but taskIdentifier missing for "${processId}" — indices out of sync`);
+            assert.ok(identifier, `[${this.constructor.name}#markCompleted]: processState exists but taskIdentifier missing for "${processId}" — indices out of sync`);
 
-            let taskNames = affectedByChanges.get(identifier.scopeKey);
+            let taskNames = affectedByChanges.get(identifier.originKey);
             if (!taskNames) {
                 taskNames = new Set();
-                affectedByChanges.set(identifier.scopeKey, taskNames);
+                affectedByChanges.set(identifier.originKey, taskNames);
             }
             taskNames.add(identifier.taskName);
         }
@@ -232,25 +219,25 @@ class ProcessRegistry implements Disposable {
     }
 
 
-    /** Удаляет из реестра процессы, которых больше нет в системе.
+    /** Удаляет из реестра процессы, идентификаторов которых больше нет в системе.
      * ("система" != "ОС")
      * ("больше нет" != "running: false")
      *
-     * Снапшот — полный список процессов, реально присутствующих в системе
-     * на момент `requestId`. Если процесса нет в снапшоте (а значит и в
+     * Снимок — полный список процессов, идентификаторы которых реально присутствуют в системе
+     * на момент `requestId`. Если процесса нет в снимке (а значит и в
      * системе), он удаляется из реестра.
      *
      * Исключение: записи, *изменённые после `requestId`*, пропускаются —
-     * снапшот мог не застать ни регистрацию нового процесса,
+     * снимок мог не застать ни регистрацию нового процесса,
      * ни завершение уже существующего.
      *
-     * @param requestId Идентификатор запроса, которому соответствует снапшот.
-     *   Записи с `processState.requestId > requestId` считаются "новее снапшота"
+     * @param requestId Идентификатор запроса, которому соответствует снимок.
+     *   Записи с `processState.requestId > requestId` считаются "новее снимка"
      *   и пропускаются.
      * @param ongoingProcesses Снимок состояния системы в момент `requestId`.
      *   Ожидается что снимок всегда полный (нет пропущенных процессов).
      *
-     * @fires onDidChangeTaskProcesses `Map { scopeKey → Set { taskName } }` — задачи, затронутые удалением */
+     * @fires onDidChangeTaskProcesses `Map { originKey → Set { taskName } }` — задачи, затронутые удалением */
     // @todo (Важность низкая)
     // При большом количестве зарегистрированных процессов полный обход byId
     // может быть затратным.
@@ -258,9 +245,9 @@ class ProcessRegistry implements Disposable {
     // итерацию, если снапшот старше всех процессов.
     reconcile(
         requestId: RequestId,
-        ongoingProcesses: ReadonlySet<ProcessId>,
+        ongoingProcesses: ReadonlySet<TaskProcessId>,
     ): void {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#reconcile: use after dispose`);
+        assert.ok(!this.#disposed, `[${this.constructor.name}#reconcile]: use after dispose`);
 
         const affectedByChanges: EventPayload = new Map();
 
@@ -272,24 +259,24 @@ class ProcessRegistry implements Disposable {
             }
 
             if (requestId < processState.requestId) {
-                // Запись новее снапшота: процесс был зарегистрирован или завершён
-                // уже после того, как снапшот был собран — его отсутствие в нём ожидаемо
-                continue; // @todo break? можно если есть гарантия что в processById порядок строго от requestId.
+                // Запись новее снимка: процесс был зарегистрирован или завершён
+                // уже после того, как снимок был собран — его отсутствие в нём ожидаемо
+                continue; // @todo break? можно если есть гарантия что в #processStateById порядок строго от requestId.
             }
 
-            // Процесс отсутствует в снапшоте и не новее него —
+            // Процесс отсутствует в снимке и не новее него —
             // вычищаем реестр, запоминая идентификаторы для уведомления
 
             const taskIdentifier = this.#taskIdentifierById.get(registeredProcess);
 
-            assert.ok(taskIdentifier, `${this.constructor.name}#reconcile: process without task identifier "${registeredProcess}"`);
+            assert.ok(taskIdentifier, `[${this.constructor.name}#reconcile]: process without task identifier "${registeredProcess}"`);
 
             // Полная очистка реестра: после удаления не должно остаться
             // "пустых" вложенных коллекций (Map/Set с size=0).
             this.#processStateById.delete(registeredProcess);
             this.#taskIdentifierById.delete(registeredProcess);
 
-            const processesByTaskName = this.#processesByTask.get(taskIdentifier.scopeKey);
+            const processesByTaskName = this.#processesByTask.get(taskIdentifier.originKey);
             assert.ok(processesByTaskName);
             const processIds = processesByTaskName.get(taskIdentifier.taskName);
             assert.ok(processIds);
@@ -297,15 +284,15 @@ class ProcessRegistry implements Disposable {
             if (processIds.size < 1) {
                 processesByTaskName.delete(taskIdentifier.taskName);
                 if (processesByTaskName.size < 1) {
-                    this.#processesByTask.delete(taskIdentifier.scopeKey);
+                    this.#processesByTask.delete(taskIdentifier.originKey);
                 }
             }
 
             // запоминаем затронутый идентификатор для уведомления
-            let affectedTaskNames = affectedByChanges.get(taskIdentifier.scopeKey);
+            let affectedTaskNames = affectedByChanges.get(taskIdentifier.originKey);
             if (!affectedTaskNames) {
                 affectedTaskNames = new Set();
-                affectedByChanges.set(taskIdentifier.scopeKey, affectedTaskNames);
+                affectedByChanges.set(taskIdentifier.originKey, affectedTaskNames);
             }
             affectedTaskNames.add(taskIdentifier.taskName);
         }
@@ -316,50 +303,25 @@ class ProcessRegistry implements Disposable {
     }
 
 
-    /** Полностью очищает реестр.
-     * Уведомляет обо всех задачах, у которых были процессы.
+    /** Возвращает состояния всех процессов задачи.
      *
-     * @fires onDidChangeTaskProcesses `Map { scopeKey → Set { taskName } }` — все задачи, бывшие в реестре */
-    clear(): void {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#clear: use after dispose`);
-
-        const affectedByChanges: EventPayload = new Map();
-
-        // Итерируемся по плоскому обратному индексу #taskIdentifierById, а не по
-        // двухуровневому #processesByTask — дешевле и проще. Set<TaskName>
-        // в affectedByChanges автоматически дедуплицирует taskName, если у задачи
-        // было несколько процессов.
-        for (const { scopeKey, taskName } of this.#taskIdentifierById.values()) {
-            let set = affectedByChanges.get(scopeKey);
-            if (!set) {
-                set = new Set();
-                affectedByChanges.set(scopeKey, set);
-            }
-            set.add(taskName);
-        }
-
-        this.#taskIdentifierById.clear();
-        this.#processStateById.clear();
-        this.#processesByTask.clear();
-
-        if (affectedByChanges.size > 0) {
-            this.#onDidChangeTaskProcesses.fire(affectedByChanges);
-        }
-    }
-
-
-    /** Возвращает снимок состояний всех процессов задачи.
+     * Возвращаемая Map создаётся заново при каждом вызове;
+     * значения (`ProcessState`) — живые ссылки на внутренние объекты реестра,
+     * актуальные на момент обращения.
      *
-     * @returns Новая `Map<ProcessId, ProcessState>` — снимок состояний.
-     *   `undefined`, если у задачи нет процессов в реестре.
+     * @param originKey Ключ области происхождения задачи
+     * @param taskName Имя задачи
+     * @returns Новая `Map<TaskProcessId, ProcessState>` с текущими состояниями,
+     *   либо `undefined` если у задачи нет записей в реестре.
      */
-    getState(
-        scopeKey: ScopeKey,
+    getTaskProcessStates(
+        originKey: OriginKey,
         taskName: TaskName
     ): Immutable<TaskProcesses> | undefined {
-        assert.equal(this.#disposed, false, `${this.constructor.name}#getState: use after dispose`);
 
-        const processesByTaskName = this.#processesByTask.get(scopeKey);
+        assert.ok(!this.#disposed, `[${this.constructor.name}#getTaskProcessStates]: use after dispose`);
+
+        const processesByTaskName = this.#processesByTask.get(originKey);
         if (!processesByTaskName) {
             return undefined;
         }
@@ -367,7 +329,7 @@ class ProcessRegistry implements Disposable {
         if (!processes) {
             return undefined;
         }
-        assert.ok(processes.size > 0, `${this.constructor.name}#getState invariant violated: entry exists but set is empty`);
+        assert.ok(processes.size > 0, `[${this.constructor.name}#getTaskProcessStates]: invariant violated: entry exists but set is empty`);
 
         const result: TaskProcesses = new Map();
 
@@ -383,7 +345,4 @@ class ProcessRegistry implements Disposable {
 }
 
 
-export {
-    ReadonlyProcessRegistry,
-    ProcessRegistry
-};
+export default ProcessRegistry;

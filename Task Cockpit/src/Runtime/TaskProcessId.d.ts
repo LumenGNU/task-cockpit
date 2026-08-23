@@ -1,6 +1,6 @@
 declare const ___ProcessId: unique symbol;
 
-/** Номинальный тип для идентификатора системного процесса. */
-type ProcessId = number & { readonly [___ProcessId]: never; };
+/** Номинальный тип для идентификатора процесса рантайм-задачи. */
+type TaskProcessId = number & { readonly [___ProcessId]: never; };
 
-export default ProcessId;
+export default TaskProcessId;

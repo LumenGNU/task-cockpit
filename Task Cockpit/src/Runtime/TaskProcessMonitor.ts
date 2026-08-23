@@ -10,21 +10,23 @@ import WindowSettings from '../WindowSettings/WindowSettings';
 
 import type {
     Disposable,
-    Event
+    Event,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    TaskProcessStartEvent
 } from 'vscode';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
-import type ProcessId from './ProcessId';
+import type TaskProcessId from './TaskProcessId';
 
 
-type ModuleConfig = WindowSettings.Configuration[typeof TaskProcessMonitor.CONFIGURATION_KEY];
+type TaskProcessMonitorConfig = WindowSettings.Configuration[typeof TaskProcessMonitor.CONFIGURATION_SECTION];
 
 
-/** Мониторинг процессов задач VS Code (адаптивный интервал опроса).
+/** Мониторинг процессов рантайм-задач VS Code (адаптивный интервал опроса).
  *
  * Класс для отслеживания состояния запущенных процессов задач VS Code.
  * Автоматически определяет завершившиеся процессы и уведомляет подписчиков.
  *
- * (не произвольные процессы ОС, а процессы рантайм-задач VS Code)
+ * (не произвольные процессы ОС, а *процессы рантайм-задач* VS Code)
  *
  * Интервал проверки растёт по квадратичной формуле: `min + acceleration×n²` мс,
  * в зависимости от количества отслеживаемых процессов, но не более `cap` мс — что обеспечивает
@@ -36,22 +38,22 @@ type ModuleConfig = WindowSettings.Configuration[typeof TaskProcessMonitor.CONFI
  * */
 class TaskProcessMonitor implements Disposable {
 
-    static readonly CONFIGURATION_KEY = 'ProcessMonitor' as const;
-    #config: ModuleConfig;
+    static readonly CONFIGURATION_SECTION = 'TaskProcessMonitor' as const;
+    #config: TaskProcessMonitorConfig;
 
-    /** Событие: процесс(ы) завершился.
+    /** Событие: процесс(ы) рантайм-задачи завершился.
      * Вызывается при обнаружении завершенных процессов среди
      * отслеживаемых */
-    readonly #onProcessesCompleted: EventEmitter<ReadonlySet<ProcessId>>;
+    readonly #onTaskProcessesCompleted: EventEmitter<ReadonlySet<TaskProcessId>>;
 
-    public readonly onProcessesCompleted: Event<ReadonlySet<ProcessId>>;
+    public readonly onTaskProcessesCompleted: Event<ReadonlySet<TaskProcessId>>;
 
-    readonly #processes: Set<ProcessId>;
+    readonly #taskProcessIds: Set<TaskProcessId>;
 
-    /** Таймер периодической проверки процессов.
+    /** Таймер следующей проверки процессов рантайм-задач.
      *
      * null когда мониторинг остановлен (нет активных процессов). */
-    #checkInterval: NodeJS.Timeout | null;
+    #checkTimeout: NodeJS.Timeout | null;
 
     #disposed: boolean;
     #disposables: Disposable[];
@@ -59,13 +61,13 @@ class TaskProcessMonitor implements Disposable {
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
     readonly #dependencies: Readonly<{
-        windowConfiguration: LifecycleOmitted<WindowSettings>;
+        windowSettings: LifecycleOmitted<WindowSettings>;
     }>;
 
     /** Создать экземпляр монитора. */
     constructor(
         dependencies: Readonly<{
-            windowConfiguration: LifecycleOmitted<WindowSettings>;
+            windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
@@ -73,44 +75,44 @@ class TaskProcessMonitor implements Disposable {
         this.#disposed = false;
         this.#logOutputChannel = logOutputChannel;
 
-        this.#onProcessesCompleted = new EventEmitter();
-        this.onProcessesCompleted = this.#onProcessesCompleted.event;
+        this.#onTaskProcessesCompleted = new EventEmitter();
+        this.onTaskProcessesCompleted = this.#onTaskProcessesCompleted.event;
 
         this.#disposables = [
-            this.#onProcessesCompleted
+            this.#onTaskProcessesCompleted
         ];
 
-        this.#checkInterval = null;
-        this.#processes = new Set();
+        this.#checkTimeout = null;
+        this.#taskProcessIds = new Set();
 
         this.#dependencies = dependencies;
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
-        this.#config = this.#applyConf(this.#dependencies.windowConfiguration.getConfiguration(TaskProcessMonitor.CONFIGURATION_KEY));
+        this.#config = this.#normalizePollingConfig(this.#dependencies.windowSettings.getConfiguration(TaskProcessMonitor.CONFIGURATION_SECTION));
 
     }
 
 
     /** Освободить ресурсы монитора.
      *
-     * Останавливает все проверки, очищает события и набор процессов.
+     * Останавливает все проверки, очищает события и набор идентификаторов процессов задач.
      *
-     * @affects `checkInterval` Таймер будет остановлен
-     * @affects `processes` Будет очищен  */
+     * @affects `checkTimeout` Таймер будет остановлен
+     * @affects `taskProcessIds` Будет очищен  */
     public dispose() {
         if (this.#disposed) { return; }
         this.#disposed = true;
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        if (this.#checkInterval) {
-            clearTimeout(this.#checkInterval);
-            this.#checkInterval = null;
+        if (this.#checkTimeout) {
+            clearTimeout(this.#checkTimeout);
+            this.#checkTimeout = null;
         }
 
-        this.#processes.clear();
+        this.#taskProcessIds.clear();
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
         this.#logOutputChannel = null;
@@ -119,9 +121,17 @@ class TaskProcessMonitor implements Disposable {
 
     // #region Handlers
 
-    #changeConfigurationHandler(affectedKey: WindowSettings.AffectedKeys) {
-        if (!affectedKey.has(TaskProcessMonitor.CONFIGURATION_KEY)) { return; }
-        this.#config = this.#applyConf(this.#dependencies.windowConfiguration.getConfiguration(TaskProcessMonitor.CONFIGURATION_KEY));
+    #handleConfigurationChange(affectedKeys: WindowSettings.AffectedKeys) {
+        if (!affectedKeys.has(TaskProcessMonitor.CONFIGURATION_SECTION)) { return; }
+        // Изменение конфигурации применится с задержкой — текущий интервал, если есть,
+        // доработает с прошлыми параметрами. Новые вступят в силу только после
+        // следующего срабатывания таймера.
+        // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
+        // скорректировать оставшееся время.
+        // Для этого нужно хранить метку запуска таймера и в applyConf вычислять
+        // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
+        // Важность — Низкая. Пока просто ждем нового тика.
+        this.#config = this.#normalizePollingConfig(this.#dependencies.windowSettings.getConfiguration(TaskProcessMonitor.CONFIGURATION_SECTION));
     }
 
     // #endregion Handlers
@@ -129,26 +139,22 @@ class TaskProcessMonitor implements Disposable {
 
     // #region Public
 
-
-    /** Добавить процесс в мониторинг.
+    /** Добавить процесс рантайм-задачи в мониторинг.
      *
-     * @param processId - PID процесса задачи из
-     *   {@link vscode.TaskProcessStartEvent.processId}.
-     *   ProcessMonitor не делает предположений о природе этого процесса —
+     * @param taskProcessId - идентификатор процесса рантайм-задачи из {@linkcode TaskProcessStartEvent}.
+     *   {@linkcode TaskProcessMonitor} не делает предположений о природе этого процесса —
      *   его внутренняя иерархия вне зоны ответственности монитора.
      *
      * @affects
      * - Игнорирует дубликаты (если PID уже отслеживается)
      * - Запускает мониторинг если он был остановлен
-     * - Сохраняет текущий интервал проверки для быстрого отклика UI
+     * - Не пересчитывает таймер, если проверка уже запланирована
      * */
-    public addTaskProcess(processId: ProcessId) {
+    public addTaskProcessId(taskProcessId: TaskProcessId) {
 
-        if (this.#disposed) {
-            assert.fail(`[${this.constructor.name}#addTaskProcess]: use after dispose`);
-        }
+        assert.ok(!this.#disposed, `[${this.constructor.name}#addTaskProcessId]: use after dispose`);
 
-        this.#processes.add(processId);
+        this.#taskProcessIds.add(taskProcessId);
 
         // Не проверяем жив-ли процесс сразу — даем UI время
         // отдышаться — пусть он побудет какое-то время "живим" в UI
@@ -158,8 +164,8 @@ class TaskProcessMonitor implements Disposable {
         // Отзывчивость ui при массовом добавлении процессов: если таймер уже тикает, и прилетает
         // ещё 100 процессов, то не нужно сразу же пересчитывать интервал, — ближайшая проверка
         // пройдёт и scheduleCheck пересчитает интервал уже с новым count.
-        if (!this.#checkInterval) {
-            this.#scheduleCheck();
+        if (!this.#checkTimeout) {
+            this.#scheduleNextCheck();
         }
     }
 
@@ -171,47 +177,47 @@ class TaskProcessMonitor implements Disposable {
 
     /** Запланировать следующую проверку процессов.
      *
-     * Пересчитывает интервал на основе текущего количества процессов.
+     * Пересчитывает интервал на основе текущего количества отслеживаемых процессов.
      * Если процессов нет — мониторинг останавливается до добавления новых.
      *
      * */
-    #scheduleCheck(): void {
+    #scheduleNextCheck(): void {
 
         if (this.#disposed) { return; }
 
-        assert.equal(this.#checkInterval, null, `[${this.constructor.name}#scheduleCheck]: called with active timer — duplicate timer would be scheduled`);
+        assert.equal(this.#checkTimeout, null, `[${this.constructor.name}#scheduleNextCheck]: called with active timer — duplicate timer would be scheduled`);
 
-        const timeoutMs = this.#pollingInterval();
-        // если pollingInterval возвращает undefined (0 отслеживаемых
+        const timeoutMs = this.#calculatePollingIntervalMs();
+        // если calculatePollingIntervalMs возвращает undefined (0 отслеживаемых
         // процессов) — останавливаемся.
         if (timeoutMs != null) {
 
-            let checkInterval: NodeJS.Timeout;
+            let checkTimeout: NodeJS.Timeout;
 
             // иначе планируем новый цикл-проверку через timeoutMs
-            this.#checkInterval = checkInterval = setTimeout(() => {
+            this.#checkTimeout = checkTimeout = setTimeout(() => {
 
                 if (this.#disposed) { return; }
-                if (checkInterval !== this.#checkInterval) { return; }
-                this.#checkInterval = null;
+                if (checkTimeout !== this.#checkTimeout) { return; }
+                this.#checkTimeout = null;
 
-                const completed = this.#pruneDead();
+                const completed = this.#removeCompletedTaskProcessIds();
 
                 if (completed.size > 0) {
-                    this.#onProcessesCompleted.fire(completed);
+                    this.#onTaskProcessesCompleted.fire(completed);
                 }
 
-                // кто-то мог вызвать addTaskProcess в обработчик onProcessesCompleted
-                // кто-то мог вызвать dispose в обработчик onProcessesCompleted
+                // кто-то мог вызвать addTaskProcessId в обработчик onTaskProcessesCompleted
+                // кто-то мог вызвать dispose в обработчик onTaskProcessesCompleted
                 // Проверка !this.#checkInterval гарантирует, что мы не создадим
                 // второй таймер, если подписчик уже сделал это во время обработки события.
-                if (this.#disposed || this.#checkInterval) {
+                if (this.#disposed || this.#checkTimeout) {
                     return;
                 }
 
-                // #scheduleCheck() вызывается только когда монитор не уничтожен и
+                // #scheduleNextCheck() вызывается только когда монитор не уничтожен и
                 // таймер не активен.
-                this.#scheduleCheck(); // и по новой, пока this.#processes.size > 0
+                this.#scheduleNextCheck(); // и по новой, пока this.#processes.size > 0
 
 
             }, timeoutMs);
@@ -219,67 +225,58 @@ class TaskProcessMonitor implements Disposable {
     }
 
 
-    /** Вычислить интервал опроса на основе количества
-     * отслеживаемых процессов.
+    /** Вычислить интервал опроса на основе количества отслеживаемых идентификаторов процессов задач.
      *
      * Формула: `polling.min + polling.acceleration × #processes.size²` мс, но не дольше `polling.cap` мс.
      *
      * @returns Интервал в миллисекундах, или `undefined` если нет процессов —
      *   что остановит опрос до появления новых процессов */
-    #pollingInterval(): number | undefined {
+    #calculatePollingIntervalMs(): number | undefined {
 
-        if (this.#processes.size < 1) { return undefined; }
+        if (this.#taskProcessIds.size < 1) { return undefined; }
 
         const { min, acceleration, cap } = this.#config.polling;
 
         // При увеличении count: медленный рост вначале → резкое ускорение → cap
-        return Math.min(min + acceleration * this.#processes.size * this.#processes.size, cap);
+        return Math.min(min + acceleration * this.#taskProcessIds.size * this.#taskProcessIds.size, cap);
     }
 
 
-    /** Проверить все отслеживаемые процессы и удалить завершившиеся.
+    /** Проверить все отслеживаемые идентификаторы процессов рантайм-задач и удалить завершившиеся.
      *
      * Вызывается таймером согласно адаптивному интервалу.
-     * Проверяет каждый PID через `#isAlive` и удаляет завершенные (и не доступные).
-     *
-     * @fires onProcessesCompleted — один раз с набором завершённых процессов (если есть).
+     * Проверяет каждый Task Process ID через {@linkcode isTaskProcessAlive} и удаляет завершенные (и не доступные).
      *
      *  */
-    #pruneDead(): ReadonlySet<ProcessId> {
+    #removeCompletedTaskProcessIds(): ReadonlySet<TaskProcessId> {
 
-        const completed = new Set<ProcessId>();
+        const completedTaskProcessIds = new Set<TaskProcessId>();
 
-        for (const processId of this.#processes) {
+        for (const taskProcessId of this.#taskProcessIds) {
 
-            if (!isAlive(processId)) {
-                this.#processes.delete(processId); // Safe: Set allows delete during iteration
-                completed.add(processId);
+            if (!isTaskProcessAlive(taskProcessId)) {
+                this.#taskProcessIds.delete(taskProcessId); // Safe: Set allows delete during iteration
+                completedTaskProcessIds.add(taskProcessId);
             }
         }
 
-        return completed;
+        return completedTaskProcessIds;
     }
 
 
-    /** Обновить конфигурацию опроса.
+    /** Нормализует и возвращает конфигурацию опроса.
      *
-     * Изменение конфигурации применится с задержкой — текущий интервал, если есть,
-     * доработает с прошлыми параметрами. Новые вступят в силу только после
-     * следующего срабатывания таймера.
-     *
-     * Clamp polling.cap >= polling.min * 1.7
+     * Нормализует конфигурацию polling: клампит cap относительно min
+     * ~~~
+     * polling.cap >= polling.min * 1.7
+     * ~~~
      *
      * Смотри: src/WindowSettings/Schema.ts — границы и значения по умолчанию
      *
-     * @param config
+     * @param rawConfig
      *
      * */
-    // @todo: если таймер активен, можно не ждать а перезапускать его с дельтою,
-    // скорректировать оставшееся время.
-    // Для этого нужно хранить метку запуска таймера и в applyConf вычислять
-    // remaining = this.#nextCheckTime - Date.now(). (?? performance.now() ??)
-    // Важность — Низкая. Пока просто ждем нового тика.
-    #applyConf(config: ModuleConfig): ModuleConfig {
+    #normalizePollingConfig(rawConfig: TaskProcessMonitorConfig): TaskProcessMonitorConfig {
 
         // Clamp polling.cap >= polling.min * 1.7
         // Остальные значения и их границы должны проверятся
@@ -287,12 +284,12 @@ class TaskProcessMonitor implements Disposable {
 
         return {
             polling: {
-                min: config.polling.min,
+                min: rawConfig.polling.min,
                 cap: Math.max(
-                    config.polling.min * 1.7,
-                    config.polling.cap
+                    rawConfig.polling.min * 1.7,
+                    rawConfig.polling.cap
                 ),
-                acceleration: config.polling.acceleration
+                acceleration: rawConfig.polling.acceleration
             }
         } as const;
     }
@@ -305,7 +302,7 @@ class TaskProcessMonitor implements Disposable {
  *
  * Использует `process.kill(pid, 0)` для проверки доступности процесса.
  *
- * @param processId PID процесса
+ * @param taskProcessId идентификатор процесса рантайм-задачи
  * @returns true если процесс жив и доступен для проверки
  *
  *
@@ -322,10 +319,10 @@ class TaskProcessMonitor implements Disposable {
  * (https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/tasks/browser/terminalTaskSystem.ts)
  *
  * @throws { never } */
-function isAlive(processId: ProcessId): boolean {
+function isTaskProcessAlive(taskProcessId: TaskProcessId): boolean {
 
     try {
-        return process.kill(processId, 0);
+        return process.kill(taskProcessId, 0);
     }
     catch (_error) { /* no-op */ }
 

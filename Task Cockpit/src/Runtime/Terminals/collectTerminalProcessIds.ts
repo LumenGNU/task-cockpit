@@ -7,7 +7,7 @@ import {
 import getTerminalProcessId from './getTerminalProcessId';
 
 import type Immutable from '../../utils/Immutable';
-import type ProcessId from '../ProcessId';
+import type TaskProcessId from '../TaskProcessId';
 import type RequestId from '../RequestId';
 import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
 
@@ -49,7 +49,7 @@ async function collectTerminalProcessIds(
     return {
         requestId,
         // Фильтруем закрытые/зависшие/без процесса (undefined|null)
-        terminalProcesses: results.filter((p): p is ProcessId => p != null)
+        terminalProcesses: results.filter((p): p is TaskProcessId => p != null)
     };
 }
 
