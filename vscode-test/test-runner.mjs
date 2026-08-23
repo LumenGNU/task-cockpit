@@ -173,9 +173,25 @@ async function main() {
     process.stderr.write(`${'~'.repeat(hrLength)}\n`);
 
     const fixtures = findFixtures(TESTS);
-    printFixtures(fixtures);
 
-    const statsByFixture = await runFixtures(fixtures);
+    const nonEmptyFixtures = [];
+    for (const fixture of fixtures) {
+        if (fixture.testFiles.length > 0) {
+            nonEmptyFixtures.push(fixture);
+        } else {
+            process.stderr.write(
+                `\n${C.warn('⚠')} Fixture "${fixture.fixtureName}" has no test files matching the pattern, skipping.\n`
+            );
+        }
+    }
+
+    if (nonEmptyFixtures.length === 0) {
+        throw new Error('No test files found for any fixture.');
+    }
+
+    printFixtures(nonEmptyFixtures);
+
+    const statsByFixture = await runFixtures(nonEmptyFixtures);
 
     const exitCode = printSummary(statsByFixture);
 
@@ -394,10 +410,6 @@ function resolveTestFiles(outFixturePath, testGlob) {
 
     const testFiles = fs.globSync(path.join(outFixturePath, `${testGlob}.test.js`));
 
-    if (testFiles.length < 1) {
-        throw new Error(`No test files found: "${path.join(outFixturePath, testGlob)}.test.js"`);
-    }
-
     return testFiles;
 }
 
@@ -452,8 +464,12 @@ function printFixtures(fixtures) {
     for (const [i, fixture] of fixtures.entries()) {
         process.stderr.write(`[${i + 1}/${fixtures.length}] ${fixture.fixtureName}\n`);
         process.stderr.write(`  workspace: ${fixture.workspace}\n`);
-        process.stderr.write('  tests:\n');
-        fixture.testFiles.forEach((test) => process.stderr.write(`    ⬝ ${test}\n`));
+        if (fixture.testFiles.length > 0) {
+            process.stderr.write('  tests:\n');
+            fixture.testFiles.forEach((test) => process.stderr.write(`    ⬝ ${test}\n`));
+        } else {
+            process.stderr.write(`  tests: ${C.fail('(no test files)')}\n`);
+        }
 
         process.stderr.write('\n');
     }
