@@ -1,1 +1,0 @@
-../../../../Task Cockpit/src/Configuration/Scoped/SCHEMA.ts

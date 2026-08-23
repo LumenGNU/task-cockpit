@@ -1,1 +1,0 @@
-../../../Task Cockpit/src/ProjectSpace/ScopeData.d.ts

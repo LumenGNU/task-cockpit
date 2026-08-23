@@ -1,1 +1,0 @@
-../../../Task Cockpit/src/Runtime/RuntimeRegistry.d.ts

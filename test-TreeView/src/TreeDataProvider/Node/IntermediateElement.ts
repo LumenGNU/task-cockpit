@@ -1,1 +1,0 @@
-../../../../Task Cockpit/src/TreeDataProvider/Node/IntermediateElement.ts

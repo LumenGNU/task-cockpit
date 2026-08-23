@@ -1,1 +1,0 @@
-../../../../Task Cockpit/src/Scope/Workspace/Workspace.d.ts

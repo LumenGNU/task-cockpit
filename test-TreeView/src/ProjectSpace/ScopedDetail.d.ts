@@ -1,1 +1,0 @@
-../../../Task Cockpit/src/ProjectSpace/ScopedDetail.d.ts

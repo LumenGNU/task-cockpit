@@ -1,1 +1,0 @@
-../../../Task Cockpit/src/DecorationProvider/UriQuery.d.ts

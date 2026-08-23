@@ -1,1 +1,0 @@
-../../../../Task Cockpit/src/Scope/SourceFile/getJSONPath.ts

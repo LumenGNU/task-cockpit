@@ -1,1 +1,0 @@
-../../../Task Cockpit/src/Scope/Type.d.ts
