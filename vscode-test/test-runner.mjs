@@ -424,6 +424,13 @@ function findFixtures(globs) {
                 .sort()
                 .filter((fixture) => {
                     return fs.statSync(fixture).isDirectory();
+                })
+                // Добавляем фильтр: исключаем пути, где любой сегмент начинается с "~"
+                .filter((fixture) => {
+                    const relativePath = path.relative(SUT_TEST, fixture);
+                    const segments = relativePath.split(path.sep);
+                    // Если хотя бы один сегмент начинается с "~", отбрасываем
+                    return !segments.some(segment => segment.startsWith('~'));
                 });
 
         if (matches.length === 0) {

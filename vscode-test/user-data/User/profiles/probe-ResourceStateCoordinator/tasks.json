@@ -4,15 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "echo-1",
+            "label": "My-Task-2",
             "type": "shell",
-            "command": "sleep 3 && echo Hello",
-            "problemMatcher": []
-        },
-        {
-            "label": "echo",
-            "type": "shell",
-            "command": "echo Hello",
+            "command": "from-uer",
             "problemMatcher": []
         }
     ]

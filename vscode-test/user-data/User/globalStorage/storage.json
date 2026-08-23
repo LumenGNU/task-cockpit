@@ -136,6 +136,18 @@
         {
             "location": "probe-ResourceStateCoordinator",
             "name": "probe-ResourceStateCoordinator"
+        },
+        {
+            "location": "probe-ResourceStateCoordinator-task-shadowing-behavior",
+            "name": "probe-ResourceStateCoordinator-task-shadowing-behavior"
+        },
+        {
+            "location": "-72f5fef8",
+            "name": "probes-Runtime-behavioral-study"
+        },
+        {
+            "location": "721dc4b1",
+            "name": "probes-Runtime-behavioral-study-single-folder"
         }
     ],
     "lastKnownMenubarData": {
@@ -1815,13 +1827,13 @@
     },
     "windowsState": {
         "lastActiveWindow": {
-            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/probes/ResourceStateCoordinator/single-folder",
+            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/probes/probe-probe/prj",
             "uiState": {
                 "mode": 1,
-                "x": 671,
-                "y": 79,
-                "width": 1024,
-                "height": 768
+                "x": 0,
+                "y": 0,
+                "width": 1440,
+                "height": 900
             }
         },
         "openedWindows": []
