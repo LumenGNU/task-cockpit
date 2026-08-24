@@ -886,6 +886,140 @@
         },
         // ------------------------------------------------------------------------------------------------------------------------------
         {
+            "label": "playground|Clean/create '~out-sandbox/'",
+            "detail": "Ensure '~out-sandbox' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "mkdir -p \"./~out-sandbox\" && find \"./~out-sandbox\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
+            "problemMatcher": [],
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|flat-task-inventory|manual",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/manual",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|massive-parallel-deps",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/massive-parallel-deps",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|meta-composite-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/meta-composite-task",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|single-folder-multi-instance-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/single-folder-multi-instance-task",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ------------------------------------------------------------------------------------------------------------------------------
+        {
             "label": "Probes|PreProbe|Clean/create '~out-probe/'",
             "detail": "Ensure '~out-probe' directory exists and is empty",
             "icon": {
@@ -894,6 +1028,64 @@
             "type": "shell",
             "command": "mkdir -p \"./~out-probe\" && find \"./~out-probe\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
             "problemMatcher": [],
+        },
+        {
+            "label": "Probes|FileDecorationProvider|URLSearchParams-benchmark",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/FileDecorationProvider/URLSearchParams-benchmark",
+                    // "VSC_OPEN": ""
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|FileDecorationProvider|badge-render-scenarios",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/FileDecorationProvider/badge-render-scenarios",
+                    // "VSC_OPEN": ""
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
         },
         {
             "label": "Probes|Custom-task",
@@ -906,14 +1098,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/Custom-task",
+                    "EXT_SANDBOX": "probes/Custom-task",
                     "VSC_OPEN": "probes/Custom-task/probe/READMT.md"
                 }
             },
@@ -925,7 +1117,7 @@
             ]
         },
         {
-            "label": "Probes|ResourceStateCoordinator",
+            "label": "Probes|Runtime|behavioral-study|single-folder",
             "icon": {
                 "id": "debug-console"
             },
@@ -935,46 +1127,16 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/ResourceStateCoordinator",
-                    "VSC_OPEN": "probes/ResourceStateCoordinator/single-folder",
-                    "VSC_PROFILE": "probe-ResourceStateCoordinator",
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probes|Runtime",
-            "icon": {
-                "id": "debug-console"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probes|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/Runtime",
-                    "VSC_PROFILE": "Task Cockpit Test",
+                    "EXT_SANDBOX": "probes/Runtime/behavioral-study",
+                    "VSC_PROFILE": "probes-Runtime-behavioral-study-single-folder",
+                    "VSC_OPEN": "probes/Runtime/behavioral-study/single-folder",
                 }
             },
             "problemMatcher": [
@@ -996,14 +1158,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/probe-probe",
+                    "EXT_SANDBOX": "probes/probe-probe",
                     "VSC_PROFILE": "prob-probe",
                     "VSC_VERSION": "1.111.0",
                     "VSC_OPEN": "probes/probe-probe/prj"
@@ -1027,14 +1189,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s1",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1059,14 +1221,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s2",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1091,14 +1253,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s3",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1123,14 +1285,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s4",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1155,14 +1317,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s5",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1187,14 +1349,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s6",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1219,14 +1381,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s7",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1251,14 +1413,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-between-user-level:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-single-folder-conflicts-between-user-level",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1283,14 +1445,14 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/task-shadowing/demonstration",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
                     "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-within-single-scope:probes/task-shadowing/demonstration/task-shadowing.md",
                     "VSC_PROFILE": "probe-single-folder-conflicts-within-single-scope",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
@@ -1305,7 +1467,7 @@
             ]
         },
         {
-            "label": "Probes|tree-panel|semi-manual",
+            "label": "Probes|task-shadowing|behavioral-study|single-folder",
             "icon": {
                 "id": "debug-console"
             },
@@ -1315,17 +1477,81 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/tree-panel",
+                    "EXT_SANDBOX": "probes/task-shadowing/behavioral-study",
+                    "VSC_OPEN": "probes/task-shadowing/behavioral-study/single-folder",
+                    "VSC_PROFILE": "probe-ResourceStateCoordinator-task-shadowing-behavior",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
+                    "VSC_VERSION": "1.111.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral-study|multiroot-workspace",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/behavioral-study",
+                    "VSC_OPEN": "probes/task-shadowing/behavioral-study/multiroot-workspace/workspace.code-workspace",
+                    "VSC_PROFILE": "probe-ResourceStateCoordinator-task-shadowing-behavior",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
+                    // "VSC_VERSION": "1.111.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|tree-panel|cycle-tasks+burst",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/tree-panel",
                     "VSC_PROFILE": "probe-tree-panel",
-                    "VSC_OPEN": "probes/tree-panel/semi-manual/project.code-workspace:probes/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:probes/tree-panel/semi-manual/folder1/.vscode/tasks.json:probes/tree-panel/semi-manual/folder2/.vscode/tasks.json",
-                    // "VSC_VERSION": "1.131.0"
+                    "VSC_OPEN": "probes/tree-panel/cycle-tasks+burst/",
+                    "VSC_VERSION": "1.131.0"
                 }
             },
             "problemMatcher": [
@@ -1346,17 +1572,50 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/tree-panel",
+                    "EXT_SANDBOX": "probes/tree-panel",
                     "VSC_PROFILE": "probe-tree-panel",
                     "VSC_OPEN": "probes/tree-panel/full-monty/full-monty.code-workspace",
+                    // "VSC_OPEN": "~/Projects/task-cockpit/Task Cockpit.code-workspace",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|tree-panel|semi-manual",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/tree-panel",
+                    "VSC_PROFILE": "probe-tree-panel",
+                    "VSC_OPEN": "probes/tree-panel/semi-manual/project.code-workspace:probes/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:probes/tree-panel/semi-manual/folder1/.vscode/tasks.json:probes/tree-panel/semi-manual/folder2/.vscode/tasks.json",
                     // "VSC_VERSION": "1.131.0"
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
                 }
             },
             "problemMatcher": [
@@ -1377,14 +1636,75 @@
             ],
             "dependsOrder": "sequence",
             "command": [
-                "npx tsc -p ./${SUT_PROBE}/tsconfig.json &&",
-                "./.vscode-test/probe-runner.mjs"
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "OUT_DIR": "~out-probe",
-                    "SUT_PROBE": "probes/vscode-tree-mutation",
+                    "EXT_SANDBOX": "probes/vscode-tree-mutation",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-TreeDataProvider-collapseAll",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/vscode-TreeDataProvider-collapseAll",
+                    "VSC_OPEN": "probes/vscode-TreeDataProvider-collapseAll/prj",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-TreeDataProvider-reveal-behavior",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/vscode-TreeDataProvider-reveal-behavior",
+                    "VSC_OPEN": "probes/vscode-TreeDataProvider-reveal-behavior/prj",
                     "VSC_PROFILE": "Task Cockpit Test",
                 }
             },
@@ -1558,6 +1878,204 @@
                     "SUT_TEST": "test/HierarchyModel",
                     "TESTS": "*/*",
                     "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "MOCHA_SLOW": "5_000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime|ProcessRegistry",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/ProcessRegistry*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime|Terminals|getTerminalProcessId",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/getTerminalProcessId*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "MOCHA_SLOW": "5_000",
+                    // "VSC_VERSION": "1.131.0"
                 }
             },
             "problemMatcher": [

@@ -148,6 +148,18 @@
         {
             "location": "721dc4b1",
             "name": "probes-Runtime-behavioral-study-single-folder"
+        },
+        {
+            "location": "-2583373a",
+            "name": "probes-Runtime-implementation-debugging-manual"
+        },
+        {
+            "location": "5da56b30",
+            "name": "probes-Runtime-flat-task-inventory-manual"
+        },
+        {
+            "location": "-16815631",
+            "name": "playground-flat-task-inventory"
         }
     ],
     "lastKnownMenubarData": {
@@ -1827,13 +1839,13 @@
     },
     "windowsState": {
         "lastActiveWindow": {
-            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/probes/probe-probe/prj",
+            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/playground/flat-task-inventory/manual",
             "uiState": {
                 "mode": 1,
-                "x": 0,
-                "y": 0,
-                "width": 1440,
-                "height": 900
+                "x": 448,
+                "y": 172,
+                "width": 1024,
+                "height": 768
             }
         },
         "openedWindows": []

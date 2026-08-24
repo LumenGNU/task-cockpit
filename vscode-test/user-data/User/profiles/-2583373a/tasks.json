@@ -1,0 +1,12 @@
+// User/Profile/.../tasks.json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "echo",
+            "type": "shell",
+            "command": "sleep 3 ; echo Hello",
+            "problemMatcher": []
+        }
+    ]
+}
