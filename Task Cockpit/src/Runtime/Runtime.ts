@@ -25,13 +25,16 @@ import type TaskProcessId from './TaskProcessId';
 import type TaskProcessRecord from './TaskProcessRecord';
 import type TerminalProcessesSnapshot from './Terminals/TerminalProcessesSnapshot';
 
+type ProcessRegistryView = Runtime.ProcessRegistryView;
 
-/** Публичный интерфейс реестра только для чтения.
- * Скрывает мутирующие методы оставляя только запросы и события. */
-type ProcessRegistryView =
-    LifecycleOmitted<Omit<ProcessRegistry, 'register' | 'markCompleted' | 'reconcile'>>;
+declare namespace Runtime {
 
+    /** Публичный интерфейс реестра только для чтения.
+     * Скрывает мутирующие методы оставляя только запросы и события. */
+    type ProcessRegistryView =
+        LifecycleOmitted<Omit<ProcessRegistry, 'register' | 'markCompleted' | 'reconcile'>>;
 
+}
 
 /** Отслеживает жизненный цикл процессов, порождённых задачами VS Code.
  *
@@ -128,8 +131,10 @@ class Runtime implements Disposable {
         //     "problemMatcher": []
         // }
         // для таких задач не приходит onDidEndTerminalShellExecution
-        // что делает не возможным отследить завершение процесса у задачи.
-        // С событием vscode.tasks.onDidEndTaskProcess - то же есть проблемы.
+        // что делает не возможным отследить завершение процесса у задачи. // @todo для каких версий воспроизводится?
+        // С событием vscode.tasks.onDidEndTaskProcess - то же есть проблемы:
+        // в случае запуска нескольких инстансов одной задачи событие приходит
+        // только один раз, для первой завершенной.
         // -----
         // Процесс(ы) задач(и) сдох(ли)
         // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -139,7 +144,7 @@ class Runtime implements Disposable {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         window.onDidCloseTerminal(this.#closeTerminalHandler, this, this.#disposables);
 
-        // наконец-то обновилось состояние терминалов (возможно протухшее)
+        // Обновилось состояние терминалов (возможно протухшее)
         // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#snapshotCollector.onDidCollectSnapshot(this.#collectSnapshotHandler, this, this.#disposables);
 
@@ -201,7 +206,7 @@ class Runtime implements Disposable {
 
             // Терминал может быть уничтожен в процессе опроса.
             // Сопоставление processId -> Terminal как 1:1 гарантировать не возможно.
-            // getTerminalPid пры любых проблемах вернет `undefined`.
+            // getTerminalPid при любых проблемах вернет `undefined`.
             // Повисшие/сломанные терминалы вернут `undefined` через таймаут.
             const processId = await getTerminalProcessId(terminal, this.#terminalsConfig.timeout);
 
@@ -293,14 +298,14 @@ class Runtime implements Disposable {
                 this.#processMonitor.addTaskProcessId(processId);
             }
             catch (err) {
-                // @todo log
+                // @todo log resourceStateCoordinator уничтожен во время ожидания
             }
 
         }
 
         if (this.#disposed) { return; }
 
-        // При успешной регистрации процесса — пересмотр терминалов.
+        // Если процесс задачи "наш" — пересмотр терминалов.
         //
         // Замечание: Реализация getProcessId используемая в SnapshotCollector
         // расценивает закрытый терминал (норм.) или терминал не ответивший
@@ -346,9 +351,7 @@ class Runtime implements Disposable {
      * */
     #collectSnapshotHandler(snapshot: Immutable<TerminalProcessesSnapshot>) {
 
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#disposed) { return; }
 
         // сопоставить реестр со снимком. Процессы, отсутствующие в снимке будут удалены
         this.#processRegistry.reconcile(snapshot.requestId, new Set(snapshot.terminalProcesses));
@@ -426,8 +429,8 @@ function isValidPid(pid: number | undefined): pid is TaskProcessId {
  * ESRCH (процесс уже мёртв) — не ошибка. Прочие ошибки не пробрасываются — kill не фатален. */
 function terminateProcess(pid: TaskProcessId): void {
 
-    // NO Win: попытка убить группу, fallback на сам процесс
     // Win: попытка убить только сам процесс
+    // NO Win: попытка убить группу, fallback на сам процесс
 
     if (process.platform === 'win32') {
         try {
