@@ -1,20 +1,18 @@
 import {
-    workspace,
-    window,
     Selection,
     TextEditorRevealType,
-    type TextEditor,
-    Uri
+    window,
+    workspace,
 } from 'vscode';
-import * as JSONC from 'jsonc-parser';
-import TaskName from '../TaskName';
+import findTaskDefinitionRange from './findTaskDefinitionRange';
+
+import type {
+    TextEditor,
+} from 'vscode';
 import type Immutable from '../utils/Immutable';
+import type TaskName from '../TaskName';
+import type TaskSource from '../ResourceStateCoordinator/TaskSource';
 
-
-interface TaskSource {
-    uri: Uri;
-    JSONPath: Array<string>;
-}
 
 
 // "Фиксировать нарушения формата":
@@ -58,15 +56,12 @@ async function openTaskDefinitionInEditor(taskSource: Immutable<TaskSource>, tas
         throw new Error(`Cannot open file "${workspace.asRelativePath(taskSource.uri)}"`, { cause: error });
     }
 
-
-    // Находим все диапазоны определений задачи и берём последнее
     const selectedRange =
-        findTaskDefinitionRanges(
+        findTaskDefinitionRange(
             editor.document.getText(),
             taskSource.JSONPath,
             taskName
         );
-
 
     //@reject: Сейчас не достижимо. Нужно будет если появится await выше.
     // // Из доки {@linkcode vscode.workspace.openTextDocument}:
@@ -87,68 +82,14 @@ async function openTaskDefinitionInEditor(taskSource: Immutable<TaskSource>, tas
 
     // Выделяем задачу и центрируем в редакторе
     editor.selection = new Selection(
+        // курсор в начале определения.
+        // В случае InCenter и выделенная область не умещается —
+        // при прядке start,end курсор будет вне области отображения
         editor.document.positionAt(selectedRange.end),
         editor.document.positionAt(selectedRange.start)
     );
     editor.revealRange(editor.selection, TextEditorRevealType.InCenter);
 
-}
-
-
-/** Находит диапазон (offset/length) последнего встреченного узла задачи, у которого поле 'label' равно `targetName`.
- * */
-function findTaskDefinitionRanges(
-    content: string,
-    JSONPath: Immutable<Array<JSONC.Segment>>,
-    targetName: string
-): Immutable<{ start: number; end: number; }> | null {
-
-    // Строим JSON-дерево для навигации по структуре документа и получения позиций узлов
-    const jsoncTree = JSONC.parseTree(content, undefined, {
-        allowEmptyContent: true,
-        allowTrailingComma: true
-    });
-
-    let range: { start: number; end: number; } | null = null;
-
-    if (!jsoncTree) {
-        return range;
-    }
-
-    const tasksArrayNode = JSONC.findNodeAtLocation(jsoncTree, [...JSONPath]);
-
-    if (!tasksArrayNode?.children) {
-        return range;
-    }
-
-    // одна метка может встречаться несколько раз (дубликаты)
-    // ищем последнюю
-    for (const taskNode of tasksArrayNode.children) {
-
-        // Обрабатываем каждую задачу и собираем позиции для совпадающих меток
-        // Не первый результат, а все — все равно придется проверить все
-        // из-за возможных дубликатов
-
-        const labelNode = JSONC.findNodeAtLocation(taskNode, ['label']);
-
-        if (!labelNode) {
-            // Задача без поля 'label', пропускаем
-            continue;
-        }
-
-        const label = labelNode.value as unknown;
-
-        // Метка совпадает.
-        if (label === targetName) {
-
-            range = {
-                start: taskNode.offset,
-                end: taskNode.offset + taskNode.length
-            };
-        }
-    }
-
-    return range;
 }
 
 

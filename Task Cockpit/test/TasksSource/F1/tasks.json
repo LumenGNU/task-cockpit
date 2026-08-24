@@ -1,0 +1,8 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        { "label": "unique",    "type": "shell", "command": "echo a" },
+        { "label": "duplicate", "type": "shell", "command": "echo b" },
+        { "label": "duplicate", "type": "shell", "command": "echo c" }
+    ]
+}

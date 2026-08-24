@@ -1,0 +1,88 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "long-long-task",
+            "type": "shell",
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            // ;
+            "command": "echo Hello",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": "build"
+        },
+        {
+            "label": "My Task",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": "build"
+        },
+        {
+            "label": "My Task",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": "build"
+        }
+    ]
+}
