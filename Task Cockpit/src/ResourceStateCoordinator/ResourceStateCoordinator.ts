@@ -236,7 +236,7 @@ class ResourceStateCoordinator implements Disposable {
             d.dispose();
         });
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
@@ -247,7 +247,7 @@ class ResourceStateCoordinator implements Disposable {
 
         if (this.#isDisposed()) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: Workspace folders changed. Scheduling update (with task).`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] Workspace folders changed. Scheduling update (with task).`);
 
         this.#scheduleUpdate(new Set(['TASKS']));
 
@@ -387,40 +387,26 @@ class ResourceStateCoordinator implements Disposable {
 
         if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getOriginEntries]: was disposed while waiting`); }
 
-
-        const folders: Immutable<OriginEntry.Folder[]> =
-            this.#resourceStructure.folders
+        return {
+            User: {
+                ...this.#resourceStructure.User,
+                hierarchyConfig: this.#perOriginConfig.get(OriginKey.USER)!.Hierarchy,
+                definitionEntries: this.#taskDefinitions.get(OriginKey.USER)!
+            },
+            Workspace: this.#resourceStructure.Workspace
+                ? {
+                    ...this.#resourceStructure.Workspace,
+                    hierarchyConfig: this.#perOriginConfig.get(OriginKey.WORKSPACE)!.Hierarchy,
+                    definitionEntries: this.#taskDefinitions.get(OriginKey.WORKSPACE)!
+                }
+                : null,
+            folders: this.#resourceStructure.folders
                 ? this.#resourceStructure.folders.map((folder) => ({
                     ...folder,
                     hierarchyConfig: this.#perOriginConfig.get(folder.originKey)!.Hierarchy,
-                    definitionEntries: [...this.#taskDefinitions.get(folder.originKey)!.entries()]
+                    definitionEntries: this.#taskDefinitions.get(folder.originKey)!
                 }))
-                : [];
-
-        const projectOrigins: Immutable<[OriginEntry.Workspace, ...OriginEntry.Folder[]]> =
-            this.#resourceStructure.Workspace
-                ? [
-                    {
-                        originKey: OriginKey.WORKSPACE,
-                        name: this.#resourceStructure.Workspace.name,
-                        taskSource: this.#resourceStructure.Workspace.taskSource,
-                        hierarchyConfig: this.#perOriginConfig.get(OriginKey.WORKSPACE)!.Hierarchy,
-                        definitionEntries: [...this.#taskDefinitions.get(OriginKey.WORKSPACE)!.entries()]
-                    },
-                    ...folders
-                ]
-                : folders;
-
-
-        return {
-            user: {
-                originKey: OriginKey.USER,
-                name: 'User',
-                taskSource: null,
-                hierarchyConfig: this.#perOriginConfig.get(OriginKey.USER)!.Hierarchy,
-                definitionEntries: [...this.#taskDefinitions.get(OriginKey.USER)!.entries()]
-            },
-            project: projectOrigins
+                : []
         };
 
     }
@@ -943,7 +929,7 @@ function buildResourceStructure(): Immutable<ResourceStructure> {
                 name: folder.name,
                 uri: folder.uri,
                 taskSource,
-                isPrima: folder.index === 0
+                isPrimary: folder.index === 0
             };
         }) ?? []
     };

@@ -16,7 +16,7 @@ declare namespace OriginEntry {
 
     interface User {
         originKey: OriginKey.User;
-        definitionEntries: ReadonlyArray<[taskName: TaskName, definition: TaskDefinitionEntry]>;
+        definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
         name: string,
         taskSource: null,
@@ -25,7 +25,7 @@ declare namespace OriginEntry {
 
     interface Workspace {
         originKey: OriginKey.Workspace;
-        definitionEntries: ReadonlyArray<[taskName: TaskName, definition: TaskDefinitionEntry]>;
+        definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
         name: string,
         taskSource: TaskSource;
@@ -34,11 +34,11 @@ declare namespace OriginEntry {
 
     interface Folder {
         originKey: OriginKey.Folder;
-        definitionEntries: ReadonlyArray<[taskName: TaskName, definition: TaskDefinitionEntry]>;
+        definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
         name: string,
         taskSource: TaskSource,
-        isPrima: boolean;
+        isPrimary: boolean;
     }
 
 }

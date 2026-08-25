@@ -2,10 +2,9 @@ import type OriginEntry from './OriginEntry';
 
 
 interface OriginEntriesSnapshot {
-
-    project: Array<OriginEntry.Workspace | OriginEntry.Folder>;
-    user: OriginEntry.User,
-
+    User: OriginEntry.User;
+    Workspace: OriginEntry.Workspace | null;
+    folders: Array<OriginEntry.Folder>;
 }
 
 

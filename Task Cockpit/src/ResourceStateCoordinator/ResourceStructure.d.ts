@@ -19,7 +19,7 @@ interface WorkspaceOrigin {
 }
 
 interface FolderOrigin {
-    isPrima: boolean;
+    isPrimary: boolean;
     name: string;
     originKey: OriginKey.Folder;
     taskSource: TaskSource;

@@ -1,4 +1,5 @@
 /** @file ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions.ts */
+/** @internal */
 
 import {
     Uri,
@@ -6,9 +7,9 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import Configuration from '../../Configuration';
-import OriginKey from '../../OriginKey';
 import TaskName from '../../TaskName';
 
+import type OriginKey from '../../OriginKey';
 import type Group from './Group';
 import type Icon from './Icon';
 import type Immutable from '../../utils/Immutable';
@@ -53,20 +54,20 @@ import type TaskGroup from './TaskGroup';
  *
  * @param scope Область-источник определений задач
  *  */
-function groupTaskDefinitions(scopeLayout: Immutable<ResourceStructure>): Immutable<Map<OriginKey, TaskDefinitionMap>> {
+function groupTaskDefinitions(resourceStructure: Immutable<ResourceStructure>): Immutable<Map<OriginKey, TaskDefinitionMap>> {
 
     const resultMap = new Map<OriginKey, TaskDefinitionMap>();
 
     const globalDefinitions = buildTaskDefinitionsMap(getIsolatedGlobalTasks());
 
-    resultMap.set(OriginKey.USER, globalDefinitions);
+    resultMap.set(resourceStructure.User.originKey, globalDefinitions);
 
-    const workspaceDefinitions =
-        scopeLayout.Workspace
-            ? buildTaskDefinitionsMap(getIsolatedWorkspaceTasks())
-            : null;
+    let workspaceDefinitions: TaskDefinitionMap | null = null;
 
-    if (workspaceDefinitions) {
+    if (resourceStructure.Workspace) {
+
+        workspaceDefinitions = buildTaskDefinitionsMap(getIsolatedWorkspaceTasks());
+
         for (const [taskName, taskDefinitionEntry] of workspaceDefinitions) {
             if (globalDefinitions.has(taskName)) {
                 assert.ok(taskDefinitionEntry.effective);
@@ -75,16 +76,16 @@ function groupTaskDefinitions(scopeLayout: Immutable<ResourceStructure>): Immuta
             }
         }
 
-        resultMap.set(OriginKey.WORKSPACE, workspaceDefinitions);
+        resultMap.set(resourceStructure.Workspace.originKey, workspaceDefinitions);
     }
 
 
-    if (scopeLayout.folders) {
+    if (resourceStructure.folders) {
 
-        for (const folderScope of scopeLayout.folders) {
-            const folderDefinitions = buildTaskDefinitionsMap(getIsolatedFolderTasks(folderScope.uri));
+        for (const folderOrigin of resourceStructure.folders) {
+            const folderDefinitions = buildTaskDefinitionsMap(getIsolatedFolderTasks(folderOrigin.uri));
 
-            if (folderScope.isPrima) {
+            if (folderOrigin.isPrimary) {
                 for (const [taskName, taskDefinitionEntry] of folderDefinitions) {
                     if (globalDefinitions.has(taskName) || workspaceDefinitions?.has(taskName)) {
                         assert.ok(taskDefinitionEntry.effective);
@@ -94,7 +95,7 @@ function groupTaskDefinitions(scopeLayout: Immutable<ResourceStructure>): Immuta
                 }
             }
 
-            resultMap.set(folderScope.originKey, folderDefinitions);
+            resultMap.set(folderOrigin.originKey, folderDefinitions);
         }
     }
 
