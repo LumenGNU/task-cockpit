@@ -1,3 +1,5 @@
+/** @file TasksSource/openTaskDefinitionInEditor.ts */
+
 import {
     Selection,
     TextEditorRevealType,
