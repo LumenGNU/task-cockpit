@@ -168,7 +168,7 @@ class ResourceStateCoordinator implements Disposable {
         workspace.onDidChangeWorkspaceFolders(this.#changeWorkspaceFoldersHandler, this, this.#disposables);
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        workspace.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+        workspace.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
         // ----------------------------------------------
         // Первичное заполнение кешей
@@ -254,11 +254,11 @@ class ResourceStateCoordinator implements Disposable {
     }
 
 
-    #changeConfigurationHandler(event: ConfigurationChangeEvent) {
+    #handleConfigurationChange(event: ConfigurationChangeEvent) {
 
         if (this.#isDisposed()) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}#changeConfigurationHandler]: Configuration changed…`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}#handleConfigurationChange]: Configuration changed…`);
 
         const changes: AffectedKeys =
             // @todo или просто "tasks"? в чем разница?
@@ -315,7 +315,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getResourceConfig(originKey: OriginKey): Promise<Immutable<ResourceConfig> | null> {
 
-        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getResourceConfig]: use after dispose`); }
+        assert.ok(!this.#isDisposed(), `[${this.constructor.name}#getResourceConfig]: use after dispose`);
 
         await this.#waitForIdle();
 
@@ -338,7 +338,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async resolveTaskOrigin(task: Immutable<Task>): Promise<Immutable<{ originKey: OriginKey; taskName: TaskName; }> | null> {
 
-        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#resolveTaskOrigin]: use after dispose`); }
+        assert.ok(!this.#isDisposed(), `[${this.constructor.name}#resolveTaskOrigin]: use after dispose`);
 
         await this.#waitForIdle();
 
@@ -381,31 +381,29 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getOriginEntries(): Promise<Immutable<OriginEntriesSnapshot>> {
 
-        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getOriginEntries]: use after dispose`); }
+        assert.ok(!this.#isDisposed(), `[${this.constructor.name}#getOriginEntries]: use after dispose`);
 
         await this.#waitForIdle();
 
         if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getOriginEntries]: was disposed while waiting`); }
 
 
-        const folders: OriginEntry[] =
+        const folders: Immutable<OriginEntry.Folder[]> =
             this.#resourceStructure.folders
-                ? this.#resourceStructure.folders.map(({ originKey, name, taskSource }) => ({
-                    originKey,
-                    name,
-                    taskSourceUri: taskSource.uri,
-                    hierarchyConfig: this.#perOriginConfig.get(originKey)!.Hierarchy,
-                    definitionEntries: [...this.#taskDefinitions.get(originKey)!.entries()]
+                ? this.#resourceStructure.folders.map((folder) => ({
+                    ...folder,
+                    hierarchyConfig: this.#perOriginConfig.get(folder.originKey)!.Hierarchy,
+                    definitionEntries: [...this.#taskDefinitions.get(folder.originKey)!.entries()]
                 }))
                 : [];
 
-        const projectOrigins: OriginEntry[] =
+        const projectOrigins: Immutable<[OriginEntry.Workspace, ...OriginEntry.Folder[]]> =
             this.#resourceStructure.Workspace
                 ? [
                     {
                         originKey: OriginKey.WORKSPACE,
                         name: this.#resourceStructure.Workspace.name,
-                        taskSourceUri: this.#resourceStructure.Workspace.taskSource.uri,
+                        taskSource: this.#resourceStructure.Workspace.taskSource,
                         hierarchyConfig: this.#perOriginConfig.get(OriginKey.WORKSPACE)!.Hierarchy,
                         definitionEntries: [...this.#taskDefinitions.get(OriginKey.WORKSPACE)!.entries()]
                     },
@@ -418,7 +416,7 @@ class ResourceStateCoordinator implements Disposable {
             user: {
                 originKey: OriginKey.USER,
                 name: 'User',
-                taskSourceUri: null,
+                taskSource: null,
                 hierarchyConfig: this.#perOriginConfig.get(OriginKey.USER)!.Hierarchy,
                 definitionEntries: [...this.#taskDefinitions.get(OriginKey.USER)!.entries()]
             },
@@ -443,7 +441,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getTaskBundle(originKey: OriginKey, taskName: TaskName): Promise<Immutable<TaskBundle>> {
 
-        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#getTaskBundle]: use after dispose`); }
+        assert.ok(!this.#isDisposed(), `[${this.constructor.name}#getTaskBundle]: use after dispose`);
 
         await this.#waitForIdle();
 
@@ -451,7 +449,7 @@ class ResourceStateCoordinator implements Disposable {
 
         return {
             nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
-            taskDefinition: this.#taskDefinitions.get(originKey)?.get(taskName)?.active ?? null,
+            taskDefinition: this.#taskDefinitions.get(originKey)?.get(taskName)?.effective ?? null,
             eligibleTask: this.#eligibleTasks.get(originKey)?.get(taskName) ?? null
         };
     }
@@ -851,19 +849,19 @@ function lookupTaskOrigin(
 
     if (scope === TaskScope.Workspace) {
 
-        if (taskDefinitions.get(OriginKey.USER)?.get(eligibleTask.name)?.active) {
+        if (taskDefinitions.get(OriginKey.USER)?.get(eligibleTask.name)?.effective) {
             return OriginKey.USER;
         }
-        else if (taskDefinitions.get(OriginKey.WORKSPACE)?.get(eligibleTask.name)?.active) {
+        else if (taskDefinitions.get(OriginKey.WORKSPACE)?.get(eligibleTask.name)?.effective) {
             return OriginKey.WORKSPACE;
         }
 
         return null;
     }
 
-    const folderKey = scope.uri.toString() as OriginKey.FolderKey;
+    const folderKey = scope.uri.toString() as OriginKey.Folder;
 
-    if (taskDefinitions.get(folderKey)?.get(eligibleTask.name)?.active) {
+    if (taskDefinitions.get(folderKey)?.get(eligibleTask.name)?.effective) {
         return folderKey;
     }
 
@@ -935,7 +933,7 @@ function buildResourceStructure(): Immutable<ResourceStructure> {
                 }
                 : null,
         folders: workspace.workspaceFolders?.map((folder) => {
-            const originKey = folder.uri.toString() as OriginKey.FolderKey;
+            const originKey = folder.uri.toString() as OriginKey.Folder;
             const taskSource = {
                 uri: Uri.joinPath(folder.uri, '.vscode', 'tasks.json'),
                 JSONPath: ['tasks'] as const

@@ -3,8 +3,8 @@ import type OriginEntry from './OriginEntry';
 
 interface OriginEntriesSnapshot {
 
-    project: Array<OriginEntry>;
-    user: OriginEntry,
+    project: Array<OriginEntry.Workspace | OriginEntry.Folder>;
+    user: OriginEntry.User,
 
 }
 

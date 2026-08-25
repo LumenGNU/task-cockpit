@@ -1,7 +1,7 @@
 import type TaskDefinition from './TaskDefinition';
 
 interface TaskDefinitionEntry {
-    active: TaskDefinition | null;
+    effective: TaskDefinition | null;
     shadowed?: TaskDefinition[];
 }
 

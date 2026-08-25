@@ -8,20 +8,20 @@ import type TaskSource from './TaskSource';
 
 interface UserOrigin {
     name: 'User',
-    originKey: OriginKey.UserKey;
+    originKey: OriginKey.User;
     taskSource: null;
 }
 
 interface WorkspaceOrigin {
     name: string;
-    originKey: OriginKey.WorkspaceKey;
+    originKey: OriginKey.Workspace;
     taskSource: TaskSource;
 }
 
 interface FolderOrigin {
     isPrima: boolean;
     name: string;
-    originKey: OriginKey.FolderKey;
+    originKey: OriginKey.Folder;
     taskSource: TaskSource;
     uri: Uri,
 }

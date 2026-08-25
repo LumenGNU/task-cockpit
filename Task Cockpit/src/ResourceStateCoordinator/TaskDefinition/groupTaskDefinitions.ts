@@ -69,9 +69,9 @@ function groupTaskDefinitions(scopeLayout: Immutable<ResourceStructure>): Immuta
     if (workspaceDefinitions) {
         for (const [taskName, taskDefinitionEntry] of workspaceDefinitions) {
             if (globalDefinitions.has(taskName)) {
-                assert.ok(taskDefinitionEntry.active);
-                (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.active);
-                taskDefinitionEntry.active = null;
+                assert.ok(taskDefinitionEntry.effective);
+                (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.effective);
+                taskDefinitionEntry.effective = null;
             }
         }
 
@@ -87,9 +87,9 @@ function groupTaskDefinitions(scopeLayout: Immutable<ResourceStructure>): Immuta
             if (folderScope.isPrima) {
                 for (const [taskName, taskDefinitionEntry] of folderDefinitions) {
                     if (globalDefinitions.has(taskName) || workspaceDefinitions?.has(taskName)) {
-                        assert.ok(taskDefinitionEntry.active);
-                        (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.active);
-                        taskDefinitionEntry.active = null;
+                        assert.ok(taskDefinitionEntry.effective);
+                        (taskDefinitionEntry.shadowed ??= []).push(taskDefinitionEntry.effective);
+                        taskDefinitionEntry.effective = null;
                     }
                 }
             }
@@ -125,12 +125,12 @@ function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): TaskDefiniti
         const existing = map.get(raw.label);
 
         if (existing === undefined) {
-            map.set(raw.label, { active: definition });
+            map.set(raw.label, { effective: definition });
         }
         else {
-            assert.ok(existing.active);
-            (existing.shadowed ??= []).push(existing.active); // текущий active → в архив
-            existing.active = definition;            // новый побеждает
+            assert.ok(existing.effective);
+            (existing.shadowed ??= []).push(existing.effective); // текущий active → в архив
+            existing.effective = definition;            // новый побеждает
         }
     }
 
@@ -140,7 +140,7 @@ function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): TaskDefiniti
 
 function getIsolatedGlobalTasks(): Array<RawTaskDefinition> {
     const configObj = workspace.getConfiguration('tasks', null);
-    return Configuration.readRaw<Array<RawTaskDefinition>>(configObj, 'tasks', Configuration.IsolationMode.GlobalOnly) ?? [];
+    return Configuration.readRaw<Array<RawTaskDefinition>>(configObj, 'tasks', Configuration.IsolationMode.UserOnly) ?? [];
 }
 
 

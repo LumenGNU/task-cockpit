@@ -22,7 +22,7 @@ function groupResourceConfig<SchemaType extends object>(
     outMap.set(OriginKey.USER, Configuration.coerce(
         workspace.getConfiguration(),
         resourceConfigSchema,
-        Configuration.IsolationMode.GlobalOnly
+        Configuration.IsolationMode.UserOnly
     ));
 
     if (scopeLayout.Workspace) {
