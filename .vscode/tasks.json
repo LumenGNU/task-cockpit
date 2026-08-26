@@ -1106,6 +1106,7 @@
                     "VSC_PROFILE": "playground-tree-panel",
                     "VSC_OPEN": "playground/tree-panel/full-monty/full-monty.code-workspace",
                     // "VSC_VERSION": "1.131.0"
+                    "VSC_INSPECT": "inspect"
                 }
             },
             "problemMatcher": [

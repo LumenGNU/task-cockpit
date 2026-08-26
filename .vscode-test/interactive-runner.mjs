@@ -26,6 +26,18 @@ import fs from 'node:fs';
 
 const CWD = process.cwd();
 
+const RAW_VSC_INSPECT = (process.env.VSC_INSPECT || 'no').toLowerCase();
+
+/** @type {null|string} */
+let VSC_INSPECT = null;
+if (RAW_VSC_INSPECT === 'inspect-brk') {
+    VSC_INSPECT = '--inspect-brk-extensions=9229';
+}
+else if (RAW_VSC_INSPECT === 'inspect') {
+    VSC_INSPECT = '--inspect-extensions=9229';
+}
+
+
 const OUT_DIR = process.env.OUT_DIR ?? '';
 
 
@@ -113,7 +125,8 @@ async function runSandbox() {
                 '--disable-extensions',
                 '--locale', 'en-US',
                 '--profile', VSC_PROFILE,
-                ...(VSC_PARAM_LOG ? ['--log', VSC_PARAM_LOG] : [])
+                ...(VSC_PARAM_LOG ? ['--log', VSC_PARAM_LOG] : []),
+                ...(VSC_INSPECT ? [VSC_INSPECT] : [])
             ],
             extensionTestsEnv: {
 

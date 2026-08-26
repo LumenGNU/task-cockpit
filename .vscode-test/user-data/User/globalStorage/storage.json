@@ -1848,13 +1848,13 @@
     "windowsState": {
         "lastActiveWindow": {
             "workspaceIdentifier": {
-                "id": "105e9e7a825eab64bdd1466590373e63",
-                "configURIPath": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/playground/tree-panel/semi-manual/project.code-workspace"
+                "id": "081e9b31f935cf299a819d301f396fd4",
+                "configURIPath": "file:///home/lumen/Projects/Task%20Cockpit/playground/tree-panel/full-monty/full-monty.code-workspace"
             },
             "uiState": {
                 "mode": 1,
-                "x": 448,
-                "y": 172,
+                "x": 810,
+                "y": 197,
                 "width": 1024,
                 "height": 768
             }
