@@ -1,3 +1,5 @@
+/** @file TreeViewPanel/TreeView/Element/TopElement.ts */
+
 import {
     ThemeIcon,
     TreeItem,
@@ -7,40 +9,36 @@ import {
 } from 'vscode';
 import formatTooltip from '../formatTooltip';
 import type ContextValue from '../ContextValue';
-import ElementType from '../ElementType';
 import RunnableElement from './RunnableElement';
 import IntermediateElement from './IntermediateElement';
-import ScopeKey from '../../../ScopeKey';
+import OriginKey from '../../../OriginKey';
 import Immutable from '../../../utils/Immutable';
+import type OriginNode from '../../OriginNode';
+import { UI } from '../../../common';
 
 
 interface TopElement {
-    type: ElementType.TopElement;
+    kind: 'TopNode';
     label: string;
     resourceUri: Uri | null;
-    branchKey: ScopeKey;
-    detail: {
-        total: number;
+    branchKey: OriginKey;
+    tasksSummary: {
+        totalCount: number;
         hiddenCount: number;
+        shadowedCount: number;
     };
     children: Array<RunnableElement | IntermediateElement>;
 };
 
 
-function create(
-    label: TopElement['label'],
-    branchKey: TopElement['branchKey'],
-    resourceUri: Immutable<TopElement['resourceUri']>,
-    children: Immutable<TopElement['children']>,
-    detail: Immutable<TopElement['detail']>,
-): Immutable<TopElement> {
+function create(originData: Immutable<OriginNode>): Immutable<TopElement> {
     return {
-        type: ElementType.TopElement,
-        label,
-        resourceUri,
-        branchKey,
-        detail,
-        children,
+        kind: 'TopNode',
+        label: originData.displayName,
+        resourceUri: originData.taskSourceUri,
+        branchKey: originData.originKey,
+        tasksSummary: originData.taskCounts,
+        children: originData.hierarchy.children
     };
 }
 
@@ -68,7 +66,7 @@ function createTreeItem(element: Immutable<TopElement>): TreeItem {
             scheme: 'task-cockpit',
             authority: 'Node',
             path: ''
-        }),
+        })
     } as const;
 };
 
@@ -89,16 +87,16 @@ function resolveTreeItem(
     }
 
     const scopeType =
-        element.branchKey === ScopeKey.GLOBAL_KEY
-            ? 'Global'
-            : element.branchKey === ScopeKey.WORKSPACE_KEY
+        element.branchKey === OriginKey.USER
+            ? 'User'
+            : element.branchKey === OriginKey.WORKSPACE
                 ? 'Workspace'
                 : 'Folder';
 
     item.tooltip = formatTooltip(
         scopeType,
-        element.label || '<unnamed>',
-        element.detail ? `$(tools) Tasks: ${formatTasksSummary(element.detail)}` : undefined
+        element.label || '«unnamed»',
+        element.tasksSummary ? `$(${UI.ICON.TASK_DEFAULT}) Tasks: ${formatTasksSummary(element.tasksSummary)}` : undefined
     );
 
     return item;
@@ -113,48 +111,53 @@ function resolveTreeItem(
  * - Все задачи скрыты
  * - Часть задач скрыта (отображается количество видимых и скрытых)
  * - Нет скрытых задач (отображается общее количество) */
-function formatTasksSummary(stats: { total: number; hiddenCount: number; }): string {
+function formatTasksSummary(detail: TopElement['tasksSummary']): string {
 
-    if (stats.total === 0) {
+    if (detail.totalCount === 0) {
         return '*None in this scope*';
     }
 
-    const displayed = stats.total - stats.hiddenCount;
+    const displayed = detail.totalCount - detail.hiddenCount - detail.shadowedCount;
+
+    const qualifiers: string[] = [];
+    if (detail.hiddenCount > 0) {
+        qualifiers.push(`hidden: \`${detail.hiddenCount}\``);
+    }
+    if (detail.shadowedCount > 0) {
+        qualifiers.push(`shadowed: \`${detail.shadowedCount}\``);
+    }
+    const suffix = qualifiers.length > 0 ? ` (${qualifiers.join(', ')})` : '';
 
     if (displayed === 0) {
-        return `*All hidden* (hidden: \`${stats.total}\`)`;
+        return `*All hidden*${suffix}`;
     }
 
-    if (stats.hiddenCount > 0) {
-        return `\`${displayed}\` (hidden: \`${stats.hiddenCount}\`)`;
-    }
-
-    return `\`${stats.total}\``;
+    return `\`${displayed}\`${suffix}`;
 }
 
-function buildContextValue(branchKey: ScopeKey): ContextValue.Section {
+function buildContextValue(branchKey: OriginKey): ContextValue.Section {
 
-    if (branchKey === ScopeKey.GLOBAL_KEY) {
-        return `task-cockpit:Section:Global:Group` satisfies ContextValue.Section;
+    if (branchKey === OriginKey.USER) {
+        return ':Section:Global:Group' satisfies ContextValue.Section;
     }
-    else if (branchKey === ScopeKey.WORKSPACE_KEY) {
-        return `task-cockpit:Section:Workspace:Group` satisfies ContextValue.Section;;
+    else if (branchKey === OriginKey.WORKSPACE) {
+        return ':Section:Workspace:Group' satisfies ContextValue.Section;;
     }
 
-    return `task-cockpit:Section:Folder:Group` satisfies ContextValue.Section;
+    return ':Section:Folder:Group' satisfies ContextValue.Section;
 }
 
 
-function getIcon(branchKey: ScopeKey): ThemeIcon {
+function getIcon(branchKey: OriginKey): ThemeIcon {
 
-    if (branchKey === ScopeKey.GLOBAL_KEY) {
-        return new ThemeIcon('account');
+    if (branchKey === OriginKey.USER) {
+        return new ThemeIcon(UI.ICON.USER_ORIGIN);
     }
-    else if (branchKey === ScopeKey.WORKSPACE_KEY) {
-        return new ThemeIcon('layers');
+    else if (branchKey === OriginKey.WORKSPACE) {
+        return new ThemeIcon(UI.ICON.WORKSPACE_ORIGIN);
     }
 
-    return new ThemeIcon('root-folder');
+    return new ThemeIcon(UI.ICON.FOLDER_ORIGIN);
 
 }
 

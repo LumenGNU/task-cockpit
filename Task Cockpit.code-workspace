@@ -2,30 +2,6 @@
     "folders": [
         {
             "path": "Task Cockpit"
-        },
-        {
-            "path": "test-Cockpit.Tree"
-        },
-        {
-            "path": "test-Runtime"
-        },
-        {
-            "path": "test.semi-manual"
-        },
-        {
-            "path": "test-UserState"
-        },
-        {
-            "path": "test-TreeView"
-        },
-        {
-            "path": "test-TasksSource.Diagnostics"
-        },
-        {
-            "path": "TreeView UX Testbed"
-        },
-        {
-            "path": "test-TREEEEEE"
         }
     ],
     "settings": {
@@ -80,6 +56,7 @@
     "tasks": {
         "version": "2.0.0",
         "tasks": [
+
             {
                 "label": "Dev Tooling|Dev-Scripts|shellcheck",
                 "type": "shell",
@@ -416,7 +393,41 @@
                     }
                 },
                 "problemMatcher": []
-            }
+            },
+
+{
+    "label": "TEST1 My Task",
+    "type": "shell",
+    "command": "sleep inf",
+    "problemMatcher": []
+},
+{
+    "label": "TEST2 My Task",
+    "type": "process",
+    "command": "sleep",
+    "args": ["inf"],
+    "problemMatcher": []
+},
+{
+    "label": "TEST4 My Task",
+    "type": "shell",
+    "command": "echo hello && sleep inf",
+    "options": {
+        "shell": {
+            "executable": "/usr/bin/dash",
+            "args": [
+                "-c"
+            ]
+        }
+    },
+    "problemMatcher": []
+},
+{
+    "label": "TEST5 My Task",
+    "type": "shell",
+    "command": "sudo sleep inf",
+    "problemMatcher": []
+}
         ]
     }
 }

@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "command": "echo hello",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+{
+    "label": "My Task - sleep - multi instance",
+    "command": "sleep 15",
+    "type": "shell",
+    "args": [],
+    "problemMatcher": [
+        "$tsc"
+    ],
+    "presentation": {
+        "reveal": "never",
+        "close": true,
+        "showReuseMessage": false,
+        "focus": false
+    },
+    "runOptions": {
+        "instanceLimit": 100
+    }
+}
+    ]
+}

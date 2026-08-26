@@ -1,8 +1,8 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeKey from '../../../../../src/ScopeKey';
-import mapTaskDefinitions from '../../../../../src/ResourceState/TaskDefinition/mapTaskDefinitions';
-import ScopeLayout from '../../../../../src/ResourceState/ScopeLayout';
+import OriginKey from '../../../../../src/OriginKey';
+import groupTaskDefinitions from '../../../../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
+import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 // `${/*N=0*/'000'/**/}`
 
@@ -24,15 +24,15 @@ suite('ResourceState', function () {
 
             });
 
-            const scopeLayout = ScopeLayout.getLayout();
+            const scopeLayout = ProjectLayout.getLayout();
 
             suite('mapTaskDefinitions корректно изолирует задачи по областям в single-folder проекте', function () {
 
-                const taskDefinitionMap = mapTaskDefinitions(scopeLayout);
+                const taskDefinitionMap = groupTaskDefinitions(scopeLayout);
 
                 test(`${/*++N*/'001'/**/} задачи global scope изолированы`, function () {
 
-                    const globalTasks = [...taskDefinitionMap.get(ScopeKey.GLOBAL_KEY)!.keys()];
+                    const globalTasks = [...taskDefinitionMap.get(OriginKey.USER)!.keys()];
                     assert.equal(globalTasks.length, 7); //
                     assert.equal(globalTasks[0], 'task-in-user-profile');
 
@@ -40,13 +40,13 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'002'/**/} задач из workspace scope нет`, function () {
 
-                    assert.equal(taskDefinitionMap.get(ScopeKey.WORKSPACE_KEY), undefined);
+                    assert.equal(taskDefinitionMap.get(OriginKey.WORKSPACE), undefined);
 
                 });
 
                 test(`${/*++N*/'003'/**/} задачи project-folder scope изолированы`, function () {
 
-                    const projectFolderTasks = [...taskDefinitionMap.get(scopeLayout.folderScopes![0]!.key)!.keys()];
+                    const projectFolderTasks = [...taskDefinitionMap.get(scopeLayout.folders![0]!.key)!.keys()];
                     assert.equal(projectFolderTasks.length, 1);
                     assert.equal(projectFolderTasks[0], 'task-in-project-folder');
                 });

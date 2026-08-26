@@ -1,0 +1,4 @@
+{
+    "taskCockpit.validation.duplicates": true,
+    // "taskCockpit.validation.duplicates": false
+}

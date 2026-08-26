@@ -1,10 +1,11 @@
+/** @file FileDecorationProvider/FileDecorationProvider.ts */
+
 import {
     CancellationError,
     EventEmitter,
     LogOutputChannel,
     ThemeColor
 } from 'vscode';
-import * as assert from 'node:assert/strict';
 import WindowSettings from '../WindowSettings/WindowSettings';
 
 import {
@@ -16,7 +17,6 @@ import {
     ProviderResult,
     Uri
 } from 'vscode';
-import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
@@ -44,14 +44,14 @@ import type UriSchema from './UriSchema';
  * */
 class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
-    static readonly CONFIGURATION_KEY = 'FileDecoration' as const;;
+    static readonly CONFIGURATION_SECTION = 'FileDecoration' as const;
 
     readonly #onDidChangeFileDecorations: EventEmitter<undefined>;
 
     /** {@link VscFileDecorationProvider.onDidChangeFileDecorations Событие провайдера}, происходит при изменении конфигурации. */
     public readonly onDidChangeFileDecorations: Event<undefined>;
 
-    #configuration: WindowSettings.Configuration[typeof FileDecorationProvider.CONFIGURATION_KEY];
+    #configuration: WindowSettings.Configuration[typeof FileDecorationProvider.CONFIGURATION_SECTION];
 
     #disposables: Disposable[];
 
@@ -63,14 +63,14 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     readonly #themeColorCache: Map<string, ThemeColor>;
 
     readonly #dependencies: Readonly<{
-        windowConfiguration: LifecycleOmitted<WindowSettings>;
+        windowSettings: LifecycleOmitted<WindowSettings>;
     }>;
 
     /**Создаёт провайдер.
      * @param configurationProvider начальные значения конфигурации декораций. */
     constructor(
         dependencies: Readonly<{
-            windowConfiguration: LifecycleOmitted<WindowSettings>;
+            windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
@@ -92,9 +92,9 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         ];
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.windowConfiguration.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
-        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(FileDecorationProvider.CONFIGURATION_KEY);
+        this.#configuration = this.#dependencies.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
         // ---
 
     }
@@ -108,16 +108,16 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         this.#disposed = true;
         this.#themeColorCache.clear();
         this.#disposables.forEach((d) => void d.dispose());
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
 
-    #changeConfigurationHandler(affectedKeys: Immutable<WindowSettings.AffectedKeys>) {
-        if (!affectedKeys.has(FileDecorationProvider.CONFIGURATION_KEY)) {
+    #handleConfigurationChange(affectedKeys: WindowSettings.AffectedKeys) {
+        if (!affectedKeys.has(FileDecorationProvider.CONFIGURATION_SECTION)) {
             return;
         }
-        this.#configuration = this.#dependencies.windowConfiguration.getConfiguration(FileDecorationProvider.CONFIGURATION_KEY);
+        this.#configuration = this.#dependencies.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
         this.#themeColorCache.clear(); // на всякий случай
         this.#onDidChangeFileDecorations.fire(undefined);
     }
@@ -146,7 +146,6 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             throw new CancellationError();
         }
 
-
         // see: UriSchema.d.ts
         if (uri.scheme !== 'task-cockpit' satisfies UriSchema['scheme']
             || uri.authority !== 'Node' satisfies UriSchema['authority']) {
@@ -173,7 +172,8 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         }
 
         // URI должен содержать оба параметра, если попал к нам
-        assert.ok(available !== null && running !== null, `Malformed URI: ${uri.toString()}`);
+        // @fixme только если есть один должен быть и другой. обоих нет -- нормально
+        // assert.ok(available !== null && running !== null, `Malformed URI: ${uri.toString()}`);
 
         // this.#logOutputChannel?.trace('    → {FileDecoration}');
         return {
@@ -182,7 +182,6 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             propagate: false
         } as const;
     }
-
 
     #getOrCreateThemeColor(id: string): ThemeColor {
         let color = this.#themeColorCache.get(id);

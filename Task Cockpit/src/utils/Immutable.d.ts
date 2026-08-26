@@ -13,33 +13,26 @@ type Immutable<T> =
     | symbol
     | bigint
     ? T
-
     : T extends (...args: any[]) => any
     ? T
-
     : T extends RegExp | Date
     ? T
-
     : T extends
     | vscode.Uri
     | Error
     ? Readonly<T>
-
     : T extends
     | Map<infer K, infer V>
     | ReadonlyMap<infer K, infer V>
     ? ReadonlyMap<K, Immutable<V>>
-
     : T extends
     | Set<infer U>
     | ReadonlySet<infer U>
     ? ReadonlySet<Immutable<U>>
-
-    : T extends
-    | Array<infer U>
-    | ReadonlyArray<infer U>
-    ? ReadonlyArray<Immutable<U>>
-
+    : T extends readonly unknown[]
+    ? number extends T['length']
+    ? ReadonlyArray<Immutable<T[number]>>
+    : { readonly [K in keyof T]: Immutable<T[K]> }
     : { readonly [K in keyof T]: Immutable<T[K]> };
 
 export default Immutable;

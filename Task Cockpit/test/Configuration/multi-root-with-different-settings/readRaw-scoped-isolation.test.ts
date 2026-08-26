@@ -22,10 +22,10 @@ suite('Configuration', function () {
         });
 
 
-        test(`${/*++N*/'001'/**/} Configuration scope = null, IsolationMode = GlobalOnly — возвращает значение из user-конфигурации`, function () {
+        test(`${/*++N*/'001'/**/} Configuration scope = null, IsolationMode = UserOnly — возвращает значение из user-конфигурации`, function () {
 
             const configObj = vscode.workspace.getConfiguration('', null);
-            const result = Configuration.readRaw(configObj, 'extConfig.key', Configuration.IsolationMode.GlobalOnly);
+            const result = Configuration.readRaw(configObj, 'extConfig.key', Configuration.IsolationMode.UserOnly);
 
             assert.equal(result, 'value-from-global');
         });

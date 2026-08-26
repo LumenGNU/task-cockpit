@@ -1,3 +1,5 @@
+/** @file TaskName.ts */
+
 import Splitter from './Splitter';
 
 declare const ___TaskName: unique symbol;

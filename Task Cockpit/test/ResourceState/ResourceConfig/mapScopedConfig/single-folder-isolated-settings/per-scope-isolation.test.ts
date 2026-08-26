@@ -1,9 +1,9 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeKey from '../../../../../src/ScopeKey';
-import mapScopedConfig from '../../../../../src/ResourceState/ResourceConfig/mapScopedConfig';
+import OriginKey from '../../../../../src/OriginKey';
+import groupResourceConfig from '../../../../../src/ResourceStateCoordinator/ResourceConfig/groupResourceConfig';
 import Configuration from '../../../../../src/Configuration';
-import ScopeLayout from '../../../../../src/ResourceState/ScopeLayout';
+import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 interface Settings {
     value: string;
@@ -37,25 +37,25 @@ suite('ResourceState', function () {
             });
 
 
-            const scopeLayout_moc = ScopeLayout.getLayout();
+            const scopeLayout_moc = ProjectLayout.getLayout();
 
-            const folderKeys = vscode.workspace.workspaceFolders!.map((folder) => folder.uri.toString() as ScopeKey.FolderKey);
+            const folderKeys = vscode.workspace.workspaceFolders!.map((folder) => folder.uri.toString() as OriginKey.Folder);
 
 
             suite('mapScopedConfig корректно изолирует задачи по областям в single-folder проекте', function () {
 
-                const scopedConfigMap = mapScopedConfig(scopeLayout_moc, SETTINGS_SCHEMA);
+                const scopedConfigMap = groupResourceConfig(scopeLayout_moc, SETTINGS_SCHEMA);
 
                 test(`${/*++N*/'001'/**/} конфигурация глобальной области (User) изолируется от остальных`, function () {
 
-                    const globalSettings = scopedConfigMap.get(ScopeKey.GLOBAL_KEY);
+                    const globalSettings = scopedConfigMap.get(OriginKey.USER);
                     assert.equal(globalSettings?.value, 'value-from-global');
 
                 });
 
                 test(`${/*++N*/'002'/**/} конфигурация рабочей области (workspace) отсутствует`, function () {
 
-                    assert.equal(scopedConfigMap.get(ScopeKey.WORKSPACE_KEY), undefined);
+                    assert.equal(scopedConfigMap.get(OriginKey.WORKSPACE), undefined);
 
                 });
 

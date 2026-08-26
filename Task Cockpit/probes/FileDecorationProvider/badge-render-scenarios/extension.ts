@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { SCENARIOS, STEP_INTERVAL_MS } from './SCENARIOS';
-import FileDecorationProvider from '../../../src/DecorationProvider/FileDecorationProvider';
-import WindowConfiguration from '../../../src/WindowConfiguration/WindowConfiguration';
+import FileDecorationProvider from '../../../src/FileDecorationProvider/FileDecorationProvider';
+import WindowSettings from '../../../src/WindowConfiguration/WindowSettings';
 import { ProbeTreeProvider } from './Tree';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -38,7 +38,7 @@ function run(
     traceChannel: vscode.LogOutputChannel,
 ): void {
 
-    const windowConfiguration = new WindowConfiguration(traceChannel);
+    const windowConfiguration = new WindowSettings(traceChannel);
 
     // --- дерево ---
     const treeProvider = new ProbeTreeProvider();

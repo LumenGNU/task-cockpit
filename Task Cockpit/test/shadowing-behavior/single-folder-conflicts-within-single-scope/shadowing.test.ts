@@ -2,8 +2,8 @@ import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 import type IFixture from '../extension';
 import type Immutable from '../../../src/utils/Immutable';
-import type TaskDefinitionEntry from '../../../src/TaskDefinitionEntry';
-import type EligibleTask from '../../../src/EligibleTask';
+import type TaskDefinitionEntry from '../../../src/ResourceStateCoordinator/TaskDefinition/TaskDefinitionEntry';
+import type EligibleTask from '../../../src/ResourceStateCoordinator/EligibleTask/EligibleTask';
 
 // User/profiles/.../tasks.json
 // {
@@ -86,7 +86,7 @@ suite('Shadowing behavior', function () {
                 assert.ok(taskInPrima);
 
                 // Что отображается
-                assert.equal(taskInPrima.active?.taskName, fixture.testedTaskName);
+                assert.equal(taskInPrima.effective?.taskName, fixture.testedTaskName);
 
                 // Что затеняется
                 assert.deepEqual(taskInPrima.shadowed?.map(d => d.taskName), [fixture.testedTaskName, fixture.testedTaskName]);
@@ -95,7 +95,7 @@ suite('Shadowing behavior', function () {
 
             test('Побеждает задача последняя по порядку в файле', function () {
                 assert.ok(taskInPrima);
-                assert.equal(taskInPrima.active?.icon?.id, 'my-task-3');
+                assert.equal(taskInPrima.effective?.icon?.id, 'my-task-3');
             });
 
             test('Список затененных в порядке из файла', function () {

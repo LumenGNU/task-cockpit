@@ -23,7 +23,7 @@ set -eu
 
 trap 'echo -e "\n\e[31mProcess terminated\e[0m\n" >&2 ; exit 1' TERM INT
 
-echo -e "\e[1m[CHECK] Checking @file/@module headers ...\e[0m\n" >&2
+echo -e "\e[1m[CHECK] Checking @file headers ...\e[0m\n" >&2
 
 while IFS= read -r TS_FILE; do
 
@@ -40,16 +40,13 @@ while IFS= read -r TS_FILE; do
     fi
 
     EXPECTED_FILE="/** @file ${REL} */"
-    EXPECTED_MODULE="/** @module ${MODULE} */"
 
     LINE1=$(sed -n '1p' "$TS_FILE")
-    LINE2=$(sed -n '2p' "$TS_FILE")
 
-    if [[ "$LINE1" == "$EXPECTED_FILE" && "$LINE2" == "$EXPECTED_MODULE" ]]; then
+    if [[ "$LINE1" == "$EXPECTED_FILE" ]]; then
         echo -e "  \e[32m  OK\e[0m  ${TS_FILE}"
     else
         [[ "$LINE1" != "$EXPECTED_FILE"   ]] && echo -e "  \e[31mFAIL\e[0m  ${TS_FILE}:1  expected: ${EXPECTED_FILE}"
-        [[ "$LINE2" != "$EXPECTED_MODULE" ]] && echo -e "  \e[31mFAIL\e[0m  ${TS_FILE}:2  expected: ${EXPECTED_MODULE}"
     fi
 
 done < <(git ls-files --cached --others --exclude-standard src/ | grep -v '^src/extension\.ts$' | grep '\.ts$' | grep -v '\.d\.ts$' | sort)

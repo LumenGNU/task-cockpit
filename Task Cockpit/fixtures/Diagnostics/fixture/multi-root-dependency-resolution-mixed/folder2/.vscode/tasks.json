@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // ---------------------------------------------------------
+        // задачи без зависимостей
+        {
+            "label": "folder2 level task",
+            "type": "shell",
+            "command": "echo 'folder2 level task'",
+            "problemMatcher": []
+        },
+        {
+            "label": "existing task",
+            "type": "shell",
+            "command": "echo 'existing task from folder2'",
+            "problemMatcher": []
+        },
+        // ---------------------------------------------------------
+        {
+            "label": "(folder2) depends on 'existing task'",
+            "dependsOn": "existing task", // существует и доступна
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'folder1 level task'",
+            "dependsOn": "folder1 level task",
+            // существует в folder1/.vscode/tasks.json
+            // НО из folder2 scope не доступна
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'workspace level task'",
+            // существует в .code-workspace
+            // доступна ТОЛЬКО если folder2 первая в проекте
+            "dependsOn": "workspace level task",
+            "problemMatcher": []
+        },
+        {
+            "label": "(folder2) depends on 'user level task'",
+            // существует в .../User/tasks.json
+            // доступна ТОЛЬКО если folder2 первая в проекте
+            "dependsOn": "user level task",
+            "problemMatcher": []
+        }
+    ]
+}

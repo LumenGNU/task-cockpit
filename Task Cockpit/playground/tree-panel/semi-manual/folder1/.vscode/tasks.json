@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "sleep 15",
+            "command": "sleep 15",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": []
+        },
+        {
+            "label": "sleep any",
+            "command": "sleep $((RANDOM % 27 + 3))",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+            "runOptions": {
+                "instanceLimit": 5
+            }
+        }
+    ]
+}

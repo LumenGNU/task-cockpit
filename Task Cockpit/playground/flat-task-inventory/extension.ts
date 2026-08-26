@@ -5,7 +5,8 @@ import TaskName from '../../src/TaskName';
 import ResourceStateCoordinator from "../../src/ResourceStateCoordinator/ResourceStateCoordinator";
 import OriginEntry from '../../src/ResourceStateCoordinator/OriginEntry';
 import Immutable from '../../src/utils/Immutable';
-import OriginKey from '../../src/OriginKey';
+import type OriginKey from '../../src/OriginKey';
+import DiagnosticManager from '../../src/TasksSource/Diagnostics/DiagnosticsManager';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 
@@ -43,13 +44,25 @@ async function run(
         traceChannel
     );
 
+    const diagnosticsManager = new DiagnosticManager('Task Cockpit',
+        {
+            resourceStateCoordinator,
+            windowSettings
+        },
+        traceChannel);
+
+
     const render = async () => {
         const originEntries = await resourceStateCoordinator.getOriginEntries();
         const parts: string[] = [];
 
-        parts.push(await formatOriginEntry(originEntries.user, runtime.processRegistry, resourceStateCoordinator));
+        parts.push(await formatOriginEntry(originEntries.User, runtime.processRegistry, resourceStateCoordinator));
 
-        for (const originEntry of originEntries.project) {
+        if (originEntries.Workspace) {
+            parts.push(await formatOriginEntry(originEntries.Workspace, runtime.processRegistry, resourceStateCoordinator));
+        }
+
+        for (const originEntry of originEntries.folders) {
             parts.push(await formatOriginEntry(originEntry, runtime.processRegistry, resourceStateCoordinator));
         }
 
@@ -63,6 +76,7 @@ async function run(
         resourceStateCoordinator.onDidStateChange(() => { void render(); }),
         runtime,
         runtime.processRegistry.onDidChangeTaskProcesses(() => { void render(); }),
+        diagnosticsManager
     );
 }
 
@@ -75,11 +89,13 @@ async function formatOriginEntry(
 
     const segmentSeparator = originEntry.hierarchyConfig.segmentSeparator;
 
+    const definitionEntries = [...originEntry.definitionEntries];
+
     const taskLines =
-        originEntry.definitionEntries.length === 0
+        definitionEntries.length === 0
             ? ['    (empty)']
             : await Promise.all(
-                originEntry.definitionEntries.map(([taskName]) =>
+                definitionEntries.map(([taskName]) =>
                     formatTaskLabel(
                         originEntry.originKey,
                         taskName,

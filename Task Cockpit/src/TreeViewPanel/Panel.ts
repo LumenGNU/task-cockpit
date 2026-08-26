@@ -1,58 +1,45 @@
+/** @file TreeViewPanel/Panel.ts */
 
 import {
-    commands,
-    LogOutputChannel,
-    type Disposable
+    commands
 } from 'vscode';
-import * as assert from 'node:assert/strict';
-import type Safe from '../utils/Safe';
-import { ResourceStateCoordinator } from '../ResourceState/ResourceStateCoordinator';
-import ScopeData from './ScopeData';
-import HierarchyModel from '../HierarchyModel/HierarchyModel';
-import Splitter from '../Splitter';
-import TaskName from '../TaskName';
-// import Runtime from '../Runtime/Runtime';
-import Config from '../ResourceState/ResourceConfig/Config';
-import TaskDefinition from '../ResourceState/TaskDefinition/TaskDefinition';
-import TreeView from './TreeView/TreeView';
-import WindowConfiguration from '../WindowConfiguration/WindowConfiguration';
+import * as timers from 'timers/promises';
 import AsyncQueue from '../utils/AsyncQueue';
-import ScopeKey from '../ScopeKey';
+import ResourceStateCoordinator from '../ResourceStateCoordinator/ResourceStateCoordinator';
+import TreeView from './TreeView/TreeView';
+import WindowSettings from '../WindowSettings/WindowSettings';
+import {
+    GLOBAL_TREE_VIEW,
+    PROJECT_TREE_VIEW,
+    VIEW_CONTAINER_ID,
+    PANEL_CONTEXT_TAG
+} from '../common';
+import * as assert from 'node:assert/strict';
+import OriginNode from './OriginNode';
+
+import type {
+    Disposable,
+    LogOutputChannel
+} from 'vscode';
 import type Immutable from '../utils/Immutable';
-import type Scope from '../ResourceState/Scope';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
+import type Runtime from '../Runtime/Runtime';
 
-type ViewContainerId = 'task-cockpit_view-container';
-type GlobalTreeViewId = `${ViewContainerId}_global-task-view`;
-type WorkspaceTreeViewId = `${ViewContainerId}_workspace-task-view`;
-
-export const VIEW_CONTAINER_ID = 'task-cockpit_view-container' satisfies ViewContainerId;
-export const GLOBAL_TREE_VIEW_ID = `${VIEW_CONTAINER_ID}_global-task-view` satisfies GlobalTreeViewId;
-export const WORKSPACE_TREE_VIEW_ID = `${VIEW_CONTAINER_ID}_workspace-task-view` satisfies WorkspaceTreeViewId;
 
 type TreeViewId =
-    | GlobalTreeViewId
-    | WorkspaceTreeViewId
-    ;
+    | typeof GLOBAL_TREE_VIEW.ID
+    | typeof PROJECT_TREE_VIEW.ID;
 
 class Panel implements Disposable {
 
-
-    readonly #stateCoordinator: Safe<ResourceStateCoordinator>;
-    #logOutputChannel: Safe<LogOutputChannel> | null;
-
-
     readonly #globalTreeView: TreeView;
-    readonly #workspaceTreeView: TreeView;
+    readonly #projectTreeView: TreeView;
 
+    readonly ID = VIEW_CONTAINER_ID;
 
-    // readonly #runtime: Safe<Runtime>;
-
-    readonly #windowConfiguration: Safe<WindowConfiguration>;
-
-    // Защита от дребезга между onDidChange’сами
-    // --------------------------------------------------------
-    #debounceTimer: NodeJS.Timeout | null;
-    #debounceDelay: number;
+    // тротлинг между onDidChange’сами
+    static readonly #throttleDelay: number = 25;
     // ------------------------------
 
     readonly #disposables: Disposable[];
@@ -60,259 +47,214 @@ class Panel implements Disposable {
 
     readonly #asyncQueue: AsyncQueue;
 
+    #updatePending: boolean;
+
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+
+    readonly #dependencies: Readonly<{
+        windowSettings: LifecycleOmitted<WindowSettings>;
+        resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+        processRegistry: Runtime.ProcessRegistryView;
+    }>;
+
     constructor(
-        windowConfiguration: Safe<WindowConfiguration>,
-        projectStateCoordinator: Safe<ResourceStateCoordinator>,
-        // runtime: Safe<Runtime>,
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        dependencies: Readonly<{
+            windowSettings: LifecycleOmitted<WindowSettings>;
+            resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+            processRegistry: Runtime.ProcessRegistryView;
+        }>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
         this.#disposed = false;
 
+        this.#dependencies = dependencies;
         this.#logOutputChannel = logOutputChannel;
-        this.#stateCoordinator = projectStateCoordinator;
-        this.#windowConfiguration = windowConfiguration;
 
-        this.#debounceTimer = null;
-        this.#debounceDelay = 15;
-
-
-        // this.#runtime = runtime;
-
-        this.#disposables = [
-
-            this.#stateCoordinator.onDidChange(() => {
-                if (this.#disposed) {
-                    return;
-                }
-                this.#scheduleUpdate();
-            }),
-
-            this.#windowConfiguration.onDidChange((affectedKeys) => {
-                if (this.#disposed) {
-                    return;
-                }
-                if (affectedKeys.has('Filtering')) {
-                    this.#scheduleUpdate();
-                }
-            })
-        ];
-
-        // this.#runtime.onDidChange((taskIdentifier) => {
-
-        //     this.#globalTreeView.updateRunnable(taskIdentifier);
-        //     this.#workspaceTreeView.updateRunnable(taskIdentifier);
-
-        // });
-
-        // @fixme dispose
-
+        this.#asyncQueue = AsyncQueue.create(this.#logOutputChannel);
 
         this.#globalTreeView = new TreeView(
-            GLOBAL_TREE_VIEW_ID,
-            this.#stateCoordinator,
-            // this.#runtime.registry,
+            GLOBAL_TREE_VIEW.ID,
+            GLOBAL_TREE_VIEW.NAME,
+            this.#dependencies,
             this.#logOutputChannel
         );
 
-        this.#workspaceTreeView = new TreeView(
-            WORKSPACE_TREE_VIEW_ID,
-            this.#stateCoordinator,
-            // this.#runtime.registry,
+        this.#projectTreeView = new TreeView(
+            PROJECT_TREE_VIEW.ID,
+            PROJECT_TREE_VIEW.NAME,
+            this.#dependencies,
             this.#logOutputChannel
         );
 
+        this.#disposables = [
+            this.#globalTreeView,
+            this.#projectTreeView
+        ];
 
-        this.#asyncQueue = AsyncQueue.create();
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#dependencies.resourceStateCoordinator.onDidStateChange(this.#resourceStateChangeHandler, this, this.#disposables);
 
-        this.#updateFromProjectState();
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
 
-        void this.#setActivateContext(true);
+        this.#updatePending = false;
+        void this.#asyncQueue.enqueue(async () => {
+            if (this.#isInoperable) { return; }
+            await commands.executeCommand<void>('setContext', PANEL_CONTEXT_TAG.PANEL_ACTIVE, false);
+            if (this.#isInoperable) { return; }
+            await this.#updateFromProjectState();
+        });
 
     }
 
 
     public dispose() {
 
-        if (this.#disposed) {
-            return;
-        }
-
+        if (this.#disposed) { return; }
         this.#disposed = true;
 
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
+        this.#disposables.forEach((d) => void d.dispose());
 
-        void this.#setActivateContext(false);
+        void commands.executeCommand<void>('setContext', PANEL_CONTEXT_TAG.PANEL_ACTIVE, undefined);
 
-        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
 
-    public expandAllInView(viewId: TreeViewId) {
-        if (viewId === GLOBAL_TREE_VIEW_ID) {
-            this.#globalTreeView.expandAll();
-        }
-        else if (viewId === WORKSPACE_TREE_VIEW_ID) {
-            this.#workspaceTreeView.expandAll();
-        }
+    // #region Handlers
+
+    #resourceStateChangeHandler() {
+        if (this.#isInoperable) { return; }
+        this.#requestUpdate();
     }
 
-
-    #scheduleUpdate(): void {
-
-        if (this.#disposed) {
-            return;
+    #changeConfigurationHandler(affectedKeys: Immutable<WindowSettings.AffectedKeys>) {
+        if (this.#isInoperable) { return; }
+        if (affectedKeys.has('Filtering')) {
+            this.#requestUpdate();
         }
-
-        // Перезапускаем таймер
-        if (this.#debounceTimer) {
-            clearTimeout(this.#debounceTimer);
-        }
-
-        this.#debounceTimer = setTimeout(() => {
-
-            if (this.#disposed) {
-                return;
-            }
-
-            this.#updateFromProjectState();
-
-        }, this.#debounceDelay);
-    }
-
-    #updateFromProjectState() {
-
-        if (this.#disposed) {
-            return;
-        }
-
-        if (this.#stateCoordinator.disposed || this.#windowConfiguration.disposed) {
-            return;
-        }
-
-        const scopeLayout = this.#stateCoordinator.getScopeLayout();
-
-        // про no-null assertion: строится на основе "свежего" состояния полученного
-        // от StateCoordinator, в пределах одного синхронного
-        // блока — состояние **обязано** быть согласовано, иначе StateCoordinator сломан.
-        // **`StateCoordinator#get*` не даёт частичных состояний**
-
-        this.#globalTreeView.fullUpdate([buildScopesData(
-            ScopeKey.GLOBAL_KEY,
-            scopeLayout[ScopeKey.GLOBAL_KEY],
-            [...this.#stateCoordinator.getTaskDefinitions(ScopeKey.GLOBAL_KEY)!.entries()],
-            this.#stateCoordinator.getResourceConfig(ScopeKey.GLOBAL_KEY)!.Hierarchy,
-        )]);
-
-        const workspaceScopes: Immutable<{ key: ScopeKey; scope: Scope.WorkspaceScope | Scope.FolderScope; }>[] = [];
-
-        // @todo isMultiroot+excluded выглядит коряво
-        const isMultiroot = scopeLayout[ScopeKey.WORKSPACE_KEY] != null;
-
-        // игнорируется для single-folder проекта
-        const excluded = isMultiroot
-            ? this.#windowConfiguration.getConfig('Filtering').excludeFolders
-            : null;
-
-        let excludedScopesCount = 0;
-
-        if (isMultiroot) {
-            if (excluded!.has(scopeLayout[ScopeKey.WORKSPACE_KEY]!.name)) {
-                ++excludedScopesCount;
-            }
-            else {
-                workspaceScopes.push({ key: ScopeKey.WORKSPACE_KEY, scope: scopeLayout[ScopeKey.WORKSPACE_KEY]! });
-            }
-        }
-
-        if (scopeLayout.folders) {
-            for (const [key, folderScope] of Object.entries(scopeLayout.folders)) {
-                if (excluded?.has(folderScope.name)) {
-                    ++excludedScopesCount;
-                }
-                else {
-                    workspaceScopes.push({ key: key as ScopeKey.FolderKey, scope: folderScope });
-                }
-            }
-        }
-
-        this.#workspaceTreeView.fullUpdate(
-            workspaceScopes.map(({ key: scopeKey, scope }) => {
-                return buildScopesData(
-                    scopeKey,
-                    scope,
-                    [...this.#stateCoordinator.getTaskDefinitions(scopeKey)!.entries()],
-                    this.#stateCoordinator.getResourceConfig(scopeKey)!.Hierarchy,
-                );
-            }),
-            excludedScopesCount
-        );
-    }
-
-
-    // #region set**Context
-
-    async #setActivateContext(isActivate: boolean) {
-        // @todo isBusy
-        return this.#asyncQueue.enqueue(() => commands.executeCommand<void>('setContext', `${VIEW_CONTAINER_ID}.isActivate`, isActivate));
     }
 
     // #endregion
-}
 
 
-function buildScopesData(
-    scopeKey: ScopeKey,
-    scope: Immutable<Scope.Scope>,
-    taskDefinitions: ReadonlyArray<[taskName: TaskName, definition: Immutable<TaskDefinition>]>,
-    hierarchyConfig: Immutable<Config['Hierarchy']>
-): Immutable<ScopeData> {
+    public expandAllInView(viewId: TreeViewId) {
 
-    const { segmentSeparator, useGroupKind, showHidden } = hierarchyConfig;
+        assert.ok(!this.#disposed, `[${this.constructor.name}#expandAllInView] use after dispose`);
 
-    const splitter = Splitter.create(segmentSeparator);
+        if (viewId === GLOBAL_TREE_VIEW.ID) {
+            this.#globalTreeView.expandAll();
+        }
+        else if (viewId === PROJECT_TREE_VIEW.ID) {
+            this.#projectTreeView.expandAll();
+        }
+    }
 
-    let total = 0;
-    let hiddenCount = 0;
 
-    const hierarchy = HierarchyModel.buildHierarchy({
-        branchKey: scopeKey,
-        specs:
-            taskDefinitions.reduce((acc, [taskName, definition]) => {
+    public collapseAllInView(viewId: TreeViewId) {
 
-                ++total;
+        assert.ok(!this.#disposed, `[${this.constructor.name}#collapseAllInView] use after dispose`);
 
-                if (!showHidden && definition.hidden) {
-                    ++hiddenCount;
+        if (viewId === GLOBAL_TREE_VIEW.ID) {
+            this.#globalTreeView.collapseAll();
+        }
+        else if (viewId === PROJECT_TREE_VIEW.ID) {
+            this.#projectTreeView.collapseAll();
+        }
+    }
+
+    // Coalesce: в очереди не больше одного pending-update одновременно.
+    // #updatePending сбрасывается до getScopeEntries — чтобы новый onDidChange
+    // мог вытеснить текущий цикл: #updateFromProjectState увидит флаг и выйдет досрочно.
+    #requestUpdate(): void {
+
+        if (this.#isInoperable) { return; }
+
+        if (this.#updatePending) { return; }
+        this.#updatePending = true;
+
+        void this.#asyncQueue.enqueue(async () => {
+            if (this.#isInoperable) { return; }
+            await commands.executeCommand<void>('setContext', PANEL_CONTEXT_TAG.PANEL_ACTIVE, false);
+            if (this.#isInoperable) { return; }
+            await timers.setTimeout(Panel.#throttleDelay);
+            if (this.#isInoperable) { return; }
+
+            // #updatePending при раннем выходе не сбрасывается намеренно:
+            // неработоспособный Panel не возобновляет работу, флаг нерелевантен.
+            this.#updatePending = false;
+
+            await this.#updateFromProjectState();
+        });
+
+    }
+
+    async #updateFromProjectState() {
+
+        if (this.#isInoperable) { return; }
+        // Вытесненный цикл не выставляет PANEL_ACTIVE=true намеренно:
+        // TreeView не обновлён, Panel не готова к взаимодействию.
+        // Следующий цикл из очереди сделает полный update с актуальными данными.
+        if (this.#updatePending) { return; }
+
+        const originEntries = await this.#dependencies.resourceStateCoordinator.getOriginEntries();
+
+        if (this.#isInoperable) { return; }
+        if (this.#updatePending) { return; }
+
+        this.#globalTreeView.rebuild([OriginNode.build(originEntries.User)]);
+
+        const excluded = this.#dependencies.windowSettings.getConfiguration('Filtering').excludeFolders;
+        let excludedScopesCount = 0;
+
+        const projectOrigins =
+            originEntries.Workspace
+                ? [originEntries.Workspace, ...originEntries.folders]
+                : originEntries.folders;
+
+        const filteredOrigins =
+            excluded.size < 1
+                ? projectOrigins
+                : projectOrigins.reduce((acc, originEntry) => {
+                    if (excluded.has(originEntry.name)) {
+                        ++excludedScopesCount;
+                    }
+                    else {
+                        acc.push(originEntry);
+                    }
                     return acc;
-                }
+                }, [] as Immutable<OriginEntry>[]);
 
-                const groupKind = useGroupKind
-                    ? definition.group?.kind
-                    : undefined;
 
-                const segments =
-                    groupKind
-                        ? [groupKind, ...splitter.split(taskName)]
-                        : splitter.split(taskName);
+        this.#projectTreeView.rebuild(
+            filteredOrigins.map((originEntry) => OriginNode.build(originEntry)),
+            excludedScopesCount
+        );
 
-                acc.push({ segments, data: { taskName } });
+        await commands.executeCommand<void>('setContext', PANEL_CONTEXT_TAG.PANEL_ACTIVE, true);
+    }
 
-                return acc;
 
-            }, [] as HierarchyModel.Spec<{ taskName: TaskName; }>[])
-    }, 'off');
+    get #isInoperable(): boolean {
 
-    return {
-        scopeKey: scopeKey,
-        displayName: scope.name,
-        taskSource: scope.taskSource?.uri ?? null,
-        detail: { total, hiddenCount },
-        hierarchy
-    };
+        if (this.#disposed) {
+            return true;
+        }
+
+        const dependenciesDisposed =
+            this.#dependencies.resourceStateCoordinator.disposed ||
+            this.#dependencies.windowSettings.disposed;
+
+        if (dependenciesDisposed) {
+            // warn намеренно: сигнал о нарушении порядка dispose.
+            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            return true;
+        }
+
+        return false;
+    }
 
 }
 

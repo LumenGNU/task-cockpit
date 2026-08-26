@@ -1,4 +1,4 @@
-/** @file WindowConfiguration/WindowConfigurationSchema.ts */
+/** @file WindowSettings/Schema.ts */
 /** @internal */
 
 import { SETTING_IDS } from '../common';
@@ -9,12 +9,14 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
 
     /** Enable diagnostics to detect potential issues with task definitions. */
     Validation: {
-        /** Check for tasks with duplicate labels and flag them as problematic. */
-        duplicates: Configuration.BooleanSpec({
-            configKey: SETTING_IDS.VALIDATION_DUPLICATE_LABELS,
+        /** Flag task definitions that are shadowed by other definitions with
+         * the same name (either from higher‑priority origins or within the same origin). */
+        shadowed: Configuration.BooleanSpec({
+            configKey: SETTING_IDS.VALIDATION_SHADOWED_TASKS,
             fallback: true
         }),
-        /** Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems. */
+        /** Check that tasks referenced in dependsOn exist and are known in the
+         * current resolution context. Missing dependencies will be flagged as problems. */
         dependencies: Configuration.BooleanSpec({
             configKey: SETTING_IDS.VALIDATION_MISSING_DEPENDENCIES,
             fallback: true
@@ -34,29 +36,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
     },
 
 
-    // Pins: {
-    //     visibility: {
-    //         section: 'display.pins',
-    //         type: SpecType.Boolean,
-    //         spec: { fallback: true }
-    //     },
-    //     pathCompression: {
-    //         section: 'display.pins',
-    //         type: SpecType.StringLiteral,
-    //         spec: { fallback: 'on', values: ['off', 'on', 'on-aggressive'] }
-    //     }
-    // },
-
-    // cockpit: {
-
-    //     cacheIdleTTL: {
-    //         from: 'tasks.cacheTTL',
-    //         type: SpecType.Number,
-    //         spec: { min: 66_000, fallback: 666_000, max: 6.6e6 } // 1.1 мин; 11.1 мин; 1ч 50мин
-    //     }
-    // },
-
-    ProcessMonitor: {
+    TaskProcessMonitor: {
         /** Параметры адаптивной кривой опроса системы на работающие задачи.
          * Интервал опроса будет увеличиваться от min до cap с скоростью
          * acceleration при росте количества одновременно работающих задач.

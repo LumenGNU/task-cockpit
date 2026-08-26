@@ -2,8 +2,8 @@ import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 import type IFixture from '../extension';
 import type Immutable from '../../../src/utils/Immutable';
-import type TaskDefinitionEntry from '../../../src/TaskDefinitionEntry';
-import type EligibleTask from '../../../src/EligibleTask';
+import type TaskDefinitionEntry from '../../../src/ResourceStateCoordinator/TaskDefinition/TaskDefinitionEntry';
+import type EligibleTask from '../../../src/ResourceStateCoordinator/EligibleTask/EligibleTask';
 
 
 // User/profiles/.../tasks.json
@@ -113,10 +113,10 @@ suite('Shadowing behavior', function () {
                 assert.ok(taskInFolder2);
 
                 // Что отображается
-                assert.ok(taskInUser.active);
-                assert.equal(taskInWorkspace.active, null);
-                assert.equal(taskInPrima.active, null);
-                assert.ok(taskInFolder2.active);
+                assert.ok(taskInUser.effective);
+                assert.equal(taskInWorkspace.effective, null);
+                assert.equal(taskInPrima.effective, null);
+                assert.ok(taskInFolder2.effective);
 
                 // Что затеняется
                 assert.equal(taskInUser.shadowed, undefined);

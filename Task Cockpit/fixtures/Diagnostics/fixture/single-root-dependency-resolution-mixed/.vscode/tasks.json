@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "existing task",
+            "type": "shell",
+            "command": "echo 'existing task'",
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'existing task'",
+            "dependsOn": "existing task", // Ok существует
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'non-existing task'",
+            "dependsOn": "non-existing task", // Err не существует
+            "problemMatcher": []
+        },
+        {
+            "label": "depends on 'user level task'",
+            // существует в .../User/tasks.json
+            // и доступна
+            "dependsOn": "user level task", // Ok
+            "problemMatcher": []
+        }
+    ]
+}

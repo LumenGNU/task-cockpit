@@ -1,0 +1,44 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+    "settings": {},
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Task In Workspace",
+                "type": "shell",
+                "command": "command-from-workspace",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "type": "shell",
+                "command": "command-from-workspace",
+                "problemMatcher": []
+            },
+            {
+                "label": "My Task",
+                "type": "shell",
+                "command": "command-from-workspace (2)",
+                "problemMatcher": [],
+                "presentation": {
+                    "echo": true,
+                    "reveal": "never",
+                    "focus": false,
+                    "panel": "new",
+                    "showReuseMessage": false,
+                    "clear": true,
+                    "close": true
+                }
+            }
+        ]
+    }
+
+}

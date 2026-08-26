@@ -1,5 +1,4 @@
-
-
+/** @file common.ts */
 
 export const DISPLAY_NAME = 'Task Cockpit';
 
@@ -21,11 +20,31 @@ export const PROJECT_TREE_VIEW = {
 } as const;
 
 
-export const CONTEXT_KEY = {
+export const PANEL_CONTEXT_TAG = {
     PANEL_ACTIVE: `${VIEW_CONTAINER_ID}.active`,
     GLOBAL_TREE_VIEW_HAS_ITEMS: `${GLOBAL_TREE_VIEW.ID}.hasItems`,
     PROJECT_TREE_VIEW_HAS_ITEMS: `${PROJECT_TREE_VIEW.ID}.hasItems`
 } as const;
+
+
+export const UI = {
+    COLOR: {
+        INVALID: 'list.invalidItemForeground',
+        DEEMPHASIZED: 'list.deemphasizedForeground'
+    },
+    ICON: {
+        DEEMPHASIZED: 'dash',
+        ERROR: 'circle-slash',
+        WARNING: 'warning',
+        TASK_DEFAULT: 'tools',
+        USER_ORIGIN: 'vm',
+        WORKSPACE_ORIGIN: 'layers',
+        FOLDER_ORIGIN: 'root-folder',
+        SYMBOL_FOLDER: 'symbol-folder'// 'folder' | @todo имя может отличатся для разных версий. проверь
+    }
+    // MD_EXPANDER: '![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAABAgMAAABS/qhXAAAACVBMVEUAAAAAAAD///+D3c/SAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjYKACAAAARQABMOPaBgAAAABJRU5ErkJggg==)'
+} as const;
+
 
 
 export const COMMAND_CATEGORY = 'Task Cockpit';
@@ -87,6 +106,6 @@ export const SETTING_IDS = {
     PROCESS_MONITOR_POLLING_MIN      /**/: `${CONFIG_BASE_SECTION}.processMonitor.polling.min`,
     SHOW_GLOBAL_TASKS_VIEW           /**/: `${CONFIG_BASE_SECTION}.showGlobalTasksView`,
     TERMINALS_TIMEOUT                /**/: `${CONFIG_BASE_SECTION}.terminals.timeout`,
-    VALIDATION_DUPLICATE_LABELS      /**/: `${CONFIG_BASE_SECTION}.validation.duplicateLabels`,
+    VALIDATION_SHADOWED_TASKS        /**/: `${CONFIG_BASE_SECTION}.validation.duplicateLabels`, // @fixme "не дубликаты", а "затененные"
     VALIDATION_MISSING_DEPENDENCIES  /**/: `${CONFIG_BASE_SECTION}.validation.missingDependencies`, // @fixme переименовано dependencies -> missingDependencies
 } as const;

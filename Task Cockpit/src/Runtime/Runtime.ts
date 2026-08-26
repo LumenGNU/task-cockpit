@@ -1,3 +1,5 @@
+/** @file Runtime/Runtime.ts */
+
 import {
     tasks,
     window
@@ -161,7 +163,7 @@ class Runtime implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
 
     }
@@ -273,7 +275,7 @@ class Runtime implements Disposable {
      * */
     async #processStartedHandler({ execution, processId }: TaskProcessStartEvent): Promise<void> {
 
-        if (this.#isUnusable) { return; }
+        if (this.#isInoperable) { return; }
 
         // начинаем следить, если "подходящая"
         if (isValidPid(processId)) { // сразу отбрасываем сломанное
@@ -392,17 +394,22 @@ class Runtime implements Disposable {
 
     // ---------------------------------------------------------------------------
 
-    get #isUnusable(): boolean {
+    get #isInoperable(): boolean {
+
+        if (this.#disposed) {
+            return true;
+        }
 
         const dependenciesDisposed =
             this.#dependencies.resourceStateCoordinator.disposed ||
             this.#dependencies.windowSettings.disposed;
 
         if (dependenciesDisposed) {
-            this.#logOutputChannel?.warn(`[${this.constructor.name}]: External dependencies are disposed`);
+            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            return true;
         }
 
-        return this.#disposed || dependenciesDisposed;
+        return false;
     }
 
 }

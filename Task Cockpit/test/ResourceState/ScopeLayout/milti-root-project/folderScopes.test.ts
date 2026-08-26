@@ -1,6 +1,6 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeLayout from '../../../../src/ResourceState/ScopeLayout';
+import ProjectLayout from '../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 
 // `${/*N=0*/'000'/**/}`
@@ -22,8 +22,8 @@ suite('ResourceState', function () {
 
         suite('folderScopes', function () {
 
-            const scopeLayout = ScopeLayout.getLayout();
-            const { folderScopes } = scopeLayout;
+            const scopeLayout = ProjectLayout.getLayout();
+            const { folders: folderScopes } = scopeLayout;
 
 
             test(`${/*++N*/'001'/**/} Секция folderScopes, multi-root проект`, function () {

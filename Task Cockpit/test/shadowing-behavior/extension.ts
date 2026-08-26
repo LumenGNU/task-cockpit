@@ -1,23 +1,23 @@
 import * as vscode from 'vscode';
-import ScopeLayout from '../../src/ResourceState/ScopeLayout';
+import ProjectLayout from '../../src/ResourceStateCoordinator/ResourceStructure';
 import assert from 'node:assert/strict';
-import mapTaskDefinitions from '../../src/ResourceState/TaskDefinition/mapTaskDefinitions';
+import groupTaskDefinitions from '../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
 import type TaskName from '../../src/TaskName';
 import type Immutable from '../../src/utils/Immutable';
-import ScopeKey from '../../src/ScopeKey';
-import type TaskDefinitionMap from '../../src/TaskDefinitionMap';
-import EligibleTask from '../../src/EligibleTask';
-import type EligibleTasksMap from '../../src/EligibleTasksMap';
+import OriginKey from '../../src/OriginKey';
+import type TaskDefinitionMap from '../../src/ResourceStateCoordinator/TaskDefinition/TaskDefinitionMap';
+import EligibleTask from '../../src/ResourceStateCoordinator/EligibleTask/EligibleTask';
+import type EligibleTasksMap from '../../src/ResourceStateCoordinator/EligibleTask/EligibleTasksMap';
 
 
 interface IFixture {
-    taskDefinitions: Immutable<Map<ScopeKey, TaskDefinitionMap>>;
-    eligibleTasks: Immutable<Map<ScopeKey, EligibleTasksMap>>;
+    taskDefinitions: Immutable<Map<OriginKey, TaskDefinitionMap>>;
+    eligibleTasks: Immutable<Map<OriginKey, EligibleTasksMap>>;
     availableKeys: {
-        userKey: ScopeKey.GlobalKey,
-        workspaceKey: ScopeKey.WorkspaceKey | undefined,
-        primaKey: ScopeKey.FolderKey | undefined,
-        folder2Key: ScopeKey.FolderKey | undefined,
+        userKey: OriginKey.GlobalKey,
+        workspaceKey: OriginKey.Workspace | undefined,
+        primaKey: OriginKey.Folder | undefined,
+        folder2Key: OriginKey.Folder | undefined,
     };
     testedTaskName: TaskName;
 }
@@ -26,10 +26,10 @@ interface IFixture {
 export async function activate(context: vscode.ExtensionContext): Promise<Immutable<IFixture>> {
 
 
-    const scopeLayout = ScopeLayout.getLayout();
-    const [primaKey, folder2Key] = scopeLayout.folderScopes?.map(f => f.key) ?? [undefined, undefined];
+    const scopeLayout = ProjectLayout.getLayout();
+    const [primaKey, folder2Key] = scopeLayout.folders?.map(f => f.key) ?? [undefined, undefined];
 
-    const taskDefinitions = mapTaskDefinitions(scopeLayout);
+    const taskDefinitions = groupTaskDefinitions(scopeLayout);
 
     const fetchedTasks = await vscode.tasks.fetchTasks();
 
@@ -44,8 +44,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Immuta
         taskDefinitions,
         eligibleTasks,
         availableKeys: {
-            userKey: scopeLayout.globalScope.key,
-            workspaceKey: scopeLayout.workspaceScope?.key,
+            userKey: scopeLayout.global.key,
+            workspaceKey: scopeLayout.workspace?.key,
             primaKey,
             folder2Key
         },

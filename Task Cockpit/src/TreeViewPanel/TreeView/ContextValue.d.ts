@@ -1,5 +1,5 @@
 
-type ContextPrefix = 'task-cockpit';
+type ContextPrefix = '';
 
 
 declare namespace ContextValue {
@@ -12,10 +12,8 @@ declare namespace ContextValue {
 
         export type Intermediate = `${ContextPrefix}:Node:Group`;
 
-        export type Runnable = `${ContextPrefix}${':Node'
-            }${'' | ':Group'
-            }${':Runnable:Broken' | `:Runnable${'' | ':Running'}${'' | ':Terminals'}`
-            }${'' | ':Pinned' | ':Pinned:Stale'
+        export type Runnable = `${ContextPrefix}:Node${'' | ':Group'}:Runnable${'' | ':Broken-NoDefinition' | ':Broken-NotExecutable'
+            }${'' | ':Terminals' | ':Running:Terminals'
             }`;
     }
 }

@@ -1,8 +1,8 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeKey from '../../../../../src/ScopeKey';
-import mapTaskDefinitions from '../../../../../src/ResourceState/TaskDefinition/mapTaskDefinitions';
-import ScopeLayout from '../../../../../src/ResourceState/ScopeLayout';
+import OriginKey from '../../../../../src/OriginKey';
+import groupTaskDefinitions from '../../../../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
+import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 // `${/*N=0*/'000'/**/}`
 
@@ -24,15 +24,15 @@ suite('ResourceState', function () {
 
             });
 
-            const scopeLayout = ScopeLayout.getLayout();
+            const scopeLayout = ProjectLayout.getLayout();
 
             suite('mapTaskDefinitions корректно изолирует задачи по областям в multi-root проекте', function () {
 
-                const taskDefinitionMap = mapTaskDefinitions(scopeLayout);
+                const taskDefinitionMap = groupTaskDefinitions(scopeLayout);
 
                 test(`${/*++N*/'001'/**/} задачи global scope изолированы`, function () {
 
-                    const globalTasks = [...taskDefinitionMap.get(ScopeKey.GLOBAL_KEY)!.keys()];
+                    const globalTasks = [...taskDefinitionMap.get(OriginKey.USER)!.keys()];
                     assert.equal(globalTasks.length, 7); // в user-profile несколько задач, на все тесты
                     assert.equal(globalTasks[0], 'task-in-user-profile');
 
@@ -40,14 +40,14 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'002'/**/} задачи workspace scope изолированы`, function () {
 
-                    const workspaceTasks = [...taskDefinitionMap.get(ScopeKey.WORKSPACE_KEY)!.keys()];
+                    const workspaceTasks = [...taskDefinitionMap.get(OriginKey.WORKSPACE)!.keys()];
                     assert.equal(workspaceTasks.length, 1);
                     assert.equal(workspaceTasks[0], 'task-in-workspace');
                 });
 
                 test(`${/*++N*/'003'/**/} задачи folder1 scope изолированы`, function () {
 
-                    const folderKey = scopeLayout.folderScopes![0]!.key;
+                    const folderKey = scopeLayout.folders![0]!.key;
 
                     const folder1Tasks = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.equal(folder1Tasks.length, 1);
@@ -56,7 +56,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'004'/**/} задачи folder2 scope изолированы`, function () {
 
-                    const folderKey = scopeLayout.folderScopes![1]!.key;
+                    const folderKey = scopeLayout.folders![1]!.key;
 
                     const folder2Tasks = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.equal(folder2Tasks.length, 1);

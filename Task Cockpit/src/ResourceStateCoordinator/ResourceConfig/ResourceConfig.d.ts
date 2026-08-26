@@ -34,6 +34,7 @@ interface Config {
 
         /** Группировать ли задачи по свойству `group` в task definition.
          * Соответствует `taskCockpit.display.useGroupKind`. */
+        // @todo useGroupKind -> prependGroupKind ???
         useGroupKind: boolean;
     };
 

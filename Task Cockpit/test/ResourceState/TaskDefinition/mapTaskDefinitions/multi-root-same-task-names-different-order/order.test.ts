@@ -1,8 +1,8 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeKey from '../../../../../src/ScopeKey';
-import mapTaskDefinitions from '../../../../../src/ResourceState/TaskDefinition/mapTaskDefinitions';
-import ScopeLayout from '../../../../../src/ResourceState/ScopeLayout';
+import OriginKey from '../../../../../src/OriginKey';
+import groupTaskDefinitions from '../../../../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
+import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 // `${/*N=0*/'000'/**/}`
 
@@ -24,15 +24,15 @@ suite('ResourceState', function () {
 
             });
 
-            const scopeLayout = ScopeLayout.getLayout();
+            const scopeLayout = ProjectLayout.getLayout();
 
             suite('mapTaskDefinitions гарантирует порядок на основе порядка из файла-источника', function () {
 
-                const taskDefinitionMap = mapTaskDefinitions(scopeLayout);
+                const taskDefinitionMap = groupTaskDefinitions(scopeLayout);
 
                 test(`${/*++N*/'001'/**/} для global scope порядок сохраняется`, function () {
 
-                    const globalNames = [...taskDefinitionMap.get(ScopeKey.GLOBAL_KEY)!.keys()];
+                    const globalNames = [...taskDefinitionMap.get(OriginKey.USER)!.keys()];
                     assert.deepEqual(globalNames, [
                         'task-in-user-profile',
                         '3',
@@ -47,7 +47,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'002'/**/} для workspace scope порядок сохраняется`, function () {
 
-                    const workspaceNames = [...taskDefinitionMap.get(ScopeKey.WORKSPACE_KEY)!.keys()];
+                    const workspaceNames = [...taskDefinitionMap.get(OriginKey.WORKSPACE)!.keys()];
                     assert.deepEqual(workspaceNames, [
                         'task A',
                         'task B',
@@ -60,7 +60,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'003'/**/} для folder1 scope порядок сохраняется`, function () {
 
-                    const folderKey = scopeLayout.folderScopes![0]!.key;
+                    const folderKey = scopeLayout.folders![0]!.key;
 
                     const folder1Names = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.deepEqual(folder1Names, [
@@ -75,7 +75,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'004'/**/} для folder2 scope порядок сохраняется`, function () {
 
-                    const folderKey = scopeLayout.folderScopes![1]!.key;
+                    const folderKey = scopeLayout.folders![1]!.key;
 
                     const folder2Names = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.deepEqual(folder2Names, [

@@ -1,6 +1,6 @@
+/** @file HierarchyModel/HierarchyModel.ts */
 
 import * as assert from 'node:assert/strict';
-import CompressionBehavior from './CompressionBehavior';
 
 
 type AnyData = Record<string, unknown>;
@@ -120,7 +120,7 @@ const SEP = '\x00\x00\x1F';
  *  */
 function buildHierarchy<K extends string, D extends AnyData>(
     specsDict: SpecsDict<K, D>,
-    pathCompression: CompressionBehavior
+    pathCompression: PathCompression
 ): HierarchyModel.Hierarchy<K, D> {
 
 
@@ -178,9 +178,11 @@ function buildHierarchy<K extends string, D extends AnyData>(
     }
 
 
-    return (pathCompression !== 'off'
-        ? compressHierarchy(hierarchy, pathCompression)
-        : hierarchy) as HierarchyModel.Hierarchy<K, D>;
+    return (
+        pathCompression !== PathCompression.OFF
+            ? compressHierarchy(hierarchy, pathCompression)
+            : hierarchy
+    ) as HierarchyModel.Hierarchy<K, D>;
 
 }
 
@@ -231,8 +233,15 @@ declare namespace HierarchyModel {
     export type SpecsDict<K extends string, D extends AnyData> = { branchKey: K, specs: Array<HierarchyModel.Spec<D>>; };
 }
 
+enum PathCompression {
+    OFF,
+    ON,
+    ON_AGGRESSIVE
+}
+
 const HierarchyModel = {
-    buildHierarchy
+    buildHierarchy,
+    PathCompression
 };
 
 export default HierarchyModel;
@@ -240,7 +249,6 @@ export default HierarchyModel;
 
 // ------------------------
 
-export type CompressionMode = 'on' | 'on-aggressive';
 
 const LABEL_SEP = '\u2009›\u2009';
 
@@ -262,7 +270,7 @@ const LABEL_SEP = '\u2009›\u2009';
  * */
 function compressHierarchy<K extends string, D extends AnyData>(
     dict: InnerMap<string, Element<K, D>>,
-    mode: CompressionMode
+    mode: PathCompression.ON | PathCompression.ON_AGGRESSIVE
 ): InnerMap<string, Element<K, D>> {
 
     function compress(node: Element<K, D>): Element<K, D> {
@@ -282,7 +290,7 @@ function compressHierarchy<K extends string, D extends AnyData>(
 
         const last = chain.at(-1)!;
 
-        if (mode === 'on' && last[DATA] != null && chain.length > 1) {
+        if (mode === PathCompression.ON && last[DATA] != null && chain.length > 1) {
             // Терминальный узел не участвует в сжатии,
             // сжимаем только предшествующие узлы.
             // chain = [ ...intermediates, leaf ]

@@ -884,6 +884,7 @@
             },
             "problemMatcher": []
         },
+
         // ------------------------------------------------------------------------------------------------------------------------------
         {
             "label": "playground|Clean/create '~out-sandbox/'",
@@ -894,6 +895,38 @@
             "type": "shell",
             "command": "mkdir -p \"./~out-sandbox\" && find \"./~out-sandbox\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
             "problemMatcher": [],
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|open-task-definition",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/open-task-definition",
+                    "VSC_PROFILE": "playground-open-task-definition",
+                    "VSC_OPEN": "playground/open-task-definition/prj:playground/open-task-definition/prj/.vscode/tasks.json",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
         },
         // ..............................................................................................................................
         {
@@ -917,6 +950,7 @@
                     "EXT_SANDBOX": "playground/flat-task-inventory",
                     "VSC_OPEN": "playground/flat-task-inventory/manual",
                     "VSC_PROFILE": "playground-flat-task-inventory",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
                 }
             },
             "problemMatcher": [
@@ -1009,6 +1043,132 @@
                     "VSC_OPEN": "playground/flat-task-inventory/single-folder-multi-instance-task",
                     "VSC_PROFILE": "playground-flat-task-inventory",
                     // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|tree-panel|cycle-tasks+burst",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/cycle-tasks+burst/",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|full-monty",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/full-monty/full-monty.code-workspace",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|semi-manual",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/semi-manual/project.code-workspace:playground/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:playground/tree-panel/semi-manual/folder1/.vscode/tasks.json:playground/tree-panel/semi-manual/folder2/.vscode/tasks.json",
+                    // "VSC_VERSION": "1.131.0"
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|semi-manual-2",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    // "VSC_VERSION": "1.131.0"
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
                 }
             },
             "problemMatcher": [
@@ -1531,101 +1691,6 @@
             ]
         },
         {
-            "label": "Probes|tree-panel|cycle-tasks+burst",
-            "icon": {
-                "id": "debug-console"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probes|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
-                "./.vscode-test/interactive-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "EXT_SANDBOX": "probes/tree-panel",
-                    "VSC_PROFILE": "probe-tree-panel",
-                    "VSC_OPEN": "probes/tree-panel/cycle-tasks+burst/",
-                    "VSC_VERSION": "1.131.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probes|tree-panel|full-monty",
-            "icon": {
-                "id": "debug-console"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probes|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
-                "./.vscode-test/interactive-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "EXT_SANDBOX": "probes/tree-panel",
-                    "VSC_PROFILE": "probe-tree-panel",
-                    "VSC_OPEN": "probes/tree-panel/full-monty/full-monty.code-workspace",
-                    // "VSC_OPEN": "~/Projects/task-cockpit/Task Cockpit.code-workspace",
-                    "VSC_VERSION": "1.131.0"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
-            "label": "Probes|tree-panel|semi-manual",
-            "icon": {
-                "id": "debug-console"
-            },
-            "type": "shell",
-            "dependsOn": [
-                "Probes|PreProbe|Clean/create '~out-probe/'"
-            ],
-            "dependsOrder": "sequence",
-            "command": [
-                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
-                "./.vscode-test/interactive-runner.mjs"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "OUT_DIR": "~out-probe",
-                    "EXT_SANDBOX": "probes/tree-panel",
-                    "VSC_PROFILE": "probe-tree-panel",
-                    "VSC_OPEN": "probes/tree-panel/semi-manual/project.code-workspace:probes/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:probes/tree-panel/semi-manual/folder1/.vscode/tasks.json:probes/tree-panel/semi-manual/folder2/.vscode/tasks.json",
-                    // "VSC_VERSION": "1.131.0"
-                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
-                }
-            },
-            "problemMatcher": [
-                {
-                    "applyTo": "allDocuments",
-                    "base": "$tsc"
-                }
-            ]
-        },
-        {
             "label": "Probes|vscode-tree-mutation",
             "icon": {
                 "id": "debug-console"
@@ -2119,6 +2184,140 @@
                 },
             ]
         },
+
+        {
+            "label": "Test|TasksSource|findTaskDefinitionRange",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/TasksSource",
+                    "TESTS": "*/**/findTaskDefinitionRange*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|TasksSource|openTaskDefinitionInEditor",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/TasksSource",
+                    "TESTS": "*/**/openTaskDefinitionInEditor*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        // -----------------------------------------------------------------------------------------------------------
         {
             "label": "Test|ResourceState|ResourceConfig|mapScopedConfig",
             "icon": {

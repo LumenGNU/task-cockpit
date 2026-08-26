@@ -1,28 +1,31 @@
+/** @file TreeViewPanel/TreeView/Element/IntermediateElement.ts */
+
 import {
     ThemeIcon,
     TreeItemCollapsibleState,
-    type CancellationToken,
-    type TreeItem,
     Uri
 } from 'vscode';
+import { UI } from '../../../common';
 import formatTooltip from '../formatTooltip';
-import type Conf from '../../../ResourceState/ResourceConfig/Config';
+
+import type {
+    CancellationToken,
+    TreeItem
+} from 'vscode';
 import type ContextValue from '../ContextValue';
-import type UriSchema from '../../../DecorationProvider/UriSchema';
-import HierarchyModel from '../../../HierarchyModel/HierarchyModel';
-import TaskName from '../../../TaskName';
-import RunnableElement from './RunnableElement';
-import { Scope } from '../../../ResourceState/ResourceStateCoordinator';
-import ScopeKey from '../../../ScopeKey';
+import type HierarchyModel from '../../../HierarchyModel/HierarchyModel';
 import type Immutable from '../../../utils/Immutable';
+import type NodeConfiguration from './NodeConfiguration';
+import type OriginKey from '../../../OriginKey';
+import type RunnableElement from './RunnableElement';
+import type TaskName from '../../../TaskName';
+import type UriSchema from '../../../FileDecorationProvider/UriSchema';
 
 
-type NodeConfiguration = Conf["Node"];
-
-type IntermediateElement = Omit<HierarchyModel.Element<ScopeKey, { taskName: TaskName; }>, 'data' | 'children'> & { data: null; children: Array<IntermediateElement | RunnableElement>; };
+type IntermediateElement = Omit<HierarchyModel.Element<OriginKey, { taskName: TaskName; }>, 'data' | 'children'> & { data: null; children: Array<IntermediateElement | RunnableElement>; };
 
 /**
- * Возвращает {@link vscode.TreeItem} для чистого промежуточного узла
+ * Возвращает {@link TreeItem} для чистого промежуточного узла
  * (группы).
  * Intermediate-узел:
  * - всегда имеет не пустую иерархию детей
@@ -31,7 +34,7 @@ type IntermediateElement = Omit<HierarchyModel.Element<ScopeKey, { taskName: Tas
 function createTreeItem(
     element: Immutable<IntermediateElement>,
     props: Immutable<{
-        conf: NodeConfiguration | null,
+        nodeConfig: NodeConfiguration | null;
     }>
 ): TreeItem {
 
@@ -40,16 +43,16 @@ function createTreeItem(
         label: element.label,
         collapsibleState: TreeItemCollapsibleState.Collapsed, // @todo
         description: false,
-        contextValue: `task-cockpit:Node:Group` satisfies ContextValue.Node.Intermediate,
+        contextValue: ':Node:Group' satisfies ContextValue.Node.Intermediate,
         iconPath:
-            props.conf?.useFolderIcon
-                ? new ThemeIcon('symbol-folder') // 'folder' | @todo имя может отличатся для разных версий. проверь
+            props.nodeConfig?.useFolderIcon
+                ? new ThemeIcon(UI.ICON.SYMBOL_FOLDER)
                 : undefined,
         resourceUri: Uri.from({
             scheme: 'task-cockpit',
             authority: 'Node',
             path: ''
-        } satisfies UriSchema),
+        } satisfies UriSchema)
     } as const;
 }
 

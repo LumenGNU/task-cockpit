@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import WindowConfiguration from '../../src/WindowConfiguration/WindowConfiguration';
-import FileDecorationProvider from '../../src/DecorationProvider/FileDecorationProvider';
+import WindowSettings from '../../src/WindowConfiguration/WindowSettings';
+import FileDecorationProvider from '../../src/FileDecorationProvider/FileDecorationProvider';
 import Config from '../../src/WindowConfiguration/Config';
-import WindowConfigurationSchema from '../../src/WindowConfiguration/WindowConfigurationSchema';
+import Schema from '../../src/WindowConfiguration/Schema';
 
 export interface IFixture {
     fileDecorationProvider: FileDecorationProvider;
@@ -12,13 +12,13 @@ export interface IFixture {
 const CONFIGURATION_KEY = 'FileDecoration' as const;
 type FileDecorationConf = Config[typeof CONFIGURATION_KEY];
 
-const windowConfiguration = new WindowConfiguration();
+const windowConfiguration = new WindowSettings();
 
 async function updateConfig(
     value: FileDecorationConf
 ): Promise<void> {
 
-    const fd = WindowConfigurationSchema.SCHEMA[CONFIGURATION_KEY];
+    const fd = Schema.SCHEMA[CONFIGURATION_KEY];
     const cfg = vscode.workspace.getConfiguration();
 
     function isSatisfied(): boolean {

@@ -2,8 +2,8 @@ import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 import type IFixture from '../extension';
 import type Immutable from '../../../src/utils/Immutable';
-import type TaskDefinitionEntry from '../../../src/TaskDefinitionEntry';
-import type EligibleTask from '../../../src/EligibleTask';
+import type TaskDefinitionEntry from '../../../src/ResourceStateCoordinator/TaskDefinition/TaskDefinitionEntry';
+import type EligibleTask from '../../../src/ResourceStateCoordinator/EligibleTask/EligibleTask';
 
 
 // User/profiles/.../tasks.json
@@ -120,11 +120,11 @@ suite('Shadowing behavior: within-scope в User и Prima', function () {
                 assert.ok(taskInPrima);
                 assert.equal(taskInFolder2, undefined);
 
-                assert.ok(taskInUser.active);
-                assert.equal(taskInUser.active?.icon?.id, 'u-2');
+                assert.ok(taskInUser.effective);
+                assert.equal(taskInUser.effective?.icon?.id, 'u-2');
                 assert.deepEqual(taskInUser.shadowed?.map(d => d.icon?.id), ['u-1']);
 
-                assert.equal(taskInPrima.active, null);
+                assert.equal(taskInPrima.effective, null);
                 assert.deepEqual(taskInPrima.shadowed?.map(d => d.icon?.id), ['p-1', 'p-2']);
             });
 

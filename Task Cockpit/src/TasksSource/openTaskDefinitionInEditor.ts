@@ -4,17 +4,16 @@ import {
     Selection,
     TextEditorRevealType,
     window,
-    workspace,
+    workspace
 } from 'vscode';
 import findTaskDefinitionRange from './findTaskDefinitionRange';
 
 import type {
-    TextEditor,
+    TextEditor
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type TaskName from '../TaskName';
 import type TaskSource from '../ResourceStateCoordinator/TaskSource';
-
 
 
 // "Фиксировать нарушения формата":

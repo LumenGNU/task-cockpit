@@ -1,3 +1,5 @@
+/** @file OriginKey.ts */
+
 import {
     workspace
 } from 'vscode';
@@ -6,9 +8,9 @@ import assert from 'node:assert/strict';
 
 declare const ___Folder: unique symbol;
 
-type UserKey = OriginKey.UserKey;
-type WorkspaceKey = OriginKey.WorkspaceKey;
-type FolderKey = OriginKey.FolderKey;
+type UserKey = OriginKey.User;
+type WorkspaceKey = OriginKey.Workspace;
+type FolderKey = OriginKey.Folder;
 
 
 function resolveOriginName(originKey: OriginKey): string | null {
@@ -37,8 +39,8 @@ function resolveOriginName(originKey: OriginKey): string | null {
 type OriginKey = UserKey | WorkspaceKey | FolderKey;
 
 declare namespace OriginKey {
-    type UserKey = '\x00\x00$User';
-    type WorkspaceKey = '\x00\x00$Workspace';
+    type User = '\x00\x00$User';
+    type Workspace = '\x00\x00$Workspace';
     // Проблема:
     // ===-сужение в TypeScript работает на основе строкового значения, а не структуры.
     // Бренд { readonly [___Folder]: never } для сужения невидим — TypeScript не может доказать,
@@ -47,7 +49,7 @@ declare namespace OriginKey {
     // Теперь TypeScript при проверке scopeKey === ScopeKey.WORKSPACE_KEY вычислит:
     // - '\x00\x00$Workspace' — совпадает
     // - string:{string} & brand— пересечение с'\x00\x00$Workspace', нет ":" = never` → выбрасывается
-    type FolderKey = `${string}:${string}` & {
+    type Folder = `${string}:${string}` & {
         readonly [___Folder]: never;
     };
 }

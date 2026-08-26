@@ -1,4 +1,4 @@
-/** @file WindowConfiguration/WindowConfiguration.ts */
+/** @file WindowSettings/WindowSettings.ts */
 
 import {
     EventEmitter,
@@ -25,21 +25,42 @@ type AffectedKeys = WindowSettings.AffectedKeys;
 
 declare namespace WindowSettings {
 
+    /** Ключ секции window-конфигурации.
+     * Соответствует ключам типа {@linkcode WindowConfiguration}. */
     export type ConfigKey = keyof WindowConfiguration;
-    export type AffectedKeys = Set<ConfigKey>;
 
-    export type Configuration = WindowConfiguration;
+    /** Набор ключей конфигурации, затронутых событием изменения.
+     * Передаётся подписчикам события {@linkcode WindowSettings.onDidChangeConfiguration}. */
+    export type AffectedKeys = Immutable<Set<ConfigKey>>;
+
+    /** Полный снимок window-конфигурации. */
+    export type Configuration = Immutable<WindowConfiguration>;
 
 }
 
+
+/** Управляет window-конфигурацией расширения.
+ *
+ * - Кеширует результат `workspace.getConfiguration()` + `Configuration.coerce`.
+ * - Слушает `workspace.onDidChangeConfiguration` и определяет, какие именно
+ *   ключи схемы были затронуты.
+ * - Накапливает изменения конфигурации с задержкой (по умолчанию 350 ms),
+ *   после чего один раз обновляет кеш и уведомляет подписчиков
+ *   через `onDidChangeConfiguration` с накопленным набором ключей.
+ *
+ * Реализует {@linkcode Disposable}. После `dispose()` все публичные методы
+ * выбрасывают ошибку. */
 class WindowSettings implements Disposable {
 
+    /** Карта «ключ конфигурации → набор секций VS Code»,
+     * построенная из схемы при загрузке модуля. */
+    static readonly #SECTIONS_BY_KEY = Configuration.collectSections(SCHEMA);
 
-    static readonly SECTIONS_BY_KEY = Configuration.collectSections(SCHEMA);
+    readonly #onDidChangeConfiguration: EventEmitter<AffectedKeys>;
 
-
-    readonly #onDidChangeConfiguration: EventEmitter<Immutable<AffectedKeys>>;
-    readonly onDidChangeConfiguration: Event<Immutable<AffectedKeys>>;
+    /** Событие изменения window-конфигурации.
+     * В аргументе — набор реально затронутых ключей (после debounce). */
+    readonly onDidChangeConfiguration: Event<AffectedKeys>;
 
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
@@ -49,13 +70,14 @@ class WindowSettings implements Disposable {
     /** Кеш window-конфигурации */
     #configuration!: Immutable<WindowConfiguration>;
 
-
     #pendingChanges: Set<ConfigKey>;
     #debounceTimer: NodeJS.Timeout | null;
 
-
     static readonly #DEBOUNCE_MS = 350;
 
+    /**
+     * @param logOutputChannel Опциональный канал логирования.
+     */
     constructor(
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
@@ -95,15 +117,13 @@ class WindowSettings implements Disposable {
 
         this.#pendingChanges.clear();
 
+        this.#disposables.forEach((d) => void d.dispose());
 
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
-
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
+    /** `true`, если экземпляр уже был уничтожен через {@linkcode dispose}. */
     get disposed(): boolean {
         return this.#disposed;
     }
@@ -114,14 +134,14 @@ class WindowSettings implements Disposable {
 
         if (this.#disposed) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: Configuration changed…`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] Configuration changed…`);
 
         const changes = new Set<ConfigKey>();
 
         // Гранулярный трекинг: для каждого WindowConfigKey определяем, затронула ли
         // хоть одна из принадлежащих ему секций конфигурации текущее событие.
         // Позволяет подписчикам фильтровать нерелевантные обновления window-конфигурации.
-        for (const [key, sectionSet] of WindowSettings.SECTIONS_BY_KEY) {
+        for (const [key, sectionSet] of WindowSettings.#SECTIONS_BY_KEY) {
             for (const section of sectionSet) {
                 if (event.affectsConfiguration(section)) {
                     changes.add(key);
@@ -137,7 +157,7 @@ class WindowSettings implements Disposable {
             return;
         }
 
-        this.#logOutputChannel?.trace(`  Affected keys: ${[...changes.keys()].map((k) => `"${k}"`).join(', ')}. Accumulating.`);
+        this.#logOutputChannel?.trace(`  Affected keys: ${[...changes].map((k) => `"${k}"`).join(', ')}. Accumulating.`);
 
         // каждое событие конфигурации аккумулирует ключи в #pendingChanges и перезапускает таймер.
         // Когда поток событий прерывается на ≥DEBOUNCE_MS, один fire уходит со всем накопленным Set.
@@ -153,23 +173,29 @@ class WindowSettings implements Disposable {
 
     // #endregion Handlers
 
-    /** Получить "общих" настроек (для суб-модулей). */
+
+    /** Возвращает текущее значение указанного ключа window-конфигурации.
+     *
+     * @param key Ключ из схемы.
+     * @returns Иммутабельное значение соответствующего поля.
+     * @throws Если вызван после `dispose()`. */
     public getConfiguration<K extends ConfigKey>(key: K): Immutable<WindowConfiguration[K]> {
 
-        if (this.#disposed) {
-            assert.fail(`[${this.constructor.name}#getConfiguration]: use after dispose`);
-        }
+        assert.ok(!this.#disposed, `[${this.constructor.name}#getConfiguration]: use after dispose`);
 
         return this.#configuration[key];
     }
 
+
+    /** Список всех доступных ключей window-конфигурации
+     * (порядок соответствует порядку в схеме).
+     *
+     * @throws Если вызван после `dispose()`. */
     public get availableKeys(): Immutable<Array<ConfigKey>> {
 
-        if (this.#disposed) {
-            assert.fail(`[${this.constructor.name}#availableKeys]: use after dispose`);
-        }
+        assert.ok(!this.#disposed, `[${this.constructor.name}#availableKeys]: use after dispose`);
 
-        return [...WindowSettings.SECTIONS_BY_KEY.keys()];
+        return [...WindowSettings.#SECTIONS_BY_KEY.keys()];
     }
 
 
@@ -190,7 +216,7 @@ class WindowSettings implements Disposable {
             const accumulated = new Set(this.#pendingChanges);
             this.#pendingChanges.clear();
 
-            this.#logOutputChannel?.trace(`[${this.constructor.name}]: Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
 
             this.#updateCache();
             this.#onDidChangeConfiguration.fire(accumulated);

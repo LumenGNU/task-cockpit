@@ -2,8 +2,8 @@ import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 import type IFixture from '../extension';
 import type Immutable from '../../../src/utils/Immutable';
-import type TaskDefinitionEntry from '../../../src/TaskDefinitionEntry';
-import type EligibleTask from '../../../src/EligibleTask';
+import type TaskDefinitionEntry from '../../../src/ResourceStateCoordinator/TaskDefinition/TaskDefinitionEntry';
+import type EligibleTask from '../../../src/ResourceStateCoordinator/EligibleTask/EligibleTask';
 
 
 // User/profiles/.../tasks.json
@@ -110,11 +110,11 @@ suite('Shadowing behavior', function () {
                 assert.equal(taskInPrima, undefined);
                 assert.ok(taskInFolder2);
 
-                assert.ok(taskInUser.active);
+                assert.ok(taskInUser.effective);
                 assert.equal(taskInUser.shadowed, undefined);
 
-                assert.ok(taskInFolder2.active);
-                assert.equal(taskInFolder2.active?.icon?.id, 'f2-2');
+                assert.ok(taskInFolder2.effective);
+                assert.equal(taskInFolder2.effective?.icon?.id, 'f2-2');
                 assert.deepEqual(taskInFolder2.shadowed?.map(d => d.icon?.id), ['f2-1']);
             });
 

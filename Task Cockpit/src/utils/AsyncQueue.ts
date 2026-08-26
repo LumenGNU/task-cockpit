@@ -1,9 +1,22 @@
+/** @file utils/AsyncQueue.ts */
+
+import {
+    LogOutputChannel
+} from 'vscode';
+
+import type LifecycleOmitted from './LifecycleOmitted';
+
 /** Простая последовательная очередь асинхронных операций.
  *
  * Каждая операция, переданная в `enqueue`, выполняется только после
  * завершения предыдущей. В случае ошибки в операции очередь не ломается —
- * ошибка проглатывается, и следующие операции продолжают выполняться. */
-function create(): AsyncQueue {
+ * ошибка проглатывается, и следующие операции продолжают выполняться.
+ *
+ * Дополнительно можно дождаться завершения всех операций в очереди
+ * с помощью метода `drain()`. */
+function create(
+    logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+): AsyncQueue {
     /** Цепочка промисов, представляющая конец очереди. */
     let pending: Promise<void> = Promise.resolve();
     return {
@@ -11,7 +24,7 @@ function create(): AsyncQueue {
          *
          * Возвращает промис, который разрешится, когда операция будет выполнена
          * (успешно или с ошибкой). Сам факт ошибки не прерывает очередь,
-         * но возвращаемый промис может быть отклонён.
+         * вызывающий обязан обрабатывать возвращённый промис, иначе UHR.
          *
          * @param op Асинхронная операция без аргументов, которую нужно выполнить.
          * @returns Промис, отражающий выполнение конкретной операции. */
@@ -19,14 +32,24 @@ function create(): AsyncQueue {
             const next = pending.then(op);
             // Заменяем pending на цепочку, которая не падает при ошибке,
             // чтобы следующие операции могли стартовать.
-            pending = next.catch(() => { });
+            pending = next.catch((reason: unknown) => {
+                logOutputChannel?.error(String(reason));
+            });
             return next;
+        },
+
+        /** Ожидает завершения всех операций, уже поставленных в очередь.
+         * После вызова `drain()` новые операции могут быть добавлены
+         * и не будут учтены этим ожиданием. */
+        drain(): Promise<void> {
+            return pending;
         }
     };
 }
 
 type AsyncQueue = {
     enqueue(op: () => PromiseLike<void>): Promise<void>;
+    drain(): Promise<void>;
 };
 
 const AsyncQueue = {

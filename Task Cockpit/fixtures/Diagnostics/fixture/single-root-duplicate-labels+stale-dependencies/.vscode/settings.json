@@ -1,0 +1,6 @@
+{
+    "taskCockpit.validation.duplicates": true,
+    "taskCockpit.validation.dependencies": true
+    // "taskCockpit.validation.duplicates": false,
+    // "taskCockpit.validation.dependencies": false
+}

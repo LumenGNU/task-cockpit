@@ -27,7 +27,7 @@ type TaskProcesses = Map<TaskProcessId, ProcessState>;
 
 /** Полезная нагрузка события `onDidChangeTaskProcesses`:
  * область происхождения → имена задач, в которых изменилось состояние процессов. */
-type EventPayload = Map<OriginKey, Set<TaskName>>;
+type AffectedTasks = Map<OriginKey, Set<TaskName>>;
 
 
 /** Хранит сопоставления задача → рантайм-состояние её процессов.
@@ -52,8 +52,8 @@ type EventPayload = Map<OriginKey, Set<TaskName>>;
  * */
 class ProcessRegistry implements Disposable {
 
-    readonly #onDidChangeTaskProcesses: EventEmitter<Immutable<EventPayload>>;
-    readonly onDidChangeTaskProcesses: Event<Immutable<EventPayload>>;
+    readonly #onDidChangeTaskProcesses: EventEmitter<Immutable<AffectedTasks>>;
+    readonly onDidChangeTaskProcesses: Event<Immutable<AffectedTasks>>;
 
     // Первичный индекс: processId → состояние процесса.
     readonly #processStateById: Map<TaskProcessId, ProcessState>;
@@ -106,7 +106,7 @@ class ProcessRegistry implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}]: disposed`);
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
@@ -186,7 +186,7 @@ class ProcessRegistry implements Disposable {
         assert.ok(!this.#disposed, `[${this.constructor.name}#markCompleted]: use after dispose`);
         assert.ok(taskProcessesIds.size > 0, `[${this.constructor.name}#markCompleted]: taskProcessesIds must not be empty`);
 
-        const affectedByChanges: EventPayload = new Map();
+        const affectedByChanges: AffectedTasks = new Map();
 
         for (const processId of taskProcessesIds) {
 
@@ -249,7 +249,7 @@ class ProcessRegistry implements Disposable {
     ): void {
         assert.ok(!this.#disposed, `[${this.constructor.name}#reconcile]: use after dispose`);
 
-        const affectedByChanges: EventPayload = new Map();
+        const affectedByChanges: AffectedTasks = new Map();
 
         for (const [registeredProcess, processState] of this.#processStateById) {
 

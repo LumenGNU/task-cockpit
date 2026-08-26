@@ -1,6 +1,6 @@
 
-import FileDecorationProvider from '../../../src/DecorationProvider/FileDecorationProvider';
-import type UriSchema from '../../../src/DecorationProvider/UriSchema';
+import FileDecorationProvider from '../../../src/FileDecorationProvider/FileDecorationProvider';
+import type UriSchema from '../../../src/FileDecorationProvider/UriSchema';
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
 import {
@@ -10,7 +10,7 @@ import {
     type CancellationToken,
     CancellationError
 } from 'vscode';
-import type UriQuery from '../../../src/DecorationProvider/UriQuery';
+import type UriQuery from '../../../src/FileDecorationProvider/UriQuery';
 import type { IFixture } from '../extension';
 
 

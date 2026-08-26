@@ -1,23 +1,28 @@
+/** @file TreeViewPanel/TreeView/Element/EmptyElement.ts */
+
 import {
     ThemeColor,
     ThemeIcon,
     TreeItemCollapsibleState,
-    type CancellationToken,
-    type TreeItem,
-    Uri,
+    Uri
 } from 'vscode';
+import { UI } from '../../../common';
 import formatTooltip from '../formatTooltip';
-import ElementType from '../ElementType';
+
+import type {
+    CancellationToken,
+    TreeItem
+} from 'vscode';
 import type ContextValue from '../ContextValue';
-import type UriSchema from '../../../DecorationProvider/UriSchema';
-import type UriQuery from '../../../DecorationProvider/UriQuery';
-import type Immutable from 'src/utils/Immutable';
+import type Immutable from '../../../utils/Immutable';
+import type UriQuery from '../../../FileDecorationProvider/UriQuery';
+import type UriSchema from '../../../FileDecorationProvider/UriSchema';
 
 
 /** Узел-заглушка — отображается внутри секции,
  * когда секция пуста. */
 interface Element {
-    type: ElementType.EmptyNode;
+    kind: 'EmptyNode';
     // /** (*) Область, отображаемая этой веткой */
     // scopeKey: ScopeKey;
     /** (*) Уникальный id узла в дереве */
@@ -29,15 +34,19 @@ interface Element {
 function create(
     id: string,
     // scopeKey: ScopeKey,
-    detail: Readonly<{ total: number; hiddenCount: number; }> | undefined
+    detail: Readonly<{
+        totalCount: number;
+        hiddenCount: number;
+        shadowedCount: number;
+    }> | undefined
 ): Immutable<Element> {
 
     return {
-        type: ElementType.EmptyNode,
+        kind: 'EmptyNode',
         // scopeKey,
         id,
         cause: detail
-            ? detail.total > 0 && detail.hiddenCount === detail.total
+            ? detail.totalCount > 0 && detail.hiddenCount === detail.totalCount
                 ? 'Hidden'
                 : 'Empty'
             : 'Empty'
@@ -56,15 +65,15 @@ function createTreeItem(element: Immutable<Element>): TreeItem {
         id: element.id,
         label: 'No tasks to display in this scope',
         description: false,
-        iconPath: new ThemeIcon('dash', new ThemeColor('list.deemphasizedForeground')),
+        iconPath: new ThemeIcon(UI.ICON.DEEMPHASIZED, new ThemeColor(UI.COLOR.DEEMPHASIZED)),
         collapsibleState: TreeItemCollapsibleState.None,
-        contextValue: `task-cockpit:Node:Special:${element.cause}` satisfies ContextValue.Node.Special,
+        contextValue: `:Node:Special:${element.cause}` satisfies ContextValue.Node.Special,
         resourceUri: Uri.from({
             scheme: 'task-cockpit',
             authority: 'Node',
             path: '',
             query: (new URLSearchParams({
-                tintColor: 'list.deemphasizedForeground'
+                tintColor: UI.COLOR.DEEMPHASIZED
             } satisfies UriQuery)).toString()
         } satisfies UriSchema)
     };

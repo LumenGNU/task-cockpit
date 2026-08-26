@@ -1,6 +1,6 @@
 import * as assert from 'assert/strict';
 import * as vscode from 'vscode';
-import ScopeLayout from '../../../../src/ResourceState/ScopeLayout';
+import ProjectLayout from '../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 
 // `${/*N=0*/'000'/**/}`
@@ -19,11 +19,11 @@ suite('ResourceState', function () {
 
         suite('workspaceScope', function () {
 
-            const scopeLayout = ScopeLayout.getLayout();
+            const scopeLayout = ProjectLayout.getLayout();
 
             test(`${/*++N*/'001'/**/} Секция workspaceScope, single-folder проект — null`, function () {
 
-                assert.equal(scopeLayout.workspaceScope, null);
+                assert.equal(scopeLayout.workspace, null);
 
             });
 

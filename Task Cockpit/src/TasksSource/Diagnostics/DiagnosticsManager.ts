@@ -4,15 +4,15 @@
 //
 // Документ "task-shadowing.md" систематизирует неочевидное и местами противоречивое
 // поведение VS Code при разрешении задач с одинаковыми метками (label) в разных
-// источниках происхождения (User, Workspace, папки проекта).
+// источниках происхождения (*User*, *Workspace*, *папки проекта*).
 // Ключевые выводы:
 //
 // - Прямой запуск задачи с коллизией:
-//     Для первой папки (Primary Folder) и для задач из User/Workspace фактически выполняется
+//     Для *Primary Folder*[^1] и для задач из *User*/*Workspace* фактически выполняется
 //     не та задача, которая выбрана в списке, а та, которая побеждает в порядке
-//     User → Workspace → Primary Folder (Cross‑Origin Resolution Order).
+//     *User* → *Workspace* → *Primary Folder* (Cross‑Origin Resolution Order).
 //
-//     Задачи из второй и последующих папок (folder2+) всегда выполняют свою локальную версию —
+//     Задачи из второй и последующих папок (*folder2+*) всегда выполняют свою локальную версию —
 //     они изолированы.
 //
 // - Запуск через dependsOn:
@@ -21,8 +21,8 @@
 //      Отсутствие зависимости в этом источнике приводит к ошибке, даже если она есть в
 //      других местах.
 //
-//      Первая папка (Primary Folder) использует каскадный поиск (Fallback Resolution):
-//      сначала своя папка, затем Workspace, затем User. Она «наследует» зависимости
+//      *Primary Folder* использует каскадный поиск (Fallback Resolution):
+//      сначала своя папка, затем *Workspace*, затем *User*. Она «наследует» зависимости
 //      из более приоритетных источников.
 //
 // - Дубликаты внутри одного источника:
@@ -33,12 +33,13 @@
 // - Пользователь может ожидать, что его задача из folder1 выполнится, но реально выполнится задача
 //   из User с тем же именем.
 // - Зависимость может не разрешиться, хотя задача с нужным именем "перед глазами".
+// - Зависимости перестают работать после реорганизации каталогов.
 // - Поведение различается в зависимости от того, запускается ли задача напрямую или через dependsOn.
 // - Ошибки конфигурации проявляются только во время выполнения, часто неожиданно.
 //
 // Роль `DiagnosticsManager`: проактивное выявление описанных выше проблем ещё на этапе редактирования
 // конфигураций задач.
-// Он анализирует все источники задач (кроме User[^1]) и генерирует предупреждения непосредственно в
+// Он анализирует все источники задач (кроме User[^2]) и генерирует предупреждения непосредственно в
 // редакторе, привязывая их к конкретным строкам JSON‑файлов.
 //
 // Какие проблемы ловит:
@@ -54,7 +55,7 @@
 // - **missing-dependency**
 //   Зависимость, объявленная через dependsOn, не может быть разрешена в том контексте, где определена
 //   родительская задача.
-//   Для источников Workspace и folder2+ это означает, что зависимость с таким именем отсутствует в том
+//   Для источников *Workspace* и *folder2+* это означает, что зависимость с таким именем отсутствует в том
 //   же источнике. Для *Primary Folder* диагностика учитывает каскадный поиск: если имя не найдено
 //   ни в самой папке, ни в Workspace, ни в User, то будет ошибка.
 //
@@ -77,7 +78,9 @@
 // Я х.з, но: делает поведение VS Code более явным, повышая предсказуемость происходящего.
 //
 // -----
-// [^1]: я не придумал как получить профиль текущей сессии VS Code, а значит — не могу
+// [^1]: *Primary Folder* — Текущая первая папка (`index = 0`) в multi-root проекте. Или
+//       единственная в single-folder проекте.
+// [^2]: Я не придумал как получить профиль текущей сессии VS Code, а значит — не могу
 //       добраться до /User/profiles/???/tasks.json.
 //
 // -----
@@ -257,7 +260,7 @@ class DiagnosticsManager implements Disposable {
         if (this.#isInoperable) { return; }
 
         // @todo исключать "скрытые"?
-        // User исключён, т.к. у него нет TaskSource
+        // User исключён, т.к. у него "нет" TaskSource
         const sourcedOriginEntries =
             originEntries.Workspace
                 ? [originEntries.Workspace, ...originEntries.folders]
@@ -302,7 +305,10 @@ class DiagnosticsManager implements Disposable {
                 ].map((rawDiagnostic) => {
                     return {
                         message: rawDiagnostic.message,
-                        range: new Range(document.positionAt(rawDiagnostic.position.offset), document.positionAt(rawDiagnostic.position.offset + rawDiagnostic.position.length)),
+                        range: new Range(
+                            document.positionAt(rawDiagnostic.position.offset),
+                            document.positionAt(rawDiagnostic.position.offset + rawDiagnostic.position.length)
+                        ),
                         severity: DiagnosticSeverity.Warning,
                         source: this.#diagnosticSource,
                         code: rawDiagnostic.code
@@ -402,7 +408,7 @@ function collectShadowedTaskNameDiagnostics(
                 : {
                     code: 'duplicate-label',
                     position: cr.position,
-                    message: `Task "${cr.taskLabel}" is defined multiple times. Duplicate labels can cause unexpected behavior.`
+                    message: `Task "${cr.taskLabel}" is defined multiple times. Duplicate labels may cause conflicts.`
                 };
         });
 }
@@ -419,6 +425,9 @@ function collectDependencyDiagnosticsForOrigin(
             ? buildAvailableTaskNamesForPrimaryFolder(originEntry, originEntries)
             : originEntry.definitionEntries;
 
+    // В данном resolution context вообще нет ни одной task definition.
+    // А значит, нет и task node, для которого мы сейчас должны
+    // диагностировать dependency.
     if (availableTaskNames.size < 1) {
         return [];
     }
@@ -433,7 +442,7 @@ function collectDependencyDiagnosticsForOrigin(
 }
 
 // Функция собирает имена задач, доступные для разрешения
-// зависимостей, когда текущая область — Primary Workspace Folder
+// зависимостей, когда текущая область разрешения — Primary Workspace Folder
 function buildAvailableTaskNamesForPrimaryFolder(
     folderOrigin: Immutable<OriginEntry.Folder>,
     originEntries: Immutable<OriginEntriesSnapshot>

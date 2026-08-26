@@ -32,7 +32,7 @@ interface Config {
         excludeFolders: Set<string>;
     };
 
-    ProcessMonitor: {
+    TaskProcessMonitor: {
 
         /** Параметры адаптивного поллинга опроса системы на работающие задачи */
         polling: {
@@ -60,7 +60,7 @@ interface Config {
         dependencies: boolean;
 
         /** выполнять поиск дубликатов лейблов в файлах задач */
-        duplicates: boolean;
+        shadowed: boolean;
     };
 
 }

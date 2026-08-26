@@ -1,3 +1,4 @@
+/** @file TreeViewPanel/TreeView/formatTooltip.ts */
 
 import {
     MarkdownString

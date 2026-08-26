@@ -160,6 +160,14 @@
         {
             "location": "-16815631",
             "name": "playground-flat-task-inventory"
+        },
+        {
+            "location": "-47bc95b8",
+            "name": "playground-tree-panel"
+        },
+        {
+            "location": "7cd23bb2",
+            "name": "playground-open-task-definition"
         }
     ],
     "lastKnownMenubarData": {
@@ -1839,7 +1847,10 @@
     },
     "windowsState": {
         "lastActiveWindow": {
-            "folder": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/playground/flat-task-inventory/manual",
+            "workspaceIdentifier": {
+                "id": "105e9e7a825eab64bdd1466590373e63",
+                "configURIPath": "file:///home/lumen/Projects/task-cockpit/Task%20Cockpit/playground/tree-panel/semi-manual/project.code-workspace"
+            },
             "uiState": {
                 "mode": 1,
                 "x": 448,

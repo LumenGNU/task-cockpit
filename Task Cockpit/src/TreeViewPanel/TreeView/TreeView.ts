@@ -1,141 +1,207 @@
+/** @file TreeViewPanel/TreeView/TreeView.ts */
+
 import {
-    window,
-    LogOutputChannel,
-    TreeView as VscTreeView,
-    TreeDataProvider as VscTreeDataProvider,
     commands,
-    type Disposable
+    window
 } from 'vscode';
-import * as assert from 'node:assert/strict';
-import { ResourceStateCoordinator } from '../../ResourceState/ResourceStateCoordinator';
-import TreeDataProvider from './TreeDataProvider';
-// import type RuntimeRegistry from '../../Runtime/RuntimeRegistry';
-import type Safe from '../../utils/Safe';
-import type ScopeData from '../ScopeData';
-// import type TaskIdentifier from '../../Runtime/TaskIdentifier';
-import Element from './Element/Element';
-import type ScopeKey from '../../ScopeKey';
-import type TaskName from '../../TaskName';
 import AsyncQueue from '../../utils/AsyncQueue';
-import type Immutable from 'src/utils/Immutable';
+import ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
+import TaskTreeDataProvider from './TaskTreeDataProvider';
+
+import type {
+    Disposable,
+    LogOutputChannel,
+    TreeDataProvider,
+    TreeView as VscTreeView
+} from 'vscode';
+import type Immutable from '../../utils/Immutable';
+import type LifecycleOmitted from '../../utils/LifecycleOmitted';
+import type OriginKey from '../../OriginKey';
+import type OriginNode from '../OriginNode';
+import type Runtime from '../../Runtime/Runtime';
+import type TaskName from '../../TaskName';
 
 
 class TreeView implements Disposable {
 
-    readonly #stateCoordinator: Safe<ResourceStateCoordinator>;
-    // readonly #runtimeRegistry: RuntimeRegistry;
-    #logOutputChannel: Safe<LogOutputChannel> | null;
-
-    readonly #treeDataProvider: TreeDataProvider;
-    readonly #treeView: VscTreeView<Immutable<Element>>;
+    readonly #treeDataProvider: TaskTreeDataProvider;
+    readonly #treeView: VscTreeView<Immutable<unknown>>;
 
     readonly #viewId: string;
 
     #excludedScopesCount: number | null;
 
+    #disposed: boolean;
+    readonly #disposables: Disposable[];
+
     readonly #asyncQueue: AsyncQueue;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+
+    readonly #dependencies: Readonly<{
+        resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+        processRegistry: Runtime.ProcessRegistryView;
+    }>;
 
     constructor(
         viewId: string,
-        projectStateCoordinator: Safe<ResourceStateCoordinator>,
-        // runtimeRegistry: RuntimeRegistry,
-        logOutputChannel: Safe<LogOutputChannel> | null = null
+        title: string,
+        dependencies: Readonly<{
+            resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
+            processRegistry: Runtime.ProcessRegistryView;
+        }>,
+        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
-        this.#stateCoordinator = projectStateCoordinator;
-        // this.#runtimeRegistry = runtimeRegistry;
+        this.#disposed = false;
+
         this.#logOutputChannel = logOutputChannel;
+        this.#asyncQueue = AsyncQueue.create(this.#logOutputChannel);
 
-        this.#asyncQueue = AsyncQueue.create();
+        this.#dependencies = dependencies;
 
-
-        this.#treeDataProvider = new TreeDataProvider(
-            this.#stateCoordinator,
-            // this.#runtimeRegistry,
-            this.#logOutputChannel
-        );
+        this.#treeDataProvider = new TaskTreeDataProvider(this.#dependencies, this.#logOutputChannel);
 
         this.#viewId = viewId;
 
         this.#treeView = window.createTreeView(
             this.#viewId,
             {
-                treeDataProvider: this.#treeDataProvider as VscTreeDataProvider<Immutable<Element>>,
+                treeDataProvider: this.#treeDataProvider as TreeDataProvider<Immutable<unknown>>,
                 canSelectMany: false,
                 dragAndDropController: undefined,
-                manageCheckboxStateManually: undefined,
-                showCollapseAll: true // #todo
+                manageCheckboxStateManually: undefined
             }
         );
 
+        this.#treeView.title = title;
         this.#treeView.description = undefined;
+
         this.#excludedScopesCount = null;
-        void this.#setIsEmptyContext(true);
-        void this.#setInUpdatingContext(true);
 
-        // @fixme dispose
-        this.#treeDataProvider.onStartUpdate(() => {
-            void this.#setInUpdatingContext(true);
-        });
+        this.#disposables = [
+            this.#treeView,
+            this.#treeDataProvider
+        ];
 
-        // @fixme dispose
-        this.#treeDataProvider.onBeenUpdated(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#treeDataProvider.onDidRefreshTopElements(this.#updateTopElementsHandler, this, this.#disposables);
 
-            const visibleScopesCount = this.#treeDataProvider.topElements?.length ?? null;
-            this.#treeView.description = buildViewDescription(visibleScopesCount, this.#excludedScopesCount);
-
-            void this.#setIsEmptyContext(!Boolean(visibleScopesCount));
-            void this.#setInUpdatingContext(false);
-        });
-
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#dependencies.processRegistry.onDidChangeTaskProcesses(this.#changeTaskProcessesHandler, this, this.#disposables);
     }
 
     public dispose() {
-        // @fixme
 
-        this.#logOutputChannel?.trace(`${this.constructor.name}: disposed`);
+        if (this.#disposed) { return; }
+        this.#disposed = true;
+
+        this.#disposables.forEach((d) => void d.dispose());
+
+        void this.#asyncQueue.enqueue(
+            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems`, undefined)
+        );
+
+        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
     }
 
-    updateRunnable(taskIdentifier: { scopeKey: ScopeKey, taskName: TaskName; }) {
-        this.#treeDataProvider.updateRunnable(taskIdentifier);
+    // #region Handlers
+
+    #updateTopElementsHandler() {
+
+        if (this.#disposed) { return; }
+
+        const visibleScopesCount = this.#treeDataProvider.topElements?.length ?? null;
+        this.#treeView.description = buildViewDescription(visibleScopesCount, this.#excludedScopesCount);
+
+        void this.#asyncQueue.enqueue(
+            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems`, Boolean(visibleScopesCount))
+        );
     }
 
 
-    fullUpdate(scopesData: Immutable<Array<ScopeData>>, excludedScopesCount: number | null = null) {
-        this.#excludedScopesCount = excludedScopesCount;
-        this.#treeDataProvider.fullUpdate(scopesData);
-    }
+    #changeTaskProcessesHandler(affectedTasks: Immutable<Map<OriginKey, Set<TaskName>>>) {
 
+        if (this.#disposed) { return; }
 
-    public expandAll() {
-        const topElements = this.#treeDataProvider.topElements;
-        if (!topElements || topElements.length < 1) {
-            return;
+        // @todo - знать originKeys содержимого, и отбрасывать сразу не валидное?
+        // не делать for, не вызывать updateRunnable - если все равно будет промах
+        for (const [originKey, taskNames] of affectedTasks) {
+            for (const taskName of taskNames) {
+                this.#treeDataProvider.notifyRunnableChanged(originKey, taskName);
+            }
         }
-        topElements.forEach(e => void this.#treeView.reveal(e, {
-            expand: 3,
-            focus: false,
-            select: false
-        }));
-    }
-
-
-    // #region #setIs**Context
-
-    async #setIsEmptyContext(isEmpty: boolean) {
-        return this.#asyncQueue.enqueue(() => commands.executeCommand<void>('setContext', `task-cockpit.${this.#viewId}.isEmpty`, isEmpty));
-    }
-
-    async #setInUpdatingContext(inUpdating: boolean) {
-        return this.#asyncQueue.enqueue(() => commands.executeCommand<void>('setContext', `task-cockpit.${this.#viewId}.inUpdating`, inUpdating));
     }
 
     // #endregion
 
+    public rebuild(originTree: Immutable<Array<OriginNode>>, excludedScopesCount: number | null = null): void {
+        if (this.#isInoperable) { return; }
+
+        this.#excludedScopesCount = excludedScopesCount;
+        this.#treeDataProvider.rebuild(originTree);
+    }
+
+
+    public expandAll() {
+
+        if (this.#isInoperable) { return; }
+
+        const topElements = this.#treeDataProvider.topElements;
+        if (!topElements || topElements.length < 1) {
+            return;
+        }
+
+        for (const element of topElements) {
+            void this.#treeView.reveal(element, {
+                expand: 3,
+                focus: false,
+                select: false
+            })
+                .then(undefined, (err) => {
+                    this.#logOutputChannel?.trace(`[${this.constructor.name}#expandAll] reveal skipped: ${err}.`);
+                });
+        }
+
+    }
+
+
+    public collapseAll() {
+
+        if (this.#isInoperable) { return; }
+
+        // не документирована. проверено работает 1.86.2-1.131.0
+        void commands.executeCommand(
+            `workbench.actions.treeView.${this.#viewId}.collapseAll` // @remark так вот почему в ID запрещена точка?
+        )
+            .then(undefined, (err) => {
+                this.#logOutputChannel?.trace(`[${this.constructor.name}#collapseAll] collapse skipped: ${err}.`);
+            });
+    }
+
+
+    get #isInoperable(): boolean {
+
+        if (this.#disposed) { return true; }
+
+        const dependenciesDisposed =
+            this.#dependencies.resourceStateCoordinator.disposed ||
+            this.#dependencies.processRegistry.disposed;
+
+        if (dependenciesDisposed) {
+            // warn намеренно: сигнал о нарушении порядка dispose.
+            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            return true;
+        }
+
+        return false;
+    }
 }
 
-
+// есть если нет исключённых скоупов, описание не показывается
+// вовсе — тек задумано: ничего не сообщаем, если сообщать нечего.
+// viewsWelcome из package.json уже объясняет
+// "все скоупы скрыты" — "0/5" в description избыточно.
 function buildViewDescription(visibleScopesCount: number | null, excludedScopesCount: number | null): string | undefined {
 
     if (!visibleScopesCount || !excludedScopesCount) {

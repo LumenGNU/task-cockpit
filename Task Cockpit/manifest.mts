@@ -11,12 +11,12 @@ import {
     COMMAND_CATEGORY,
     COMMAND_IDS,
     DISPLAY_NAME,
-    GLOBAL_TREE_VIEW_ID,
     ID_PREFIX,
     ID,
     SETTING_IDS,
     VIEW_CONTAINER_ID,
-    WORKSPACE_TREE_VIEW_ID,
+    PROJECT_TREE_VIEW,
+    GLOBAL_TREE_VIEW,
 } from './src/common.js';
 
 
@@ -299,14 +299,14 @@ const MANIFEST = {
                 category: COMMAND_CATEGORY,
                 title: 'Open Tasks File',
                 icon: '$(go-to-file)',
-                enablement: `view == ${WORKSPACE_TREE_VIEW_ID} && viewItem == ${ID_PREFIX}:Folder:Project`
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Project`
             },
             {
                 command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_FILE,
                 category: COMMAND_CATEGORY,
                 title: 'Open Workspace File',
                 icon: '$(go-to-file)',
-                enablement: `view == ${WORKSPACE_TREE_VIEW_ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`
             },
             {
                 command: COMMAND_IDS.TASK_EXECUTE,
@@ -368,14 +368,14 @@ const MANIFEST = {
                 category: COMMAND_CATEGORY,
                 title: 'Expand All',
                 icon: '$(expand-all)',
-                enablement: `view == ${GLOBAL_TREE_VIEW_ID} && workbenchState != empty`
+                enablement: `view == ${GLOBAL_TREE_VIEW.ID} && workbenchState != empty`
             },
             {
-                command: COMMAND_IDS.WORKSPACE_TASK_VIEW_EXPAND_ALL,
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
                 category: COMMAND_CATEGORY,
                 title: 'Expand All',
                 icon: '$(expand-all)',
-                enablement: `view == ${WORKSPACE_TREE_VIEW_ID} && workbenchState != empty`
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && workbenchState != empty`
             }
         ),
         viewsContainers: {
@@ -390,20 +390,20 @@ const MANIFEST = {
         views: {
             [VIEW_CONTAINER_ID]: [
                 {
-                    id: GLOBAL_TREE_VIEW_ID,
-                    name: 'Global Tasks',
+                    id: GLOBAL_TREE_VIEW.ID,
+                    name: GLOBAL_TREE_VIEW.NAME,
                     icon: iconPath('panel-icon.svg'),
                     type: 'tree',
-                    initialSize: 1,
+                    initialSize: 55,
                     visibility: 'visible',
                     when: `config.${SETTING_IDS.SHOW_GLOBAL_TASKS_VIEW}`
                 },
                 {
-                    id: WORKSPACE_TREE_VIEW_ID,
-                    name: 'Workspace Tasks',
+                    id: PROJECT_TREE_VIEW.ID,
+                    name: PROJECT_TREE_VIEW.NAME,
                     icon: iconPath('panel-icon.svg'),
                     type: 'tree',
-                    initialSize: 2,
+                    initialSize: 89,
                     visibility: 'visible'
                 }
             ]
@@ -412,7 +412,7 @@ const MANIFEST = {
             // global-task-view (не умеет быть пустым)
             // -------------------------------------------------------------------
             {
-                view: GLOBAL_TREE_VIEW_ID,
+                view: GLOBAL_TREE_VIEW.ID,
                 contents: 'Scanning...',
                 when: 'workbenchState != empty',
                 enablement: 'workbenchState != empty'
@@ -420,23 +420,23 @@ const MANIFEST = {
             // workspace-task-view
             // -------------------------------------------------------------------
             {
-                view: WORKSPACE_TREE_VIEW_ID,
+                view: PROJECT_TREE_VIEW.ID,
                 contents: 'Scanning...',
                 // @fixme тут не точно. isEmpty тут не должен использоваться
-                when: `workbenchState != empty && !${WORKSPACE_TREE_VIEW_ID}.isEmpty`,
-                enablement: `workbenchState != empty && !${WORKSPACE_TREE_VIEW_ID}.isEmpty`
+                when: `workbenchState != empty && !${PROJECT_TREE_VIEW.ID}.isEmpty`,
+                enablement: `workbenchState != empty && !${PROJECT_TREE_VIEW.ID}.isEmpty`
             },
             {
-                view: WORKSPACE_TREE_VIEW_ID,
+                view: PROJECT_TREE_VIEW.ID,
                 contents: 'No tasks available. Open a folder or workspace to get started.',
                 when: 'workbenchState == empty',
                 enablement: 'workbenchState == empty'
             },
             {
-                view: WORKSPACE_TREE_VIEW_ID,
+                view: PROJECT_TREE_VIEW.ID,
                 contents: `All folders are hidden by the [filter settings](command:${COMMAND_IDS.OPEN_SETTINGS_FILTERING})`,
-                when: `workbenchState != empty && ${WORKSPACE_TREE_VIEW_ID}.isEmpty`,
-                enablement: `workbenchState != empty && ${WORKSPACE_TREE_VIEW_ID}.isEmpty`
+                when: `workbenchState != empty && ${PROJECT_TREE_VIEW.ID}.isEmpty`, // @fixme
+                enablement: `workbenchState != empty && ${PROJECT_TREE_VIEW.ID}.isEmpty` // @fixme
             }
         ],
         submenus: [
@@ -448,11 +448,11 @@ const MANIFEST = {
                 defineMenuItems('navigation',
                     {
                         command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
-                        when: `view == ${GLOBAL_TREE_VIEW_ID}`
+                        when: `view == ${GLOBAL_TREE_VIEW.ID}`
                     },
                     {
-                        command: COMMAND_IDS.WORKSPACE_TASK_VIEW_EXPAND_ALL,
-                        when: `view == ${WORKSPACE_TREE_VIEW_ID}`
+                        command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
+                        when: `view == ${PROJECT_TREE_VIEW.ID}`
                     }
                 ),
                 defineMenuItems('a1_commands',
@@ -487,18 +487,18 @@ const MANIFEST = {
                     },
                     {
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
-                        when: `view == ${WORKSPACE_TREE_VIEW_ID} && viewItem == ${ID_PREFIX}:Folder:Project`, // @fixme
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Project`, // @fixme
                     },
                     {
                         command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_FILE,
-                        when: `view == ${WORKSPACE_TREE_VIEW_ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`, // @fixme
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`, // @fixme
                     }
                     // @todo для GLOBAL_TREE_VIEW_ID открыть "глобальные задачи" со значком-шестерней
                 ),
                 defineMenuItems('a1_edit',
                     { // можно "открыть задачу" только для workspace-задач
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
-                        when: `view == ${WORKSPACE_TREE_VIEW_ID} && viewItem =~ /^${ID_PREFIX}:Task/`,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem =~ /^${ID_PREFIX}:Task/`,
                     }
                 ),
                 defineMenuItems('b2_execute',
@@ -639,7 +639,7 @@ const MANIFEST = {
                 order: order.nextIn('configuration'),
                 type: 'object',
                 properties: {
-                    [SETTING_IDS.VALIDATION_DUPLICATE_LABELS]: {
+                    [SETTING_IDS.VALIDATION_SHADOWED_TASKS]: {
                         type: 'boolean',
                         scope: 'window',
                         default: true,
