@@ -128,7 +128,7 @@ class DiagnosticsManager implements Disposable {
 
     static readonly #DEBOUNCE_DELAY_MS = 50;
 
-    static readonly CONFIGURATION_SECTION = 'Validation' as const;
+    static readonly CONFIGURATION_SECTION = 'Diagnostics' as const;
     #validationConfig: WindowSettings.Configuration[typeof DiagnosticsManager.CONFIGURATION_SECTION];
 
     readonly #diagnosticCollection: DiagnosticCollection;
@@ -140,7 +140,7 @@ class DiagnosticsManager implements Disposable {
     #phase: 'disposed' | UpdatePhaseId;
     #disposables: Disposable[];
 
-    readonly #dependencies: Readonly<{
+    readonly #resourceProps: Readonly<{
         windowSettings: LifecycleOmitted<WindowSettings>;
         resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
     }>;
@@ -149,14 +149,14 @@ class DiagnosticsManager implements Disposable {
 
     constructor(
         collectionName: string | undefined, // 'Task Cockpit'
-        dependencies: Readonly<{
+        resourceProps: Readonly<{
             windowSettings: LifecycleOmitted<WindowSettings>;
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
-        this.#dependencies = dependencies;
+        this.#resourceProps = resourceProps;
         this.#logOutputChannel = logOutputChannel;
 
         this.#diagnosticCollection = languages.createDiagnosticCollection(collectionName);
@@ -167,14 +167,14 @@ class DiagnosticsManager implements Disposable {
             this.#diagnosticCollection
         ];
 
-        this.#dependencies.windowSettings.onDidChangeConfiguration((affectedKeys) => {
+        this.#resourceProps.windowSettings.onDidChangeConfiguration((affectedKeys) => {
             if (affectedKeys.has(DiagnosticsManager.CONFIGURATION_SECTION)) {
-                this.#validationConfig = this.#dependencies.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
+                this.#validationConfig = this.#resourceProps.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
                 this.#scheduleUpdate();
             }
         }, this, this.#disposables);
 
-        this.#dependencies.resourceStateCoordinator.onDidStateChange((affectedKeys) => {
+        this.#resourceProps.resourceStateCoordinator.onDidStateChange((affectedKeys) => {
             if (affectedKeys.has('TASKS')) {
                 this.#scheduleUpdate();
             }
@@ -183,7 +183,7 @@ class DiagnosticsManager implements Disposable {
 
         this.#debounceTimer = null;
 
-        this.#validationConfig = this.#dependencies.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
+        this.#validationConfig = this.#resourceProps.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
         this.#phase = this.#updatePhaseIdGen.next();
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}] schedule first check`);
@@ -255,7 +255,7 @@ class DiagnosticsManager implements Disposable {
         assert.ok(this.#phase !== 'disposed');
         const capturedPhase = this.#phase = this.#updatePhaseIdGen.next();
 
-        const originEntries = await this.#dependencies.resourceStateCoordinator.getOriginEntries();
+        const originEntries = await this.#resourceProps.resourceStateCoordinator.getOriginEntries();
         if (capturedPhase !== this.#phase) { return; }
         if (this.#isInoperable) { return; }
 
@@ -296,10 +296,10 @@ class DiagnosticsManager implements Disposable {
                 }
 
                 const diagnostics = [
-                    ...this.#validationConfig.shadowed
+                    ...this.#validationConfig.shadowedTasks
                         ? collectShadowedTaskNameDiagnostics(taskNodes, originEntry)
                         : [],
-                    ...this.#validationConfig.dependencies
+                    ...this.#validationConfig.unreachableDependencies
                         ? collectDependencyDiagnosticsForOrigin(taskNodes, originEntry, originEntries)
                         : []
                 ].map((rawDiagnostic) => {
@@ -349,8 +349,8 @@ class DiagnosticsManager implements Disposable {
         }
 
         const dependenciesDisposed =
-            this.#dependencies.resourceStateCoordinator.disposed ||
-            this.#dependencies.windowSettings.disposed;
+            this.#resourceProps.resourceStateCoordinator.disposed ||
+            this.#resourceProps.windowSettings.disposed;
 
         if (dependenciesDisposed) {
             this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);

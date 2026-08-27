@@ -25,7 +25,7 @@ import type LifecycleOmitted from '../../utils/LifecycleOmitted';
 import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
 import type TaskName from '../../TaskName';
-import type Runtime from '../../Runtime/Runtime';
+import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
 
 
 type Element =
@@ -75,10 +75,11 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     #cachedTopElements: Immutable<Array<TopElement>> | null;
     // ----------------------------------------------------
 
-    readonly #dependencies: Readonly<{
+    readonly #resourceProps: Readonly<{
         resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
-        processRegistry: Runtime.ProcessRegistryView;
     }>;
+
+    readonly #taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView;
 
     #disposed: boolean;
 
@@ -87,16 +88,17 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
     public constructor(
-        dependencies: Readonly<{
+        resourceProps: Readonly<{
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
-            processRegistry: Runtime.ProcessRegistryView;
         }>,
+        taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
         this.#disposed = false;
 
-        this.#dependencies = dependencies;
+        this.#resourceProps = resourceProps;
+        this.#taskProcessRegistry = taskProcessRegistry;
         this.#logOutputChannel = logOutputChannel;
 
         // кеш/состояние
@@ -142,7 +144,10 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#cachedTopElements = null;
         this.#originNodes = [];
 
-        this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
+        try {
+            this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
+        }
+        catch { /* no-op */ }
 
         this.#disposables.forEach((d) => void d.dispose());
 
@@ -243,7 +248,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         // Обновить cachedTreeItem на основе runtime stats
         RunnableElement.applyRuntimeState(
             cachedTreeItem,
-            this.#dependencies.processRegistry.getTaskProcessStates(originKey, taskName)
+            this.#taskProcessRegistry.getTaskProcessStates(originKey, taskName)
         );
 
         return cachedTreeItem;
@@ -286,7 +291,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
         try {
             // resourceStateCoordinator отклонит getTaskBundle если будет диспознут в процессе
-            const taskBundle = await this.#dependencies.resourceStateCoordinator.getTaskBundle(originKey, taskName);
+            const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(originKey, taskName);
 
             this.#cancelIfInoperable();
 
@@ -317,7 +322,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     async #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): Promise<TreeItem> {
         try {
             // resourceStateCoordinator отклонит getResourceConfig если будет диспознут в процессе
-            const nodeConfig = (await this.#dependencies.resourceStateCoordinator.getResourceConfig(element.branchKey))?.Node ?? null;
+            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.branchKey))?.Node ?? null;
 
             this.#cancelIfInoperable();
 
@@ -424,7 +429,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         if (element.data != null) {
 
             try {
-                const taskBundle = await this.#dependencies.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
+                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
 
                 this.#cancelIfInoperable();
 
@@ -456,6 +461,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * - провайдер (или одна из зависимостей) disposed
      * - после `fullUpdate()` VS Code ещё не запросил `getChildren(undefined)` */
     // @todo стоит сделать асинхронным и ждать onDidUpdateTopElements?
+    // да!
     public get topElements(): Immutable<Array<TopElement>> | null {
 
         if (this.#isInoperable) { return null; }
@@ -472,8 +478,8 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         }
 
         const dependenciesDisposed =
-            this.#dependencies.resourceStateCoordinator.disposed ||
-            this.#dependencies.processRegistry.disposed;
+            this.#resourceProps.resourceStateCoordinator.disposed ||
+            this.#taskProcessRegistry.disposed;
 
         if (dependenciesDisposed) {
             this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);

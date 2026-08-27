@@ -28,11 +28,11 @@
         "js/ts.preferences.quoteStyle": "single",
         "js/ts.workspaceSymbols.scope": "currentProject",
         "js/ts.hover.maximumLength": 2500,
-        "taskCockpit.filtering.showHidden": true,
-        "notelets.notesFolder": "../notelets/",
+        "taskCockpit.filtering.showHidden": false,
+
         "cSpell.useGitignore": false,
         // --------------------------------------------------------
-        "workbench.iconTheme": "symbols",
+
         "symbols.hidesExplorerArrows": false,
         "symbols.folders.associations": {
             "/": "folder-purple"
@@ -46,22 +46,23 @@
         },
         "explorer.fileNesting.expand": false,
         "explorer.autoReveal": "focusNoScroll",
+        "explorer.autoRevealExclude": {
+            "**/node_modules": true,
+            "**/.vscode-test": true,
+            "**/.vscode": true,
+        },
         // --------------------------------------------------------
 // =========================================================================================================
-	"search.exclude": {
-		"~*": true,
-		".vscode-test": true,
-		"node_modules": true,
-	},
+
 	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-	"typescript.tsc.autoDetect": "off",
+
 	"[typescript]": {
 		"editor.colorDecorators": false
 	},
 	"[javascript]": {
 		"editor.colorDecorators": false
 	},
-	"taskCockpit.display.segmentSeparator": "|",
+
 	"files.trimTrailingWhitespace": true,
 	"files.autoSave": "afterDelay",
 	"files.autoSaveDelay": 660000,
@@ -71,7 +72,7 @@
 	"notelets.showStatusBar": false,
 	"terminal.integrated.shellIntegration.enabled": false,
 	"taskCockpit.display.tintLabel": true,
-	"taskCockpit.validation.dependencies": true,
+
 	"cSpell.ignoreRandomStrings": false,
 	"cSpell.language": "en,ru",
 	"markdown.styles": [
@@ -88,8 +89,8 @@
 	"cSpell.words": [
 		"снапшоте"
 	],
-	"js/ts.format.semicolons": "insert",
-	
+
+
 	//=============================================================================
-	
+
 }

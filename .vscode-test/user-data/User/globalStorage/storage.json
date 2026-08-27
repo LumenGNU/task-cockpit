@@ -168,6 +168,14 @@
         {
             "location": "7cd23bb2",
             "name": "playground-open-task-definition"
+        },
+        {
+            "location": "-20832a03",
+            "name": "playground-my-command"
+        },
+        {
+            "location": "-22257d27",
+            "name": "extension-debug-clean"
         }
     ],
     "lastKnownMenubarData": {
@@ -1848,13 +1856,13 @@
     "windowsState": {
         "lastActiveWindow": {
             "workspaceIdentifier": {
-                "id": "081e9b31f935cf299a819d301f396fd4",
-                "configURIPath": "file:///home/lumen/Projects/Task%20Cockpit/playground/tree-panel/full-monty/full-monty.code-workspace"
+                "id": "3754669d59e1637350be0d3c5aef8364",
+                "configURIPath": "file:///home/lumen/Projects/Task%20Cockpit/~fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace"
             },
             "uiState": {
                 "mode": 1,
-                "x": 810,
-                "y": 197,
+                "x": 755,
+                "y": 106,
                 "width": 1024,
                 "height": 768
             }

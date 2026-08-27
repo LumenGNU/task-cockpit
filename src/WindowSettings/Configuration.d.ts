@@ -54,13 +54,13 @@ interface Config {
         timeout: number;
     };
 
-    Validation: {
+    Diagnostics: {
 
         /** выполнять поиск потерянных зависимостей в файлах задач */
-        dependencies: boolean;
+        unreachableDependencies: boolean;
 
         /** выполнять поиск дубликатов лейблов в файлах задач */
-        shadowed: boolean;
+        shadowedTasks: boolean;
     };
 
 }

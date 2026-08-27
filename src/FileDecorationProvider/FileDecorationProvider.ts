@@ -62,14 +62,14 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
     // ---------------
     readonly #themeColorCache: Map<string, ThemeColor>;
 
-    readonly #dependencies: Readonly<{
+    readonly #resourceProps: Readonly<{
         windowSettings: LifecycleOmitted<WindowSettings>;
     }>;
 
     /**Создаёт провайдер.
      * @param configurationProvider начальные значения конфигурации декораций. */
     constructor(
-        dependencies: Readonly<{
+        resourceProps: Readonly<{
             windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
@@ -85,16 +85,16 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         this.#themeColorCache = new Map();
 
         // conf ---
-        this.#dependencies = dependencies;
+        this.#resourceProps = resourceProps;
 
         this.#disposables = [
             this.#onDidChangeFileDecorations
         ];
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
+        this.#resourceProps.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
-        this.#configuration = this.#dependencies.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
+        this.#configuration = this.#resourceProps.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
         // ---
 
     }
@@ -117,7 +117,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         if (!affectedKeys.has(FileDecorationProvider.CONFIGURATION_SECTION)) {
             return;
         }
-        this.#configuration = this.#dependencies.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
+        this.#configuration = this.#resourceProps.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
         this.#themeColorCache.clear(); // на всякий случай
         this.#onDidChangeFileDecorations.fire(undefined);
     }

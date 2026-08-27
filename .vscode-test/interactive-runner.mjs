@@ -2,7 +2,12 @@
 
 // @ts-check
 
+import { runTests } from '@vscode/test-electron';
 import * as C from './color.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import sm from 'source-map-support';
+
 
 // Проверка версии Node.js
 const REQUIRED_NODE_MAJOR = 22;
@@ -14,15 +19,7 @@ if (currentMajor < REQUIRED_NODE_MAJOR) {
     process.exit(1);
 }
 
-import sm from 'source-map-support';
 sm.install();
-
-
-
-import { runTests } from '@vscode/test-electron';
-import path from 'node:path';
-import fs from 'node:fs';
-
 
 const CWD = process.cwd();
 
@@ -47,15 +44,15 @@ if (!OUT_DIR) {
 
 
 if (!fs.existsSync(OUT_DIR)) {
-    // @fixme и что это директория
+    // @fixme и что это директория?
     throw new Error(`Output directory not found: "${OUT_DIR}"`);
 }
 
-
+// @fixme ?????
 const EXT_SANDBOX = process.env.EXT_SANDBOX;
 
 
-if (!EXT_SANDBOX || !fs.existsSync(EXT_SANDBOX)) {
+if (EXT_SANDBOX && !fs.existsSync(EXT_SANDBOX)) {
     throw new Error(`Sandbox directory not found: "${EXT_SANDBOX}"`);
 }
 
@@ -64,9 +61,13 @@ const VSC_VERSION = process.env.VSC_VERSION ?? '1.86.2';
 const VSC_PROFILE = process.env.VSC_PROFILE ?? "Default";
 const VSC_PARAM_LOG = process.env.VSC_PARAM_LOG;
 
-const VSC_OPEN = process.env.VSC_OPEN ? process.env.VSC_OPEN.split(path.delimiter) : [EXT_SANDBOX];
+const VSC_OPEN = process.env.VSC_OPEN ? process.env.VSC_OPEN.split(path.delimiter) : [];
 
 const extensionDevelopmentPath = (() => {
+
+    if (!EXT_SANDBOX) {
+        return path.join(CWD, OUT_DIR);
+    }
 
     const developmentPath = path.join(CWD, OUT_DIR, EXT_SANDBOX);
 

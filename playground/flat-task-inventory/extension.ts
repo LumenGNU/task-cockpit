@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import WindowSettings from "../../src/WindowSettings/WindowSettings";
-import Runtime from "../../src/Runtime/Runtime";
+import TaskProcessLifecycle from "../../src/Runtime/TaskProcessLifecycle";
 import TaskName from '../../src/TaskName';
 import ResourceStateCoordinator from "../../src/ResourceStateCoordinator/ResourceStateCoordinator";
 import OriginEntry from '../../src/ResourceStateCoordinator/OriginEntry';
@@ -37,7 +37,7 @@ async function run(
 ) {
     const resourceStateCoordinator = await ResourceStateCoordinator.create(5_000, traceChannel);
     const windowSettings = new WindowSettings(traceChannel);
-    const runtime = new Runtime({
+    const runtime = new TaskProcessLifecycle({
         resourceStateCoordinator,
         windowSettings
     },
@@ -56,14 +56,14 @@ async function run(
         const originEntries = await resourceStateCoordinator.getOriginEntries();
         const parts: string[] = [];
 
-        parts.push(await formatOriginEntry(originEntries.User, runtime.processRegistry, resourceStateCoordinator));
+        parts.push(await formatOriginEntry(originEntries.User, runtime.taskProcessRegistry, resourceStateCoordinator));
 
         if (originEntries.Workspace) {
-            parts.push(await formatOriginEntry(originEntries.Workspace, runtime.processRegistry, resourceStateCoordinator));
+            parts.push(await formatOriginEntry(originEntries.Workspace, runtime.taskProcessRegistry, resourceStateCoordinator));
         }
 
         for (const originEntry of originEntries.folders) {
-            parts.push(await formatOriginEntry(originEntry, runtime.processRegistry, resourceStateCoordinator));
+            parts.push(await formatOriginEntry(originEntry, runtime.taskProcessRegistry, resourceStateCoordinator));
         }
 
         logChannel.replace(parts.join('\n'));
@@ -75,7 +75,7 @@ async function run(
         resourceStateCoordinator,
         resourceStateCoordinator.onDidStateChange(() => { void render(); }),
         runtime,
-        runtime.processRegistry.onDidChangeTaskProcesses(() => { void render(); }),
+        runtime.taskProcessRegistry.onDidChangeTaskProcesses(() => { void render(); }),
         diagnosticsManager
     );
 }
@@ -83,7 +83,7 @@ async function run(
 
 async function formatOriginEntry(
     originEntry: Immutable<OriginEntry>,
-    processRegistry: Runtime.ProcessRegistryView,
+    processRegistry: TaskProcessLifecycle.TaskProcessRegistryView,
     resourceStateCoordinator: ResourceStateCoordinator
 ): Promise<string> {
 
@@ -121,7 +121,7 @@ async function formatTaskLabel(
     taskName: TaskName,
     displayName: string,
     resourceStateCoordinator: ResourceStateCoordinator,
-    processRegistry: Runtime.ProcessRegistryView
+    processRegistry: TaskProcessLifecycle.TaskProcessRegistryView
 ) {
 
     const { taskDefinition, eligibleTask } = await resourceStateCoordinator.getTaskBundle(originKey, taskName);

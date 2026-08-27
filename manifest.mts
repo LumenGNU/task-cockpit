@@ -1,6 +1,5 @@
 #!/usr/bin/env -S npx tsx
 
-
 import cps from 'node:child_process';
 import url from 'node:url';
 import path from 'node:path';
@@ -11,12 +10,14 @@ import {
     COMMAND_CATEGORY,
     COMMAND_IDS,
     DISPLAY_NAME,
-    ID_PREFIX,
+    PREFIX,
     ID,
     SETTING_IDS,
     VIEW_CONTAINER_ID,
     PROJECT_TREE_VIEW,
     GLOBAL_TREE_VIEW,
+    WHEN_CONTEXT,
+    UI,
 } from './src/common.js';
 
 
@@ -279,69 +280,83 @@ const MANIFEST = {
         commands: defineCommands(
             {
                 command: COMMAND_IDS.FORCE_FULL_REFRESH,
-                icon: '$(refresh)',
+                icon: `$(${UI.ICON.REFRESH})`,
                 category: COMMAND_CATEGORY,
                 title: 'Force Full Refresh',
                 shortTitle: 'Full Refresh',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
-            },
-            { // Обновить это представление
-                command: COMMAND_IDS.VIEW_REFRESH,
-                category: COMMAND_CATEGORY,
-                title: 'Refresh Task List',
-                icon: '$(refresh)',
-                // @todo нужна возможность обновить глобальные задачи и в
-                // не-проект окне
-                enablement: 'workbenchState != empty',
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
             },
             {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
+                command: COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET,
+                icon: `$(${UI.ICON.SEARCH})`,
                 category: COMMAND_CATEGORY,
-                title: 'Open Tasks File',
-                icon: '$(go-to-file)',
-                enablement: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Project`
+                title: 'Find Task In List',
+                shortTitle: 'Find Task',
+                enablement: `view == ${GLOBAL_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
             },
             {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_FILE,
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
+                icon: `$(${UI.ICON.SEARCH})`,
                 category: COMMAND_CATEGORY,
-                title: 'Open Workspace File',
-                icon: '$(go-to-file)',
-                enablement: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`
+                title: 'Find Task In List',
+                shortTitle: 'Find Task',
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
             },
             {
                 command: COMMAND_IDS.TASK_EXECUTE,
                 category: COMMAND_CATEGORY,
                 title: 'Run Task',
                 icon: '$(play)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`
             },
             {
                 command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
                 category: COMMAND_CATEGORY,
                 title: 'Start New Instance', // @todo или Run или execute?
                 icon: '$(play)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/ && !(viewItem =~ /:empty|:broken/)`
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && !(viewItem =~ /:empty|:broken/)`
             },
             {
-                command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCE,
+                command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
                 category: COMMAND_CATEGORY,
                 title: 'Abort All Running Instances',
                 icon: '$(stop)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/ && viewItem =~ /:running/` // @fixme
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && viewItem =~ /:running/` // @fixme
             },
             {
                 command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
                 category: COMMAND_CATEGORY,
                 title: 'Edit Task',
                 icon: '$(edit)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/`
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/`
+            },
+            {
+                command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
+                category: COMMAND_CATEGORY,
+                title: 'Open User Tasks',
+                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
+                enablement: `view == ${GLOBAL_TREE_VIEW.ID}`
+            },
+            {
+                command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
+                category: COMMAND_CATEGORY,
+                title: 'Open Workspace Tasks',
+                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
+                enablement: `view == ${PROJECT_TREE_VIEW.ID}`
+            },
+            {
+                command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
+                category: COMMAND_CATEGORY,
+                title: 'Open Tasks File',
+                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
+                enablement: `view == ${PROJECT_TREE_VIEW.ID}`
             },
             {
                 command: COMMAND_IDS.TASK_SHOW_TERMINAL,
                 category: COMMAND_CATEGORY,
                 title: 'Show Task Terminal',
                 icon: '$(terminal)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/ && viewItem =~ /:terminals/`
+                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && viewItem =~ /:terminals/`
             },
             {
                 command: COMMAND_IDS.OPEN_HELP_PAGE,
@@ -360,29 +375,43 @@ const MANIFEST = {
                 command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
                 category: COMMAND_CATEGORY,
                 title: 'Filtering Settings',
-                icon: '$(list-filter)',
+                icon: `$(${UI.ICON.LIST_FILTER})`,
                 enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
             },
             {
                 command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
                 category: COMMAND_CATEGORY,
                 title: 'Expand All',
-                icon: '$(expand-all)',
-                enablement: `view == ${GLOBAL_TREE_VIEW.ID} && workbenchState != empty`
+                icon: `$(${UI.ICON.EXPAND_ALL})`,
+                enablement: `view == ${GLOBAL_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
+            },
+            {
+                command: COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Collapse All',
+                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
+                enablement: `view == ${GLOBAL_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
             },
             {
                 command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
                 category: COMMAND_CATEGORY,
                 title: 'Expand All',
-                icon: '$(expand-all)',
-                enablement: `view == ${PROJECT_TREE_VIEW.ID} && workbenchState != empty`
+                icon: `$(${UI.ICON.EXPAND_ALL})`,
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
+            },
+            {
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Collapse All',
+                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
             }
         ),
         viewsContainers: {
             activitybar: [
                 {
                     id: VIEW_CONTAINER_ID,
-                    title: 'Task Cockpit',
+                    title: DISPLAY_NAME,
                     icon: iconPath('panel-icon.svg')
                 }
             ]
@@ -396,7 +425,7 @@ const MANIFEST = {
                     type: 'tree',
                     initialSize: 55,
                     visibility: 'visible',
-                    when: `config.${SETTING_IDS.SHOW_GLOBAL_TASKS_VIEW}`
+                    when: `config.${SETTING_IDS.FILTERING.SHOW_GLOBAL_TASKS}`
                 },
                 {
                     id: PROJECT_TREE_VIEW.ID,
@@ -409,7 +438,7 @@ const MANIFEST = {
             ]
         },
         viewsWelcome: [
-            // global-task-view (не умеет быть пустым)
+            // global-task-view (не умеет быть по настоящему пустым)
             // -------------------------------------------------------------------
             {
                 view: GLOBAL_TREE_VIEW.ID,
@@ -422,21 +451,20 @@ const MANIFEST = {
             {
                 view: PROJECT_TREE_VIEW.ID,
                 contents: 'Scanning...',
-                // @fixme тут не точно. isEmpty тут не должен использоваться
-                when: `workbenchState != empty && !${PROJECT_TREE_VIEW.ID}.isEmpty`,
-                enablement: `workbenchState != empty && !${PROJECT_TREE_VIEW.ID}.isEmpty`
+                when: `workbenchState != empty && !${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                enablement: `workbenchState != empty && !${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
             },
             {
                 view: PROJECT_TREE_VIEW.ID,
-                contents: 'No tasks available. Open a folder or workspace to get started.',
+                contents: 'Open a folder or workspace to get started.',
                 when: 'workbenchState == empty',
                 enablement: 'workbenchState == empty'
             },
             {
                 view: PROJECT_TREE_VIEW.ID,
-                contents: `All folders are hidden by the [filter settings](command:${COMMAND_IDS.OPEN_SETTINGS_FILTERING})`,
-                when: `workbenchState != empty && ${PROJECT_TREE_VIEW.ID}.isEmpty`, // @fixme
-                enablement: `workbenchState != empty && ${PROJECT_TREE_VIEW.ID}.isEmpty` // @fixme
+                contents: `All folders are excluded by the [filter settings](command:${COMMAND_IDS.OPEN_SETTINGS_EXCLUDE_FOLDERS})`,
+                when: `workbenchState != empty && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                enablement: `workbenchState != empty && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
             }
         ],
         submenus: [
@@ -446,20 +474,34 @@ const MANIFEST = {
             commandPalette: defineMenu(),
             'view/title': defineMenu(
                 defineMenuItems('navigation',
+                    { // искать в списке глобальных
+                        command: COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID}`,
+                    },
+                    { // искать в списке проекта
+                        command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
+                        when: `view == ${PROJECT_TREE_VIEW.ID}`,
+                    },
+                    { // обновить все. @todo-@fixme не блокируемый пункт в меню?
+                        command: COMMAND_IDS.FORCE_FULL_REFRESH,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/`,
+                    },
                     {
                         command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
                         when: `view == ${GLOBAL_TREE_VIEW.ID}`
                     },
                     {
+                        command: COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID}`
+                    },
+                    {
                         command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
                         when: `view == ${PROJECT_TREE_VIEW.ID}`
-                    }
-                ),
-                defineMenuItems('a1_commands',
+                    },
                     {
-                        command: COMMAND_IDS.FORCE_FULL_REFRESH,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/`,
-                    }
+                        command: COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL,
+                        when: `view == ${PROJECT_TREE_VIEW.ID}`
+                    },
                 ),
                 defineMenuItems('b2_open_settings',
                     {
@@ -483,38 +525,42 @@ const MANIFEST = {
                 defineMenuItems('inline',
                     {
                         command: COMMAND_IDS.TASK_EXECUTE,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`,
+                    },
+                    {
+                        command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem == :Section:Global:Group`
+                    },
+                    {
+                        command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Workspace:Group`,
                     },
                     {
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Project`, // @fixme
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Folder:Group`,
                     },
-                    {
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_FILE,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == ${ID_PREFIX}:Folder:Workspace`, // @fixme
-                    }
-                    // @todo для GLOBAL_TREE_VIEW_ID открыть "глобальные задачи" со значком-шестерней
+
                 ),
                 defineMenuItems('a1_edit',
                     { // можно "открыть задачу" только для workspace-задач
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem =~ /^${ID_PREFIX}:Task/`,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem =~ /^${PREFIX}:Task/`,
                     }
                 ),
                 defineMenuItems('b2_execute',
                     {
                         command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/`,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/`,
                     },
                     {
-                        command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCE,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/`,
+                        command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/`,
                     },
                 ),
                 defineMenuItems('c3_terminals',
                     {
                         command: COMMAND_IDS.TASK_SHOW_TERMINAL,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${ID_PREFIX}:Task/`,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/`,
                     },
                 )
             )
@@ -524,7 +570,7 @@ const MANIFEST = {
                 title: DISPLAY_NAME,
                 type: 'object',
                 properties: {
-                    [SETTING_IDS.SHOW_GLOBAL_TASKS_VIEW]: {
+                    [SETTING_IDS.FILTERING.SHOW_GLOBAL_TASKS]: {
                         type: 'boolean',
                         scope: 'window',
                         default: true,
@@ -539,7 +585,7 @@ const MANIFEST = {
                 order: order.nextIn('configuration'),
                 type: 'object',
                 properties: {
-                    [SETTING_IDS.DISPLAY_SEGMENT_SEPARATOR]: {
+                    [SETTING_IDS.DISPLAY.SEGMENT_SEPARATOR]: {
                         type: 'string',
                         scope: 'resource',
                         default: '',
@@ -553,24 +599,24 @@ const MANIFEST = {
                             'when adjacent to whitespace (e.g., `:build::dev : watch:` remains unsplit). Leave empty',
                             'to disable hierarchy. ',
                             '\nMust be a single non-alphanumeric, non-whitespace character or empty. ',
-                            `\nSee also \`#${SETTING_IDS.DISPLAY_GROUP_BY_TASK_GROUP}#\`.`
+                            `\nSee also \`#${SETTING_IDS.DISPLAY.GROUP_BY_TASK_GROUP}#\`.`
                         ].join(' '),
                         order: order.nextIn('configuration.display'),
                     },
-                    [SETTING_IDS.DISPLAY_GROUP_BY_TASK_GROUP]: {
+                    [SETTING_IDS.DISPLAY.GROUP_BY_TASK_GROUP]: {
                         type: 'boolean',
                         scope: 'resource',
                         default: false,
                         markdownDescription: [
                             'Groups tasks by their `group` property. For example, tasks with `"group": "build"` or',
                             '`"group": { kind: "build" }` will be placed under a `Build` folder (the group name will',
-                            `be capitalized). Works independently or combined with \`#${SETTING_IDS.DISPLAY_SEGMENT_SEPARATOR}#\`. `,
+                            `be capitalized). Works independently or combined with \`#${SETTING_IDS.DISPLAY.SEGMENT_SEPARATOR}#\`. `,
                             '\n**Note:** When combined, both grouping and splitting apply: a task named `Build:dev:watch` with',
                             '`"group": "build"` and separator `:` creates `Build` → `Build` → `dev` → `watch`.'
                         ].join(' '),
                         order: order.nextIn('configuration.display'),
                     },
-                    [SETTING_IDS.DISPLAY_USE_FOLDER_ICON]: {
+                    [SETTING_IDS.DISPLAY.USE_FOLDER_ICON]: {
                         type: 'boolean',
                         scope: 'resource',
                         default: false,
@@ -580,20 +626,20 @@ const MANIFEST = {
                         ].join(' '),
                         order: order.nextIn('configuration.display'),
                     },
-                    [SETTING_IDS.DISPLAY_DEFAULT_ICON_NAME]: {
+                    [SETTING_IDS.DISPLAY.DEFAULT_ICON_NAME]: {
                         type: 'string',
                         scope: 'resource',
                         default: 'tools',
                         enum: [...getCodiconsList()],
                         markdownEnumDescriptions: [...getCodiconsList().map(i => `$(${i})`)],
                         markdownDescription: [
-                            'Icon name for tasks without a custom icon in their definition. Defaults to `tools`. Tip: use',
-                            '`blank` for an empty icon. ',
+                            'Icon name for tasks without a custom icon in their definition. Defaults to `tools`. ',
+                            '\nTip: use `blank` for an empty icon. ',
                             '\n[Available icons list](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing).'
                         ].join(' '),
                         order: order.nextIn('configuration.display'),
                     },
-                    [SETTING_IDS.DISPLAY_TINT_LABEL]: {
+                    [SETTING_IDS.DISPLAY.TINT_LABEL]: {
                         type: "boolean",
                         scope: "resource",
                         default: false,
@@ -608,14 +654,14 @@ const MANIFEST = {
                 order: order.nextIn('configuration'),
                 type: 'object',
                 properties: {
-                    [SETTING_IDS.FILTERING_SHOW_HIDDEN]: {
+                    [SETTING_IDS.FILTERING.SHOW_HIDDEN]: {
                         type: 'boolean',
                         scope: 'resource',
                         default: false,
                         markdownDescription: 'Show tasks marked with `"hide": true` in the task tree.',
                         order: order.nextIn('configuration.filtering'),
                     },
-                    [SETTING_IDS.FILTERING_EXCLUDE_FOLDERS]: {
+                    [SETTING_IDS.FILTERING.EXCLUDE_FOLDERS]: {
                         type: 'array',
                         items: {
                             type: 'string',
@@ -625,33 +671,42 @@ const MANIFEST = {
                         scope: 'window',
                         default: [],
                         markdownDescription: [
-                            'Excludes specified workspace folders from the task explorer. Matches the display name as',
-                            'shown by VS Code, not the directory name. Also accepts the workspace scope name',
-                            '(e.g. `"my-project (Workspace)"`).'
+                            'Workspace folders to hide from the task explorer.',
+                            'Each entry should match the folder’s display name as shown by VS Code —',
+                            'not the directory name on disk. ',
+                            '\nAlso accepts the workspace scope name (e.g. `"my-project (Workspace)"`).'
                         ].join(' '),
                         order: order.nextIn('configuration.filtering')
                     }
                 }
             },
             {
-                title: 'Tasks Files Diagnostics',
-                markdownDescription: 'Enable diagnostics to detect potential issues with task definitions.',
+                title: 'Task Definition Issues',
+                markdownDescription: 'Enable diagnostics to surface potential issues with task definitions.',
                 order: order.nextIn('configuration'),
                 type: 'object',
                 properties: {
-                    [SETTING_IDS.VALIDATION_SHADOWED_TASKS]: {
+                    [SETTING_IDS.DIAGNOSTICS_SHADOWED_TASKS]: {
                         type: 'boolean',
                         scope: 'window',
                         default: true,
-                        markdownDescription: 'Check for tasks with duplicate labels and flag them as problematic.',
-                        order: order.nextIn('configuration.validation')
+                        markdownDescription: [
+                            'When enabled, flags task definitions that share the same label but cannot',
+                            'all be reached — either because a higher-priority origin shadows them,',
+                            'or because multiple definitions within a same origin conflict with each other.'
+                        ].join(' '),
+                        order: order.nextIn('configuration.definition-issues')
                     },
-                    [SETTING_IDS.VALIDATION_MISSING_DEPENDENCIES]: {
+                    [SETTING_IDS.DIAGNOSTICS_UNREACHABLE_DEPENDENCIES]: {
                         type: 'boolean',
                         scope: 'window',
                         default: true,
-                        markdownDescription: 'Check that tasks referenced in `dependsOn` exist. Missing dependencies will be flagged as problems.',
-                        order: order.nextIn('configuration.validation')
+                        markdownDescription: [
+                            'When enabled, flags tasks whose `dependsOn` references cannot be resolved —',
+                            'either because the target task does not exist, or because it is not reachable',
+                            'from the current resolution scope.'
+                        ].join(' '),
+                        order: order.nextIn('configuration.definition-issues')
                     }
                 }
             }

@@ -8,7 +8,7 @@ import type OriginKey from '../../../src/OriginKey';
 import type TaskName from '../../../src/TaskName';
 import type RequestId from '../../../src/Runtime/RequestId';
 import type Immutable from '../../../src/utils/Immutable';
-import ProcessRegistry from '../../../src/Runtime/ProcessRegistry';
+import TaskProcessRegistry from '../../../src/Runtime/TaskProcessRegistry';
 
 
 function hashDjb2(s: string): number {
@@ -42,11 +42,11 @@ const mono = () => ++_mono as RequestId;
 
 suite('ProcessRegistry', function () {
 
-    let registry: ProcessRegistry;
+    let registry: TaskProcessRegistry;
     let disposables: Disposable[];
 
     setup(function () {
-        registry = new ProcessRegistry();
+        registry = new TaskProcessRegistry();
         disposables = [registry];
     });
 

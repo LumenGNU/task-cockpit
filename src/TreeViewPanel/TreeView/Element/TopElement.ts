@@ -141,7 +141,7 @@ function buildContextValue(branchKey: OriginKey): ContextValue.Section {
         return ':Section:Global:Group' satisfies ContextValue.Section;
     }
     else if (branchKey === OriginKey.WORKSPACE) {
-        return ':Section:Workspace:Group' satisfies ContextValue.Section;;
+        return ':Section:Workspace:Group' satisfies ContextValue.Section;
     }
 
     return ':Section:Folder:Group' satisfies ContextValue.Section;

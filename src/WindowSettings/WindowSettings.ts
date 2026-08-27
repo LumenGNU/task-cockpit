@@ -6,7 +6,7 @@ import {
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import Configuration from '../Configuration';
-import SCHEMA from './Schema';
+import SCHEMA from './WindowConfigurationSchema';
 
 import type {
     ConfigurationChangeEvent,

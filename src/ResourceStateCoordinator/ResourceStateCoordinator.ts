@@ -4,7 +4,6 @@ import {
     EventEmitter,
     LogOutputChannel,
     TaskScope,
-    Uri,
     workspace
 } from 'vscode';
 import * as assert from 'node:assert/strict';
@@ -13,6 +12,7 @@ import groupResourceConfig from './ResourceConfig/groupResourceConfig';
 import groupTaskDefinitions from './TaskDefinition/groupTaskDefinitions';
 import OriginKey from '../OriginKey';
 import ResourceConfigurationSchema from './ResourceConfig/ResourceConfigurationSchema';
+import ResourceStructure from './ResourceStructure';
 
 import type {
     ConfigurationChangeEvent,
@@ -25,9 +25,7 @@ import type EligibleTasksMap from './EligibleTask/EligibleTasksMap';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type OriginEntriesSnapshot from './OriginEntriesSnapshot';
-import type OriginEntry from './OriginEntry';
 import type ResourceConfig from './ResourceConfig/ResourceConfig';
-import type ResourceStructure from './ResourceStructure';
 import type TaskDefinitionEntry from './TaskDefinition/TaskDefinitionEntry';
 import type TaskDefinitionMap from './TaskDefinition/TaskDefinitionMap';
 import type TaskName from '../TaskName';
@@ -468,6 +466,8 @@ class ResourceStateCoordinator implements Disposable {
             return Promise.reject(new Error(`[${this.constructor.name}#forceFullRefresh]: use after dispose`));
         }
 
+        this.#logOutputChannel?.trace(`[${this.constructor.name}#forceFullRefresh] ???????????????????????`);
+
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
             this.#debounceTimer = null;
@@ -603,6 +603,13 @@ class ResourceStateCoordinator implements Disposable {
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}#performUpdate]: Updating caches for ${[...capturedPhase.affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
 
+        // for-debug-only
+        // await new Promise<void>((r) => {
+        //     setTimeout(() => {
+        //         r();
+        //     }, 5_000);
+        // });
+
         let eligibleTasks: Immutable<EligibleTask[]> | null = null;
 
         if (capturedPhase.affectedKeys.has('TASKS')) {
@@ -683,7 +690,7 @@ class ResourceStateCoordinator implements Disposable {
         // потому что изменение workspaceFolders могло произойти одновременно
         // с изменением конфигурации. Так мы гарантируем,
         // что структура всегда актуальна.
-        this.#resourceStructure = buildResourceStructure();
+        this.#resourceStructure = ResourceStructure.build();
 
         // если получали рантайм-задачи
         if (eligibleTasks != null) {
@@ -889,54 +896,4 @@ function groupEligibleTasksByOrigin(
     return map;
 }
 
-// -----
-
-/** Формирует снапшот всех активных областей: глобальной (User),
- * рабочей области (workspace) и папок (workspace folders).
- *
- * Глобальная область *не имеет taskSource*.
- *
- * Workspace-область может быть null (нет открытого workspace). */
-function buildResourceStructure(): Immutable<ResourceStructure> {
-
-    const isMultiRoot = workspace.workspaceFile != null;
-
-    return {
-        User: {
-            originKey: OriginKey.USER,
-            name: 'User',
-            taskSource: null
-        },
-        Workspace:
-            isMultiRoot
-                ? {
-                    originKey: OriginKey.WORKSPACE,
-                    name: workspace.name!,
-                    taskSource: {
-                        uri: workspace.workspaceFile!,
-                        JSONPath: ['tasks', 'tasks'] as const
-                    }
-                }
-                : null,
-        folders: workspace.workspaceFolders?.map((folder) => {
-            const originKey = folder.uri.toString() as OriginKey.Folder;
-            const taskSource = {
-                uri: Uri.joinPath(folder.uri, '.vscode', 'tasks.json'),
-                JSONPath: ['tasks'] as const
-            };
-            return {
-                originKey,
-                name: folder.name,
-                uri: folder.uri,
-                taskSource,
-                isPrimary: folder.index === 0
-            };
-        }) ?? []
-    };
-}
-
-// -----
-
 export default ResourceStateCoordinator;
-
-// -----------

@@ -79,7 +79,7 @@ const OriginNode = {
      * @returns Иммутабельный {@linkcode OriginNode} с иерархией и счётчиками задач */
     build(originEntry: Immutable<OriginEntry>): Immutable<OriginNode> {
 
-        const { segmentSeparator, useGroupKind, showHidden } = originEntry.hierarchyConfig;
+        const { segmentSeparator, groupByTaskGroup: useGroupKind, showHidden } = originEntry.hierarchyConfig;
 
         const splitter = Splitter.create(segmentSeparator);
 

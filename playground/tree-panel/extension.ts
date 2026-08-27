@@ -8,10 +8,10 @@ import LifecycleOmitted from '../../src/utils/LifecycleOmitted';
 import ResourceStateCoordinator from '../../src/ResourceStateCoordinator/ResourceStateCoordinator';
 import OriginKey from '../../src/OriginKey';
 import TaskName from '../../src/TaskName';
-import Panel from '../../src/TreeViewPanel/Panel';
+import TreeViewPanel from '../../src/TreeViewPanel/TreeViewPanel';
 import FileDecorationProvider from '../../src/FileDecorationProvider/FileDecorationProvider';
 import { GLOBAL_TREE_VIEW, PROJECT_TREE_VIEW } from '../../src/common';
-import Runtime from '../../src/Runtime/Runtime';
+import TaskProcessLifecycle from '../../src/Runtime/TaskProcessLifecycle';
 
 
 
@@ -93,15 +93,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const windowSettings = new WindowSettings(logOutputChannel);
     const resourceStateCoordinator = await ResourceStateCoordinator.create(10_000, logOutputChannel);
-    const runtime = new Runtime({
+    const runtime = new TaskProcessLifecycle({
         windowSettings,
         resourceStateCoordinator
-    });
+    }, logOutputChannel);
 
     const dep = {
         windowSettings,
         resourceStateCoordinator,
-        processRegistry: runtime.processRegistry
+        processRegistry: runtime.taskProcessRegistry
     };
 
 
@@ -113,7 +113,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // }, 15_000);
 
 
-    const panel = new Panel(dep, logOutputChannel);
+    const panel = new TreeViewPanel(dep, logOutputChannel);
 
 }
 

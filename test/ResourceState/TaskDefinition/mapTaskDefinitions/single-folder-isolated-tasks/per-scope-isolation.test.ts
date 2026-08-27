@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import OriginKey from '../../../../../src/OriginKey';
 import groupTaskDefinitions from '../../../../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
 import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
+import ResourceStructure from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 // `${/*N=0*/'000'/**/}`
 
@@ -24,11 +25,11 @@ suite('ResourceState', function () {
 
             });
 
-            const scopeLayout = ProjectLayout.getLayout();
+            const resourceStructure = ResourceStructure.build();
 
             suite('mapTaskDefinitions корректно изолирует задачи по областям в single-folder проекте', function () {
 
-                const taskDefinitionMap = groupTaskDefinitions(scopeLayout);
+                const taskDefinitionMap = groupTaskDefinitions(resourceStructure);
 
                 test(`${/*++N*/'001'/**/} задачи global scope изолированы`, function () {
 
@@ -46,7 +47,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'003'/**/} задачи project-folder scope изолированы`, function () {
 
-                    const projectFolderTasks = [...taskDefinitionMap.get(scopeLayout.folders![0]!.key)!.keys()];
+                    const projectFolderTasks = [...taskDefinitionMap.get(resourceStructure.folders![0]!.originKey)!.keys()];
                     assert.equal(projectFolderTasks.length, 1);
                     assert.equal(projectFolderTasks[0], 'task-in-project-folder');
                 });

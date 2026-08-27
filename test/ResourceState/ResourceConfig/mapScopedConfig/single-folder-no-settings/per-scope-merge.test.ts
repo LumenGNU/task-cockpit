@@ -37,14 +37,14 @@ suite('ResourceState', function () {
             });
 
 
-            const scopeLayout = ProjectLayout.getLayout();
+            const resourceStructure = ResourceStructure.build();
 
             const folderKeys = vscode.workspace.workspaceFolders!.map((folder) => folder.uri.toString() as OriginKey.Folder);
 
 
             suite('mapScopedConfig корректно изолирует задачи по областям в single-folder проекте', function () {
 
-                const scopedConfigMap = groupResourceConfig(scopeLayout, SETTINGS_SCHEMA);
+                const scopedConfigMap = groupResourceConfig(resourceStructure, SETTINGS_SCHEMA);
 
                 test(`${/*++N*/'001'/**/} конфигурация глобальной области (User) изолируется от остальных`, function () {
 

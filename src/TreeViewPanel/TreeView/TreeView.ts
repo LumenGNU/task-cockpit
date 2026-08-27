@@ -7,6 +7,11 @@ import {
 import AsyncQueue from '../../utils/AsyncQueue';
 import ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
 import TaskTreeDataProvider from './TaskTreeDataProvider';
+import {
+    WHEN_CONTEXT,
+    GLOBAL_TREE_VIEW,
+    PROJECT_TREE_VIEW
+} from '../../common';
 
 import type {
     Disposable,
@@ -18,16 +23,23 @@ import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
 import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
-import type Runtime from '../../Runtime/Runtime';
+import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
 import type TaskName from '../../TaskName';
 
+type ContextTag =
+    | typeof WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS
+    | typeof WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS;
+
+type ViewId =
+    | typeof GLOBAL_TREE_VIEW.ID
+    | typeof PROJECT_TREE_VIEW.ID;
 
 class TreeView implements Disposable {
 
     readonly #treeDataProvider: TaskTreeDataProvider;
     readonly #treeView: VscTreeView<Immutable<unknown>>;
 
-    readonly #viewId: string;
+    readonly #viewId: ViewId;
 
     #excludedScopesCount: number | null;
 
@@ -37,18 +49,19 @@ class TreeView implements Disposable {
     readonly #asyncQueue: AsyncQueue;
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
-    readonly #dependencies: Readonly<{
+    readonly #resourceProps: Readonly<{
         resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
-        processRegistry: Runtime.ProcessRegistryView;
     }>;
 
+    readonly #taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView;
+
     constructor(
-        viewId: string,
+        viewId: ViewId,
         title: string,
-        dependencies: Readonly<{
+        resourceProps: Readonly<{
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
-            processRegistry: Runtime.ProcessRegistryView;
         }>,
+        taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView,
         logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
     ) {
 
@@ -57,9 +70,10 @@ class TreeView implements Disposable {
         this.#logOutputChannel = logOutputChannel;
         this.#asyncQueue = AsyncQueue.create(this.#logOutputChannel);
 
-        this.#dependencies = dependencies;
+        this.#resourceProps = resourceProps;
+        this.#taskProcessRegistry = taskProcessRegistry;
 
-        this.#treeDataProvider = new TaskTreeDataProvider(this.#dependencies, this.#logOutputChannel);
+        this.#treeDataProvider = new TaskTreeDataProvider(this.#resourceProps, this.#taskProcessRegistry, this.#logOutputChannel);
 
         this.#viewId = viewId;
 
@@ -87,7 +101,7 @@ class TreeView implements Disposable {
         this.#treeDataProvider.onDidRefreshTopElements(this.#updateTopElementsHandler, this, this.#disposables);
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.processRegistry.onDidChangeTaskProcesses(this.#changeTaskProcessesHandler, this, this.#disposables);
+        this.#taskProcessRegistry.onDidChangeTaskProcesses(this.#changeTaskProcessesHandler, this, this.#disposables);
     }
 
     public dispose() {
@@ -98,7 +112,7 @@ class TreeView implements Disposable {
         this.#disposables.forEach((d) => void d.dispose());
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems`, undefined)
+            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies ContextTag, undefined)
         );
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
@@ -107,15 +121,19 @@ class TreeView implements Disposable {
 
     // #region Handlers
 
+    // @todo внимательно проверить
     #updateTopElementsHandler() {
 
         if (this.#disposed) { return; }
 
-        const visibleScopesCount = this.#treeDataProvider.topElements?.length ?? null;
-        this.#treeView.description = buildViewDescription(visibleScopesCount, this.#excludedScopesCount);
+        this.#treeView.description = buildViewDescription(this.#treeDataProvider.topElements?.length, this.#excludedScopesCount);
+
+        const itemsCount = this.#treeDataProvider.topElements?.reduce((acc, entry) => {
+            return acc + entry.children.length;
+        }, 0);
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems`, Boolean(visibleScopesCount))
+            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies ContextTag, Boolean(itemsCount))
         );
     }
 
@@ -185,8 +203,8 @@ class TreeView implements Disposable {
         if (this.#disposed) { return true; }
 
         const dependenciesDisposed =
-            this.#dependencies.resourceStateCoordinator.disposed ||
-            this.#dependencies.processRegistry.disposed;
+            this.#resourceProps.resourceStateCoordinator.disposed ||
+            this.#taskProcessRegistry.disposed;
 
         if (dependenciesDisposed) {
             // warn намеренно: сигнал о нарушении порядка dispose.
@@ -202,7 +220,7 @@ class TreeView implements Disposable {
 // вовсе — тек задумано: ничего не сообщаем, если сообщать нечего.
 // viewsWelcome из package.json уже объясняет
 // "все скоупы скрыты" — "0/5" в description избыточно.
-function buildViewDescription(visibleScopesCount: number | null, excludedScopesCount: number | null): string | undefined {
+function buildViewDescription(visibleScopesCount: number | undefined, excludedScopesCount: number | null): string | undefined {
 
     if (!visibleScopesCount || !excludedScopesCount) {
         return undefined;

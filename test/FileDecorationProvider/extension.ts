@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import WindowSettings from '../../src/WindowSettings/WindowSettings';
 import FileDecorationProvider from '../../src/FileDecorationProvider/FileDecorationProvider';
 import Config from '../../src/WindowSettings/Configuration';
-import Schema from '../../src/WindowSettings/Schema';
+import Schema from '../../src/WindowSettings/WindowConfigurationSchema';
 
 export interface IFixture {
     fileDecorationProvider: FileDecorationProvider;

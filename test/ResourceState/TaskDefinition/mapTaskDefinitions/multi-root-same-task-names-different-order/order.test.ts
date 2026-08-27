@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import OriginKey from '../../../../../src/OriginKey';
 import groupTaskDefinitions from '../../../../../src/ResourceStateCoordinator/TaskDefinition/groupTaskDefinitions';
 import ProjectLayout from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
+import ResourceStructure from '../../../../../src/ResourceStateCoordinator/ResourceStructure';
 
 // `${/*N=0*/'000'/**/}`
 
@@ -24,11 +25,11 @@ suite('ResourceState', function () {
 
             });
 
-            const scopeLayout = ProjectLayout.getLayout();
+            const resourceStructure = ResourceStructure.build();
 
             suite('mapTaskDefinitions гарантирует порядок на основе порядка из файла-источника', function () {
 
-                const taskDefinitionMap = groupTaskDefinitions(scopeLayout);
+                const taskDefinitionMap = groupTaskDefinitions(resourceStructure);
 
                 test(`${/*++N*/'001'/**/} для global scope порядок сохраняется`, function () {
 
@@ -60,7 +61,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'003'/**/} для folder1 scope порядок сохраняется`, function () {
 
-                    const folderKey = scopeLayout.folders![0]!.key;
+                    const folderKey = resourceStructure.folders![0]!.originKey;
 
                     const folder1Names = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.deepEqual(folder1Names, [
@@ -75,7 +76,7 @@ suite('ResourceState', function () {
 
                 test(`${/*++N*/'004'/**/} для folder2 scope порядок сохраняется`, function () {
 
-                    const folderKey = scopeLayout.folders![1]!.key;
+                    const folderKey = resourceStructure.folders![1]!.originKey;
 
                     const folder2Names = [...taskDefinitionMap.get(folderKey)!.keys()];
                     assert.deepEqual(folder2Names, [
