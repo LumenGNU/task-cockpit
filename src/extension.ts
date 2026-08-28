@@ -116,33 +116,33 @@ function registerCommands(
             void commands.executeCommand(
                 'workbench.action.openWorkspaceSettings', {
                 query: `@ext:papio-dev.${ID} ${Object.values(SETTING_IDS.FILTERING).map((val) => `@id:${val}`).join(' ')}`
-            }).then(undefined, () => {/* no-op */ });
+            }).then(undefined, () => { /* no-op */ });
         }),
 
         commands.registerCommand(COMMAND_IDS.OPEN_SETTINGS_DISPLAY, () => {
             void commands.executeCommand(
                 'workbench.action.openWorkspaceSettings', {
                 query: `@ext:papio-dev.${ID} ${Object.values(SETTING_IDS.DISPLAY).map((val) => `@id:${val}`).join(' ')}`
-            }).then(undefined, () => {/* no-op */ });
+            }).then(undefined, () => { /* no-op */ });
         }),
 
         commands.registerCommand(COMMAND_IDS.OPEN_SETTINGS_EXCLUDE_FOLDERS, () => {
             void commands.executeCommand(
                 'workbench.action.openWorkspaceSettings', {
                 query: `@ext:papio-dev.${ID} @id:${SETTING_IDS.FILTERING.EXCLUDE_FOLDERS}`
-            }).then(undefined, () => {/* no-op */ });
+            }).then(undefined, () => { /* no-op */ });
         }),
 
         commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS, () => {
             void commands.executeCommand('workbench.action.tasks.openUserTasks')
-                .then(undefined, () => {/* no-op */ });
+                .then(undefined, () => { /* no-op */ });
         }),
 
         commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS, () => {
             // @todo открывать вручную, прокручивать к задачам?
             // нет, не нужно
             void commands.executeCommand('workbench.action.tasks.openWorkspaceFileTasks')
-                .then(undefined, () => {/* no-op */ });
+                .then(undefined, () => { /* no-op */ });
         }),
 
         commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE, (element: unknown) => {
@@ -150,11 +150,11 @@ function registerCommands(
                 element != null
                 && typeof element === 'object'
                 && 'resourceUri' in element
-                && element.resourceUri instanceof Uri) {
-
+                && element.resourceUri instanceof Uri
+            ) {
                 return void commands.executeCommand('vscode.open', element.resourceUri);
             }
-            logOutputChannel.warn('openTasksFile: no resourceUri on element', element);
+            logOutputChannel.warn('[Command#openTasksFile] No resourceUri on element:', element);
         }),
     );
 
