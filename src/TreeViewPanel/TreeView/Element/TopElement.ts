@@ -21,7 +21,7 @@ interface TopElement {
     kind: 'TopNode';
     label: string;
     resourceUri: Uri | null;
-    branchKey: OriginKey;
+    originKey: OriginKey;
     tasksSummary: {
         totalCount: number;
         hiddenCount: number;
@@ -36,7 +36,7 @@ function create(originData: Immutable<OriginNode>): Immutable<TopElement> {
         kind: 'TopNode',
         label: originData.displayName,
         resourceUri: originData.taskSourceUri,
-        branchKey: originData.originKey,
+        originKey: originData.originKey,
         tasksSummary: originData.taskCounts,
         children: originData.hierarchy.children
     };
@@ -57,10 +57,10 @@ function createTreeItem(element: Immutable<TopElement>): TreeItem {
 
     return {
         collapsibleState: TreeItemCollapsibleState.Expanded, // @todo
-        contextValue: buildContextValue(element.branchKey),
+        contextValue: buildContextValue(element.originKey),
         description: false,
-        iconPath: getIcon(element.branchKey),
-        id: element.branchKey,
+        iconPath: getIcon(element.originKey),
+        id: element.originKey,
         label: element.label,
         resourceUri: element.resourceUri ?? Uri.from({
             scheme: 'task-cockpit',
@@ -87,9 +87,9 @@ function resolveTreeItem(
     }
 
     const scopeType =
-        element.branchKey === OriginKey.USER
+        element.originKey === OriginKey.USER
             ? 'User'
-            : element.branchKey === OriginKey.WORKSPACE
+            : element.originKey === OriginKey.WORKSPACE
                 ? 'Workspace'
                 : 'Folder';
 
@@ -135,12 +135,12 @@ function formatTasksSummary(detail: TopElement['tasksSummary']): string {
     return `\`${displayed}\`${suffix}`;
 }
 
-function buildContextValue(branchKey: OriginKey): ContextValue.Section {
+function buildContextValue(originKey: OriginKey): ContextValue.Section {
 
-    if (branchKey === OriginKey.USER) {
+    if (originKey === OriginKey.USER) {
         return ':Section:Global:Group' satisfies ContextValue.Section;
     }
-    else if (branchKey === OriginKey.WORKSPACE) {
+    else if (originKey === OriginKey.WORKSPACE) {
         return ':Section:Workspace:Group' satisfies ContextValue.Section;
     }
 
@@ -148,12 +148,12 @@ function buildContextValue(branchKey: OriginKey): ContextValue.Section {
 }
 
 
-function getIcon(branchKey: OriginKey): ThemeIcon {
+function getIcon(originKey: OriginKey): ThemeIcon {
 
-    if (branchKey === OriginKey.USER) {
+    if (originKey === OriginKey.USER) {
         return new ThemeIcon(UI.ICON.USER_ORIGIN);
     }
-    else if (branchKey === OriginKey.WORKSPACE) {
+    else if (originKey === OriginKey.WORKSPACE) {
         return new ThemeIcon(UI.ICON.WORKSPACE_ORIGIN);
     }
 

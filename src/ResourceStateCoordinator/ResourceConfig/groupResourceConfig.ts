@@ -19,16 +19,16 @@ function groupResourceConfig<SchemaType extends object>(
 
     const outMap = new Map<OriginKey, SchemaType>();
 
-    // global изолировано, остальное мержится (без изоляции)
+    // User изолировано, остальное мержится (без изоляции)
     outMap.set(resourceStructure.User.originKey, Configuration.coerce(
-        workspace.getConfiguration(),
+        workspace.getConfiguration('', null),
         resourceConfigSchema,
         Configuration.IsolationMode.UserOnly
     ));
 
     if (resourceStructure.Workspace) {
         outMap.set(resourceStructure.Workspace.originKey, Configuration.coerce(
-            workspace.getConfiguration(),
+            workspace.getConfiguration('', null),
             resourceConfigSchema
         ));
     }

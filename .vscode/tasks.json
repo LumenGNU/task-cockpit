@@ -113,24 +113,7 @@
                 "showReuseMessage": false
             }
         },
-        {
-            "label": "Dev Environment|(re)Generate launch.json",
-            "detail": "Scans test-fixtures/ and generates a launch configuration for each subdirectory, plus one universal config",
-            "icon": {
-                "id": "json"
-            },
-            "type": "shell",
-            "command": "echo @TODO; exit 1; #dev-scripts/generate-launch.bash",
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false
-            },
-            "runOptions": {
-                "instanceLimit": 1
-            }
-        },
+
         {
             "label": "Dev Environment|Clean project",
             "detail": "Remove generated and temporary files:  \n- Clean `~out/` directory\n- Clean `~vsix/` directory\n- Remove `~dist/` directory",

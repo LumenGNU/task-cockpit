@@ -21,15 +21,15 @@ import type Immutable from '../../../utils/Immutable';
 import type IntermediateElement from './IntermediateElement';
 import type NodeConfiguration from './NodeConfiguration';
 import type OriginKey from '../../../OriginKey';
-import type OriginNode from '../../OriginNode';
 import type ProcessState from '../../../Runtime/ProcessState';
 import type TaskDefinition from '../../../ResourceStateCoordinator/TaskDefinition/TaskDefinition';
 import type TaskProcessId from '../../../Runtime/TaskProcessId';
 import type UriQuery from '../../../FileDecorationProvider/UriQuery';
 import type UriSchema from '../../../FileDecorationProvider/UriSchema';
+import type TaskNodeData from '../../TaskNodeData';
 
 
-type RunnableElement = Omit<HierarchyModel.Element<OriginKey, OriginNode.TaskNodeData>, 'data' | 'children'> & { data: OriginNode.TaskNodeData; children: Array<RunnableElement | IntermediateElement> | null; };
+type RunnableElement = Omit<HierarchyModel.Element<OriginKey, TaskNodeData>, 'data' | 'children'> & { data: TaskNodeData; children: Array<RunnableElement | IntermediateElement> | null; };
 
 interface RuntimeState {
 

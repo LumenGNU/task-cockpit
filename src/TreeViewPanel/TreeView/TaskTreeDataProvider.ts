@@ -145,6 +145,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#originNodes = [];
 
         try {
+            // @fixme  this.#onDidChangeTreeData WTF?
             this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
         }
         catch { /* no-op */ }
@@ -235,7 +236,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * */
     async #getTreeItemForRunnableElement(element: Immutable<RunnableElement>): Promise<TreeItem> {
 
-        const originKey = element.branchKey; // сейчас branchKey всегда originKey
+        const originKey = element.originKey; // сейчас originKey всегда originKey
         const taskName = element.data.taskName;
 
         this.#registerRunnableElement(element, originKey, taskName);
@@ -322,7 +323,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     async #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): Promise<TreeItem> {
         try {
             // resourceStateCoordinator отклонит getResourceConfig если будет диспознут в процессе
-            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.branchKey))?.Node ?? null;
+            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.originKey))?.Node ?? null;
 
             this.#cancelIfInoperable();
 
@@ -361,7 +362,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
                     }
                     return [
                         EmptyElement.create(
-                            /*id*/ element.branchKey + '_empty_node', // безопасно поскольку всегда единственный в секции
+                            /*id*/ element.originKey + '_empty_node', // безопасно поскольку всегда единственный в секции
                             element.tasksSummary
                         )
                     ];
@@ -429,7 +430,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         if (element.data != null) {
 
             try {
-                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
+                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.originKey, element.data.taskName);
 
                 this.#cancelIfInoperable();
 

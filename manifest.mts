@@ -306,8 +306,13 @@ const MANIFEST = {
                 command: COMMAND_IDS.TASK_EXECUTE,
                 category: COMMAND_CATEGORY,
                 title: 'Run Task',
-                icon: '$(play)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`
+                icon: `$(${UI.ICON.EXECUTE})`,
+                enablement: [
+                    `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
+                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят // @todo всем
+                    `&& viewItem =~ /:Runnable/`, // если запускаемый
+                    `&& !(viewItem =~ /:Running|:Broken/)` // не сломан и не выполняется сейчас
+                ].join(' ')
             },
             {
                 command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
@@ -327,8 +332,8 @@ const MANIFEST = {
                 command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
                 category: COMMAND_CATEGORY,
                 title: 'Edit Task',
-                icon: '$(edit)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/`
+                icon: `$(${UI.ICON.EDIT})`,
+                enablement: `view == ${PROJECT_TREE_VIEW.ID} && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE} && ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
             },
             {
                 command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
@@ -482,7 +487,7 @@ const MANIFEST = {
                         command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
                         when: `view == ${PROJECT_TREE_VIEW.ID}`,
                     },
-                    { // обновить все. @todo-@fixme не блокируемый пункт в меню?
+                    { // обновить все.
                         command: COMMAND_IDS.FORCE_FULL_REFRESH,
                         when: `view =~ /^${VIEW_CONTAINER_ID}/`,
                     },
@@ -525,7 +530,11 @@ const MANIFEST = {
                 defineMenuItems('inline',
                     {
                         command: COMMAND_IDS.TASK_EXECUTE,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /^${PREFIX}:Task/ && !(viewItem =~ /:running|:empty|:broken/)`,
+                        when: [
+                            `view =~ /^${VIEW_CONTAINER_ID}/`,
+                            `&& viewItem =~ /:Runnable/`,
+                            `&& !(viewItem =~ /:Running/)` // не выполняется сейчас
+                        ].join(' '),
                     },
                     {
                         command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
@@ -544,7 +553,7 @@ const MANIFEST = {
                 defineMenuItems('a1_edit',
                     { // можно "открыть задачу" только для workspace-задач
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem =~ /^${PREFIX}:Task/`,
+                        when: `view =~ /^${VIEW_CONTAINER_ID}/ && viewItem =~ /:Runnable/`,
                     }
                 ),
                 defineMenuItems('b2_execute',

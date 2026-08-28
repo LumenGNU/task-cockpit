@@ -23,14 +23,14 @@ function formatTaskName(taskName: TaskName, formatData?: { readonly segmentSepar
 
 /** Проверяет, что значение является непустой строкой
  * и может использоваться как ключ. */
-function nameIsQualifies(raw: unknown): raw is TaskName {
+function isTaskName(raw: unknown): raw is TaskName {
     return typeof raw === 'string' && raw.length > 0;
 }
 
 
 const TaskName = {
     formatTaskName,
-    nameIsQualifies
+    isTaskName
 } as const;
 
 export default TaskName;

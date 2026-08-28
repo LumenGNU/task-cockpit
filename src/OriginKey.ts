@@ -54,10 +54,15 @@ declare namespace OriginKey {
     };
 }
 
+function isOriginKey(raw: unknown): raw is OriginKey {
+    return typeof raw === 'string' && raw.length > 0;
+}
+
 const OriginKey = {
     USER: '\x00\x00$User' satisfies UserKey,
     WORKSPACE: '\x00\x00$Workspace' satisfies WorkspaceKey,
-    resolveOriginName
+    resolveOriginName,
+    isOriginKey,
 } as const;
 
 export default OriginKey;

@@ -1837,20 +1837,20 @@
             }
         }
     },
-    "theme": "vs-dark",
-    "themeBackground": "#1f1f1f",
+    "theme": "vs",
+    "themeBackground": "#ffffff",
     "windowSplash": {
         "zoomLevel": 0,
-        "baseTheme": "vs-dark",
+        "baseTheme": "vs",
         "colorInfo": {
-            "foreground": "#cccccc",
-            "background": "#1f1f1f",
-            "editorBackground": "#1f1f1f",
-            "titleBarBackground": "#181818",
-            "activityBarBackground": "#181818",
-            "sideBarBackground": "#181818",
-            "statusBarBackground": "#181818",
-            "statusBarNoFolderBackground": "#1f1f1f"
+            "foreground": "#616161",
+            "background": "#ffffff",
+            "editorBackground": "#ffffff",
+            "titleBarBackground": "#dddddd",
+            "activityBarBackground": "#2c2c2c",
+            "sideBarBackground": "#f3f3f3",
+            "statusBarBackground": "#007acc",
+            "statusBarNoFolderBackground": "#68217a"
         }
     },
     "windowsState": {
@@ -1861,8 +1861,8 @@
             },
             "uiState": {
                 "mode": 1,
-                "x": 755,
-                "y": 106,
+                "x": 448,
+                "y": 172,
                 "width": 1024,
                 "height": 768
             }

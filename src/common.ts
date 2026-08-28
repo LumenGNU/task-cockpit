@@ -47,7 +47,9 @@ export const UI = {
         COLLAPSE_ALL     /**/: 'collapse-all',
         LIST_FILTER      /**/: 'list-filter',
         // USER_TASKS_FILE: 'settings-gear',
-        OPEN_TASKS_FILE: 'go-to-file'
+        OPEN_TASKS_FILE: 'go-to-file',
+        EDIT: 'edit',
+        EXECUTE: 'play'
     },
     DISPLAY_SEGMENT_SEPARATOR: '・',
     // MD_EXPANDER: '![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAABAgMAAABS/qhXAAAACVBMVEUAAAAAAAD///+D3c/SAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjYKACAAAARQABMOPaBgAAAABJRU5ErkJggg==)'

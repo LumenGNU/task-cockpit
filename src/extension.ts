@@ -5,7 +5,10 @@ import {
     LogOutputChannel,
     type ExtensionContext,
     commands,
-    Uri
+    extensions,
+    Uri,
+    tasks,
+    Task
 } from 'vscode';
 import TaskProcessLifecycle from './Runtime/TaskProcessLifecycle';
 import WindowSettings from './WindowSettings/WindowSettings';
@@ -20,6 +23,12 @@ import {
     PROJECT_TREE_VIEW,
     SETTING_IDS
 } from './common';
+import openTaskDefinitionInEditor from './TasksSource/openTaskDefinitionInEditor';
+import TaskSource from './ResourceStateCoordinator/TaskSource';
+import TaskName from './TaskName';
+import TaskNodeData from './TreeViewPanel/TaskNodeData';
+import OriginKey from './OriginKey';
+import AsyncQueue from './utils/AsyncQueue';
 
 
 let logOutputChannel: LogOutputChannel;
@@ -46,7 +55,6 @@ export async function activate(context: ExtensionContext): Promise<void> {
     );
 
     context.subscriptions.push(
-        registerCommands(resourceProps, taskProcessLifecycle, treeViewPanel, logOutputChannel),
         treeViewPanel,
         diagnosticsManager,
         window.registerFileDecorationProvider(fileDecorationProvider),
@@ -56,6 +64,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
         windowSettings,
     );
 
+    registerCommands(context, resourceProps, taskProcessLifecycle, treeViewPanel, logOutputChannel);
+
 }
 
 export function deactivate(): void {
@@ -64,6 +74,7 @@ export function deactivate(): void {
 
 
 function registerCommands(
+    context: ExtensionContext,
     resourceProps: {
         windowSettings: WindowSettings;
         resourceStateCoordinator: ResourceStateCoordinator;
@@ -71,9 +82,11 @@ function registerCommands(
     taskProcessLifecycle: TaskProcessLifecycle,
     panel: TreeViewPanel,
     logOutputChannel: LogOutputChannel
-): Disposable {
+) {
 
-    return Disposable.from(
+    const taskQueue = AsyncQueue.create(logOutputChannel);
+
+    context.subscriptions.push(
 
         commands.registerCommand(COMMAND_IDS.FORCE_FULL_REFRESH, () => {
             panel.forceFullRefresh().catch((err) => {
@@ -156,6 +169,74 @@ function registerCommands(
             }
             logOutputChannel.warn('[Command#openTasksFile] No resourceUri on element:', element);
         }),
+
+        commands.registerCommand(COMMAND_IDS.OPEN_HELP_PAGE, () => {
+            const version = extensions.getExtension(context.extension.packageJSON.version);
+            void commands.executeCommand('vscode.open', Uri.from({
+                scheme: 'https',
+                authority: 'github.com',
+                path: `/papio-dev/task-cockpit/tree/${version ? `v${version}` : 'main'}`,
+                query: 'tab=readme-ov-file',
+                fragment: 'configuration'
+            })).then(undefined, () => { /* no-op */ });
+        }),
+
+        commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_TASK, (element: unknown) => {
+            const taskNodeData = getTaskNodeData(element);
+            if (!taskNodeData) {
+                return;
+            }
+            const { taskSource, taskName } = taskNodeData;
+            if (!taskSource) {
+                // @todo user msg?
+                return;
+            }
+            void openTaskDefinitionInEditor(taskSource, taskName).catch((err) => {
+                window.showErrorMessage(String(err));
+            });
+        }),
+
+        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, (element: unknown) => {
+            const taskNodeData = getTaskNodeData(element);
+            if (!taskNodeData) { return; }
+            logOutputChannel.trace(`[task-cockpit.task.execute] Execute task`);
+            logOutputChannel.trace(`    - Origin : ${OriginKey.resolveOriginName(taskNodeData.taskOrigin)}`);
+            logOutputChannel.trace(`    - Task   : ${taskNodeData.taskLabel}`);
+
+            void resourceProps.resourceStateCoordinator
+                .getTaskBundle(taskNodeData.taskOrigin, taskNodeData.taskName).then(
+                    (taskBundle) => {
+                        if (taskBundle.eligibleTask == null) { return; }
+
+                        taskQueue.enqueue(() => {
+                            return tasks.executeTask(taskBundle.eligibleTask as any)
+                                .then(undefined, (err) => {
+                                    window.showErrorMessage(String(err));
+                                });
+                        });
+
+                    },
+                    (_err) => { /* bo-op */ }
+                );
+        })
     );
 
+}
+
+
+function getTaskNodeData(element: unknown): TaskNodeData | null {
+
+    if (!(element != null && typeof element === 'object')) {
+        return null;
+    }
+
+    if (!('data' in element)) {
+        return null;
+    }
+
+    if (!TaskNodeData.isTaskNodeData(element.data)) {
+        return null;
+    }
+
+    return element.data;
 }

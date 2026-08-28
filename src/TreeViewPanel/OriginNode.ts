@@ -9,14 +9,7 @@ import type { Uri } from 'vscode';
 import type OriginKey from '../OriginKey';
 import type Immutable from '../utils/Immutable';
 import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
-import type TaskName from '../TaskName';
-
-type TaskNodeData = OriginNode.TaskNodeData;
-
-declare namespace OriginNode {
-    /** Данные узла-задачи в иерархии. */
-    type TaskNodeData = { taskName: TaskName; taskLabel: string; };
-}
+import type TaskNodeData from './TaskNodeData';
 
 
 /** Срез данных одной области происхождения (Origin), готовый для рендеринга в TreeView.
@@ -118,11 +111,18 @@ const OriginNode = {
 
                     const taskLabel = segments.join(UI.DISPLAY_SEGMENT_SEPARATOR);
 
-                    acc.push({ segments, data: { taskName, taskLabel } });
+                    acc.push({
+                        segments, data: {
+                            taskLabel,
+                            taskName,
+                            taskOrigin: originEntry.originKey,
+                            taskSource: originEntry.taskSource
+                        }
+                    });
 
                     return acc;
 
-                }, [] as HierarchyModel.Spec<TaskNodeData>[])
+                }, [] as HierarchyModel.Spec<Immutable<TaskNodeData>>[])
         }, HierarchyModel.PathCompression.OFF);
 
         return {

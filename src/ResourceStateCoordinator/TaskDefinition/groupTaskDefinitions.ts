@@ -109,7 +109,7 @@ function buildTaskDefinitionsMap(rawArr: Array<RawTaskDefinition>): TaskDefiniti
     const map: TaskDefinitionMap = new Map();
     for (const raw of rawArr) {
 
-        if (!TaskName.nameIsQualifies(raw.label)) {
+        if (!TaskName.isTaskName(raw.label)) {
             continue;
         }
 
