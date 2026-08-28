@@ -6,6 +6,7 @@ import {
     TreeItemCollapsibleState,
     Uri
 } from 'vscode';
+import { UI } from '../../../common';
 import * as assert from 'node:assert/strict';
 import formatTooltip from '../formatTooltip';
 
@@ -18,17 +19,17 @@ import type EligibleTask from '../../../ResourceStateCoordinator/EligibleTask/El
 import type HierarchyModel from '../../../HierarchyModel/HierarchyModel';
 import type Immutable from '../../../utils/Immutable';
 import type IntermediateElement from './IntermediateElement';
+import type NodeConfiguration from './NodeConfiguration';
 import type OriginKey from '../../../OriginKey';
+import type OriginNode from '../../OriginNode';
 import type ProcessState from '../../../Runtime/ProcessState';
 import type TaskDefinition from '../../../ResourceStateCoordinator/TaskDefinition/TaskDefinition';
-import type TaskName from '../../../TaskName';
 import type TaskProcessId from '../../../Runtime/TaskProcessId';
 import type UriQuery from '../../../FileDecorationProvider/UriQuery';
 import type UriSchema from '../../../FileDecorationProvider/UriSchema';
-import type NodeConfiguration from './NodeConfiguration';
-import { UI } from '../../../common';
 
-type RunnableElement = Omit<HierarchyModel.Element<OriginKey, { taskName: TaskName; }>, 'data' | 'children'> & { data: { taskName: TaskName; }; children: Array<RunnableElement | IntermediateElement> | null; };
+
+type RunnableElement = Omit<HierarchyModel.Element<OriginKey, OriginNode.TaskNodeData>, 'data' | 'children'> & { data: OriginNode.TaskNodeData; children: Array<RunnableElement | IntermediateElement> | null; };
 
 interface RuntimeState {
 
@@ -118,10 +119,12 @@ function resolveTreeItem(
 
     if (token.isCancellationRequested) { return item; }
 
+    const taskLabel = element.data.taskLabel;
+
     if (!taskBundle.taskDefinition) {
         item.tooltip = formatTooltip(
             'Task',
-            element.label,
+            taskLabel,
             `$(${UI.ICON.ERROR}) Task definition not found` // @todo
         );
         return item;
@@ -130,7 +133,7 @@ function resolveTreeItem(
     if (!taskBundle.eligibleTask) {
         item.tooltip = formatTooltip(
             'Task',
-            element.label,
+            taskLabel,
             `$(${UI.ICON.WARNING}) No task matches this definition`
         );
         return item;
@@ -138,7 +141,7 @@ function resolveTreeItem(
 
     item.tooltip = formatTooltip(
         'Task',
-        element.label,
+        taskLabel,
         taskBundle.eligibleTask.detail
     );
 

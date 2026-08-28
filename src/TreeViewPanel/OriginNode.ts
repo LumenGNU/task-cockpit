@@ -1,8 +1,9 @@
 /** @file TreeViewPanel/OriginNode.ts */
 /** @internal */
 
-import Splitter from '../Splitter';
+import { UI } from '../common';
 import HierarchyModel from '../HierarchyModel/HierarchyModel';
+import Splitter from '../Splitter';
 
 import type { Uri } from 'vscode';
 import type OriginKey from '../OriginKey';
@@ -14,7 +15,7 @@ type TaskNodeData = OriginNode.TaskNodeData;
 
 declare namespace OriginNode {
     /** Данные узла-задачи в иерархии. */
-    type TaskNodeData = Record<'taskName', TaskName>;
+    type TaskNodeData = { taskName: TaskName; taskLabel: string; };
 }
 
 
@@ -115,7 +116,9 @@ const OriginNode = {
                             ? [groupKind, ...splitter.split(taskName)]
                             : splitter.split(taskName);
 
-                    acc.push({ segments, data: { taskName } });
+                    const taskLabel = segments.join(UI.DISPLAY_SEGMENT_SEPARATOR);
+
+                    acc.push({ segments, data: { taskName, taskLabel } });
 
                     return acc;
 
