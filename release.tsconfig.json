@@ -1,20 +1,16 @@
 {
-	"compilerOptions": {
-		"module": "Node16",
-		"target": "ES2022",
-		"lib": [
-			"ES2022"
-		],
-		"incremental": false,
-		"sourceMap": false,
-		"rootDir": "~src",
-		"strict": true,
-		"removeComments": true
-	},
-    "include": [
-        "~src/*"
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "sourceMap": false,
+        "removeComments": true,
+        "incremental": false,
+        "rootDir": "./src"
+    },
+    "exclude": [
+        "./src/~*",
+        "./src/**/~*"
     ],
-	"exclude": [
-		"**/~src/~*"
-	]
+    "include": [
+        "./src/**/*.ts"
+    ]
 }

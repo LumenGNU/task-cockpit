@@ -113,7 +113,6 @@
                 "showReuseMessage": false
             }
         },
-
         {
             "label": "Dev Environment|Clean project",
             "detail": "Remove generated and temporary files:  \n- Clean `~out/` directory\n- Clean `~vsix/` directory\n- Remove `~dist/` directory",
@@ -195,13 +194,13 @@
                 "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
                 "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
                 "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; ",
-                "npx tsx manifest.mts \"${OUT_DIR}/package.json\" ; ",
+                "npx tsx manifest.mts ; ",
                 "echo Ok."
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "TSCONFIG": "./tsconfig.debug.json",
+                    "TSCONFIG": "./debug.tsconfig.json",
                     "OUT_DIR": "./~out-debug",
                     // "EXT_SRC": "./src",
                     // manifest
@@ -257,38 +256,6 @@
         },
         // ======================================================================================================================
         {
-            "label": "Pack|Pack pre-release VSIX",
-            "detail": "Create pre-release VSIX package in `./~vsix`",
-            "icon": {
-                "id": "extensions",
-                "color": "terminal.ansiCyan"
-            },
-            "dependsOn": [
-                "Pack|Pack pre-release VSIX|Clear terminal",
-                "Build|Build All (Dev Mode)",
-                "Pack|Pack pre-release VSIX|Create/Clean '~dist/'",
-                "Pack|Pack pre-release VSIX|Copy compiled .js files",
-                "Pack|Pack pre-release VSIX|Copy additional files",
-                "Pack|Pack pre-release VSIX|Copy icons",
-                "Pack|Pack pre-release VSIX|Export extension icon",
-                "Pack|Pack pre-release VSIX|Prepare package.json",
-                "Pack|Pack pre-release VSIX|Prepare README.md",
-                "Pack|Pack pre-release VSIX|Install production dependencies",
-                "Pack|Pack pre-release VSIX|Pack VSIX"
-            ],
-            "dependsOrder": "sequence",
-            "type": "shell",
-            "command": "echo '[All done]'",
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
             "label": "Pack|Pack pre-release VSIX|Clear terminal",
             "hide": true,
             "type": "shell",
@@ -296,229 +263,6 @@
             "presentation": {
                 "panel": "shared",
                 "clear": true,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Create/Clean '~dist/'",
-            "detail": "Ensure distribution directory exists and is empty",
-            "icon": {
-                "id": "folder-opened"
-            },
-            "type": "shell",
-            "command": "dev-scripts/create-empty-directory.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~dist"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Copy compiled .js files",
-            "detail": "Copy transpiled JavaScript to distribution",
-            "icon": {
-                "id": "copy"
-            },
-            "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": "~out",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "*/ *.js",
-                    "EXCLUDES": "test/"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Copy additional files",
-            "detail": "Copy package-lock.json, LICENSE, etc.",
-            "icon": {
-                "id": "copy"
-            },
-            "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": ".",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "package-lock.json .vscodeignore CHANGELOG.md LICENSE.txt"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Copy icons",
-            "detail": "Copy icons to distribution",
-            "icon": {
-                "id": "copy"
-            },
-            "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": "icons",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "panel-icon.svg"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Export extension icon",
-            "detail": "Export SVG icon to PNG",
-            "icon": {
-                "id": "file-media"
-            },
-            "type": "shell",
-            "command": "dev-scripts/export-svg.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SRC_SVG": "icons/icon.svg",
-                    "TARGET_DIR": "~dist",
-                    "TARGET_TYPE": "png"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "runOptions": {
-                "instanceLimit": 1,
-                "instancePolicy": "warn"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Prepare package.json",
-            "detail": "Generate production `package.json` for VSIX",
-            "icon": {
-                "id": "json"
-            },
-            "type": "shell",
-            "command": "dev-scripts/prepare-package.json.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~dist"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Prepare README.md",
-            "detail": "",
-            "icon": {
-                "id": "markdown"
-            },
-            "type": "shell",
-            "command": "dev-scripts/prepare-READMT.md.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE": "README.md",
-                    "DEST_DIR": "~dist"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Install production dependencies",
-            "detail": "Install only production npm packages in ~dist/",
-            "icon": {
-                "id": "save-all"
-            },
-            "type": "shell",
-            "command": "dev-scripts/install-production-dependencies.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~dist"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack pre-release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack pre-release VSIX|Pack VSIX",
-            "detail": "Final packaging of files into a vsix",
-            "icon": {
-                "id": "package"
-            },
-            "type": "shell",
-            "dependsOrder": "sequence",
-            "command": "dev-scripts/pack-vsix.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": "~dist",
-                    "DEST_DIR": "~vsix"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
                 "echo": false,
                 "showReuseMessage": false,
                 "group": "Pack pre-release VSIX"
@@ -561,79 +305,21 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Create/Clean '~src/'",
-            "detail": "Ensure tem directory exists and is empty",
-            "icon": {
-                "id": "folder-opened"
-            },
-            "type": "shell",
-            "command": "dev-scripts/create-empty-directory.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~src"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack release VSIX|Filtering DEBUG blocks from .ts",
-            "detail": "",
-            "icon": {
-                "id": "activate-breakpoints"
-            },
-            "type": "shell",
-            "command": "dev-scripts/strip-debug-blocks.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": "src",
-                    "FIND_FILTERS": "-wholename 'src/*.ts' ! -path 'src/test/*' ! -path 'src/Logger.ts'",
-                    "DEST_DIR": "~src"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack release VSIX"
-            },
-            "problemMatcher": [
-                {
-                    "owner": "strip-debug-blocks.bash",
-                    "fileLocation": "relative",
-                    "pattern": [
-                        {
-                            "regexp": "^(.+):(\\d+): (.*)$",
-                            "kind": "line",
-                            "file": 1,
-                            "line": 2,
-                            "message": 3
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "label": "Pack|Pack release VSIX|Create/Clean '~out/'",
             "detail": "",
             "icon": {
                 "id": "folder-opened"
             },
             "type": "shell",
-            "command": "dev-scripts/create-empty-directory.bash",
+            "command": [
+                "set -eu ;",
+                "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
+                "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "DEST_DIR": "~out"
+                    "OUT_DIR": "~out"
                 }
             },
             "presentation": {
@@ -646,18 +332,21 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Transpile TypeScript to `./~out` (release)",
+            "label": "Pack|Pack release VSIX|Transpile TypeScript to `./~out`",
             "detail": "",
             "icon": {
-                "id": "rocket"
+                "id": "target"
             },
             "type": "shell",
-            "command": "dev-scripts/transpile-typescript.bash",
+            "command": [
+                "set -eu ; ",
+                "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; "
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "TSCONFIG": "release.tsconfig.json",
-                    "DEST_DIR": "~out"
+                    "OUT_DIR": "~out"
                 }
             },
             "presentation": {
@@ -673,91 +362,23 @@
             }
         },
         {
-            "label": "Pack|Pack release VSIX|Remove './~src'",
-            "detail": "",
-            "icon": {
-                "id": "trash"
-            },
-            "type": "shell",
-            "command": "dev-scripts/remove-directory.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~src"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack release VSIX|Create/Clean '~dist/'",
-            "detail": "Ensure distribution directory exists and is empty",
-            "icon": {
-                "id": "folder-opened"
-            },
-            "type": "shell",
-            "command": "dev-scripts/create-empty-directory.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "DEST_DIR": "~dist"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack release VSIX|Copy compiled .js files",
-            "detail": "Copy transpiled JavaScript to distribution",
-            "icon": {
-                "id": "copy"
-            },
-            "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
-            "options": {
-                "cwd": "${workspaceFolder}",
-                "env": {
-                    "SOURCE_DIR": "~out",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "*/ *.js",
-                    "EXCLUDES": "test/"
-                }
-            },
-            "presentation": {
-                "panel": "shared",
-                "clear": false,
-                "echo": false,
-                "showReuseMessage": false,
-                "group": "Pack release VSIX"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Pack|Pack release VSIX|Copy additional files",
+            "label": "Pack|Pack release VSIX|Copy additional files to `./~out`",
             "detail": "Copy package-lock.json, LICENSE, etc.",
             "icon": {
                 "id": "copy"
             },
             "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
+            "command": [
+                "set -euo pipefail;",
+                "IFS=':' read -ra files <<< \"${FILES}\";",
+                "mkdir -p \"${OUT_DIR}\";",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\""
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "SOURCE_DIR": ".",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "package-lock.json .vscodeignore CHANGELOG.md LICENSE.txt"
+                    "OUT_DIR": "./~out",
+                    "FILES": "./.vscodeignore:./CHANGELOG.md:./LICENSE.txt"
                 }
             },
             "presentation": {
@@ -770,19 +391,23 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Copy icons",
+            "label": "Pack|Pack release VSIX|Copy icons to `./~out`",
             "detail": "Copy icons to distribution",
             "icon": {
                 "id": "copy"
             },
             "type": "shell",
-            "command": "dev-scripts/copy-files.bash",
+            "command": [
+                "set -euo pipefail;",
+                "IFS=':' read -ra files <<< \"${FILES}\";",
+                "mkdir -p \"${OUT_DIR}\";",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\""
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "SOURCE_DIR": "icons",
-                    "DEST_DIR": "~dist",
-                    "INCLUDES": "panel-icon.svg"
+                    "OUT_DIR": "./~out",
+                    "FILES": "./icons/panel-icon.svg"
                 }
             },
             "presentation": {
@@ -801,13 +426,15 @@
                 "id": "file-media"
             },
             "type": "shell",
-            "command": "dev-scripts/export-svg.bash",
+            "command": [
+                "set -euo pipefail ; ",
+                "inkscape --export-type=png --export-filename=\"${OUT_DIR}/icon.png\" \"${SRC_SVG}\" "
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "SRC_SVG": "icons/icon.svg",
-                    "TARGET_DIR": "~dist",
-                    "TARGET_TYPE": "png"
+                    "OUT_DIR": "~out",
                 }
             },
             "presentation": {
@@ -824,17 +451,23 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Prepare package.json",
+            "label": "Pack|Pack release VSIX|Create package.json",
             "detail": "Generate production `package.json` for VSIX",
             "icon": {
                 "id": "json"
             },
             "type": "shell",
-            "command": "dev-scripts/prepare-package.json.bash",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsx manifest.mts ; ",
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "DEST_DIR": "~dist"
+                    "OUT_DIR": "~out",
+                    "MAIN_JS": "extension.js",
+                    "ICONS_PATH": "",
+                    "MANIFEST_FILE": "./~out/package.json"
                 }
             },
             "presentation": {
@@ -858,7 +491,7 @@
                 "cwd": "${workspaceFolder}",
                 "env": {
                     "SOURCE": "README.md",
-                    "DEST_DIR": "~dist"
+                    "DEST_DIR": "~out"
                 }
             },
             "presentation": {
@@ -877,11 +510,16 @@
                 "id": "save-all"
             },
             "type": "shell",
-            "command": "dev-scripts/install-production-dependencies.bash",
+            "command": [
+                "set -euo pipefail ; ",
+                "cp \"package-lock.json\" \"${OUT_DIR}/\"; ",
+                "cd \"${OUT_DIR}\"; ",
+                "npm ci --omit=dev"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "DEST_DIR": "~dist"
+                    "OUT_DIR": "~out"
                 }
             },
             "presentation": {
@@ -901,13 +539,18 @@
             },
             "type": "shell",
             "dependsOrder": "sequence",
-            "command": "dev-scripts/pack-vsix.bash",
+            "command": [
+                "set -euo pipefail ; ",
+                "cd \"${OUT_DIR}\" ; ",
+                "npx vsce package ; ",
+                "cd - ; ",
+                "cp \"${OUT_DIR}\"/task-cockpit-*.vsix \"${VSIX_DIR}/\" ; "
+            ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "SOURCE_DIR": "~dist",
-                    "DEST_DIR": "~vsix",
-                    "RELEASE": "yes"
+                    "OUT_DIR": "~out",
+                    "VSIX_DIR": "~vsix",
                 }
             },
             "presentation": {

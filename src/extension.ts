@@ -8,7 +8,9 @@ import {
     extensions,
     Uri,
     tasks,
-    Task
+    Task,
+    ThemeIcon,
+    env
 } from 'vscode';
 import TaskProcessLifecycle from './Runtime/TaskProcessLifecycle';
 import WindowSettings from './WindowSettings/WindowSettings';
@@ -24,11 +26,11 @@ import {
     SETTING_IDS
 } from './common';
 import openTaskDefinitionInEditor from './TasksSource/openTaskDefinitionInEditor';
-import TaskSource from './ResourceStateCoordinator/TaskSource';
-import TaskName from './TaskName';
 import TaskNodeData from './TreeViewPanel/TaskNodeData';
 import OriginKey from './OriginKey';
 import AsyncQueue from './utils/AsyncQueue';
+import EligibleTask from './ResourceStateCoordinator/EligibleTask/EligibleTask';
+import Immutable from './utils/Immutable';
 
 
 let logOutputChannel: LogOutputChannel;
@@ -85,6 +87,68 @@ function registerCommands(
 ) {
 
     const taskQueue = AsyncQueue.create(logOutputChannel);
+
+    function executeTask(taskNodeData: TaskNodeData): void {
+
+        logOutputChannel.trace(`[task-cockpit.task.execute] Execute task`);
+        logOutputChannel.trace(`    - Origin : ${OriginKey.resolveOriginName(taskNodeData.taskOrigin)}`);
+        logOutputChannel.trace(`    - Task   : ${taskNodeData.taskLabel}`);
+
+        void resourceProps.resourceStateCoordinator
+            .getTaskBundle(taskNodeData.taskOrigin, taskNodeData.taskName)
+            .then(
+                (taskBundle) => {
+
+                    const { eligibleTask } = taskBundle;
+
+                    if (eligibleTask == null) { return; }
+
+                    taskQueue.enqueue(() => {
+                        return tasks.executeTask(eligibleTask as unknown as Task)
+                            .then(undefined, (err) => {
+                                window.showErrorMessage(String(err));
+                            });
+                    });
+
+                },
+                (_err) => { /* bo-op */ }
+            );
+    }
+
+    async function navigateToTerminal(taskNodeData: TaskNodeData) {
+
+        const { taskOrigin, taskName, taskLabel } = taskNodeData;
+
+        const taskProcessRecords = await taskProcessLifecycle.getTaskProcessRecords(taskOrigin, taskName);
+
+        const iconPath = new ThemeIcon('terminal');
+
+        const items = [];
+        for (const record of taskProcessRecords) {
+            items.push({
+                label: `Process ID: ${record.taskProcessId}`,
+                iconPath,
+                description: record.running ? 'running' : 'completed',
+                detail: new Date(record.timestamp).toLocaleString(env.language),
+                terminal: record.terminalRef.deref() // TODO
+            });
+        }
+        if (items.length > 1) {
+            const selected = await window.showQuickPick(items, {
+                title: taskLabel,
+                placeHolder: 'Select terminal',
+                matchOnDescription: true,
+                matchOnDetail: true,
+            });
+            selected?.terminal?.show();
+            return;
+        }
+        if (items.length > 0) {
+            items[0]?.terminal?.show();
+            return;
+        }
+        return;
+    }
 
     context.subscriptions.push(
 
@@ -199,26 +263,27 @@ function registerCommands(
         commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, (element: unknown) => {
             const taskNodeData = getTaskNodeData(element);
             if (!taskNodeData) { return; }
-            logOutputChannel.trace(`[task-cockpit.task.execute] Execute task`);
-            logOutputChannel.trace(`    - Origin : ${OriginKey.resolveOriginName(taskNodeData.taskOrigin)}`);
-            logOutputChannel.trace(`    - Task   : ${taskNodeData.taskLabel}`);
+            executeTask(taskNodeData);
+        }),
 
-            void resourceProps.resourceStateCoordinator
-                .getTaskBundle(taskNodeData.taskOrigin, taskNodeData.taskName).then(
-                    (taskBundle) => {
-                        if (taskBundle.eligibleTask == null) { return; }
+        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE, (element: unknown) => {
+            const taskNodeData = getTaskNodeData(element);
+            if (!taskNodeData) { return; }
+            executeTask(taskNodeData);
+        }),
 
-                        taskQueue.enqueue(() => {
-                            return tasks.executeTask(taskBundle.eligibleTask as any)
-                                .then(undefined, (err) => {
-                                    window.showErrorMessage(String(err));
-                                });
-                        });
+        commands.registerCommand(COMMAND_IDS.TASK_ABORT_ALL_INSTANCES, (element: unknown) => {
+            const taskNodeData = getTaskNodeData(element);
+            if (!taskNodeData) { return; }
+            const { taskOrigin, taskName } = taskNodeData;
+            taskProcessLifecycle.terminateTaskProcesses(taskOrigin, taskName);
+        }),
 
-                    },
-                    (_err) => { /* bo-op */ }
-                );
-        })
+        commands.registerCommand(COMMAND_IDS.TASK_SHOW_TERMINAL, (element: unknown) => {
+            const taskNodeData = getTaskNodeData(element);
+            if (!taskNodeData) { return; }
+            navigateToTerminal(taskNodeData);
+        }),
     );
 
 }

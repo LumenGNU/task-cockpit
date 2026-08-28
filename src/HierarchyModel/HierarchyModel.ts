@@ -56,7 +56,7 @@ class Element<K extends string, D extends AnyData> {
         return this[DATA] ?? null;
     }
 
-    get originKey(): K {
+    get branchKey(): K {
         return this.id.split(SEP).at(0)! as K;
     }
 
@@ -106,8 +106,8 @@ const SEP = '\x00\x00\x1F';
  * @template D Тип данных, хранимых в runnable-узлах.
  *
  * @param props Объект с параметрами построения:
- * - `originKey` Уникальный ключ ветки. Каждый созданный узел
- *     получит этот ключ в свойство `originKey` для идентификации принадлежности
+ * - `branchKey` Уникальный ключ ветки. Каждый созданный узел
+ *     получит этот ключ в свойство `branchKey` для идентификации принадлежности
  *     к данной ветке. *обязан* быть уникальным среди *всех* веток.
  * - `specs` Массив {@linkcode Spec | спецификаций} (путь + данные),
  *     из которых строится дерево. Порядок элементов определяет порядок
@@ -198,7 +198,7 @@ declare namespace HierarchyModel {
 
     /** Read-only представление узла дерева.
      *
-     * - originKey: ключ ветки, указывающий принадлежность узла к ветке;
+     * - branchKey: ключ ветки, указывающий принадлежность узла к ветке;
      * - label: метка (сегмент) или составная метка после сжатия;
      * - id: уникальный идентификатор узла (структурных гарантий нет, см. реализацию);
      * - data: данные узла или null, если это чистый промежуточный узел;
@@ -206,7 +206,7 @@ declare namespace HierarchyModel {
      *  */
     export type Element<K extends string, D extends AnyData> =
         | {
-            originKey: K;
+            branchKey: K;
             label: string;
             id: string;
             /** Данные узла */
@@ -215,7 +215,7 @@ declare namespace HierarchyModel {
             children: Array<Element<K, D>> | null;
         }
         | {
-            originKey: K;
+            branchKey: K;
             label: string;
             id: string;
             /** Данные узла null, отсутствуют */
@@ -230,7 +230,7 @@ declare namespace HierarchyModel {
         data: D;
     }
 
-    export type SpecsDict<K extends string, D extends AnyData> = { originKey: K, specs: Array<HierarchyModel.Spec<D>>; };
+    export type SpecsDict<K extends string, D extends AnyData> = { branchKey: K, specs: Array<HierarchyModel.Spec<D>>; };
 }
 
 enum PathCompression {

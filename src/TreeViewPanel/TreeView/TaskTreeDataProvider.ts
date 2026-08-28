@@ -236,20 +236,20 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * */
     async #getTreeItemForRunnableElement(element: Immutable<RunnableElement>): Promise<TreeItem> {
 
-        const originKey = element.originKey; // сейчас originKey всегда originKey
-        const taskName = element.data.taskName;
 
-        this.#registerRunnableElement(element, originKey, taskName);
+        const { taskName, taskOrigin } = element.data;
+
+        this.#registerRunnableElement(element, taskOrigin, taskName);
 
         // Для оптимизации при частом обновлении runtime-состояния — кеширую treeItem
-        const cachedTreeItem = await this.#getOrCreateCachedTreeItem(element, originKey, taskName);
+        const cachedTreeItem = await this.#getOrCreateCachedTreeItem(element, taskOrigin, taskName);
 
         this.#cancelIfInoperable();
 
         // Обновить cachedTreeItem на основе runtime stats
         RunnableElement.applyRuntimeState(
             cachedTreeItem,
-            this.#taskProcessRegistry.getTaskProcessStates(originKey, taskName)
+            this.#taskProcessRegistry.getTaskProcessStates(taskOrigin, taskName)
         );
 
         return cachedTreeItem;
@@ -323,7 +323,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     async #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): Promise<TreeItem> {
         try {
             // resourceStateCoordinator отклонит getResourceConfig если будет диспознут в процессе
-            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.originKey))?.Node ?? null;
+            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.branchKey))?.Node ?? null;
 
             this.#cancelIfInoperable();
 
@@ -430,7 +430,8 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         if (element.data != null) {
 
             try {
-                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.originKey, element.data.taskName);
+                const { taskOrigin, taskName } = element.data;
+                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(taskOrigin, taskName);
 
                 this.#cancelIfInoperable();
 
