@@ -3,7 +3,7 @@
 import * as assert from 'node:assert/strict';
 
 
-type AnyData = Record<string, unknown>;
+type AnyData = { [k: string]: unknown; };
 
 
 /** Карта дочерних узлов. */

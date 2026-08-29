@@ -1,3 +1,5 @@
+/** @file ResourceStateCoordinator/TaskSource.ts */
+
 import { Uri } from 'vscode';
 
 interface TaskSource {

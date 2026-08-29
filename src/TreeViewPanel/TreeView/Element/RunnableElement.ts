@@ -125,7 +125,7 @@ function resolveTreeItem(
         item.tooltip = formatTooltip(
             'Task',
             taskLabel,
-            `$(${UI.ICON.ERROR}) Task definition not found` // @todo
+            `$(${UI.ICON.ERROR}) Error: Task definition not found` // @todo
         );
         return item;
     }
@@ -134,7 +134,7 @@ function resolveTreeItem(
         item.tooltip = formatTooltip(
             'Task',
             taskLabel,
-            `$(${UI.ICON.WARNING}) No task matches this definition`
+            `$(${UI.ICON.WARNING}) Error: No task matches this definition`
         );
         return item;
     }

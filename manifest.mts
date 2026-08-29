@@ -226,7 +226,7 @@ const mapGroup: Map<string, number> = new Map();
 
 interface MenuItemIn {
     command: typeof COMMAND_IDS[keyof typeof COMMAND_IDS];
-    when: string | string[];  // ← было string
+    when: string | string[];
 }
 
 interface MenuItemOut {
@@ -351,7 +351,7 @@ const MANIFEST = {
                 icon: `$(${UI.ICON.EXECUTE})`,
                 enablement: [
                     `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят // @todo нужно всем
+                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
                     `&& viewItem =~ /:Runnable/`, // если запускаемый
                     `&& !(viewItem =~ /:Running|:Broken/)` // не сломан и не выполняется сейчас
                 ]
@@ -382,7 +382,7 @@ const MANIFEST = {
             {
                 command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
                 category: COMMAND_CATEGORY,
-                title: 'Edit Task',
+                title: 'Edit Task', // @fixme это go-to не edit
                 icon: `$(${UI.ICON.EDIT})`,
                 enablement: [
                     `view == ${PROJECT_TREE_VIEW.ID}`, // можно "открыть задачу" только для project-задач
@@ -648,7 +648,8 @@ const MANIFEST = {
                     {
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
                         when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
+                            // `view =~ /^${VIEW_CONTAINER_ID}/`, // всем, но в user-tree будет серым
+                            `view == ${PROJECT_TREE_VIEW.ID}`, // только project-tree
                             `&& viewItem =~ /:Runnable/`
                         ],
                     }

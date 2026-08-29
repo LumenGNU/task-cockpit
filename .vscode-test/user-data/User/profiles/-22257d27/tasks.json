@@ -9,8 +9,9 @@
             "command": "mvn -B verify",
             "group": "build"
         },
+//
         {
-            "label": "test",
+            "label": "new task3",
             "type": "shell",
             "command": "mvn -B test",
             "group": "test"

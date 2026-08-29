@@ -162,10 +162,8 @@ class ResourceStateCoordinator implements Disposable {
         // по всей видимости, единственный случай когда срабатывает самостоятельно,
         // без сопутствующего `onDidChangeConfiguration` — это переименование
         // директорий в .code-workspace
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         workspace.onDidChangeWorkspaceFolders(this.#changeWorkspaceFoldersHandler, this, this.#disposables);
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         workspace.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
 
         // ----------------------------------------------

@@ -2,12 +2,39 @@
 
 # UNRELEASED
 
-- 'loading...' to 'scaning...'
-- detail для workspace больше не содержат сводку по пвпкам
-- `excludeFolders` setting now also supports excluding the workspace scope
-- `excludeFolders` имеет эффект в сингл-воркспейсе
-- "taskCockpit.validation.duplicateLabels" -> "taskCockpit.validation.duplicates"
-- при выделении определения задачи - курсор в начале определения
+bug с правильным получением списка задач когда файл User/profile/.../tasks.json имеет не сохраненные изменения в момент запуска любой задачи
+
+### Added
+
+- **Global Tasks view** — new panel showing user-scope tasks. Can be toggled via `taskCockpit.showGlobalTasksView`.
+- `excludeFolders` now accepts the workspace scope name (e.g. `"my-project (Workspace)"`)
+  to exclude workspace-level tasks from the tree
+
+### Changed
+
+- When folders are excluded, the panel header now shows a visibility counter (e.g. `3/5 folders`),
+  replacing the summary previously shown in the workspace item tooltip
+- `excludeFolders` now takes effect in single-folder workspaces
+- **Breaking:** `taskCockpit.display.useGroupKind` renamed to `taskCockpit.display.groupByTaskGroup`
+- **Breaking:** `taskCockpit.validation.duplicateLabels` renamed to `taskCockpit.diagnostics.shadowedTasks`
+- **Breaking:** `taskCockpit.validation.dependencies` renamed to `taskCockpit.diagnostics.unreachableDependencies`
+- Various UI and UX improvements
+
+### Removed
+
+- `taskCockpit.filtering.excludeWorkspaceTasks` (deprecated since 1.1.0)
+
+### Fixed
+
+- Cursor is now placed at the start of the task definition when jumping to it
+
+
+## [1.1.1] - 2026-06-15
+
+### Added
+
+- "Collapse All"/"Expand All" button in the Task Explorer panel (issue #6)
+- "Find Task" button — quick search and filtering in the task tree (list.find)
 
 ## [1.1.0] - 2025-06-20
 

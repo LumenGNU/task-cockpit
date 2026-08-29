@@ -11,7 +11,7 @@ declare const ___TaskName: unique symbol;
 type TaskName = string & { readonly [___TaskName]: never; };
 
 
-function formatTaskName(taskName: TaskName, formatData?: { readonly segmentSeparator: string, readonly displaySeparator?: string; } | null | undefined): string {
+function formatTaskName(taskName: TaskName, formatData?: { readonly segmentSeparator: string; readonly displaySeparator?: string; } | null): string {
     if (!formatData) {
         return taskName;
     }

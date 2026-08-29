@@ -1,10 +1,13 @@
+/** @file TreeViewPanel/TaskNodeData.ts */
+
 import TaskName from '../TaskName';
 import TaskSource from '../ResourceStateCoordinator/TaskSource';
 import OriginKey from '../OriginKey';
 
 
 /** Данные узла-задачи в иерархии. */
-type TaskNodeData = {
+interface TaskNodeData {
+    [k: string]: unknown;
     taskLabel: string;
     taskName: TaskName;
     taskOrigin: OriginKey;

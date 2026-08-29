@@ -1,4 +1,4 @@
-/** @file ResourceStateCoordinator/buildResourceStructure.ts */
+/** @file ResourceStateCoordinator/ResourceStructure.ts */
 /** @internal */
 
 import {

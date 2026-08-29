@@ -38,6 +38,7 @@ function formatTooltip(
     }
 
     const inner: string[] = [];
+
     if (label) { inner.push(`**${label}**`); }
     if (detail) { inner.push(detail); }
 
@@ -50,6 +51,7 @@ function formatTooltip(
     tooltip.supportHtml = false;
     tooltip.supportThemeIcons = true;
 
+    // tooltip.appendMarkdown(`${outer.join(P)}`);
     tooltip.appendMarkdown(`${outer.join(P)}${BR}${EXPANDER}`);
 
     return tooltip;

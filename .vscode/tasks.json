@@ -277,17 +277,12 @@
                 "color": "terminal.ansiGreen"
             },
             "dependsOn": [
-                "Pack|Pack release VSIX|Create/Clean '~src/'",
-                "Pack|Pack release VSIX|Filtering DEBUG blocks from .ts",
                 "Pack|Pack release VSIX|Create/Clean '~out/'",
-                "Pack|Pack release VSIX|Transpile TypeScript to `./~out` (release)",
-                "Pack|Pack release VSIX|Remove './~src'",
-                "Pack|Pack release VSIX|Create/Clean '~dist/'",
-                "Pack|Pack release VSIX|Copy compiled .js files",
-                "Pack|Pack release VSIX|Copy additional files",
-                "Pack|Pack release VSIX|Copy icons",
+                "Pack|Pack release VSIX|Transpile TypeScript to `./~out`",
+                "Pack|Pack release VSIX|Copy additional files to `./~out`",
+                "Pack|Pack release VSIX|Copy icons to `./~out`",
                 "Pack|Pack release VSIX|Export extension icon",
-                "Pack|Pack release VSIX|Prepare package.json",
+                "Pack|Pack release VSIX|Create package.json",
                 "Pack|Pack release VSIX|Prepare README.md",
                 "Pack|Pack release VSIX|Install production dependencies",
                 "Pack|Pack release VSIX|Pack VSIX"
@@ -308,7 +303,7 @@
             "label": "Pack|Pack release VSIX|Create/Clean '~out/'",
             "detail": "",
             "icon": {
-                "id": "folder-opened"
+                "id": "new-folder"
             },
             "type": "shell",
             "command": [
@@ -3101,9 +3096,11 @@
                         "line": 2,
                         "column": 3
                     },
-                },
+                }
+
             ]
         },
+
         //---------------------------------------------------------------------------------------------------------------------------------------------------------
         // {
         //     "label": "action-run-task",
@@ -3120,4 +3117,5 @@
     //         "args": "playground"
     //     }
     // ]
+
 }

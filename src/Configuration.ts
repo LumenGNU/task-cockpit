@@ -22,7 +22,7 @@ type BooleanSpecDefinition = Omit<BooleanSpec, 'type'>;
 function BooleanSpec(specDefinition: BooleanSpecDefinition): BooleanSpec {
     return {
         ...specDefinition,
-        type: BOOLEAN_SPEC_TYPE,
+        type: BOOLEAN_SPEC_TYPE
     };
 }
 
@@ -37,7 +37,7 @@ type NumberSpecDefinition = Omit<NumberSpec, 'type'>;
 function NumberSpec(specDefinition: NumberSpecDefinition): NumberSpec {
     return {
         ...specDefinition,
-        type: NUMBER_SPEC_TYPE,
+        type: NUMBER_SPEC_TYPE
     };
 }
 
@@ -52,7 +52,7 @@ type StringSpecDefinition = Omit<StringSpec, 'type'>;
 function StringSpec(specDefinition: StringSpecDefinition): StringSpec {
     return {
         ...specDefinition,
-        type: STRING_SPEC_TYPE,
+        type: STRING_SPEC_TYPE
     };
 }
 
@@ -67,7 +67,7 @@ type StringSetSpecDefinition = Omit<StringSetSpec, 'type'>;
 function StringSetSpec(specDefinition: StringSetSpecDefinition): StringSetSpec {
     return {
         ...specDefinition,
-        type: STRING_SET_SPEC_TYPE,
+        type: STRING_SET_SPEC_TYPE
     };
 }
 
@@ -82,7 +82,7 @@ type StringLiteralSpecDefinition = Omit<StringLiteralSpec, 'type'>;
 function StringLiteralSpec<T extends string>(specDefinition: StringLiteralSpecDefinition): StringLiteralSpec {
     return {
         ...specDefinition,
-        type: STRING_LITERAL_SPEC_TYPE,
+        type: STRING_LITERAL_SPEC_TYPE
     };
 }
 
@@ -479,8 +479,8 @@ declare namespace Configuration {
     };
 
     interface BooleanSpec {
-        readonly type: typeof BOOLEAN_SPEC_TYPE,
-        readonly configKey: string,
+        readonly type: typeof BOOLEAN_SPEC_TYPE;
+        readonly configKey: string;
         /** Значение по умолчанию, если в настройках записан не-boolean или ключ отсутствует. */
         readonly fallback: boolean;
     }

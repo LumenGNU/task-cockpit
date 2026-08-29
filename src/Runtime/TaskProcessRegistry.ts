@@ -1,4 +1,4 @@
-/** @file Runtime/ProcessRegistry.ts */
+/** @file Runtime/TaskProcessRegistry.ts */
 /** @internal */
 
 import {

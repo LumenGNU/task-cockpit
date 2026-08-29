@@ -1,11 +1,9 @@
 
 import {
-    Disposable,
     window,
     LogOutputChannel,
     type ExtensionContext,
     commands,
-    extensions,
     Uri,
     tasks,
     Task,
@@ -29,15 +27,13 @@ import openTaskDefinitionInEditor from './TasksSource/openTaskDefinitionInEditor
 import TaskNodeData from './TreeViewPanel/TaskNodeData';
 import OriginKey from './OriginKey';
 import AsyncQueue from './utils/AsyncQueue';
-import EligibleTask from './ResourceStateCoordinator/EligibleTask/EligibleTask';
-import Immutable from './utils/Immutable';
 
 
 let logOutputChannel: LogOutputChannel;
 
 export async function activate(context: ExtensionContext): Promise<void> {
 
-    const extDisplayName = context.extension.packageJSON['displayName'];
+    const extDisplayName = context.extension.packageJSON['displayName'] as string;
 
     logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
 
@@ -63,7 +59,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         fileDecorationProvider,
         taskProcessLifecycle,
         resourceStateCoordinator,
-        windowSettings,
+        windowSettings
     );
 
     registerCommands(context, resourceProps, taskProcessLifecycle, treeViewPanel, logOutputChannel);
@@ -90,7 +86,7 @@ function registerCommands(
 
     function executeTask(taskNodeData: TaskNodeData): void {
 
-        logOutputChannel.trace(`[task-cockpit.task.execute] Execute task`);
+        logOutputChannel.trace('[task-cockpit.task.execute] Execute task');
         logOutputChannel.trace(`    - Origin : ${OriginKey.resolveOriginName(taskNodeData.taskOrigin)}`);
         logOutputChannel.trace(`    - Task   : ${taskNodeData.taskLabel}`);
 
@@ -103,7 +99,7 @@ function registerCommands(
 
                     if (eligibleTask == null) { return; }
 
-                    taskQueue.enqueue(() => {
+                    return taskQueue.enqueue(() => {
                         return tasks.executeTask(eligibleTask as unknown as Task)
                             .then(undefined, (err) => {
                                 window.showErrorMessage(String(err));
@@ -130,7 +126,7 @@ function registerCommands(
                 iconPath,
                 description: record.running ? 'running' : 'completed',
                 detail: new Date(record.timestamp).toLocaleString(env.language),
-                terminal: record.terminalRef.deref() // TODO
+                terminal: record.terminalRef.deref()
             });
         }
         if (items.length > 1) {
@@ -138,7 +134,7 @@ function registerCommands(
                 title: taskLabel,
                 placeHolder: 'Select terminal',
                 matchOnDescription: true,
-                matchOnDetail: true,
+                matchOnDetail: true
             });
             selected?.terminal?.show();
             return;
@@ -162,14 +158,14 @@ function registerCommands(
         commands.registerCommand(COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET, () => {
             void commands.executeCommand(`${GLOBAL_TREE_VIEW.ID}.focus`).then(
                 () => commands.executeCommand('list.find'),
-                () => { /* no-op */ },
+                () => { /* no-op */ }
             );
         }),
 
         commands.registerCommand(COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET, () => {
             void commands.executeCommand(`${PROJECT_TREE_VIEW.ID}.focus`).then(
                 () => commands.executeCommand('list.find'),
-                () => { /* no-op */ },
+                () => { /* no-op */ }
             );
         }),
 
@@ -235,7 +231,7 @@ function registerCommands(
         }),
 
         commands.registerCommand(COMMAND_IDS.OPEN_HELP_PAGE, () => {
-            const version = extensions.getExtension(context.extension.packageJSON.version);
+            const version = context.extension.packageJSON['version'] as string;
             void commands.executeCommand('vscode.open', Uri.from({
                 scheme: 'https',
                 authority: 'github.com',
@@ -282,8 +278,8 @@ function registerCommands(
         commands.registerCommand(COMMAND_IDS.TASK_SHOW_TERMINAL, (element: unknown) => {
             const taskNodeData = getTaskNodeData(element);
             if (!taskNodeData) { return; }
-            navigateToTerminal(taskNodeData);
-        }),
+            void navigateToTerminal(taskNodeData);
+        })
     );
 
 }
