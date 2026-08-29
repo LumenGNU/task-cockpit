@@ -7,7 +7,7 @@ bug с правильным получением списка задач ког�
 
 ### Added
 
-- **Global Tasks view** — new panel showing user-scope tasks. Can be toggled via `taskCockpit.showGlobalTasksView`.
+- **Global Tasks view** — new view showing user-scope tasks.
 - `excludeFolders` now accepts the workspace scope name (e.g. `"my-project (Workspace)"`)
   to exclude workspace-level tasks from the tree
 

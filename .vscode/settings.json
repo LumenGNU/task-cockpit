@@ -1,7 +1,6 @@
 // Place your settings in this file to overwrite default and user settings.
 {
         "taskCockpit.display.segmentSeparator": "|",
-        "taskCockpit.validation.dependencies": true,
 
         "files.exclude": {
             "**/node_modules/": true,
@@ -25,7 +24,6 @@
         "js/ts.preferences.quoteStyle": "single",
         "js/ts.workspaceSymbols.scope": "currentProject",
         "js/ts.hover.maximumLength": 2500,
-        "taskCockpit.filtering.showHidden": false,
 
         "cSpell.useGitignore": false,
         // --------------------------------------------------------
@@ -76,8 +74,7 @@
 		".vscode/markdown.css"
 	],
 	"markdown.validate.enabled": true,
-	"taskExplorer.groupSeparator": "|",
-	"taskExplorer.groupMaxLevel": 5,
+
 	"taskCockpit.display.defaultIconName": "target",
 	"files.associations": {
 		"CHANGELOG.md": "plaintext"

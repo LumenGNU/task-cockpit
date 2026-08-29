@@ -644,15 +644,31 @@ const MANIFEST = {
                         ],
                     },
                 ),
-                defineMenuItems('b2_edit',
+                defineMenuItems('b2_open',
                     {
+                        // перейти к определению задачи в файле
                         command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
                         when: [
                             // `view =~ /^${VIEW_CONTAINER_ID}/`, // всем, но в user-tree будет серым
                             `view == ${PROJECT_TREE_VIEW.ID}`, // только project-tree
                             `&& viewItem =~ /:Runnable/`
                         ],
-                    }
+                    },
+                    {
+                        // открыть задачи из User/profile/.../
+                        command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem == :Section:Global:Group`
+                    },
+                    {
+                        // открыть задачи из .code-workspace
+                        command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Workspace:Group`,
+                    },
+                    {
+                        // открыть задачи из .vscode/tasks.json
+                        command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Folder:Group`,
+                    },
                 ),
                 defineMenuItems('c3_terminals',
                     {

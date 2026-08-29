@@ -38,7 +38,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
 
     const windowSettings = new WindowSettings(logOutputChannel);
-    const resourceStateCoordinator = await ResourceStateCoordinator.create(5_000, logOutputChannel);
+    const resourceStateCoordinator = await ResourceStateCoordinator.create(15_000, logOutputChannel);
 
     const resourceProps = { windowSettings, resourceStateCoordinator };
 

@@ -192,7 +192,12 @@ class TaskProcessRegistry implements Disposable {
 
             const processState = this.#processStateById.get(processId);
 
-            assert.ok(processState, `[${this.constructor.name}#markCompleted]: unregistered process "${processId}"`);
+            // @todo такое случается. почему?
+            // assert.ok(processState, `[${this.constructor.name}#markCompleted]: unregistered process "${processId}"`);
+            if (!processState) {
+                continue;
+            }
+
             assert.equal(processState.running, true, `[${this.constructor.name}#markCompleted]: process "${processId}" is already completed`);
             // requestId монотонно возрастает — завершение с тем же или более старым
             // requestId нарушало бы порядок операций

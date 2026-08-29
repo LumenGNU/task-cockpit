@@ -47,7 +47,7 @@ function create(
     };
 }
 
-type AsyncQueue = {
+interface AsyncQueue {
     enqueue(op: () => PromiseLike<void>): Promise<void>;
     drain(): Promise<void>;
 };

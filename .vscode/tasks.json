@@ -168,57 +168,211 @@
             "hide": true,
             "type": "shell",
             "command": [
-                "set -eu;",
-                "if pids=$(pgrep -f \".vscode-test/.*/code\" 2> /dev/null); then",
-                "  kill $pids 2> /dev/null || true;",
-                "  for pid in $pids;",
-                "    do while kill -0 \"$pid\" 2> /dev/null; do",
-                "      sleep 0.2;",
-                "    done;",
-                "  done;",
-                "fi;",
-            ]
+                "set -euo pipefail ; ",
+                "if pids=$(pgrep -f \".vscode-test/.*/code\" 2> /dev/null) ; then",
+                "  kill $pids 2> /dev/null || true ; ",
+                "  for pid in $pids ; ",
+                "    do while kill -0 \"$pid\" 2> /dev/null ; do",
+                "      sleep 0.5 ; ",
+                "    done ; ",
+                "  done ; ",
+                "fi ; ",
+            ],
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
         },
+        {
+            "label": "_command:workbench.view.debug",
+            "command": "${command:workbench.view.debug}",
+            "hide": true,
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
+        },
+        {
+            "label": "_command:workbench.panel.repl.view.focus",
+            "command": "${command:workbench.panel.repl.view.focus}",
+            "hide": true,
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
+        },
+        // {
+        //     "label": "_waiting-for-debugger",
+        //     "type": "shell",
+        //     "command": [
+        //         "set -euo pipefail ; ",
+        //         "echo 'Waiting for debugger...' ; ",
+        //         "timeout 30 bash -c 'until nc -z localhost 9229 2>/dev/null; do sleep 0.5; done' || { echo Timeout ; exit 1; } ;"
+        //     ]
+        // },
         // ===================================================================================================================
         {
-            "label": "Debug|Build",
-            "detail": "Transpile TypeScript to `./~out-debug`",
-            "icon": {
-                "id": "target"
-            },
-            "dependsOn": [],
+            "label": "Debug",
+            "dependsOn": [
+                "_command:workbench.view.debug",
+                "Debug|Build",
+                "Debug|Run (debug-clean)",
+                "_command:workbench.panel.repl.view.focus",
+            ],
             "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Debug|Build|Create/Clean `~out-debug/`",
+            "detail": "",
+            "icon": {
+                "id": "new-folder"
+            },
             "type": "shell",
             "command": [
-                "set -eu ;",
+                "set -euo pipefail ; ",
                 "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
                 "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
-                "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; ",
-                "npx tsx manifest.mts ; ",
-                "echo Ok."
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "TSCONFIG": "./debug.tsconfig.json",
+                    "OUT_DIR": "~out-debug"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug|Build|Transpile TypeScript to `./~out-debug`",
+            "detail": "",
+            "icon": {
+                "id": "target"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "TSCONFIG": "debug.tsconfig.json",
+                    "OUT_DIR": "~out-debug"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": {
+                "applyTo": "allDocuments",
+                "base": "$tsc"
+            }
+        },
+        {
+            "label": "Debug|Build|Copy icons to `./~out-debug`",
+            "detail": "Copy icons to distribution",
+            "icon": {
+                "id": "copy"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
                     "OUT_DIR": "./~out-debug",
-                    // "EXT_SRC": "./src",
-                    // manifest
+                    "FILES": "./icons/panel-icon.svg"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug|Build|Create package.json",
+            "detail": "Generate `package.json`",
+            "icon": {
+                "id": "json"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsx manifest.mts ; ",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-debug",
                     "MAIN_JS": "extension.js",
                     "ICONS_PATH": "",
                     "MANIFEST_FILE": "./~out-debug/package.json"
                 }
             },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug|Build",
+            "detail": "",
+            "icon": {
+                "id": "gear"
+            },
+            "dependsOn": [
+                "Debug|Build|Create/Clean `~out-debug/`",
+                "Debug|Build|Transpile TypeScript to `./~out-debug`",
+                "Debug|Build|Copy icons to `./~out-debug`",
+                "Debug|Build|Create package.json"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "echo [Build Complete]",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {}
+            },
             "group": {
                 "kind": "build"
             },
-            "problemMatcher": {
-                "applyTo": "allDocuments",
-                "base": "$tsc"
-            },
             "presentation": {
-                "clear": true,
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
             },
+            "problemMatcher": [],
             "runOptions": {
                 "instanceLimit": 1,
                 "instancePolicy": "warn"
@@ -231,17 +385,13 @@
                 "id": "rocket"
             },
             "detail": "",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "group": "build",
             "dependsOn": [
                 "_kill-vscode-test-runner",
-                "Debug|Build",
             ],
             "dependsOrder": "sequence",
             "type": "shell",
-            "command": "setsid -f ./.vscode-test/interactive-runner.mjs && echo Ok ; sleep 3",
+            "command": "setsid -f ./.vscode-test/interactive-runner.mjs && echo [Started Debug Extension] ; sleep 3",
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
@@ -252,6 +402,18 @@
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
                     // "VSC_VERSION": "1.131.0",
                 }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "instanceLimit": 1,
+                "instancePolicy": "warn"
             }
         },
         // ======================================================================================================================
@@ -270,22 +432,22 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX",
+            "label": "Pack VSIX",
             "detail": "Create release VSIX package in `./~vsix`",
             "icon": {
                 "id": "extensions",
                 "color": "terminal.ansiGreen"
             },
             "dependsOn": [
-                "Pack|Pack release VSIX|Create/Clean '~out/'",
-                "Pack|Pack release VSIX|Transpile TypeScript to `./~out`",
-                "Pack|Pack release VSIX|Copy additional files to `./~out`",
-                "Pack|Pack release VSIX|Copy icons to `./~out`",
-                "Pack|Pack release VSIX|Export extension icon",
-                "Pack|Pack release VSIX|Create package.json",
-                "Pack|Pack release VSIX|Prepare README.md",
-                "Pack|Pack release VSIX|Install production dependencies",
-                "Pack|Pack release VSIX|Pack VSIX"
+                "Pack VSIX|Create/Clean `~out/`",
+                "Pack VSIX|Transpile TypeScript to `./~out`",
+                "Pack VSIX|Copy additional files to `./~out`",
+                "Pack VSIX|Copy icons to `./~out`",
+                "Pack VSIX|Export extension icon",
+                "Pack VSIX|Create package.json",
+                "Pack VSIX|Prepare README.md",
+                "Pack VSIX|Install production dependencies",
+                "Pack VSIX|Pack VSIX"
             ],
             "dependsOrder": "sequence",
             "type": "shell",
@@ -300,14 +462,14 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Create/Clean '~out/'",
+            "label": "Pack VSIX|Create/Clean `~out/`",
             "detail": "",
             "icon": {
                 "id": "new-folder"
             },
             "type": "shell",
             "command": [
-                "set -eu ;",
+                "set -euo pipefail ; ",
                 "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
                 "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
             ],
@@ -327,14 +489,14 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Transpile TypeScript to `./~out`",
+            "label": "Pack VSIX|Transpile TypeScript to `./~out`",
             "detail": "",
             "icon": {
                 "id": "target"
             },
             "type": "shell",
             "command": [
-                "set -eu ; ",
+                "set -euo pipefail ; ",
                 "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; "
             ],
             "options": {
@@ -357,17 +519,17 @@
             }
         },
         {
-            "label": "Pack|Pack release VSIX|Copy additional files to `./~out`",
+            "label": "Pack VSIX|Copy additional files to `./~out`",
             "detail": "Copy package-lock.json, LICENSE, etc.",
             "icon": {
                 "id": "copy"
             },
             "type": "shell",
             "command": [
-                "set -euo pipefail;",
-                "IFS=':' read -ra files <<< \"${FILES}\";",
-                "mkdir -p \"${OUT_DIR}\";",
-                "cp \"${files[@]}\" \"${OUT_DIR}/\""
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
@@ -386,17 +548,17 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Copy icons to `./~out`",
+            "label": "Pack VSIX|Copy icons to `./~out`",
             "detail": "Copy icons to distribution",
             "icon": {
                 "id": "copy"
             },
             "type": "shell",
             "command": [
-                "set -euo pipefail;",
-                "IFS=':' read -ra files <<< \"${FILES}\";",
-                "mkdir -p \"${OUT_DIR}\";",
-                "cp \"${files[@]}\" \"${OUT_DIR}/\""
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
@@ -415,7 +577,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Export extension icon",
+            "label": "Pack VSIX|Export extension icon",
             "detail": "Export SVG icon to PNG",
             "icon": {
                 "id": "file-media"
@@ -446,7 +608,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Create package.json",
+            "label": "Pack VSIX|Create package.json",
             "detail": "Generate production `package.json` for VSIX",
             "icon": {
                 "id": "json"
@@ -475,7 +637,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Prepare README.md",
+            "label": "Pack VSIX|Prepare README.md",
             "detail": "",
             "icon": {
                 "id": "markdown"
@@ -499,7 +661,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Install production dependencies",
+            "label": "Pack VSIX|Install production dependencies",
             "detail": "Install only production npm packages in ~dist/",
             "icon": {
                 "id": "save-all"
@@ -527,7 +689,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Pack|Pack release VSIX|Pack VSIX",
+            "label": "Pack VSIX|Pack VSIX",
             "detail": "Final packaging of files into a vsix",
             "icon": {
                 "id": "package"
@@ -704,6 +866,7 @@
             ],
             "dependsOrder": "sequence",
             "command": [
+                "set -euo pipefail ; ",
                 "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
                 "./.vscode-test/interactive-runner.mjs"
             ],
@@ -736,6 +899,7 @@
             ],
             "dependsOrder": "sequence",
             "command": [
+                "set -euo pipefail ; ",
                 "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
                 "./.vscode-test/interactive-runner.mjs"
             ],
@@ -768,6 +932,7 @@
             ],
             "dependsOrder": "sequence",
             "command": [
+                "set -euo pipefail ; ",
                 "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
                 "./.vscode-test/interactive-runner.mjs"
             ],
@@ -796,7 +961,7 @@
             "type": "shell",
             "dependsOrder": "sequence",
             "command": [
-                "set -eu;",
+                "set -euo pipefail ; ",
                 "if pids=$(pgrep -f \".vscode-test/.*/code .*--extensionDevelopmentPath=${workspaceFolder}/${OUT_DIR}/${EXT_SANDBOX}\" 2> /dev/null); then",
                 "kill $pids 2> /dev/null || true;",
                 "for pid in $pids;",
@@ -844,6 +1009,7 @@
             ],
             "dependsOrder": "sequence",
             "command": [
+                "set -euo pipefail ; ",
                 "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
                 "./.vscode-test/interactive-runner.mjs"
             ],
@@ -876,6 +1042,7 @@
             ],
             "dependsOrder": "sequence",
             "command": [
+                "set -euo pipefail ; ",
                 "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
                 "./.vscode-test/interactive-runner.mjs"
             ],
@@ -3097,10 +3264,8 @@
                         "column": 3
                     },
                 }
-
             ]
         },
-
         //---------------------------------------------------------------------------------------------------------------------------------------------------------
         // {
         //     "label": "action-run-task",
@@ -3117,5 +3282,4 @@
     //         "args": "playground"
     //     }
     // ]
-
 }
