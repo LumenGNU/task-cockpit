@@ -121,7 +121,6 @@ export const SETTING_IDS = {
         GROUP_BY_TASK_GROUP            /**/: `${CONFIG_BASE_SECTION}.display.groupByTaskGroup`,
         SEGMENT_SEPARATOR              /**/: `${CONFIG_BASE_SECTION}.display.segmentSeparator`,
         TINT_LABEL                     /**/: `${CONFIG_BASE_SECTION}.display.tintLabel`,
-        USE_FOLDER_ICON                /**/: `${CONFIG_BASE_SECTION}.display.useFolderIcon`,
     },
     FILTERING: {
         EXCLUDE_FOLDERS              /**/: `${CONFIG_BASE_SECTION}.filtering.excludeFolders`,

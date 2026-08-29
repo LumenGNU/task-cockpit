@@ -716,16 +716,6 @@ const MANIFEST = {
                         ]),
                         order: order.nextIn('configuration.display'),
                     },
-                    [SETTING_IDS.DISPLAY.USE_FOLDER_ICON]: {
-                        type: 'boolean',
-                        scope: 'resource',
-                        default: false,
-                        description: MD([
-                            'Display folder icon for intermediate segments in the task hierarchy.',
-                            'Otherwise, no icon is applied.'
-                        ]),
-                        order: order.nextIn('configuration.display'),
-                    },
                     [SETTING_IDS.DISPLAY.DEFAULT_ICON_NAME]: {
                         type: 'string',
                         scope: 'resource',

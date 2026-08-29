@@ -19,7 +19,6 @@ import type EligibleTask from '../../../ResourceStateCoordinator/EligibleTask/El
 import type HierarchyModel from '../../../HierarchyModel/HierarchyModel';
 import type Immutable from '../../../utils/Immutable';
 import type IntermediateElement from './IntermediateElement';
-import type NodeConfiguration from './NodeConfiguration';
 import type OriginKey from '../../../OriginKey';
 import type ProcessState from '../../../Runtime/ProcessState';
 import type TaskDefinition from '../../../ResourceStateCoordinator/TaskDefinition/TaskDefinition';
@@ -27,6 +26,7 @@ import type TaskProcessId from '../../../Runtime/TaskProcessId';
 import type UriQuery from '../../../FileDecorationProvider/UriQuery';
 import type UriSchema from '../../../FileDecorationProvider/UriSchema';
 import type TaskNodeData from '../../TaskNodeData';
+import type TaskBundle from '../../../ResourceStateCoordinator/TaskBundle';
 
 
 type RunnableElement = Omit<HierarchyModel.Element<OriginKey, TaskNodeData>, 'data' | 'children'> & { data: TaskNodeData; children: Array<RunnableElement | IntermediateElement> | null; };
@@ -45,11 +45,7 @@ interface RuntimeState {
  *     */
 function createTreeItem(
     element: Immutable<RunnableElement>,
-    taskBundle: Immutable<{ // TaskBundle
-        nodeConfig: NodeConfiguration | null;
-        taskDefinition: TaskDefinition | null;
-        eligibleTask: EligibleTask | null;
-    }>
+    taskBundle: Immutable<TaskBundle>
 ): TreeItem {
 
 
@@ -245,7 +241,7 @@ function updateContextValue(
 
 function buildIconPath(
     definition: Immutable<TaskDefinition> | null,
-    conf: Immutable<NodeConfiguration> | null,
+    nodeConfig: Immutable<TaskBundle['nodeConfig']> | null,
     hasEligibleTask: boolean
 ): ThemeIcon {
 
@@ -256,7 +252,7 @@ function buildIconPath(
         return new ThemeIcon(UI.ICON.WARNING, new ThemeColor(UI.COLOR.INVALID));
     }
 
-    const iconId = definition.icon?.id ?? conf?.defaultIconName ?? UI.ICON.TASK_DEFAULT;
+    const iconId = definition.icon?.id ?? nodeConfig?.defaultIconName ?? UI.ICON.TASK_DEFAULT;
     const colorId = definition.icon?.color;
     return new ThemeIcon(iconId, colorId ? new ThemeColor(colorId) : undefined);
 }

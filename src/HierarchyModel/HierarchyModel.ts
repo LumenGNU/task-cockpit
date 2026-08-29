@@ -56,10 +56,6 @@ class Element<K extends string, D extends AnyData> {
         return this[DATA] ?? null;
     }
 
-    get branchKey(): K {
-        return this.id.split(SEP).at(0)! as K;
-    }
-
 }
 
 
@@ -206,7 +202,6 @@ declare namespace HierarchyModel {
      *  */
     export type Element<K extends string, D extends AnyData> =
         | {
-            branchKey: K;
             label: string;
             id: string;
             /** Данные узла */
@@ -215,7 +210,6 @@ declare namespace HierarchyModel {
             children: Array<Element<K, D>> | null;
         }
         | {
-            branchKey: K;
             label: string;
             id: string;
             /** Данные узла null, отсутствуют */

@@ -320,14 +320,9 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     /**
      * @throws { CancellationError }
      * */
-    async #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): Promise<TreeItem> {
+    #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): TreeItem {
         try {
-            // resourceStateCoordinator отклонит getResourceConfig если будет диспознут в процессе
-            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.branchKey))?.Node ?? null;
-
-            this.#cancelIfInoperable();
-
-            return IntermediateElement.createTreeItem(element, { nodeConfig });
+            return IntermediateElement.createTreeItem(element);
         }
         catch (err) {
             this.#handleErrorAndCancel('Failed; cancelling getTreeItem.', err);

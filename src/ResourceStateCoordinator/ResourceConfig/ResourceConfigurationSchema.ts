@@ -32,10 +32,6 @@ const SCHEMA = Configuration.createSchema<Config>({
         tintLabel: Configuration.BooleanSpec({
             configKey: SETTING_IDS.DISPLAY.TINT_LABEL,
             fallback: false
-        }),
-        useFolderIcon: Configuration.BooleanSpec({
-            configKey: SETTING_IDS.DISPLAY.USE_FOLDER_ICON,
-            fallback: false
         })
     }
 });

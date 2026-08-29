@@ -15,7 +15,6 @@ import type {
 import type ContextValue from '../ContextValue';
 import type HierarchyModel from '../../../HierarchyModel/HierarchyModel';
 import type Immutable from '../../../utils/Immutable';
-import type NodeConfiguration from './NodeConfiguration';
 import type OriginKey from '../../../OriginKey';
 import type RunnableElement from './RunnableElement';
 import type TaskName from '../../../TaskName';
@@ -33,9 +32,6 @@ type IntermediateElement = Omit<HierarchyModel.Element<OriginKey, { taskName: Ta
  * */
 function createTreeItem(
     element: Immutable<IntermediateElement>,
-    props: Immutable<{
-        nodeConfig: NodeConfiguration | null;
-    }>
 ): TreeItem {
 
     return {
@@ -44,10 +40,7 @@ function createTreeItem(
         collapsibleState: TreeItemCollapsibleState.Collapsed, // @todo
         description: false,
         contextValue: ':Node:Group' satisfies ContextValue.Node.Intermediate,
-        iconPath:
-            props.nodeConfig?.useFolderIcon
-                ? new ThemeIcon(UI.ICON.SYMBOL_FOLDER)
-                : undefined,
+        iconPath: undefined,
         resourceUri: Uri.from({
             scheme: 'task-cockpit',
             authority: 'Node',
