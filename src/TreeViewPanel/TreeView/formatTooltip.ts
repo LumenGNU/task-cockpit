@@ -46,7 +46,7 @@ function formatTooltip(
 
     const outer: string[] = [];
 
-    if (title) { outer.push(`*${title}*`); }
+    if (title) { outer.push(`###### *${title}*`); }
 
     if (inner.length) { outer.push(inner.join(BR)); }
 

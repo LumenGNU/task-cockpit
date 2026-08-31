@@ -144,16 +144,16 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#cachedTopElements = null;
         this.#originNodes = [];
 
-        // try {
-        //     // @fixme  this.#onDidChangeTreeData WTF?
-        //     // Exception has occurred: Canceled: Canceled
-        //     //   at new f (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:140:45069)
-        //     //     at d.U (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:5557)
-        //     //     at Proxy.T.<computed>.O.charCodeAt.T.<computed> (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:3008)
-        //     //     at r.$ (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-
-        //     this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
-        // }
-        // catch { /* no-op */ }
+        try {
+            // @fixme  this.#onDidChangeTreeData WTF?
+            // Exception has occurred: Canceled: Canceled
+            //   at new f (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:140:45069)
+            //     at d.U (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:5557)
+            //     at Proxy.T.<computed>.O.charCodeAt.T.<computed> (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:3008)
+            //     at r.$ (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-
+            this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
+        }
+        catch { /* no-op */ }
 
         this.#disposables.forEach((d) => void d.dispose());
 
@@ -325,9 +325,14 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     /**
      * @throws { CancellationError }
      * */
-    #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): TreeItem {
+    async #getTreeItemForIntermediateElement(element: Immutable<IntermediateElement>): Promise<TreeItem> {
         try {
-            return IntermediateElement.createTreeItem(element);
+            // resourceStateCoordinator отклонит getResourceConfig если будет диспознут в процессе
+            const nodeConfig = (await this.#resourceProps.resourceStateCoordinator.getResourceConfig(element.branchKey));
+
+            this.#cancelIfInoperable();
+
+            return IntermediateElement.createTreeItem(element, nodeConfig);
         }
         catch (err) {
             this.#handleErrorAndCancel('Failed; cancelling getTreeItem.', err);

@@ -19,6 +19,7 @@ import type OriginKey from '../../../OriginKey';
 import type RunnableElement from './RunnableElement';
 import type TaskName from '../../../TaskName';
 import type UriSchema from '../../../FileDecorationProvider/UriSchema';
+import type ResourceConfig from '../../../ResourceStateCoordinator/ResourceConfig/ResourceConfig';
 
 
 type IntermediateElement = Omit<HierarchyModel.Element<OriginKey, { taskName: TaskName; }>, 'data' | 'children'> & { data: null; children: Array<IntermediateElement | RunnableElement>; };
@@ -32,6 +33,7 @@ type IntermediateElement = Omit<HierarchyModel.Element<OriginKey, { taskName: Ta
  * */
 function createTreeItem(
     element: Immutable<IntermediateElement>,
+    resourceConfig: Immutable<ResourceConfig> | null
 ): TreeItem {
 
     return {
@@ -40,7 +42,10 @@ function createTreeItem(
         collapsibleState: TreeItemCollapsibleState.Collapsed, // @todo
         description: false,
         contextValue: ':Node:Group' satisfies ContextValue.Node.Intermediate,
-        iconPath: undefined,
+        iconPath:
+            resourceConfig?.Node.useFolderIcon
+                ? new ThemeIcon(UI.ICON.SYMBOL_FOLDER)
+                : undefined,
         resourceUri: Uri.from({
             scheme: 'task-cockpit',
             authority: 'Node',

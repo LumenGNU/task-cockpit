@@ -14,6 +14,10 @@ interface Config {
         /** Окрашивать ли текст label задачи в цвет её иконки.
          * Соответствует `taskCockpit.display.tintLabel`. */
         tintLabel: boolean;
+
+        /** Показывать ли иконку папки для промежуточных (intermediate) узлов.
+         * Соответствует `taskCockpit.display.useFolderIcon`. */
+        useFolderIcon: boolean;
     };
 
     Hierarchy: {

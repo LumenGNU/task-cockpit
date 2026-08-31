@@ -137,6 +137,7 @@ export const SETTING_IDS = {
         GROUP_BY_TASK_GROUP            /**/: `${CONFIG_BASE_SECTION}.display.groupByTaskGroup`,
         SEGMENT_SEPARATOR              /**/: `${CONFIG_BASE_SECTION}.display.segmentSeparator`,
         TINT_LABEL                     /**/: `${CONFIG_BASE_SECTION}.display.tintLabel`,
+        USE_FOLDER_ICON                /**/: `${CONFIG_BASE_SECTION}.display.useFolderIcon`,
     },
     FILTERING: {
         EXCLUDE_FOLDERS              /**/: `${CONFIG_BASE_SECTION}.filtering.excludeFolders`,
@@ -149,4 +150,5 @@ export const SETTING_IDS = {
     TERMINALS_TIMEOUT                      /**/: `${CONFIG_BASE_SECTION}.terminals.timeout`,
     DIAGNOSTICS_SHADOWED_TASKS             /**/: `${CONFIG_BASE_SECTION}.diagnostics.shadowedTasks`,
     DIAGNOSTICS_UNREACHABLE_DEPENDENCIES   /**/: `${CONFIG_BASE_SECTION}.diagnostics.unreachableDependencies`,
+
 } as const;

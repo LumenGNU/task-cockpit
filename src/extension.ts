@@ -30,10 +30,11 @@ import OriginKey from './OriginKey';
 import AsyncQueue from './utils/AsyncQueue';
 import Services from './extension/Services';
 import resolveTreeElement from './extension/resolveTreeElement';
-import resolveNodeData from './extension/resolveNodeData';
+
 import navigateToTerminal from './extension/navigateToTerminal';
 import Element from './TreeViewPanel/TreeView/Element/Element';
 import type Immutable from './utils/Immutable';
+import * as assert from 'node:assert/strict';
 
 
 let logOutputChannel: LogOutputChannel | undefined;
@@ -157,9 +158,7 @@ function registerCommands(
 
         // kbd-bind+sub-menu
         // Открыть в редакторе файл-источник задач текущей u/w/f-области
-        commands.registerCommand(COMMAND_IDS.OPEN_PROJECT_TASKS_FILE, async (
-            reason: Immutable<Element> | undefined
-        ) => {
+        commands.registerCommand(COMMAND_IDS.OPEN_PROJECT_TASKS_FILE, async (reason: Immutable<Element> | undefined) => {
 
             const element =
                 reason
@@ -172,7 +171,7 @@ function registerCommands(
 
                 const taskSource = await services.resourceStateCoordinator.resolveTaskSource(element.branchKey);
 
-                if (!taskSource) { return; }
+                assert.ok(taskSource);
 
                 try {
                     return await commands.executeCommand('vscode.open', taskSource.uri);
@@ -219,15 +218,15 @@ function registerCommands(
         // kbd-bind+sub-menu
         commands.registerCommand(COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE, (reason: unknown) => {
 
-            const treeElement = resolveTreeElement(reason, services.treeViewPanel);
-            if (!treeElement) { return; }
+            // const treeElement = resolveTreeElement(reason, services.treeViewPanel);
+            // if (!treeElement) { return; }
 
-            const taskNodeData = resolveNodeData(treeElement);
-            if (!taskNodeData) { return; }
+            // const taskNodeData = resolveNodeData(treeElement);
+            // if (!taskNodeData) { return; }
 
-            if (!taskNodeData) { return; }
+            // if (!taskNodeData) { return; }
 
-            void commands.executeCommand(COMMAND_IDS.TASK_EXECUTE, { data: taskNodeData });
+            // void commands.executeCommand(COMMAND_IDS.TASK_EXECUTE, { data: taskNodeData });
 
         }),
 
@@ -249,17 +248,20 @@ function registerCommands(
         // kbd-bind+sub-menu
         commands.registerCommand(COMMAND_IDS.TASK_SHOW_TERMINAL, (reason: unknown) => {
 
-            const treeElement = resolveTreeElement(reason, services.treeViewPanel);
-            if (!treeElement) { return; }
+            // const treeElement = resolveTreeElement(reason, services.treeViewPanel);
+            // if (!treeElement) { return; }
 
-            const taskNodeData = resolveNodeData(treeElement);
-            if (!taskNodeData) { return; }
+            // const taskNodeData = resolveNodeData(treeElement);
+            // if (!taskNodeData) { return; }
 
-            void navigateToTerminal(taskNodeData, services.taskProcessLifecycle, logOutputChannel);
+            // void navigateToTerminal(taskNodeData, services.taskProcessLifecycle, logOutputChannel);
         }),
 
 
         commands.registerCommand(COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION, async (element: Immutable<Element.Runnable>) => {
+
+            assert.ok(element.branchKey);
+            assert.ok(element.data.taskName);
 
             try {
 
@@ -282,18 +284,17 @@ function registerCommands(
             catch { /* no-op */ }
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, async (element: Immutable<Element>) => {
+        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, async (element: Immutable<Element.Runnable>) => {
 
-            if (Element.isSynthetic(element)) { return; }
-
-            const taskName = element.data?.taskName;
-
-            if (!taskName) { return; }
+            assert.ok(element);
+            assert.ok(element.branchKey);
+            assert.ok(element.data);
+            assert.ok(element.data.taskName);
 
             await taskExecQueue.enqueue(
                 async () => {
                     try {
-                        const { eligibleTask } = await services.resourceStateCoordinator.getTaskBundle(element.branchKey, taskName);
+                        const { eligibleTask } = await services.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
                         if (eligibleTask == null) { return; }
                         try {
                             await tasks.executeTask(eligibleTask as unknown as Task);

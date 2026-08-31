@@ -420,7 +420,7 @@ const MANIFEST = {
             //     title: 'Start New Instance', // @todo или Run или execute?
             //     icon: `$(${UI.ICON.EXECUTE})`,
             //     enablement: [
-            //         `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
+            //         !!`view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
             //         `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
             //         `&& viewItem =~ /:Runnable/`, // если запускаемый
             //         `&& !(viewItem =~ /:Broken/)` // не сломан
@@ -432,7 +432,7 @@ const MANIFEST = {
             //     title: 'Abort All Running Instances',
             //     icon: '$(stop)',
             //     enablement: [
-            //         `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
+            //         !!`view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
             //         `&& viewItem =~ /:Runnable/`, // если запускаемый
             //         `&& viewItem =~ /:Running/`, // если работает
             //     ]
@@ -487,31 +487,33 @@ const MANIFEST = {
             //     title: 'Show Task Terminal',
             //     icon: '$(terminal)',
             //     enablement: [
-            //         `view =~ /^${VIEW_CONTAINER_ID}/`,
+            //         !!`view =~ /^${VIEW_CONTAINER_ID}/`,
             //         `&& viewItem =~ /:Runnable/`, // если запускаемый
             //         `&& viewItem =~ /:Terminals/`
             //     ]
             // },
-            // {
-            //     command: COMMAND_IDS.OPEN_HELP_PAGE,
-            //     category: COMMAND_CATEGORY,
-            //     title: 'Open Documentation',
-            //     icon: '$(question)'
-            // },
-            // {
-            //     command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
-            //     category: COMMAND_CATEGORY,
-            //     title: 'Display Settings',
-            //     icon: '$(list-tree)',
-            //     enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
-            // },
-            // {
-            //     command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
-            //     category: COMMAND_CATEGORY,
-            //     title: 'Filtering Settings',
-            //     icon: `$(${UI.ICON.LIST_FILTER})`,
-            //     enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
-            // },
+
+            // -------------------------------------------------------------------------
+            {
+                command: COMMAND_IDS.OPEN_HELP_PAGE,
+                category: COMMAND_CATEGORY,
+                title: 'Open Documentation',
+                icon: '$(question)'
+            },
+            {
+                command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
+                category: COMMAND_CATEGORY,
+                title: 'Display Settings',
+                icon: '$(list-tree)'
+            },
+            {
+                command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
+                category: COMMAND_CATEGORY,
+                title: 'Filtering Settings',
+                icon: `$(${UI.ICON.LIST_FILTER})`
+            },
+
+            // ---------------------------------------------------------
             {
                 command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
                 category: COMMAND_CATEGORY,
@@ -616,7 +618,7 @@ const MANIFEST = {
                     },
                     { // обновить все.
                         command: COMMAND_IDS.FORCE_FULL_REFRESH,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/`,
+                        when: `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`
                     },
                     {
                         command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
@@ -635,29 +637,29 @@ const MANIFEST = {
                         when: `view == ${PROJECT_TREE_VIEW.ID}`
                     },
                 ),
-                // defineMenuItems('b2_open_settings',
-                //     {
-                //         command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
-                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`,
-                //     },
-                //     {
-                //         command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
-                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`,
-                //     },
-                // ),
-                // defineMenuItems('c3_help',
-                //     {
-                //         command: COMMAND_IDS.OPEN_HELP_PAGE,
-                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`
-                //     }
-                // ),
+                defineMenuItems('b2_open_settings',
+                    {
+                        command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
+                        when: `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
+                    },
+                    {
+                        command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
+                        when: `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
+                    },
+                ),
+                defineMenuItems('c3_help',
+                    {
+                        command: COMMAND_IDS.OPEN_HELP_PAGE,
+                        when: `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
+                    }
+                ),
             ),
             'view/item/context': defineMenu(
                 defineMenuItems('inline',
                     {
                         command: COMMAND_IDS.TASK_EXECUTE,
                         when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
+                            `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
                             `&& viewItem =~ /:Runnable/`, // запускаемый, но
                             `&& !(viewItem =~ /:Running/)`, // не выполняется сейчас
                             `&& !(viewItem =~ /:Broken/)` // и не сломан
@@ -666,7 +668,7 @@ const MANIFEST = {
                     {
                         command: COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION,
                         when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
+                            `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
                             `&& viewItem =~ /:Runnable/`, // запускаемый, и
                             `&& viewItem =~ /:Broken/` // сломан
                         ],
@@ -685,14 +687,14 @@ const MANIFEST = {
                 //     {
                 //         command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
                 //         when: [
-                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //            `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
                 //             `&& viewItem =~ /:Runnable/`
                 //         ],
                 //     },
                 //     {
                 //         command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
                 //         when: [
-                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //           `( view == ${GLOBAL_TREE_VIEW.ID} || view == ${PROJECT_TREE_VIEW.ID} )`,
                 //             `&& viewItem =~ /:Runnable/`
                 //         ],
                 //     },
@@ -734,7 +736,7 @@ const MANIFEST = {
                 //     {
                 //         command: COMMAND_IDS.TASK_SHOW_TERMINAL,
                 //         when: [
-                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //            !! `view =~ /^${VIEW_CONTAINER_ID}/`,
                 //             `&& viewItem =~ /:Runnable/`
                 //         ],
                 //     },
@@ -820,6 +822,16 @@ const MANIFEST = {
                             `be capitalized). Works independently or combined with \`#${SETTING_IDS.DISPLAY.SEGMENT_SEPARATOR}#\`. `,
                             '\n**Note:** When combined, both grouping and splitting apply: a task named `Build:dev:watch` with',
                             '`"group": "build"` and separator `:` creates `Build` → `Build` → `dev` → `watch`.'
+                        ]),
+                        order: order.nextIn('configuration.display'),
+                    },
+                    [SETTING_IDS.DISPLAY.USE_FOLDER_ICON]: {
+                        type: 'boolean',
+                        scope: 'resource',
+                        default: false,
+                        description: MD([
+                            'Display folder icon for intermediate segments in the task hierarchy.',
+                            'Otherwise, no icon is applied.'
                         ]),
                         order: order.nextIn('configuration.display'),
                     },
