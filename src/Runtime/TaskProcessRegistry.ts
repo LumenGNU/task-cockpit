@@ -184,6 +184,7 @@ class TaskProcessRegistry implements Disposable {
     ): void {
 
         assert.ok(!this.#disposed, `[${this.constructor.name}#markCompleted]: use after dispose`);
+
         assert.ok(taskProcessesIds.size > 0, `[${this.constructor.name}#markCompleted]: taskProcessesIds must not be empty`);
 
         const affectedByChanges: AffectedTasks = new Map();
@@ -193,6 +194,8 @@ class TaskProcessRegistry implements Disposable {
             const processState = this.#processStateById.get(processId);
 
             // @todo такое случается. почему?
+            // Потому что быстрая задача закрыла свой терминал, и reconcile отработал раньше чем
+            // монитор процесса вызвал markCompleted.
             // assert.ok(processState, `[${this.constructor.name}#markCompleted]: unregistered process "${processId}"`);
             if (!processState) {
                 continue;

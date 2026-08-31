@@ -20,8 +20,9 @@ import { UI } from '../../../common';
 interface TopElement {
     kind: 'TopNode';
     label: string;
-    resourceUri: Uri | null;
-    originKey: OriginKey;
+    resourceUri: Uri;
+    branchKey: OriginKey;
+    originTag: 'User' | 'Workspace' | 'Folder';
     tasksSummary: {
         totalCount: number;
         hiddenCount: number;
@@ -35,8 +36,18 @@ function create(originData: Immutable<OriginNode>): Immutable<TopElement> {
     return {
         kind: 'TopNode',
         label: originData.displayName,
-        resourceUri: originData.taskSourceUri,
-        originKey: originData.originKey,
+        resourceUri: originData.taskSourceUri ?? Uri.from({
+            scheme: 'task-cockpit',
+            authority: 'Node',
+            path: ''
+        }),
+        branchKey: originData.originKey,
+        originTag:
+            originData.originKey === OriginKey.USER
+                ? 'User'
+                : originData.originKey === OriginKey.WORKSPACE
+                    ? 'Workspace'
+                    : 'Folder',
         tasksSummary: originData.taskCounts,
         children: originData.hierarchy.children
     };
@@ -57,16 +68,12 @@ function createTreeItem(element: Immutable<TopElement>): TreeItem {
 
     return {
         collapsibleState: TreeItemCollapsibleState.Expanded, // @todo
-        contextValue: buildContextValue(element.originKey),
+        contextValue: buildContextValue(element.branchKey),
         description: false,
-        iconPath: getIcon(element.originKey),
-        id: element.originKey,
+        iconPath: getIcon(element.branchKey),
+        id: element.branchKey,
         label: element.label,
-        resourceUri: element.resourceUri ?? Uri.from({
-            scheme: 'task-cockpit',
-            authority: 'Node',
-            path: ''
-        })
+        resourceUri: element.resourceUri
     } as const;
 };
 
@@ -86,15 +93,8 @@ function resolveTreeItem(
         return item;
     }
 
-    const scopeType =
-        element.originKey === OriginKey.USER
-            ? 'User'
-            : element.originKey === OriginKey.WORKSPACE
-                ? 'Workspace'
-                : 'Folder';
-
     item.tooltip = formatTooltip(
-        scopeType,
+        element.originTag,
         element.label || '«unnamed»',
         element.tasksSummary ? `$(${UI.ICON.TASK_DEFAULT}) Tasks: ${formatTasksSummary(element.tasksSummary)}` : undefined
     );

@@ -144,11 +144,16 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#cachedTopElements = null;
         this.#originNodes = [];
 
-        try {
-            // @fixme  this.#onDidChangeTreeData WTF?
-            this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
-        }
-        catch { /* no-op */ }
+        // try {
+        //     // @fixme  this.#onDidChangeTreeData WTF?
+        //     // Exception has occurred: Canceled: Canceled
+        //     //   at new f (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:140:45069)
+        //     //     at d.U (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:5557)
+        //     //     at Proxy.T.<computed>.O.charCodeAt.T.<computed> (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:3008)
+        //     //     at r.$ (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-
+        //     this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
+        // }
+        // catch { /* no-op */ }
 
         this.#disposables.forEach((d) => void d.dispose());
 
@@ -236,8 +241,8 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * */
     async #getTreeItemForRunnableElement(element: Immutable<RunnableElement>): Promise<TreeItem> {
 
-
-        const { taskName, taskOrigin } = element.data;
+        const taskOrigin = element.branchKey;
+        const taskName = element.data.taskName;
 
         this.#registerRunnableElement(element, taskOrigin, taskName);
 
@@ -357,7 +362,8 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
                     }
                     return [
                         EmptyElement.create(
-                            /*id*/ element.originKey + '_empty_node', // безопасно поскольку всегда единственный в секции
+                            element.branchKey,
+                            /*id*/ element.branchKey + '_empty_node', // безопасно поскольку всегда единственный в секции
                             element.tasksSummary
                         )
                     ];
@@ -389,7 +395,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
         if (this.#originNodes.length > 0) {
             // если есть что строить
-            for (const scopeData of this.#originNodes) {
+            for (const scopeData of this.#originNodes) { // @fixme scopeData -> originNode
                 topElements.push(TopElement.create(scopeData));
             }
         }
@@ -425,8 +431,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         if (element.data != null) {
 
             try {
-                const { taskOrigin, taskName } = element.data;
-                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(taskOrigin, taskName);
+                const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
 
                 this.#cancelIfInoperable();
 

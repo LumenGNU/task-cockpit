@@ -19,11 +19,18 @@ export const PROJECT_TREE_VIEW = {
     NAME: 'Project Tasks'
 } as const;
 
+export type SelectedNodeTag =
+    | `TopNode:${'User' | 'Workspace' | 'Folder'}`
+    | 'RunnableNode'
+    | 'IntermediateNode'
+    | 'UnknownNode';
 
 export const WHEN_CONTEXT = {
     VIEW_CONTAINER_ACTIVE: `${VIEW_CONTAINER_ID}.active`,
     GLOBAL_TREE_VIEW_HAS_ITEMS: `${GLOBAL_TREE_VIEW.ID}.hasItems`,
-    PROJECT_TREE_VIEW_HAS_ITEMS: `${PROJECT_TREE_VIEW.ID}.hasItems`
+    PROJECT_TREE_VIEW_HAS_ITEMS: `${PROJECT_TREE_VIEW.ID}.hasItems`,
+    GLOBAL_TREE_VIEW_SELECTED_NODE_TYPE: `${GLOBAL_TREE_VIEW.ID}.selectedNodeType`,
+    PROJECT_TREE_VIEW_SELECTED_NODE_TYPE: `${PROJECT_TREE_VIEW.ID}.selectedNodeType`,
 } as const;
 
 
@@ -71,14 +78,22 @@ export const COMMAND_IDS = {
     // Перестроить дерево в представлении (на кешированных данных. малополезно)
     VIEW_REFRESH                     /**/: `${PREFIX}.view.refresh`,
 
-    // Открыть в редакторе файл-источник задач, и выделить определение
-    // конкретной задачи
-    TASKS_FILE_OPEN_TASK             /**/: `${PREFIX}.tasks-file.open-task`,
+
+    OPEN_PROFILE_TASKS_FILE   /**/: `${PREFIX}.tasks-file.open-profile-tasks-file`,
+    OPEN_PROJECT_TASKS_FILE   /**/: `${PREFIX}.tasks-file.open-project-tasks-file`,
+
+    // Открыть в редакторе файл-источник задач, и выделить определение конкретной задачи
+    OPEN_TASK_DEFINITION /**/: `${PREFIX}.tasks-file.go-to-task-definition`,
+
+
+
     // Открыть в редакторе tasks.json-источник задач
-    TASKS_FILE_OPEN_TASKS_FILE       /**/: `${PREFIX}.tasks-file.open-tasks-file`,
+    // TASKS_FILE_OPEN_TASKS_FILE       /**/: `${PREFIX}.tasks-file.open-tasks-file`,
+
     // Открыть в редакторе .code-workspace-источник задач
-    TASKS_FILE_OPEN_WORKSPACE_TASKS   /**/: `${PREFIX}.tasks-file.open-workspace-tasks`,
-    TASKS_FILE_OPEN_USER_TASKS         /**/: `${PREFIX}.tasks-file.open-user-tasks`,
+    // TASKS_FILE_OPEN_WORKSPACE_TASKS   /**/: `${PREFIX}.tasks-file.open-workspace-tasks`,
+    /** Команда: открыть файл-источник-задач User-источника */
+    // TASKS_FILE_OPEN_USER_TASKS         /**/: `${PREFIX}.tasks-file.open-user-tasks`,
 
     // Выполнить задачу
     TASK_EXECUTE                     /**/: `${PREFIX}.task.execute`,
@@ -86,7 +101,7 @@ export const COMMAND_IDS = {
     TASK_EXECUTE_NEW_INSTANCE        /**/: `${PREFIX}.task.execute-new-instance`,
 
     TASK_ABORT_ALL_INSTANCES          /**/: `${PREFIX}.task.abort-all`,
-    TASK_SHOW_TERMINAL               /**/: `${PREFIX}.task.show-terminal`,
+    TASK_SHOW_TERMINAL               /**/: `${PREFIX}.task.show-terminal`, // @todo navigate-to-terminal ?
 
     OPEN_SETTINGS_DISPLAY            /**/: `${PREFIX}.settings.configure-display`,
     OPEN_SETTINGS_FILTERING          /**/: `${PREFIX}.settings.configure-filtering`,
@@ -103,6 +118,7 @@ export const COMMAND_IDS = {
     GLOBAL_TASK_VIEW_COLLAPSE_ALL      /**/: `${PREFIX}.view-container.${GLOBAL_TREE_VIEW.ID}.collapse-all`,
     PROJECT_TASK_VIEW_COLLAPSE_ALL     /**/: `${PREFIX}.view-container.${PROJECT_TREE_VIEW.ID}.collapse-all`,
 
+    OPEN_BROKEN_TASK_DEFINITION: `${PREFIX}.aaaaaaaaaaaaaaaaaaaaaaa`,
 
 } as const;
 

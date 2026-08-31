@@ -17,14 +17,14 @@ import type ContextValue from '../ContextValue';
 import type Immutable from '../../../utils/Immutable';
 import type UriQuery from '../../../FileDecorationProvider/UriQuery';
 import type UriSchema from '../../../FileDecorationProvider/UriSchema';
+import type OriginKey from '../../../OriginKey';
 
 
 /** Узел-заглушка — отображается внутри секции,
  * когда секция пуста. */
-interface Element {
+interface EmptyElement {
     kind: 'EmptyNode';
-    // /** (*) Область, отображаемая этой веткой */
-    // scopeKey: ScopeKey;
+    branchKey: OriginKey;
     /** (*) Уникальный id узла в дереве */
     id: string;
     cause: 'Hidden' | 'Empty';
@@ -32,25 +32,25 @@ interface Element {
 
 
 function create(
+    branchKey: OriginKey,
     id: string,
-    // scopeKey: ScopeKey,
     detail: Readonly<{
         totalCount: number;
         hiddenCount: number;
         shadowedCount: number;
     }> | undefined
-): Immutable<Element> {
+): Immutable<EmptyElement> {
 
     return {
         kind: 'EmptyNode',
-        // scopeKey,
+        branchKey,
         id,
         cause: detail
             ? detail.totalCount > 0 && detail.hiddenCount === detail.totalCount
                 ? 'Hidden'
                 : 'Empty'
             : 'Empty'
-    } satisfies Element;
+    } satisfies EmptyElement;
 }
 
 
@@ -59,7 +59,7 @@ function create(
  * Иконка: `-`
  * Состояние: лист
  * `contextValue`: `task-cockpit:Node:Special:(Empty|Hidden)` */
-function createTreeItem(element: Immutable<Element>): TreeItem {
+function createTreeItem(element: Immutable<EmptyElement>): TreeItem {
 
     return {
         id: element.id,
@@ -82,7 +82,7 @@ function createTreeItem(element: Immutable<Element>): TreeItem {
 
 function resolveTreeItem(
     item: TreeItem,
-    element: Immutable<Element>,
+    element: Immutable<EmptyElement>,
     token: CancellationToken
 ): TreeItem {
 
@@ -102,11 +102,11 @@ function resolveTreeItem(
 }
 
 
-const Element = {
+const EmptyElement = {
     create,
     resolveTreeItem,
     createTreeItem
 } as const;
 
 
-export default Element;
+export default EmptyElement;

@@ -8,7 +8,8 @@ import {
     tasks,
     Task,
     ThemeIcon,
-    env
+    env,
+    Disposable
 } from 'vscode';
 import TaskProcessLifecycle from './Runtime/TaskProcessLifecycle';
 import WindowSettings from './WindowSettings/WindowSettings';
@@ -27,130 +28,51 @@ import openTaskDefinitionInEditor from './TasksSource/openTaskDefinitionInEditor
 import TaskNodeData from './TreeViewPanel/TaskNodeData';
 import OriginKey from './OriginKey';
 import AsyncQueue from './utils/AsyncQueue';
+import Services from './extension/Services';
+import resolveTreeElement from './extension/resolveTreeElement';
+import resolveNodeData from './extension/resolveNodeData';
+import navigateToTerminal from './extension/navigateToTerminal';
+import Element from './TreeViewPanel/TreeView/Element/Element';
+import type Immutable from './utils/Immutable';
 
 
-let logOutputChannel: LogOutputChannel;
+let logOutputChannel: LogOutputChannel | undefined;
 
 export async function activate(context: ExtensionContext): Promise<void> {
 
     const extDisplayName = context.extension.packageJSON['displayName'] as string;
+    const logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
 
-    logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
-
-    const windowSettings = new WindowSettings(logOutputChannel);
-    const resourceStateCoordinator = await ResourceStateCoordinator.create(15_000, logOutputChannel);
-
-    const resourceProps = { windowSettings, resourceStateCoordinator };
-
-    const taskProcessLifecycle = new TaskProcessLifecycle(resourceProps, logOutputChannel);
-    const fileDecorationProvider = new FileDecorationProvider(resourceProps, logOutputChannel);
-    const diagnosticsManager = new DiagnosticsManager(extDisplayName, resourceProps, logOutputChannel);
-
-    const treeViewPanel = new TreeViewPanel(
-        resourceProps,
-        taskProcessLifecycle.taskProcessRegistry,
-        logOutputChannel
-    );
+    const services = await Services.createServices(context, logOutputChannel);
 
     context.subscriptions.push(
-        treeViewPanel,
-        diagnosticsManager,
-        window.registerFileDecorationProvider(fileDecorationProvider),
-        fileDecorationProvider,
-        taskProcessLifecycle,
-        resourceStateCoordinator,
-        windowSettings
+        ...Object.values(services),
+        window.registerFileDecorationProvider(services.fileDecorationProvider),
     );
 
-    registerCommands(context, resourceProps, taskProcessLifecycle, treeViewPanel, logOutputChannel);
+    registerCommands(context, services, logOutputChannel);
 
 }
 
 export function deactivate(): void {
-    logOutputChannel.dispose();
+    logOutputChannel?.dispose();
 }
 
 
 function registerCommands(
     context: ExtensionContext,
-    resourceProps: {
-        windowSettings: WindowSettings;
-        resourceStateCoordinator: ResourceStateCoordinator;
-    },
-    taskProcessLifecycle: TaskProcessLifecycle,
-    panel: TreeViewPanel,
+    services: Readonly<Services>,
     logOutputChannel: LogOutputChannel
 ) {
 
-    const taskQueue = AsyncQueue.create(logOutputChannel);
 
-    function executeTask(taskNodeData: TaskNodeData): void {
-
-        logOutputChannel.trace('[task-cockpit.task.execute] Execute task');
-        logOutputChannel.trace(`    - Origin : ${OriginKey.resolveOriginName(taskNodeData.taskOrigin)}`);
-        logOutputChannel.trace(`    - Task   : ${taskNodeData.taskLabel}`);
-
-        void resourceProps.resourceStateCoordinator
-            .getTaskBundle(taskNodeData.taskOrigin, taskNodeData.taskName)
-            .then(
-                (taskBundle) => {
-
-                    const { eligibleTask } = taskBundle;
-
-                    if (eligibleTask == null) { return; }
-
-                    return taskQueue.enqueue(() => {
-                        return tasks.executeTask(eligibleTask as unknown as Task)
-                            .then(undefined, (err) => {
-                                window.showErrorMessage(String(err));
-                            });
-                    });
-
-                },
-                (_err) => { /* bo-op */ }
-            );
-    }
-
-    async function navigateToTerminal(taskNodeData: TaskNodeData) {
-
-        const { taskOrigin, taskName, taskLabel } = taskNodeData;
-
-        const taskProcessRecords = await taskProcessLifecycle.getTaskProcessRecords(taskOrigin, taskName);
-
-        const iconPath = new ThemeIcon('terminal');
-
-        const items = [];
-        for (const record of taskProcessRecords) {
-            items.push({
-                label: `Process ID: ${record.taskProcessId}`,
-                iconPath,
-                description: record.running ? 'running' : 'completed',
-                detail: new Date(record.timestamp).toLocaleString(env.language),
-                terminal: record.terminalRef.deref()
-            });
-        }
-        if (items.length > 1) {
-            const selected = await window.showQuickPick(items, {
-                title: taskLabel,
-                placeHolder: 'Select terminal',
-                matchOnDescription: true,
-                matchOnDetail: true
-            });
-            selected?.terminal?.show();
-            return;
-        }
-        if (items.length > 0) {
-            items[0]?.terminal?.show();
-            return;
-        }
-        return;
-    }
+    const taskExecQueue = AsyncQueue.create(logOutputChannel);
 
     context.subscriptions.push(
 
         commands.registerCommand(COMMAND_IDS.FORCE_FULL_REFRESH, () => {
-            panel.forceFullRefresh().catch((err) => {
-                if (resourceProps.resourceStateCoordinator.disposed) { return; }
+            services.treeViewPanel.forceFullRefresh().catch((err) => {
+                if (services.resourceStateCoordinator.disposed) { return; }
                 window.showErrorMessage(String(err));
             });
         }),
@@ -170,19 +92,19 @@ function registerCommands(
         }),
 
         commands.registerCommand(COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL, () => {
-            panel.expandAllInView(GLOBAL_TREE_VIEW.ID);
+            services.treeViewPanel.expandAllInView(GLOBAL_TREE_VIEW.ID);
         }),
 
         commands.registerCommand(COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL, () => {
-            panel.expandAllInView(PROJECT_TREE_VIEW.ID);
+            services.treeViewPanel.expandAllInView(PROJECT_TREE_VIEW.ID);
         }),
 
         commands.registerCommand(COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL, () => {
-            panel.collapseAllInView(GLOBAL_TREE_VIEW.ID);
+            services.treeViewPanel.collapseAllInView(GLOBAL_TREE_VIEW.ID);
         }),
 
         commands.registerCommand(COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL, () => {
-            panel.collapseAllInView(PROJECT_TREE_VIEW.ID);
+            services.treeViewPanel.collapseAllInView(PROJECT_TREE_VIEW.ID);
         }),
 
         commands.registerCommand(COMMAND_IDS.OPEN_SETTINGS_FILTERING, () => {
@@ -206,29 +128,13 @@ function registerCommands(
             }).then(undefined, () => { /* no-op */ });
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS, () => {
-            void commands.executeCommand('workbench.action.tasks.openUserTasks')
-                .then(undefined, () => { /* no-op */ });
-        }),
 
-        commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS, () => {
-            // @todo открывать вручную, прокручивать к задачам?
-            // нет, не нужно
-            void commands.executeCommand('workbench.action.tasks.openWorkspaceFileTasks')
-                .then(undefined, () => { /* no-op */ });
-        }),
-
-        commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE, (element: unknown) => {
-            if (
-                element != null
-                && typeof element === 'object'
-                && 'resourceUri' in element
-                && element.resourceUri instanceof Uri
-            ) {
-                return void commands.executeCommand('vscode.open', element.resourceUri);
-            }
-            logOutputChannel.warn('[Command#openTasksFile] No resourceUri on element:', element);
-        }),
+        // commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS, () => {
+        //     // @todo открывать вручную, прокручивать к задачам?
+        //     // нет, не нужно
+        //     void commands.executeCommand('workbench.action.tasks.openWorkspaceFileTasks')
+        //         .then(undefined, (_err) => { /* no-op */ });
+        // }),
 
         commands.registerCommand(COMMAND_IDS.OPEN_HELP_PAGE, () => {
             const version = context.extension.packageJSON['version'] as string;
@@ -238,66 +144,168 @@ function registerCommands(
                 path: `/papio-dev/task-cockpit/tree/${version ? `v${version}` : 'main'}`,
                 query: 'tab=readme-ov-file',
                 fragment: 'configuration'
-            })).then(undefined, () => { /* no-op */ });
+            }))
+                .then(undefined, (_err) => { /* no-op */ });
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASKS_FILE_OPEN_TASK, (element: unknown) => {
-            const taskNodeData = getTaskNodeData(element);
-            if (!taskNodeData) {
-                return;
+        // kbd-bind+sub-menu
+        // Открыть файл-задач User источника
+        commands.registerCommand(COMMAND_IDS.OPEN_PROFILE_TASKS_FILE, () => {
+            void commands.executeCommand('workbench.action.tasks.openUserTasks')
+                .then(undefined, () => { /* no-op */ });
+        }),
+
+        // kbd-bind+sub-menu
+        // Открыть в редакторе файл-источник задач текущей u/w/f-области
+        commands.registerCommand(COMMAND_IDS.OPEN_PROJECT_TASKS_FILE, async (
+            reason: Immutable<Element> | undefined
+        ) => {
+
+            const element =
+                reason
+                    ? reason
+                    : services.treeViewPanel.getSelection(PROJECT_TREE_VIEW.ID);
+
+            if (!element) { return; } // если нет выделения
+
+            try {
+
+                const taskSource = await services.resourceStateCoordinator.resolveTaskSource(element.branchKey);
+
+                if (!taskSource) { return; }
+
+                try {
+                    return await commands.executeCommand('vscode.open', taskSource.uri);
+                }
+                catch (err) {
+                    window.showErrorMessage(String(err));
+                }
             }
-            const { taskSource, taskName } = taskNodeData;
-            if (!taskSource) {
-                // @todo user msg?
-                return;
+            catch { /* no-op */ }
+
+        }),
+
+
+        // kbd-bind+sub-menu
+        // Перейти к определению задачи в файле
+        commands.registerCommand(COMMAND_IDS.OPEN_TASK_DEFINITION, async (reason: Immutable<Element> | undefined) => {
+
+            const element =
+                reason
+                    ? reason
+                    : services.treeViewPanel.getSelection(PROJECT_TREE_VIEW.ID);
+
+            if (!element) { return; }// если нет выделения
+            if (Element.isSynthetic(element)) { return; }
+            if (element.data == null) { return; }
+
+            try {
+
+                const taskSource = await services.resourceStateCoordinator.resolveTaskSource(element.branchKey);
+                if (!taskSource) { return; }
+
+                try {
+                    await openTaskDefinitionInEditor(taskSource, element.data.taskName);
+                }
+                catch (err) {
+                    window.showErrorMessage(String(err));
+                }
+
             }
-            void openTaskDefinitionInEditor(taskSource, taskName).catch((err) => {
-                window.showErrorMessage(String(err));
-            });
+            catch { /* no-op */ }
+
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, (element: unknown) => {
-            const taskNodeData = getTaskNodeData(element);
+        // kbd-bind+sub-menu
+        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE, (reason: unknown) => {
+
+            const treeElement = resolveTreeElement(reason, services.treeViewPanel);
+            if (!treeElement) { return; }
+
+            const taskNodeData = resolveNodeData(treeElement);
             if (!taskNodeData) { return; }
-            executeTask(taskNodeData);
+
+            if (!taskNodeData) { return; }
+
+            void commands.executeCommand(COMMAND_IDS.TASK_EXECUTE, { data: taskNodeData });
+
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE, (element: unknown) => {
-            const taskNodeData = getTaskNodeData(element);
-            if (!taskNodeData) { return; }
-            executeTask(taskNodeData);
+        // kbd-bind+sub-menu
+        commands.registerCommand(COMMAND_IDS.TASK_ABORT_ALL_INSTANCES, (reason: unknown) => {
+
+            // @fixme
+            // const treeElement = resolveTreeElement(reason, services.treeViewPanel);
+            // if (!treeElement) { return; }
+
+            // const taskNodeData = resolveNodeData(treeElement);
+            // if (!taskNodeData) { return; }
+
+
+            // services.taskProcessLifecycle.terminateTaskProcesses(treeElement., taskName);
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASK_ABORT_ALL_INSTANCES, (element: unknown) => {
-            const taskNodeData = getTaskNodeData(element);
+
+        // kbd-bind+sub-menu
+        commands.registerCommand(COMMAND_IDS.TASK_SHOW_TERMINAL, (reason: unknown) => {
+
+            const treeElement = resolveTreeElement(reason, services.treeViewPanel);
+            if (!treeElement) { return; }
+
+            const taskNodeData = resolveNodeData(treeElement);
             if (!taskNodeData) { return; }
-            const { taskOrigin, taskName } = taskNodeData;
-            taskProcessLifecycle.terminateTaskProcesses(taskOrigin, taskName);
+
+            void navigateToTerminal(taskNodeData, services.taskProcessLifecycle, logOutputChannel);
         }),
 
-        commands.registerCommand(COMMAND_IDS.TASK_SHOW_TERMINAL, (element: unknown) => {
-            const taskNodeData = getTaskNodeData(element);
-            if (!taskNodeData) { return; }
-            void navigateToTerminal(taskNodeData);
-        })
+
+        commands.registerCommand(COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION, async (element: Immutable<Element.Runnable>) => {
+
+            try {
+
+                const taskSource = await services.resourceStateCoordinator.resolveTaskSource(element.branchKey);
+
+                if (!taskSource) {
+                    await commands.executeCommand('workbench.action.tasks.openUserTasks')
+                        .then(undefined, () => { /* no-op */ });
+                    return;
+                }
+
+                try {
+                    await openTaskDefinitionInEditor(taskSource, element.data.taskName);
+                }
+                catch (err) {
+                    window.showErrorMessage(String(err));
+                }
+
+            }
+            catch { /* no-op */ }
+        }),
+
+        commands.registerCommand(COMMAND_IDS.TASK_EXECUTE, async (element: Immutable<Element>) => {
+
+            if (Element.isSynthetic(element)) { return; }
+
+            const taskName = element.data?.taskName;
+
+            if (!taskName) { return; }
+
+            await taskExecQueue.enqueue(
+                async () => {
+                    try {
+                        const { eligibleTask } = await services.resourceStateCoordinator.getTaskBundle(element.branchKey, taskName);
+                        if (eligibleTask == null) { return; }
+                        try {
+                            await tasks.executeTask(eligibleTask as unknown as Task);
+                        } catch (err) {
+                            window.showErrorMessage(String(err));
+                        }
+                    }
+                    catch { /* bo-op */ }
+                }
+            );
+        }),
+
     );
 
-}
-
-
-function getTaskNodeData(element: unknown): TaskNodeData | null {
-
-    if (!(element != null && typeof element === 'object')) {
-        return null;
-    }
-
-    if (!('data' in element)) {
-        return null;
-    }
-
-    if (!TaskNodeData.isTaskNodeData(element.data)) {
-        return null;
-    }
-
-    return element.data;
 }

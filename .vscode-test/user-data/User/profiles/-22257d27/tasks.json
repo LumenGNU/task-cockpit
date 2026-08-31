@@ -1,20 +1,19 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "verify",
+            "label": "hhh:echo",
             "type": "shell",
-            "command": "mvn -B verify",
-            "group": "build"
+            "command": "echo Hello"
         },
-//
         {
-            "label": "new task3",
+            "label": "AAAA",
             "type": "shell",
-            "command": "mvn -B test",
-            "group": "test"
+            "command": "true"
+        },
+        {
+            "label": "BBB",
+
         }
     ]
 }

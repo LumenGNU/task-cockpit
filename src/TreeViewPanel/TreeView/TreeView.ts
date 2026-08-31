@@ -10,14 +10,17 @@ import TaskTreeDataProvider from './TaskTreeDataProvider';
 import {
     WHEN_CONTEXT,
     GLOBAL_TREE_VIEW,
-    PROJECT_TREE_VIEW
+    PROJECT_TREE_VIEW,
+    SelectedNodeTag
 } from '../../common';
 
 import type {
     Disposable,
     LogOutputChannel,
     TreeDataProvider,
-    TreeView as VscTreeView
+    TreeViewSelectionChangeEvent,
+    TreeView as VscTreeView,
+    Event
 } from 'vscode';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
@@ -25,10 +28,17 @@ import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
 import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
 import type TaskName from '../../TaskName';
+import Element from './Element/Element';
+import * as assert from 'node:assert/strict';
 
-type ContextTag =
+
+type WhenHasItems =
     | typeof WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS
     | typeof WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS;
+
+type WhenSelectedNodeType =
+    | typeof WHEN_CONTEXT.GLOBAL_TREE_VIEW_SELECTED_NODE_TYPE
+    | typeof WHEN_CONTEXT.PROJECT_TREE_VIEW_SELECTED_NODE_TYPE;
 
 type ViewId =
     | typeof GLOBAL_TREE_VIEW.ID
@@ -37,7 +47,7 @@ type ViewId =
 class TreeView implements Disposable {
 
     readonly #treeDataProvider: TaskTreeDataProvider;
-    readonly #treeView: VscTreeView<Immutable<unknown>>;
+    readonly #treeView: VscTreeView<Immutable<Element>>;
 
     readonly #viewId: ViewId;
 
@@ -54,6 +64,7 @@ class TreeView implements Disposable {
     }>;
 
     readonly #taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView;
+
 
     constructor(
         viewId: ViewId,
@@ -80,12 +91,13 @@ class TreeView implements Disposable {
         this.#treeView = window.createTreeView(
             this.#viewId,
             {
-                treeDataProvider: this.#treeDataProvider as TreeDataProvider<Immutable<unknown>>,
+                treeDataProvider: this.#treeDataProvider as TreeDataProvider<Immutable<Element>>,
                 canSelectMany: false,
                 dragAndDropController: undefined,
                 manageCheckboxStateManually: undefined
             }
         );
+
 
         this.#treeView.title = title;
         this.#treeView.description = undefined;
@@ -96,6 +108,9 @@ class TreeView implements Disposable {
             this.#treeView,
             this.#treeDataProvider
         ];
+
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        this.#treeView.onDidChangeSelection(this.#changeSelectionHandler, this, this.#disposables);
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#treeDataProvider.onDidRefreshTopElements(this.#updateTopElementsHandler, this, this.#disposables);
@@ -112,7 +127,7 @@ class TreeView implements Disposable {
         this.#disposables.forEach((d) => void d.dispose());
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies ContextTag, undefined)
+            () => commands.executeCommand('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, undefined)
         );
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
@@ -133,7 +148,7 @@ class TreeView implements Disposable {
         }, 0);
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies ContextTag, Boolean(itemsCount))
+            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, Boolean(itemsCount))
         );
     }
 
@@ -149,6 +164,20 @@ class TreeView implements Disposable {
                 this.#treeDataProvider.notifyRunnableChanged(originKey, taskName);
             }
         }
+    }
+
+
+    #changeSelectionHandler(event: TreeViewSelectionChangeEvent<Immutable<Element>>) {
+
+        const selected = event.selection.at(0);
+
+        void this.#asyncQueue.enqueue(
+            () => commands.executeCommand<void>(
+                'setContext',
+                `${this.#viewId}.selectedNodeType` satisfies WhenSelectedNodeType,
+                getNodeTag(selected) satisfies SelectedNodeTag | undefined
+            ));
+
     }
 
     // #endregion
@@ -198,6 +227,11 @@ class TreeView implements Disposable {
     }
 
 
+    public getSelection(): Immutable<Element> | undefined {
+        return this.#treeView.selection.at(0);
+    }
+
+
     get #isInoperable(): boolean {
 
         if (this.#disposed) { return true; }
@@ -216,10 +250,10 @@ class TreeView implements Disposable {
     }
 }
 
-// есть если нет исключённых скоупов, описание не показывается
+// есть если нет исключённых источников, описание не показывается
 // вовсе — тек задумано: ничего не сообщаем, если сообщать нечего.
 // viewsWelcome из package.json уже объясняет
-// "все скоупы скрыты" — "0/5" в description избыточно.
+// "все скрыты" — "0/5" в description избыточно.
 function buildViewDescription(visibleScopesCount: number | undefined, excludedScopesCount: number | null): string | undefined {
 
     if (!visibleScopesCount || !excludedScopesCount) {
@@ -229,5 +263,20 @@ function buildViewDescription(visibleScopesCount: number | undefined, excludedSc
     return `${visibleScopesCount}/${total}`;
 }
 
+
+function getNodeTag(element: Immutable<Element> | undefined): SelectedNodeTag | undefined {
+
+    if (element == null) { return undefined; }
+
+    if (Element.isSynthetic(element)) {
+        if (element.kind === 'TopNode') {
+            return `${element.kind}:${element.originTag}`;
+        }
+        return 'UnknownNode';
+    }
+
+    return element.data ? 'RunnableNode' : 'IntermediateNode';
+
+}
 
 export default TreeView;

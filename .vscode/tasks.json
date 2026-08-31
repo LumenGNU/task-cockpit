@@ -215,11 +215,11 @@
         // },
         // ===================================================================================================================
         {
-            "label": "Debug",
+            "label": "Debug-inspect",
             "dependsOn": [
                 "_command:workbench.view.debug",
-                "Debug|Build",
-                "Debug|Run (debug-clean)",
+                "Debug-inspect|Build",
+                "Debug-inspect|Run (debug-clean)",
                 "_command:workbench.panel.repl.view.focus",
             ],
             "dependsOrder": "sequence",
@@ -229,7 +229,7 @@
             }
         },
         {
-            "label": "Debug|Build|Create/Clean `~out-debug/`",
+            "label": "Debug-inspect|Build|Create/Clean `~out-debug/`",
             "detail": "",
             "icon": {
                 "id": "new-folder"
@@ -256,7 +256,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Debug|Build|Transpile TypeScript to `./~out-debug`",
+            "label": "Debug-inspect|Build|Transpile TypeScript to `./~out-debug`",
             "detail": "",
             "icon": {
                 "id": "target"
@@ -286,7 +286,7 @@
             }
         },
         {
-            "label": "Debug|Build|Copy icons to `./~out-debug`",
+            "label": "Debug-inspect|Build|Copy icons to `./~out-debug`",
             "detail": "Copy icons to distribution",
             "icon": {
                 "id": "copy"
@@ -315,7 +315,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Debug|Build|Create package.json",
+            "label": "Debug-inspect|Build|Create package.json",
             "detail": "Generate `package.json`",
             "icon": {
                 "id": "json"
@@ -344,16 +344,16 @@
             "problemMatcher": []
         },
         {
-            "label": "Debug|Build",
+            "label": "Debug-inspect|Build",
             "detail": "",
             "icon": {
                 "id": "gear"
             },
             "dependsOn": [
-                "Debug|Build|Create/Clean `~out-debug/`",
-                "Debug|Build|Transpile TypeScript to `./~out-debug`",
-                "Debug|Build|Copy icons to `./~out-debug`",
-                "Debug|Build|Create package.json"
+                "Debug-inspect|Build|Create/Clean `~out-debug/`",
+                "Debug-inspect|Build|Transpile TypeScript to `./~out-debug`",
+                "Debug-inspect|Build|Copy icons to `./~out-debug`",
+                "Debug-inspect|Build|Create package.json"
             ],
             "dependsOrder": "sequence",
             "type": "shell",
@@ -380,7 +380,7 @@
         },
         // .............................................................................
         {
-            "label": "Debug|Run (debug-clean)",
+            "label": "Debug-inspect|Run (debug-clean)",
             "icon": {
                 "id": "rocket"
             },

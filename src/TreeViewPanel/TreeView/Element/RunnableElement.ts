@@ -130,7 +130,7 @@ function resolveTreeItem(
         item.tooltip = formatTooltip(
             'Task',
             taskLabel,
-            `$(${UI.ICON.WARNING}) Error: No task matches this definition`
+            `$(${UI.ICON.WARNING}) No task matches this definition`
         );
         return item;
     }
@@ -248,12 +248,17 @@ function buildIconPath(
     if (!definition) {
         return new ThemeIcon(UI.ICON.ERROR, new ThemeColor(UI.COLOR.INVALID)); // @todo
     }
-    else if (!hasEligibleTask) {
-        return new ThemeIcon(UI.ICON.WARNING, new ThemeColor(UI.COLOR.INVALID));
-    }
+
+    // if (!hasEligibleTask) {
+    //     return new ThemeIcon(UI.ICON.WARNING, new ThemeColor(UI.COLOR.INVALID));
+    // }
 
     const iconId = definition.icon?.id ?? nodeConfig?.defaultIconName ?? UI.ICON.TASK_DEFAULT;
-    const colorId = definition.icon?.color;
+    const colorId =
+        (hasEligibleTask)
+            ? definition.icon?.color
+            : UI.COLOR.INVALID;
+
     return new ThemeIcon(iconId, colorId ? new ThemeColor(colorId) : undefined);
 }
 

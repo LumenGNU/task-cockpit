@@ -3,5 +3,24 @@
     {
         "key": "f9",
         "command": "workbench.action.tasks.runTask"
-    }
+    },
+
+    // -------------------------------------------------
+// OK
+    // {
+    //     "command": "task-cockpit.tasks-file.open-profile-tasks-file",
+    //     "key": "f7",
+    //     "when": "focusedView == task-cockpit_view-container_global-task-view"
+    // },
+    // {
+    //     "command": "task-cockpit.tasks-file.open-project-tasks-file",
+    //     "key": "f7",
+    //     "when": "focusedView == task-cockpit_view-container_project-task-view && task-cockpit_view-container_project-task-view.selectedNodeType != RunnableNode"
+    // },
+    // {
+    //     "command": "task-cockpit.tasks-file.go-to-task-definition",
+    //     "key": "f7",
+    //     "when": "focusedView == task-cockpit_view-container_project-task-view && task-cockpit_view-container_project-task-view.selectedNodeType == RunnableNode"
+    // }
+    // -------------------------------------------------------------------------------------------
 ]

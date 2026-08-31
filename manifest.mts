@@ -308,188 +308,6 @@ const MANIFEST = {
         "onStartupFinished"
     ],
     contributes: {
-        commands: defineCommands(
-            {
-                command: COMMAND_IDS.FORCE_FULL_REFRESH,
-                icon: `$(${UI.ICON.REFRESH})`,
-                category: COMMAND_CATEGORY,
-                title: 'Force Full Refresh',
-                shortTitle: 'Full Refresh',
-                enablement: [
-                    `view =~ /^${VIEW_CONTAINER_ID}/`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET,
-                icon: `$(${UI.ICON.SEARCH})`,
-                category: COMMAND_CATEGORY,
-                title: 'Find Task In List',
-                shortTitle: 'Find Task',
-                enablement: [
-                    `view == ${GLOBAL_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
-                icon: `$(${UI.ICON.SEARCH})`,
-                category: COMMAND_CATEGORY,
-                title: 'Find Task In List',
-                shortTitle: 'Find Task',
-                enablement: [
-                    `view == ${PROJECT_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASK_EXECUTE,
-                category: COMMAND_CATEGORY,
-                title: 'Run Task',
-                icon: `$(${UI.ICON.EXECUTE})`,
-                enablement: [
-                    `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
-                    `&& viewItem =~ /:Runnable/`, // если запускаемый
-                    `&& !(viewItem =~ /:Running|:Broken/)` // не сломан и не выполняется сейчас
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
-                category: COMMAND_CATEGORY,
-                title: 'Start New Instance', // @todo или Run или execute?
-                icon: `$(${UI.ICON.EXECUTE})`,
-                enablement: [
-                    `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
-                    `&& viewItem =~ /:Runnable/`, // если запускаемый
-                    `&& !(viewItem =~ /:Broken/)` // не сломан
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
-                category: COMMAND_CATEGORY,
-                title: 'Abort All Running Instances',
-                icon: '$(stop)',
-                enablement: [
-                    `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
-                    `&& viewItem =~ /:Runnable/`, // если запускаемый
-                    `&& viewItem =~ /:Running/`, // если работает
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
-                category: COMMAND_CATEGORY,
-                title: 'Edit Task', // @fixme это go-to не edit
-                icon: `$(${UI.ICON.EDIT})`,
-                enablement: [
-                    `view == ${PROJECT_TREE_VIEW.ID}`, // можно "открыть задачу" только для project-задач
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
-                category: COMMAND_CATEGORY,
-                title: 'Open User Tasks',
-                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
-                enablement: `view == ${GLOBAL_TREE_VIEW.ID}`
-            },
-            {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
-                category: COMMAND_CATEGORY,
-                title: 'Open Workspace Tasks',
-                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
-                enablement: `view == ${PROJECT_TREE_VIEW.ID}`
-            },
-            {
-                command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
-                category: COMMAND_CATEGORY,
-                title: 'Open Tasks File',
-                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
-                enablement: [
-                    `view == ${PROJECT_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                ]
-            },
-            {
-                command: COMMAND_IDS.TASK_SHOW_TERMINAL,
-                category: COMMAND_CATEGORY,
-                title: 'Show Task Terminal',
-                icon: '$(terminal)',
-                enablement: [
-                    `view =~ /^${VIEW_CONTAINER_ID}/`,
-                    `&& viewItem =~ /:Runnable/`, // если запускаемый
-                    `&& viewItem =~ /:Terminals/`
-                ]
-            },
-            {
-                command: COMMAND_IDS.OPEN_HELP_PAGE,
-                category: COMMAND_CATEGORY,
-                title: 'Open Documentation',
-                icon: '$(question)'
-            },
-            {
-                command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
-                category: COMMAND_CATEGORY,
-                title: 'Display Settings',
-                icon: '$(list-tree)',
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
-            },
-            {
-                command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
-                category: COMMAND_CATEGORY,
-                title: 'Filtering Settings',
-                icon: `$(${UI.ICON.LIST_FILTER})`,
-                enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
-            },
-            {
-                command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
-                category: COMMAND_CATEGORY,
-                title: 'Expand All',
-                icon: `$(${UI.ICON.EXPAND_ALL})`,
-                enablement: [
-                    `view == ${GLOBAL_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL,
-                category: COMMAND_CATEGORY,
-                title: 'Collapse All',
-                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
-                enablement: [
-                    `view == ${GLOBAL_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
-                category: COMMAND_CATEGORY,
-                title: 'Expand All',
-                icon: `$(${UI.ICON.EXPAND_ALL})`,
-                enablement: [
-                    `view == ${PROJECT_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
-                ]
-            },
-            {
-                command: COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL,
-                category: COMMAND_CATEGORY,
-                title: 'Collapse All',
-                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
-                enablement: [
-                    `view == ${PROJECT_TREE_VIEW.ID}`,
-                    `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
-                ]
-            }
-        ),
         viewsContainers: {
             activitybar: [
                 {
@@ -521,13 +339,16 @@ const MANIFEST = {
             ]
         },
         viewsWelcome: [
+
+            // @todo context: tasksAvailable=false ?
+
             // global-task-view (не умеет быть по настоящему пустым)
             // -------------------------------------------------------------------
             {
                 view: GLOBAL_TREE_VIEW.ID,
                 contents: 'Scanning...',
                 when: 'workbenchState != empty',
-                enablement: 'workbenchState != empty'
+                // enablement: 'workbenchState != empty'
             },
             // workspace-task-view
             // -------------------------------------------------------------------
@@ -535,26 +356,254 @@ const MANIFEST = {
                 view: PROJECT_TREE_VIEW.ID,
                 contents: 'Scanning...',
                 when: `workbenchState != empty && !${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                enablement: `workbenchState != empty && !${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                // enablement: `workbenchState != empty && !${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
             },
             {
                 view: PROJECT_TREE_VIEW.ID,
                 contents: 'Open a folder or workspace to get started.',
                 when: 'workbenchState == empty',
-                enablement: 'workbenchState == empty'
+                // enablement: 'workbenchState == empty'
             },
             {
                 view: PROJECT_TREE_VIEW.ID,
                 contents: `All folders are excluded by the [filter settings](command:${COMMAND_IDS.OPEN_SETTINGS_EXCLUDE_FOLDERS})`,
                 when: `workbenchState != empty && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
-                enablement: `workbenchState != empty && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                // enablement: `workbenchState != empty && ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
             }
         ],
-        submenus: [
+        commands: defineCommands(
+            {
+                command: COMMAND_IDS.FORCE_FULL_REFRESH,
+                icon: `$(${UI.ICON.REFRESH})`,
+                category: COMMAND_CATEGORY,
+                title: 'Force Full Refresh',
+                shortTitle: 'Full Refresh',
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET,
+                icon: `$(${UI.ICON.SEARCH})`,
+                category: COMMAND_CATEGORY,
+                title: 'Find Task In List',
+                shortTitle: 'Find Task',
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
+                icon: `$(${UI.ICON.SEARCH})`,
+                category: COMMAND_CATEGORY,
+                title: 'Find Task In List',
+                shortTitle: 'Find Task',
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.TASK_EXECUTE,
+                category: COMMAND_CATEGORY,
+                title: 'Run Task',
+                icon: `$(${UI.ICON.EXECUTE})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
+                    `&& !(viewItem =~ /:Broken/)` // не сломан
+                ]
+            },
+            // {
+            //     command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Start New Instance', // @todo или Run или execute?
+            //     icon: `$(${UI.ICON.EXECUTE})`,
+            //     enablement: [
+            //         `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
+            //         `&& ${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`, // если не занят
+            //         `&& viewItem =~ /:Runnable/`, // если запускаемый
+            //         `&& !(viewItem =~ /:Broken/)` // не сломан
+            //     ]
+            // },
+            // {
+            //     command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Abort All Running Instances',
+            //     icon: '$(stop)',
+            //     enablement: [
+            //         `view =~ /^${VIEW_CONTAINER_ID}/`, // любое дерево
+            //         `&& viewItem =~ /:Runnable/`, // если запускаемый
+            //         `&& viewItem =~ /:Running/`, // если работает
+            //     ]
+            // },
 
-        ],
+
+            {
+                // открыть файл-источник задач из профиля
+                command: COMMAND_IDS.OPEN_PROFILE_TASKS_FILE,
+                category: COMMAND_CATEGORY,
+                title: 'Open Profile Tasks File',
+                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                ]
+            },
+
+            {
+                // открыть файл-источник задач текущего проекта
+                command: COMMAND_IDS.OPEN_PROJECT_TASKS_FILE,
+                category: COMMAND_CATEGORY,
+                title: 'Open Tasks File',
+                icon: `$(${UI.ICON.OPEN_TASKS_FILE})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.OPEN_TASK_DEFINITION,
+                category: COMMAND_CATEGORY,
+                title: 'Go To Task Definition', // @fixme
+                icon: `$(${UI.ICON.EDIT})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                ]
+            },
+
+
+            {
+                command: COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION,
+                category: COMMAND_CATEGORY,
+                title: 'No task matches this definition', // @fixme
+                icon: `$(${UI.ICON.WARNING})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`
+                ]
+            },
+
+            // {
+            //     command: COMMAND_IDS.TASK_SHOW_TERMINAL,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Show Task Terminal',
+            //     icon: '$(terminal)',
+            //     enablement: [
+            //         `view =~ /^${VIEW_CONTAINER_ID}/`,
+            //         `&& viewItem =~ /:Runnable/`, // если запускаемый
+            //         `&& viewItem =~ /:Terminals/`
+            //     ]
+            // },
+            // {
+            //     command: COMMAND_IDS.OPEN_HELP_PAGE,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Open Documentation',
+            //     icon: '$(question)'
+            // },
+            // {
+            //     command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Display Settings',
+            //     icon: '$(list-tree)',
+            //     enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
+            // },
+            // {
+            //     command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
+            //     category: COMMAND_CATEGORY,
+            //     title: 'Filtering Settings',
+            //     icon: `$(${UI.ICON.LIST_FILTER})`,
+            //     enablement: `view =~ /^${VIEW_CONTAINER_ID}/`
+            // },
+            {
+                command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Expand All',
+                icon: `$(${UI.ICON.EXPAND_ALL})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Collapse All',
+                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Expand All',
+                icon: `$(${UI.ICON.EXPAND_ALL})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+            {
+                command: COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL,
+                category: COMMAND_CATEGORY,
+                title: 'Collapse All',
+                icon: `$(${UI.ICON.COLLAPSE_ALL})`,
+                enablement: [
+                    `${WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE}`,
+                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS}`
+                ]
+            },
+
+        ),
         menus: {
-            commandPalette: defineMenu(),
+            commandPalette: [ // @todo
+                {
+                    command: COMMAND_IDS.OPEN_PROFILE_TASKS_FILE,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.OPEN_PROJECT_TASKS_FILE,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.OPEN_TASK_DEFINITION,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.FORCE_FULL_REFRESH
+                },
+                {
+                    command: COMMAND_IDS.GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.PROJECT_TASK_VIEW_OPEN_FIND_WIDGET,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.GLOBAL_TASK_VIEW_EXPAND_ALL,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.GLOBAL_TASK_VIEW_COLLAPSE_ALL,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.PROJECT_TASK_VIEW_EXPAND_ALL,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.PROJECT_TASK_VIEW_COLLAPSE_ALL,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.TASK_EXECUTE,
+                    when: 'false'
+                },
+                {
+                    command: COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION,
+                    when: 'false'
+                }
+            ],
             'view/title': defineMenu(
                 defineMenuItems('navigation',
                     { // искать в списке глобальных
@@ -586,23 +635,22 @@ const MANIFEST = {
                         when: `view == ${PROJECT_TREE_VIEW.ID}`
                     },
                 ),
-                defineMenuItems('b2_open_settings',
-                    {
-                        command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/`,
-                    },
-                    {
-                        command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/`,
-                    },
-                ),
-                defineMenuItems('c3_help',
-                    {
-                        command: COMMAND_IDS.OPEN_HELP_PAGE,
-                        when: `view =~ /^${VIEW_CONTAINER_ID}/`
-                    }
-                ),
-
+                // defineMenuItems('b2_open_settings',
+                //     {
+                //         command: COMMAND_IDS.OPEN_SETTINGS_DISPLAY,
+                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //     },
+                //     {
+                //         command: COMMAND_IDS.OPEN_SETTINGS_FILTERING,
+                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //     },
+                // ),
+                // defineMenuItems('c3_help',
+                //     {
+                //         command: COMMAND_IDS.OPEN_HELP_PAGE,
+                //         when: `view =~ /^${VIEW_CONTAINER_ID}/`
+                //     }
+                // ),
             ),
             'view/item/context': defineMenu(
                 defineMenuItems('inline',
@@ -610,77 +658,120 @@ const MANIFEST = {
                         command: COMMAND_IDS.TASK_EXECUTE,
                         when: [
                             `view =~ /^${VIEW_CONTAINER_ID}/`,
-                            `&& viewItem =~ /:Runnable/`,
-                            `&& !(viewItem =~ /:Running/)` // не выполняется сейчас
+                            `&& viewItem =~ /:Runnable/`, // запускаемый, но
+                            `&& !(viewItem =~ /:Running/)`, // не выполняется сейчас
+                            `&& !(viewItem =~ /:Broken/)` // и не сломан
                         ],
                     },
                     {
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
-                        when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem == :Section:Global:Group`
+                        command: COMMAND_IDS.OPEN_BROKEN_TASK_DEFINITION,
+                        when: [
+                            `view =~ /^${VIEW_CONTAINER_ID}/`,
+                            `&& viewItem =~ /:Runnable/`, // запускаемый, и
+                            `&& viewItem =~ /:Broken/` // сломан
+                        ],
                     },
                     {
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Workspace:Group`,
+                        command: COMMAND_IDS.OPEN_PROFILE_TASKS_FILE,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem =~ /:Section/`
                     },
                     {
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Folder:Group`,
+                        command: COMMAND_IDS.OPEN_PROJECT_TASKS_FILE,
+                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem =~ /:Section/`,
                     },
 
                 ),
-                defineMenuItems('a1_execute',
-                    {
-                        command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
-                        when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
-                            `&& viewItem =~ /:Runnable/`
-                        ],
-                    },
-                    {
-                        command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
-                        when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
-                            `&& viewItem =~ /:Runnable/`
-                        ],
-                    },
-                ),
+                // defineMenuItems('a1_execute',
+                //     {
+                //         command: COMMAND_IDS.TASK_EXECUTE_NEW_INSTANCE,
+                //         when: [
+                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //             `&& viewItem =~ /:Runnable/`
+                //         ],
+                //     },
+                //     {
+                //         command: COMMAND_IDS.TASK_ABORT_ALL_INSTANCES,
+                //         when: [
+                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //             `&& viewItem =~ /:Runnable/`
+                //         ],
+                //     },
+                // ),
                 defineMenuItems('b2_open',
+                    // {
+                    //     // открыть задачи из User/profile/.../
+                    //     // Для User- вместо "перейти к задаче" - "открыть файл"
+                    //     command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
+                    //     when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem`
+                    // },
+                    // {
+                    //     // открыть задачи из .code-workspace
+                    //     command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
+                    //     when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Workspace:Group`,
+                    // },
+
                     {
-                        // перейти к определению задачи в файле
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_TASK,
+                        // перейти к определению задачи в файле для Runnable
+                        command: COMMAND_IDS.OPEN_TASK_DEFINITION,
                         when: [
-                            // `view =~ /^${VIEW_CONTAINER_ID}/`, // всем, но в user-tree будет серым
                             `view == ${PROJECT_TREE_VIEW.ID}`, // только project-tree
-                            `&& viewItem =~ /:Runnable/`
+                            `&& viewItem =~ /:Runnable/` // и только Runnable
                         ],
                     },
                     {
-                        // открыть задачи из User/profile/.../
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_USER_TASKS,
-                        when: `view == ${GLOBAL_TREE_VIEW.ID} && viewItem == :Section:Global:Group`
+                        command: COMMAND_IDS.OPEN_PROFILE_TASKS_FILE,
+                        when: `view == ${GLOBAL_TREE_VIEW.ID}`
                     },
                     {
-                        // открыть задачи из .code-workspace
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_WORKSPACE_TASKS,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Workspace:Group`,
-                    },
-                    {
-                        // открыть задачи из .vscode/tasks.json
-                        command: COMMAND_IDS.TASKS_FILE_OPEN_TASKS_FILE,
-                        when: `view == ${PROJECT_TREE_VIEW.ID} && viewItem == :Section:Folder:Group`,
-                    },
-                ),
-                defineMenuItems('c3_terminals',
-                    {
-                        command: COMMAND_IDS.TASK_SHOW_TERMINAL,
+                        command: COMMAND_IDS.OPEN_PROJECT_TASKS_FILE,
                         when: [
-                            `view =~ /^${VIEW_CONTAINER_ID}/`,
-                            `&& viewItem =~ /:Runnable/`
-                        ],
-                    },
-                )
+                            `view == ${PROJECT_TREE_VIEW.ID}`,// в project-tree на всех элементах, кроме...
+                            '&& !(viewItem =~ /:Runnable/)', // Runnable
+                        ]
+                    }
+                ),
+                // defineMenuItems('c3_terminals',
+                //     {
+                //         command: COMMAND_IDS.TASK_SHOW_TERMINAL,
+                //         when: [
+                //             `view =~ /^${VIEW_CONTAINER_ID}/`,
+                //             `&& viewItem =~ /:Runnable/`
+                //         ],
+                //     },
+                // )
             )
         },
+        submenus: [],
+        "keybindings": [ // @fixme
+            {
+                command: COMMAND_IDS.OPEN_PROFILE_TASKS_FILE,
+                key: 'f7',
+                when: [
+                    `focusedView == ${GLOBAL_TREE_VIEW.ID}`
+                ].join(' ')
+            },
+            {
+                command: COMMAND_IDS.OPEN_PROJECT_TASKS_FILE,
+                key: 'f7',
+                when: [
+                    `focusedView == ${PROJECT_TREE_VIEW.ID}`,
+                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_SELECTED_NODE_TYPE} != RunnableNode`
+                ].join(' ')
+            },
+            {
+                command: COMMAND_IDS.OPEN_TASK_DEFINITION,
+                key: 'f7',
+                when: [
+                    `focusedView == ${PROJECT_TREE_VIEW.ID}`,
+                    `&& ${WHEN_CONTEXT.PROJECT_TREE_VIEW_SELECTED_NODE_TYPE} == RunnableNode`
+                ].join(' ')
+            },
+            {
+                command: COMMAND_IDS.FORCE_FULL_REFRESH,
+                key: 'f12',
+                when: `focusedView =~ /^${VIEW_CONTAINER_ID}/`
+            }
+        ],
         configuration: [
             {
                 title: DISPLAY_NAME,

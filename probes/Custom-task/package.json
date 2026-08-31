@@ -15,5 +15,6 @@
   ],
   "main": "extension.js",
   "contributes": {
+
   }
 }

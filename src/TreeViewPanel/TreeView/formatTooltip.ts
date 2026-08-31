@@ -39,11 +39,15 @@ function formatTooltip(
 
     const inner: string[] = [];
 
-    if (label) { inner.push(`**${label}**`); }
+    // if (label) { inner.push(`**${label}**`); }
+    if (label) { inner.push(`##### ${label}`); }
+
     if (detail) { inner.push(detail); }
 
     const outer: string[] = [];
+
     if (title) { outer.push(`*${title}*`); }
+
     if (inner.length) { outer.push(inner.join(BR)); }
 
     const tooltip = new MarkdownString();

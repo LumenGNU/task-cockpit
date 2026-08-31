@@ -24,7 +24,7 @@
                 "${workspaceFolder}/.vscode-test/**/vs/**/*",
                 "${workspaceFolder}/node_modules/**/*"
             ],
-            "preLaunchTask": "Debug"
+            "preLaunchTask": "Debug-inspect"
         },
         {
             "type": "node",

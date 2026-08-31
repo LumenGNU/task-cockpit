@@ -25,6 +25,7 @@ import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
 import type TaskProcessLifecycle from '../Runtime/TaskProcessLifecycle';
+import type Element from './TreeView/Element/Element';
 
 
 type TreeViewId =
@@ -177,6 +178,18 @@ class TreeViewPanel implements Disposable {
         });
         return await this.#resourceProps.resourceStateCoordinator.forceFullRefresh();
     }
+
+
+    public getSelection(viewId: TreeViewId): Immutable<Element> | undefined {
+        if (viewId === GLOBAL_TREE_VIEW.ID) {
+            return this.#globalTreeView.getSelection();
+        }
+        else if (viewId === PROJECT_TREE_VIEW.ID) {
+            return this.#projectTreeView.getSelection();
+        }
+        return undefined;
+    }
+
 
     // Coalesce: в очереди не больше одного pending-update одновременно.
     // #updatePending сбрасывается до getScopeEntries — чтобы новый onDidChange

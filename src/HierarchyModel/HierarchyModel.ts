@@ -3,7 +3,7 @@
 import * as assert from 'node:assert/strict';
 
 
-type AnyData = { [k: string]: unknown; };
+interface AnyData { [k: string]: unknown; };
 
 
 /** Карта дочерних узлов. */
@@ -39,8 +39,9 @@ class Element<K extends string, D extends AnyData> {
     id: string;
 
     constructor(
+        public branchKey: K,
         id: string,
-        label: string,
+        label: string
     ) {
         this[INNER_MAP] = null;
         this.label = label;
@@ -67,7 +68,10 @@ interface Spec<D extends AnyData> {
 
 
 /** Список спецификаций */
-type SpecsDict<K extends string, D extends AnyData> = { branchKey: K, specs: Array<Spec<D>>; };
+interface SpecsDict<K extends string, D extends AnyData> {
+    branchKey: K;
+    specs: Array<Spec<D>>;
+};
 
 
 const SEP = '\x00\x00\x1F';
@@ -146,10 +150,11 @@ function buildHierarchy<K extends string, D extends AnyData>(
 
             if (!node) {
                 node = new Element<K, D>(
+                    specsDict.branchKey,
                     /*id*/ leafNode
                         ? leafNode.id + SEP + segment
                         : specsDict.branchKey + SEP + segment,
-                    /*label*/ segment,
+                    /*label*/ segment
                 );
                 currentChildren.set(segment, node);
             }
@@ -188,9 +193,9 @@ declare namespace HierarchyModel {
     /** Иерархия, содержит узлы верхнего уровня (корень под-дерева)
      * сгруппированные по ключам веток.
      *  Объект с единственным полем `children` — массивом корневых узлов. */
-    export type Hierarchy<K extends string, D extends AnyData> = {
+    export interface Hierarchy<K extends string, D extends AnyData> {
         children: Array<Element<K, D>>;
-    };
+    }
 
     /** Read-only представление узла дерева.
      *
@@ -202,6 +207,7 @@ declare namespace HierarchyModel {
      *  */
     export type Element<K extends string, D extends AnyData> =
         | {
+            branchKey: K,
             label: string;
             id: string;
             /** Данные узла */
@@ -210,6 +216,7 @@ declare namespace HierarchyModel {
             children: Array<Element<K, D>> | null;
         }
         | {
+            branchKey: K,
             label: string;
             id: string;
             /** Данные узла null, отсутствуют */
@@ -224,7 +231,10 @@ declare namespace HierarchyModel {
         data: D;
     }
 
-    export type SpecsDict<K extends string, D extends AnyData> = { branchKey: K, specs: Array<HierarchyModel.Spec<D>>; };
+    export interface SpecsDict<K extends string, D extends AnyData> {
+        branchKey: K;
+        specs: Array<HierarchyModel.Spec<D>>;
+    }
 }
 
 enum PathCompression {
@@ -307,6 +317,7 @@ function compressHierarchy<K extends string, D extends AnyData>(
             assert.ok(tail[INNER_MAP] != null, 'Invariant violated: tail.children must be non-null here');
 
             const element = new Element<K, D>(
+                tail.branchKey,
                 tail.id,
                 body.map(n => n.label).join(LABEL_SEP)
             );
@@ -321,6 +332,7 @@ function compressHierarchy<K extends string, D extends AnyData>(
         // тогда → дети last рекурсивно сжимаются.
 
         const element = new Element<K, D>(
+            last.branchKey,
             last.id,
             chain.map(n => n.label).join(LABEL_SEP)
         );

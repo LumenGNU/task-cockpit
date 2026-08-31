@@ -18,7 +18,8 @@ function resolveOriginName(originKey: OriginKey): string | null {
     if (originKey === OriginKey.USER) {
         return 'User';
     }
-    else if (originKey === OriginKey.WORKSPACE) {
+
+    if (originKey === OriginKey.WORKSPACE) {
         return workspace.name ?? null;
     }
 

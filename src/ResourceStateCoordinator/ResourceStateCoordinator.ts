@@ -30,6 +30,7 @@ import type TaskDefinitionEntry from './TaskDefinition/TaskDefinitionEntry';
 import type TaskDefinitionMap from './TaskDefinition/TaskDefinitionMap';
 import type TaskName from '../TaskName';
 import type TaskBundle from './TaskBundle';
+import type TaskSource from './TaskSource';
 
 
 interface ActiveUpdatePhase { affectedKeys: Immutable<AffectedKeys>; }
@@ -434,6 +435,49 @@ class ResourceStateCoordinator implements Disposable {
             taskDefinition: this.#taskDefinitions.get(originKey)?.get(taskName)?.effective ?? null,
             eligibleTask: this.#eligibleTasks.get(originKey)?.get(taskName) ?? null
         };
+    }
+
+
+    /** Возвращает ассоциированный источник задач для указанного origin.
+     *
+     * Перед чтением ожидает завершения текущего обновления конфигурации.
+     * Если объект был или стал disposed — выбрасывает исключение.
+     *
+     * @param originKey Ключ origin.
+     *
+     * @returns Источник задач, либо `null` для USER.
+     *
+     * @throws {Error} Если объект disposed — немедленно или во время ожидания idle.
+     * @throws {Error} Если запрошен origin недоступен.
+     */
+    public async resolveTaskSource(originKey: OriginKey): Promise<Immutable<TaskSource> | null> {
+
+        assert.ok(!this.#isDisposed(), `[${this.constructor.name}#resolveTaskSource]: use after dispose`);
+
+        await this.#waitForIdle();
+
+        if (this.#isDisposed()) { throw new Error(`[${this.constructor.name}#resolveTaskSource]: was disposed while waiting`); }
+
+        if (originKey === OriginKey.USER) {
+            return this.#resourceStructure.User.taskSource;
+        }
+
+        if (originKey === OriginKey.WORKSPACE) {
+            const taskSource = this.#resourceStructure.Workspace?.taskSource;
+            if (!taskSource) {
+                throw new Error(`Origin not found for key "${originKey}"`);
+            }
+            return taskSource;
+        }
+
+        const folderOrigin = this.#resourceStructure.folders?.find((f) => f.uri.toString() === originKey);
+
+        if (!folderOrigin) {
+            throw new Error(`Origin not found for key "${originKey}"`);
+        }
+
+        return folderOrigin.taskSource;
+
     }
 
 
