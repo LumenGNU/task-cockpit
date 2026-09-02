@@ -25,24 +25,29 @@ function isSynthetic(element: Immutable<Element>): element is Immutable<Element.
 }
 
 
-function isTopElement(element: Immutable<Element.Top | Element.Empty>): element is Immutable<Element.Top> {
+function isTop(element: Immutable<Element.Top | Element.Empty>): element is Immutable<Element.Top> {
     return element.kind === 'TopNode';
 }
 
 
-function isEmptyElement(element: Immutable<Element.Top | Element.Empty>): element is Immutable<Element.Empty> {
+function isEmpty(element: Immutable<Element.Top | Element.Empty>): element is Immutable<Element.Empty> {
     return element.kind === 'EmptyNode';
 }
 
+
+function isRunnable(element: Immutable<Element.Runnable | Element.Intermediate>): element is Immutable<Element.Runnable> {
+    return element.data != null;
+}
 
 const Element = {
     Empty: EmptyElement,
     Intermediate: IntermediateElement,
     Runnable: RunnableElement,
     Top: TopElement,
-    isTopElement,
+    isTopElement: isTop,
     isSynthetic,
-    isEmptyElement
+    isEmptyElement: isEmpty,
+    isRunnable
 };
 
 export default Element;

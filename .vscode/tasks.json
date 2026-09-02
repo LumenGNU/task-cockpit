@@ -398,7 +398,7 @@
                     "OUT_DIR": "./~out-debug",
                     "VSC_PROFILE": "extension-debug-clean",
                     "VSC_OPEN": "./~fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace",
-                    "VSC_INSPECT": "inspect-brk",
+                    "VSC_INSPECT": "inspect", // "inspect-brk",
                     "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
                     // "VSC_VERSION": "1.131.0",
                 }

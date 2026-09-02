@@ -94,7 +94,7 @@ function resolveTreeItem(
     }
 
     item.tooltip = formatTooltip(
-        element.originTag,
+        'Origin',
         element.label || '«unnamed»',
         element.tasksSummary ? `$(${UI.ICON.TASK_DEFAULT}) Tasks: ${formatTasksSummary(element.tasksSummary)}` : undefined
     );

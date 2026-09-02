@@ -4,29 +4,7 @@ import {
     MarkdownString
 } from 'vscode';
 
-// const EXPANDER = '\u00A0'.padEnd(36, '\u00A0');
-// const EXPANDER = '.'.padEnd(36, '.');
-const P = '\n\n';
-const BR = '  \n';
 
-const EXPANDER = '![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAABAgMAAABS/qhXAAAACVBMVEUAAAAAAAD///+D3c/SAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjYKACAAAARQABMOPaBgAAAABJRU5ErkJggg==)';
-
-// [ *title*                ] (T)
-// [                        ]
-// [ **label**              ] (L)
-// [ detail...              ] (D)
-// [<-- tooltip expander -->] (EXP)
-//
-// аргументы	структура
-// ----------------------------------------------------
-// T + L + D	*T* [P] **L** [BR] D [BR] EXP
-// T + L	    *T* [P] **L** [BR] EXP
-// T + D	    *T* [P] D [BR] EXP
-// L + D	    **L** [BR] D [BR] EXP
-// T	        *T* [BR] EXP
-// L	        **L** [BR] EXP
-// D	        D [BR] EXP
-// —	        undefined
 function formatTooltip(
     title: string | undefined | null,
     label: string | undefined | null,
@@ -37,28 +15,38 @@ function formatTooltip(
         return undefined;
     }
 
-    const inner: string[] = [];
+    const tooltipMd = new MarkdownString();
+    tooltipMd.isTrusted = false;
+    tooltipMd.supportHtml = true;
+    tooltipMd.supportThemeIcons = true;
 
-    // if (label) { inner.push(`**${label}**`); }
-    if (label) { inner.push(`##### ${label}`); }
+    const titleRow =
+        title
+            ? `<tr><td><small><i>${title}</i></small></td></tr>`
+            : '';
 
-    if (detail) { inner.push(detail); }
+    const labelRow =
+        label
+            ? `<tr><td><b>${label}</b></td></tr>`
+            : '';
 
-    const outer: string[] = [];
+    if (titleRow || labelRow) {
+        tooltipMd.appendMarkdown(`<table width="217">${titleRow}${labelRow}</table>`);
+    }
 
-    if (title) { outer.push(`###### *${title}*`); }
+    tooltipMd.appendMarkdown(detail ? `\n\n${escapeHtml(detail)}` : '');
 
-    if (inner.length) { outer.push(inner.join(BR)); }
+    return tooltipMd;
+}
 
-    const tooltip = new MarkdownString();
-    tooltip.isTrusted = false;
-    tooltip.supportHtml = false;
-    tooltip.supportThemeIcons = true;
 
-    // tooltip.appendMarkdown(`${outer.join(P)}`);
-    tooltip.appendMarkdown(`${outer.join(P)}${BR}${EXPANDER}`);
-
-    return tooltip;
+function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 export default formatTooltip;

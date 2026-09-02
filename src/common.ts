@@ -1,154 +1,226 @@
 /** @file common.ts */
 
-export const DISPLAY_NAME = 'Task Cockpit';
 
-export const ID = 'task-cockpit';
-export const PREFIX = ID;
+const PREFIX        /**/ = 'task-cockpit';
+const DISPLAY_NAME  /**/ = 'Task Cockpit';
 
-export const VIEW_CONTAINER_ID = `${PREFIX}_view-container`;
-
-
-export const GLOBAL_TREE_VIEW = {
-    ID: `${VIEW_CONTAINER_ID}_global-task-view`,
-    NAME: 'Global Tasks'
-} as const;
-
-
-export const PROJECT_TREE_VIEW = {
-    ID: `${VIEW_CONTAINER_ID}_project-task-view`,
-    NAME: 'Project Tasks'
-} as const;
-
-export type SelectedNodeTag =
-    | `TopNode:${'User' | 'Workspace' | 'Folder'}`
-    | 'RunnableNode'
-    | 'IntermediateNode'
-    | 'UnknownNode';
-
-export const WHEN_CONTEXT = {
-    VIEW_CONTAINER_ACTIVE: `${VIEW_CONTAINER_ID}.active`,
-    GLOBAL_TREE_VIEW_HAS_ITEMS: `${GLOBAL_TREE_VIEW.ID}.hasItems`,
-    PROJECT_TREE_VIEW_HAS_ITEMS: `${PROJECT_TREE_VIEW.ID}.hasItems`,
-    GLOBAL_TREE_VIEW_SELECTED_NODE_TYPE: `${GLOBAL_TREE_VIEW.ID}.selectedNodeType`,
-    PROJECT_TREE_VIEW_SELECTED_NODE_TYPE: `${PROJECT_TREE_VIEW.ID}.selectedNodeType`,
-} as const;
-
+const CONTAINER_ID     /**/ = `${PREFIX}_container`;
+const USER_TREE_ID     /**/ = `${PREFIX}_user-tasks`;
+const PROJECT_TREE_ID  /**/ = `${PREFIX}_project-tasks`;
 
 export const UI = {
-    COLOR: {
-        INVALID: 'list.invalidItemForeground',
-        DEEMPHASIZED: 'list.deemphasizedForeground'
-    },
-    ICON: {
-        DEEMPHASIZED     /**/: 'dash',
-        ERROR            /**/: 'circle-slash',
-        WARNING          /**/: 'warning',
-        TASK_DEFAULT     /**/: 'tools',
-        USER_ORIGIN      /**/: 'vm',
-        WORKSPACE_ORIGIN /**/: 'layers',
-        FOLDER_ORIGIN    /**/: 'root-folder',
-        SYMBOL_FOLDER    /**/: 'symbol-folder',// 'folder' | @todo имя может отличатся для разных версий. проверь
-        REFRESH          /**/: 'refresh',
-        SEARCH           /**/: 'search',
-        EXPAND_ALL       /**/: 'expand-all',
-        COLLAPSE_ALL     /**/: 'collapse-all',
-        LIST_FILTER      /**/: 'list-filter',
-        // USER_TASKS_FILE: 'settings-gear',
-        OPEN_TASKS_FILE: 'go-to-file',
-        EDIT: 'edit',
-        EXECUTE: 'play'
-    },
-    DISPLAY_SEGMENT_SEPARATOR: '・',
-    // MD_EXPANDER: '![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQ4AAAABAgMAAABS/qhXAAAACVBMVEUAAAAAAAD///+D3c/SAAAAAXRSTlMAQObYZgAAAAxJREFUCNdjYKACAAAARQABMOPaBgAAAABJRU5ErkJggg==)'
+  COLOR: {
+    INVALID            /**/: 'list.invalidItemForeground',
+    DEEMPHASIZED       /**/: 'list.deemphasizedForeground'
+  },
+  ICON: {
+    DEEMPHASIZED       /**/: 'dash',
+    ERROR              /**/: 'circle-slash',
+    WARNING            /**/: 'warning',
+    TASK_DEFAULT       /**/: 'tools',
+    USER_ORIGIN        /**/: 'vm',
+    WORKSPACE_ORIGIN   /**/: 'layers',
+    FOLDER_ORIGIN      /**/: 'root-folder',
+    SYMBOL_FOLDER      /**/: 'symbol-folder',
+    REFRESH            /**/: 'refresh',
+    SEARCH             /**/: 'search',
+    EXPAND_ALL         /**/: 'expand-all',
+    COLLAPSE_ALL       /**/: 'collapse-all',
+    LIST_FILTER        /**/: 'list-filter',
+    OPEN_TASKS_FILE    /**/: 'go-to-file',
+    EDIT               /**/: 'edit',
+    RUN                /**/: 'play',
+    HELP               /**/: 'question',
+    RUN_ERRORS         /**/: 'run-errors',
+    TERMINAL           /**/: 'terminal',
+    ABORT              /**/: 'stop-circle',
+    SETTING            /**/: 'settings'
+  },
+  DISPLAY_SEGMENT_SEPARATOR: '・',
+
 } as const;
 
+
+export const EXTENSION = {
+  ID: PREFIX,
+  NAME: DISPLAY_NAME,
+  COMMAND: {
+    // Открыть README (github) для текущей версии
+    OPEN_HELP_PAGE                 /**/: { ID: `${PREFIX}.open-help-page`,                          /**/ LABEL: 'Open Documentation',  /**/ ICON: UI.ICON.HELP },
+    OPEN_DISPLAY_SETTINGS          /**/: { ID: `${PREFIX}.open-display-settings`,                   /**/ LABEL: 'Display Settings',    /**/ ICON: UI.ICON.SETTING },
+    OPEN_FILTERING_SETTINGS        /**/: { ID: `${PREFIX}.open-filtering-settings`,                 /**/ LABEL: 'Filtering Settings',  /**/ ICON: UI.ICON.LIST_FILTER },
+    OPEN_SETTINGS_EXCLUDE_FOLDERS  /**/: { ID: `${PREFIX}.open-filtering-settings@excludeFolders`,  /**/ LABEL: 'Filtering Settings — Exclude Folders',     /**/ ICON: UI.ICON.LIST_FILTER },
+  }
+} as const;
+
+
+// ---------------------------------
+
+const WHEN_TAG = {
+  HAS_ITEMS: 'hasItems',
+  SELECTED_NODE_TYPE: 'selectedNode'
+} as const;
+
+const COMMON_ACTIONS = {
+  RUN_TASK_INLINE: {
+    CMD   /**/: 'task-run@inline',
+    LABEL /**/: 'Run Task',
+    ICON  /**/: UI.ICON.RUN
+  },
+  RUN_TASK: {
+    CMD   /**/: 'task-run',
+    LABEL /**/: 'Run New Instance',
+    ICON  /**/: UI.ICON.RUN
+  },
+  ABORT_ALL_INSTANCES: {
+    CMD   /**/: 'task-abort-all-instances',
+    LABEL /**/: 'Abort All Instances',
+    ICON  /**/: UI.ICON.ABORT
+  },
+  NAVIGATE_TO_TERMINAL: {
+    CMD   /**/: 'task-navigate-to-terminal',
+    LABEL /**/: 'Navigate to Terminal',
+    ICON  /**/: UI.ICON.TERMINAL
+  },
+  LIST_OPEN_FIND: {
+    CMD   /**/: 'list-open-find',
+    LABEL /**/: 'Find in List',
+    ICON  /**/: UI.ICON.SEARCH
+  },
+  LIST_EXPAND_ALL: {
+    CMD   /**/: 'list-expand-all',
+    LABEL /**/: 'Expand All',
+    ICON  /**/: UI.ICON.EXPAND_ALL
+  },
+  LIST_COLLAPSE_ALL: {
+    CMD   /**/: 'list-collapse-all',
+    LABEL /**/: 'Collapse All',
+    ICON  /**/: UI.ICON.COLLAPSE_ALL
+  }
+} as const;
+
+
+export const CONTAINER = {
+  ID: CONTAINER_ID,
+  NAME: DISPLAY_NAME,
+  COMMAND: {
+    // Перечитать все данные, будет спровоцирована перестройка всех *-task-view представлений
+    FULL_REFRESH              /**/: { ID: `${CONTAINER_ID}.full-refresh`,           /**/ LABEL: 'Refresh List',  /**/ ICON: UI.ICON.REFRESH },
+  },
+  WHEN: {
+    ACTIVE: `${CONTAINER_ID}.active`,
+  }
+} as const;
+
+
+export const USER_TREE = {
+  ID: USER_TREE_ID,
+  NAME: 'User Level Tasks',
+  COMMAND: {
+    // Открыть файл с определением задачи
+    OPEN_USER_TASKS             /**/: { ID: `${USER_TREE_ID}.open-user-tasks`,                             /**/ LABEL: 'Open User Tasks',                          /**/ ICON: UI.ICON.OPEN_TASKS_FILE },
+    // Открыть файл с определением задачи (для "сломанной" задачи)
+    OPEN_USER_TASKS__BROKEN     /**/: { ID: `${USER_TREE_ID}.open-user-tasks@run-error`, /**/ LABEL: 'No task matches this definition (Open User Tasks)',  /**/ ICON: UI.ICON.WARNING },
+    // Выполнить задачу
+    TASK_RUN_INLINE                   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK_INLINE.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK_INLINE.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK_INLINE.ICON },
+    // Запустить новый экземпляр задачи
+    TASK_RUN      /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,      /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,      /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    // Прервать все работающие экземпляры задачи
+    TASK_ABORT_ALL_INSTANCES   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.ABORT_ALL_INSTANCES.CMD}`,   /**/ LABEL: COMMON_ACTIONS.ABORT_ALL_INSTANCES.LABEL,   /**/ ICON: COMMON_ACTIONS.ABORT_ALL_INSTANCES.ICON },
+    // Перейти к терминалу задачи
+    TASK_NAVIGATE_TO_TERMINAL  /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.CMD}`,  /**/ LABEL: COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.LABEL,  /**/ ICON: COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.ICON },
+    // Открыть поиск по списку
+    LIST_FIND                  /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_OPEN_FIND.CMD}`,        /**/ LABEL: COMMON_ACTIONS.LIST_OPEN_FIND.LABEL,        /**/ ICON: COMMON_ACTIONS.LIST_OPEN_FIND.ICON },
+    // Развернуть все элементы списка
+    LIST_EXPAND_ALL            /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_EXPAND_ALL.CMD}`,       /**/ LABEL: COMMON_ACTIONS.LIST_EXPAND_ALL.LABEL,       /**/ ICON: COMMON_ACTIONS.LIST_EXPAND_ALL.ICON },
+    // Свернуть все элементы списка
+    LIST_COLLAPSE_ALL          /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON },
+  },
+  WHEN: {
+    // true если в дереве есть элементы ("настоящие", не синтетические)
+    HAS_ITEMS: `${USER_TREE_ID}.${WHEN_TAG.HAS_ITEMS}`,
+    // тип выделенного элемента или undefined
+    SELECTED_NODE_TYPE: `${USER_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`,
+  }
+} as const;
 
 
 export const COMMAND_CATEGORY = 'Task Cockpit';
 
-export const COMMAND_IDS = {
 
-    // Открыть README (github) для текущей версии
-    OPEN_HELP_PAGE                   /**/: `${PREFIX}.open-help-page`,
+export const PROJECT_TREE = {
+  ID: PROJECT_TREE_ID,
+  NAME: 'Project Tasks',
+  COMMAND: {
+    OPEN_TASKS_FILE        /**/: { ID: `${PROJECT_TREE_ID}.open-tasks-file`,                             /**/ LABEL: 'Open Tasks File',                         /**/ ICON: UI.ICON.OPEN_TASKS_FILE },
 
-    // Перечитать все данные, будет спровоцирована перестройка
-    // всех *-task-view представлений
-    FORCE_FULL_REFRESH               /**/: `${PREFIX}.force-full-refresh`,
+    TASK_GO_TO_DEFINITION      /**/: { ID: `${PROJECT_TREE_ID}.task-go-to-definition`,                       /**/ LABEL: 'Open Task Definition',                               /**/ ICON: UI.ICON.EDIT },
 
-    // Перестроить дерево в представлении (на кешированных данных. малополезно)
-    VIEW_REFRESH                     /**/: `${PREFIX}.view.refresh`,
-
-
-    OPEN_PROFILE_TASKS_FILE   /**/: `${PREFIX}.tasks-file.open-profile-tasks-file`,
-    OPEN_PROJECT_TASKS_FILE   /**/: `${PREFIX}.tasks-file.open-project-tasks-file`,
-
-    // Открыть в редакторе файл-источник задач, и выделить определение конкретной задачи
-    OPEN_TASK_DEFINITION /**/: `${PREFIX}.tasks-file.go-to-task-definition`,
-
-
-
-    // Открыть в редакторе tasks.json-источник задач
-    // TASKS_FILE_OPEN_TASKS_FILE       /**/: `${PREFIX}.tasks-file.open-tasks-file`,
-
-    // Открыть в редакторе .code-workspace-источник задач
-    // TASKS_FILE_OPEN_WORKSPACE_TASKS   /**/: `${PREFIX}.tasks-file.open-workspace-tasks`,
-    /** Команда: открыть файл-источник-задач User-источника */
-    // TASKS_FILE_OPEN_USER_TASKS         /**/: `${PREFIX}.tasks-file.open-user-tasks`,
-
+    TASK_GO_TO_DEFINITION__BROKEN /**/: { ID: `${PROJECT_TREE_ID}.task-go-to-definition@run-error`,  /**/ LABEL: 'No task matches this definition (Open Task Definition)',  /**/ ICON: UI.ICON.WARNING },
     // Выполнить задачу
-    TASK_EXECUTE                     /**/: `${PREFIX}.task.execute`,
-    // Выполнить задачу (alias)
-    TASK_EXECUTE_NEW_INSTANCE        /**/: `${PREFIX}.task.execute-new-instance`,
-
-    TASK_ABORT_ALL_INSTANCES          /**/: `${PREFIX}.task.abort-all`,
-    TASK_SHOW_TERMINAL               /**/: `${PREFIX}.task.show-terminal`, // @todo navigate-to-terminal ?
-
-    OPEN_SETTINGS_DISPLAY            /**/: `${PREFIX}.settings.configure-display`,
-    OPEN_SETTINGS_FILTERING          /**/: `${PREFIX}.settings.configure-filtering`,
-    OPEN_SETTINGS_EXCLUDE_FOLDERS    /**/: `${PREFIX}.settings.configure-excludeFolders`,
-
-    GLOBAL_TASK_VIEW_OPEN_FIND_WIDGET    /**/: `${PREFIX}.view-container.${GLOBAL_TREE_VIEW.ID}.open-find-widget`,
-    PROJECT_TASK_VIEW_OPEN_FIND_WIDGET   /**/: `${PREFIX}.view-container.${PROJECT_TREE_VIEW.ID}.open-find-widget`,
-
-    // Развернуть все узлы в global-task-view представлении
-    GLOBAL_TASK_VIEW_EXPAND_ALL      /**/: `${PREFIX}.view-container.${GLOBAL_TREE_VIEW.ID}.expand-all`,
-    // Развернуть все узлы в project-task-view представлении
-    PROJECT_TASK_VIEW_EXPAND_ALL     /**/: `${PREFIX}.view-container.${PROJECT_TREE_VIEW.ID}.expand-all`,
-
-    GLOBAL_TASK_VIEW_COLLAPSE_ALL      /**/: `${PREFIX}.view-container.${GLOBAL_TREE_VIEW.ID}.collapse-all`,
-    PROJECT_TASK_VIEW_COLLAPSE_ALL     /**/: `${PREFIX}.view-container.${PROJECT_TREE_VIEW.ID}.collapse-all`,
-
-    OPEN_BROKEN_TASK_DEFINITION: `${PREFIX}.aaaaaaaaaaaaaaaaaaaaaaa`,
-
+    TASK_RUN_INLINE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK_INLINE.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK_INLINE.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK_INLINE.ICON },
+    // Запустить новый экземпляр задачи
+    TASK_RUN                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,      /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,      /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    // Прервать все работающие экземпляры задачи
+    TASK_ABORT_ALL_INSTANCES   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.ABORT_ALL_INSTANCES.CMD}`,   /**/ LABEL: COMMON_ACTIONS.ABORT_ALL_INSTANCES.LABEL,   /**/ ICON: COMMON_ACTIONS.ABORT_ALL_INSTANCES.ICON },
+    // Перейти к терминалу задачи
+    TASK_NAVIGATE_TO_TERMINAL  /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.CMD}`,  /**/ LABEL: COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.LABEL,  /**/ ICON: COMMON_ACTIONS.NAVIGATE_TO_TERMINAL.ICON },
+    // Открыть поиск по списку
+    LIST_FIND                  /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_OPEN_FIND.CMD}`,        /**/ LABEL: COMMON_ACTIONS.LIST_OPEN_FIND.LABEL,        /**/ ICON: COMMON_ACTIONS.LIST_OPEN_FIND.ICON },
+    // Развернуть все элементы списка
+    LIST_EXPAND_ALL            /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_EXPAND_ALL.CMD}`,       /**/ LABEL: COMMON_ACTIONS.LIST_EXPAND_ALL.LABEL,       /**/ ICON: COMMON_ACTIONS.LIST_EXPAND_ALL.ICON },
+    // Свернуть все элементы списка
+    LIST_COLLAPSE_ALL          /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON },
+  },
+  WHEN: {
+    // true если в дереве есть элементы ("настоящие", не синтетические)
+    HAS_ITEMS: `${PROJECT_TREE_ID}.${WHEN_TAG.HAS_ITEMS}`,
+    // тип выделенного элемента или undefined
+    SELECTED_NODE_TYPE: `${PROJECT_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`,
+  }
 } as const;
 
 
-export const CONFIG_BASE_SECTION = 'taskCockpit';
+export type SelectedNodeTag =
+  | `TopNode:${'User' | 'Workspace' | 'Folder'}`
+  | 'RunnableNode'
+  | 'IntermediateNode'
+  | 'UnknownNode';
 
-export const SETTING_IDS = {
-    BADGES: {
-        AVAILABLE_SYMBOL        /**/: `${CONFIG_BASE_SECTION}.badges.availableSymbol`,
-        BADGE_ORDER             /**/: `${CONFIG_BASE_SECTION}.badges.badgeOrder`,
-        OVERFLOW_SYMBOL         /**/: `${CONFIG_BASE_SECTION}.badges.overflowSymbol`,
-        RUNNING_SYMBOL          /**/: `${CONFIG_BASE_SECTION}.badges.runningSymbol`,
-    },
-    DISPLAY: {
-        DEFAULT_ICON_NAME              /**/: `${CONFIG_BASE_SECTION}.display.defaultIconName`,
-        GROUP_BY_TASK_GROUP            /**/: `${CONFIG_BASE_SECTION}.display.groupByTaskGroup`,
-        SEGMENT_SEPARATOR              /**/: `${CONFIG_BASE_SECTION}.display.segmentSeparator`,
-        TINT_LABEL                     /**/: `${CONFIG_BASE_SECTION}.display.tintLabel`,
-        USE_FOLDER_ICON                /**/: `${CONFIG_BASE_SECTION}.display.useFolderIcon`,
-    },
-    FILTERING: {
-        EXCLUDE_FOLDERS              /**/: `${CONFIG_BASE_SECTION}.filtering.excludeFolders`,
-        SHOW_HIDDEN                  /**/: `${CONFIG_BASE_SECTION}.filtering.showHidden`,
-        SHOW_GLOBAL_TASKS            /**/: `${CONFIG_BASE_SECTION}.showGlobalTasksView`,
-    },
-    PROCESS_MONITOR_POLLING_ACCEL          /**/: `${CONFIG_BASE_SECTION}.processMonitor.polling.acceleration`,
-    PROCESS_MONITOR_POLLING_CAP            /**/: `${CONFIG_BASE_SECTION}.processMonitor.polling.cap`,
-    PROCESS_MONITOR_POLLING_MIN            /**/: `${CONFIG_BASE_SECTION}.processMonitor.polling.min`,
-    TERMINALS_TIMEOUT                      /**/: `${CONFIG_BASE_SECTION}.terminals.timeout`,
-    DIAGNOSTICS_SHADOWED_TASKS             /**/: `${CONFIG_BASE_SECTION}.diagnostics.shadowedTasks`,
-    DIAGNOSTICS_UNREACHABLE_DEPENDENCIES   /**/: `${CONFIG_BASE_SECTION}.diagnostics.unreachableDependencies`,
+
+
+export const CONFIG_SECTION = 'taskCockpit';
+
+export const SETTING = {
+  DECORATOR: {
+    AVAILABLE_SYMBOL                /**/: `${CONFIG_SECTION}.decorator.availableSymbol`,
+    BADGE_ORDER                     /**/: `${CONFIG_SECTION}.decorator.badgeOrder`,
+    OVERFLOW_SYMBOL                 /**/: `${CONFIG_SECTION}.decorator.overflowSymbol`,
+    RUNNING_SYMBOL                  /**/: `${CONFIG_SECTION}.decorator.runningSymbol`,
+  },
+  DISPLAY: {
+    DEFAULT_ICON_NAME               /**/: `${CONFIG_SECTION}.display.defaultIconName`,
+    GROUP_BY_TASK_GROUP             /**/: `${CONFIG_SECTION}.display.groupByTaskGroup`,
+    SEGMENT_SEPARATOR               /**/: `${CONFIG_SECTION}.display.segmentSeparator`,
+    TINT_LABEL                      /**/: `${CONFIG_SECTION}.display.tintLabel`,
+    USE_FOLDER_ICON                 /**/: `${CONFIG_SECTION}.display.useFolderIcon`,
+  },
+  FILTERING: {
+    EXCLUDE_FOLDERS                 /**/: `${CONFIG_SECTION}.filtering.excludeFolders`,
+    SHOW_HIDDEN                     /**/: `${CONFIG_SECTION}.filtering.showHidden`,
+    SHOW_GLOBAL_TASKS               /**/: `${CONFIG_SECTION}.filtering.showUserLevelTasks`,
+  },
+  PROCESS_MONITOR: {
+    POLLING_ACCEL                   /**/: `${CONFIG_SECTION}.processMonitor.polling.acceleration`,
+    POLLING_CAP                     /**/: `${CONFIG_SECTION}.processMonitor.polling.cap`,
+    POLLING_MIN                     /**/: `${CONFIG_SECTION}.processMonitor.polling.min`,
+  },
+  TERMINALS: {
+    TIMEOUT                         /**/: `${CONFIG_SECTION}.terminals.timeout`,
+  },
+  DIAGNOSTICS: {
+    SHADOWED_TASKS                  /**/: `${CONFIG_SECTION}.diagnostics.shadowedTasks`,
+    UNREACHABLE_DEPENDENCIES        /**/: `${CONFIG_SECTION}.diagnostics.unreachableDependencies`,
+  }
 
 } as const;

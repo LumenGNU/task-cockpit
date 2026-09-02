@@ -9,10 +9,9 @@ import ResourceStateCoordinator from '../ResourceStateCoordinator/ResourceStateC
 import TreeView from './TreeView/TreeView';
 import WindowSettings from '../WindowSettings/WindowSettings';
 import {
-    GLOBAL_TREE_VIEW,
-    PROJECT_TREE_VIEW,
-    VIEW_CONTAINER_ID,
-    WHEN_CONTEXT
+    CONTAINER,
+    PROJECT_TREE,
+    USER_TREE
 } from '../common';
 import * as assert from 'node:assert/strict';
 import OriginNode from './OriginNode';
@@ -29,15 +28,15 @@ import type Element from './TreeView/Element/Element';
 
 
 type TreeViewId =
-    | typeof GLOBAL_TREE_VIEW.ID
-    | typeof PROJECT_TREE_VIEW.ID;
+    | typeof USER_TREE.ID
+    | typeof PROJECT_TREE.ID;
 
 class TreeViewPanel implements Disposable {
 
     readonly #globalTreeView: TreeView;
     readonly #projectTreeView: TreeView;
 
-    readonly ID = VIEW_CONTAINER_ID;
+    // readonly #containerId = CONTAINER.ID;
 
     // тротлинг между onDidChange’сами
     static readonly #throttleDelay: number = 25;
@@ -74,16 +73,16 @@ class TreeViewPanel implements Disposable {
         this.#asyncQueue = AsyncQueue.create(this.#logOutputChannel);
 
         this.#globalTreeView = new TreeView(
-            GLOBAL_TREE_VIEW.ID,
-            GLOBAL_TREE_VIEW.NAME,
+            USER_TREE.ID,
+            USER_TREE.NAME,
             this.#resourceProps,
             taskProcessRegistry,
             this.#logOutputChannel
         );
 
         this.#projectTreeView = new TreeView(
-            PROJECT_TREE_VIEW.ID,
-            PROJECT_TREE_VIEW.NAME,
+            PROJECT_TREE.ID,
+            PROJECT_TREE.NAME,
             this.#resourceProps,
             taskProcessRegistry,
             this.#logOutputChannel
@@ -102,9 +101,9 @@ class TreeViewPanel implements Disposable {
 
         this.#updatePending = false;
         void this.#asyncQueue.enqueue(async () => {
-            if (this.#isInoperable) { return; }
-            await commands.executeCommand('setContext', WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE, false);
-            if (this.#isInoperable) { return; }
+            if (this.isInoperable) { return; }
+            await commands.executeCommand('setContext', CONTAINER.WHEN.ACTIVE, false);
+            if (this.isInoperable) { return; }
             await this.#updateFromProjectState();
         });
 
@@ -119,7 +118,7 @@ class TreeViewPanel implements Disposable {
         this.#disposables.forEach((d) => void d.dispose());
 
         void this.#asyncQueue.enqueue(async () => {
-            await commands.executeCommand<void>('setContext', WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE, undefined);
+            await commands.executeCommand<void>('setContext', CONTAINER.WHEN.ACTIVE, undefined);
         });
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
@@ -130,12 +129,12 @@ class TreeViewPanel implements Disposable {
     // #region Handlers
 
     #resourceStateChangeHandler() {
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
         this.#requestUpdate();
     }
 
     #changeConfigurationHandler(affectedKeys: Immutable<WindowSettings.AffectedKeys>) {
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
         if (affectedKeys.has('Filtering')) {
             this.#requestUpdate();
         }
@@ -146,12 +145,12 @@ class TreeViewPanel implements Disposable {
 
     public expandAllInView(viewId: TreeViewId) {
 
-        assert.ok(!this.#disposed, `[${this.constructor.name}#expandAllInView] use after dispose`);
+        if (this.isInoperable) { return; };
 
-        if (viewId === GLOBAL_TREE_VIEW.ID) {
+        if (viewId === USER_TREE.ID) {
             this.#globalTreeView.expandAll();
         }
-        else if (viewId === PROJECT_TREE_VIEW.ID) {
+        else if (viewId === PROJECT_TREE.ID) {
             this.#projectTreeView.expandAll();
         }
     }
@@ -159,32 +158,37 @@ class TreeViewPanel implements Disposable {
 
     public collapseAllInView(viewId: TreeViewId) {
 
-        assert.ok(!this.#disposed, `[${this.constructor.name}#collapseAllInView] use after dispose`);
+        if (this.isInoperable) { return; };
 
-        if (viewId === GLOBAL_TREE_VIEW.ID) {
+        if (viewId === USER_TREE.ID) {
             this.#globalTreeView.collapseAll();
         }
-        else if (viewId === PROJECT_TREE_VIEW.ID) {
+        else if (viewId === PROJECT_TREE.ID) {
             this.#projectTreeView.collapseAll();
         }
     }
 
     public async forceFullRefresh() {
-        if (this.#resourceProps.resourceStateCoordinator.disposed) { return; };
+
+        if (this.isInoperable) { return; };
+
         // @todo если после этого вызова прошло, скажем, 15 сек, но onDidStateChange
-        // так и не случился: выбросить ошибку, setContext ACTIVE -> true
+        // так и не случился: выбросить ошибку + setContext ACTIVE -> true
         void this.#asyncQueue.enqueue(async () => {
-            await commands.executeCommand<void>('setContext', WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE, false);
+            await commands.executeCommand<void>('setContext', CONTAINER.WHEN.ACTIVE, false);
         });
         return await this.#resourceProps.resourceStateCoordinator.forceFullRefresh();
     }
 
 
     public getSelection(viewId: TreeViewId): Immutable<Element> | undefined {
-        if (viewId === GLOBAL_TREE_VIEW.ID) {
+
+        if (this.isInoperable) { return undefined; };
+
+        if (viewId === USER_TREE.ID) {
             return this.#globalTreeView.getSelection();
         }
-        else if (viewId === PROJECT_TREE_VIEW.ID) {
+        else if (viewId === PROJECT_TREE.ID) {
             return this.#projectTreeView.getSelection();
         }
         return undefined;
@@ -196,17 +200,17 @@ class TreeViewPanel implements Disposable {
     // мог вытеснить текущий цикл: #updateFromProjectState увидит флаг и выйдет досрочно.
     #requestUpdate(): void {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         if (this.#updatePending) { return; }
         this.#updatePending = true;
 
         void this.#asyncQueue.enqueue(async () => {
-            if (this.#isInoperable) { return; }
-            await commands.executeCommand<void>('setContext', WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE, false);
-            if (this.#isInoperable) { return; }
+            if (this.isInoperable) { return; }
+            await commands.executeCommand<void>('setContext', CONTAINER.WHEN.ACTIVE, false);
+            if (this.isInoperable) { return; }
             await timers.setTimeout(TreeViewPanel.#throttleDelay);
-            if (this.#isInoperable) { return; }
+            if (this.isInoperable) { return; }
 
             // #updatePending при раннем выходе не сбрасывается намеренно:
             // неработоспособный Panel не возобновляет работу, флаг нерелевантен.
@@ -219,7 +223,7 @@ class TreeViewPanel implements Disposable {
 
     async #updateFromProjectState() {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
         // Вытесненный цикл не выставляет PANEL_ACTIVE=true намеренно:
         // TreeView не обновлён, Panel не готова к взаимодействию.
         // Следующий цикл из очереди сделает полный update с актуальными данными.
@@ -227,7 +231,7 @@ class TreeViewPanel implements Disposable {
 
         const originEntries = await this.#resourceProps.resourceStateCoordinator.getOriginEntries();
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
         if (this.#updatePending) { return; }
 
         this.#globalTreeView.rebuild([OriginNode.build(originEntries.User)]);
@@ -259,11 +263,11 @@ class TreeViewPanel implements Disposable {
             excludedScopesCount
         );
 
-        await commands.executeCommand<void>('setContext', WHEN_CONTEXT.VIEW_CONTAINER_ACTIVE, true);
+        await commands.executeCommand<void>('setContext', CONTAINER.WHEN.ACTIVE, true);
     }
 
 
-    get #isInoperable(): boolean {
+    get isInoperable(): boolean {
 
         if (this.#disposed) {
             return true;

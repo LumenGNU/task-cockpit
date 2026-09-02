@@ -8,8 +8,9 @@
         },
         {
             "label": "AAAA",
+            "detail": "<span style=\"color:red\">Your text here</span>\n\n\naaaa\n\n-----\n\npppp",
             "type": "shell",
-            "command": "true"
+            "command": "echo AAAAAAAAAAAAAAAAAAAAAAAA"
         },
         {
             "label": "BBB",

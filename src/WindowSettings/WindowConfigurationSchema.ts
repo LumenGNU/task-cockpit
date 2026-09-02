@@ -1,7 +1,7 @@
 /** @file WindowSettings/WindowConfigurationSchema.ts */
 /** @internal */
 
-import { SETTING_IDS } from '../common';
+import { SETTING } from '../common';
 import Configuration from '../Configuration';
 import WindowConfiguration from './Configuration';
 
@@ -13,14 +13,14 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * all be reached — either because a higher-priority origin shadows them,
          * or because multiple definitions within a same origin conflict with each other. */
         shadowedTasks: Configuration.BooleanSpec({
-            configKey: SETTING_IDS.DIAGNOSTICS_SHADOWED_TASKS,
+            configKey: SETTING.DIAGNOSTICS.SHADOWED_TASKS,
             fallback: true
         }),
         /** When enabled, flags tasks whose \`dependsOn\` references cannot be resolved —
          * either because the target task does not exist, or because it is not reachable
          * from the current resolution scope. */
         unreachableDependencies: Configuration.BooleanSpec({
-            configKey: SETTING_IDS.DIAGNOSTICS_UNREACHABLE_DEPENDENCIES,
+            configKey: SETTING.DIAGNOSTICS.UNREACHABLE_DEPENDENCIES,
             fallback: true
         })
     },
@@ -33,7 +33,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * not the directory name on disk.
          * Also accepts the workspace scope name (e.g. `\"my-project (Workspace)\"`). */
         excludeFolders: Configuration.StringSetSpec({
-            configKey: SETTING_IDS.FILTERING.EXCLUDE_FOLDERS,
+            configKey: SETTING.FILTERING.EXCLUDE_FOLDERS,
             fallback: []
         })
     },
@@ -50,7 +50,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
             /** Minimum polling interval in milliseconds.
              * Applied when few tasks are running. */
             min: Configuration.NumberSpec({
-                configKey: SETTING_IDS.PROCESS_MONITOR_POLLING_MIN,
+                configKey: SETTING.PROCESS_MONITOR.POLLING_MIN,
                 max: 1_000,
                 fallback: 250,
                 min: 200,
@@ -60,7 +60,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
              * how many tasks are running simultaneously.
              * Must be meaningfully larger than \`min\` (at least \`min × 1.7\` is recommended). */
             cap: Configuration.NumberSpec({
-                configKey: SETTING_IDS.PROCESS_MONITOR_POLLING_CAP,
+                configKey: SETTING.PROCESS_MONITOR.POLLING_CAP,
                 max: 3_500,
                 fallback: 550,
                 min: 340,
@@ -70,7 +70,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
              * Higher values cause the interval to reach \`cap\` sooner,
              * reducing system load at the cost of slower UI updates. */
             acceleration: Configuration.NumberSpec({
-                configKey: SETTING_IDS.PROCESS_MONITOR_POLLING_ACCEL,
+                configKey: SETTING.PROCESS_MONITOR.POLLING_ACCEL,
                 max: 1.0,
                 fallback: 0.2,
                 min: 0.1,
@@ -87,7 +87,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * Lowering this value improves UI responsiveness, but may cause a running
          * task to be incorrectly shown as finished in some situations. */
         timeout: Configuration.NumberSpec({
-            configKey: SETTING_IDS.TERMINALS_TIMEOUT,
+            configKey: SETTING.TERMINALS.TIMEOUT,
             max: 12_000,
             fallback: 1_300,
             min: 500,
@@ -102,7 +102,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * *Note*: Use a single visible glyph. Avoid digits — a numeric count
          * may appear next to this symbol. Default: `●` */
         runningSymbol: Configuration.StringSpec({
-            configKey: SETTING_IDS.BADGES.RUNNING_SYMBOL,
+            configKey: SETTING.DECORATOR.RUNNING_SYMBOL,
             fallback: '●',
             pattern: /^[^\d\s]$/u
         }),
@@ -110,7 +110,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * VS Code badges are limited to two characters, so when the count reaches 10 or more,
          * this symbol replaces the numeric count. Default: `+` */
         overflowSymbol: Configuration.StringSpec({
-            configKey: SETTING_IDS.BADGES.OVERFLOW_SYMBOL,
+            configKey: SETTING.DECORATOR.OVERFLOW_SYMBOL,
             fallback: '+',
             pattern: /^[^\d\s]$/u
         }),
@@ -118,7 +118,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * the instance count (`symbolFirst`) or after it (`countFirst`).
          * Default: `symbolFirst` */
         badgeOrder: Configuration.StringLiteralSpec({
-            configKey: SETTING_IDS.BADGES.BADGE_ORDER,
+            configKey: SETTING.DECORATOR.BADGE_ORDER,
             fallback: 'symbolFirst',
             values: ['symbolFirst', 'countFirst']
         }),
@@ -127,7 +127,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
          * task in the same terminal or until the terminal is closed.
          * Default: `•` */
         availableSymbol: Configuration.StringSpec({
-            configKey: SETTING_IDS.BADGES.AVAILABLE_SYMBOL,
+            configKey: SETTING.DECORATOR.AVAILABLE_SYMBOL,
             fallback: '•',
             pattern: /^[^\d\s]$/u
         })

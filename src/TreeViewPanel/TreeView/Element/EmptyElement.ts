@@ -91,7 +91,7 @@ function resolveTreeItem(
     }
 
     item.tooltip = formatTooltip(
-        'Empty Scope',
+        undefined, //'Empty Scope',
         undefined,
         (element.cause === 'Hidden')
             ? '*All tasks hidden by active filters*'

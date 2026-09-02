@@ -8,9 +8,8 @@ import AsyncQueue from '../../utils/AsyncQueue';
 import ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
 import TaskTreeDataProvider from './TaskTreeDataProvider';
 import {
-    WHEN_CONTEXT,
-    GLOBAL_TREE_VIEW,
-    PROJECT_TREE_VIEW,
+    USER_TREE,
+    PROJECT_TREE,
     SelectedNodeTag
 } from '../../common';
 
@@ -19,8 +18,7 @@ import type {
     LogOutputChannel,
     TreeDataProvider,
     TreeViewSelectionChangeEvent,
-    TreeView as VscTreeView,
-    Event
+    TreeView as VscTreeView
 } from 'vscode';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
@@ -33,16 +31,16 @@ import * as assert from 'node:assert/strict';
 
 
 type WhenHasItems =
-    | typeof WHEN_CONTEXT.GLOBAL_TREE_VIEW_HAS_ITEMS
-    | typeof WHEN_CONTEXT.PROJECT_TREE_VIEW_HAS_ITEMS;
+    | typeof USER_TREE.WHEN.HAS_ITEMS
+    | typeof PROJECT_TREE.WHEN.HAS_ITEMS;
 
 type WhenSelectedNodeType =
-    | typeof WHEN_CONTEXT.GLOBAL_TREE_VIEW_SELECTED_NODE_TYPE
-    | typeof WHEN_CONTEXT.PROJECT_TREE_VIEW_SELECTED_NODE_TYPE;
+    | typeof USER_TREE.WHEN.SELECTED_NODE_TYPE
+    | typeof PROJECT_TREE.WHEN.SELECTED_NODE_TYPE;
 
 type ViewId =
-    | typeof GLOBAL_TREE_VIEW.ID
-    | typeof PROJECT_TREE_VIEW.ID;
+    | typeof USER_TREE.ID
+    | typeof PROJECT_TREE.ID;
 
 class TreeView implements Disposable {
 
@@ -174,7 +172,7 @@ class TreeView implements Disposable {
         void this.#asyncQueue.enqueue(
             () => commands.executeCommand<void>(
                 'setContext',
-                `${this.#viewId}.selectedNodeType` satisfies WhenSelectedNodeType,
+                `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType,
                 getNodeTag(selected) satisfies SelectedNodeTag | undefined
             ));
 

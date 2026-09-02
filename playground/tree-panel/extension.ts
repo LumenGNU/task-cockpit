@@ -10,7 +10,7 @@ import OriginKey from '../../src/OriginKey';
 import TaskName from '../../src/TaskName';
 import TreeViewPanel from '../../src/TreeViewPanel/TreeViewPanel';
 import FileDecorationProvider from '../../src/FileDecorationProvider/FileDecorationProvider';
-import { GLOBAL_TREE_VIEW, PROJECT_TREE_VIEW } from '../../src/common';
+import { USER_TREE, PROJECT_TREE_VIEW } from '../../src/common';
 import TaskProcessLifecycle from '../../src/Runtime/TaskProcessLifecycle';
 
 
@@ -84,7 +84,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // -------------------
     vscode.commands.registerCommand('task-cockpit.view-container.global-task-view.expand-all', function () {
-        panel.expandAllInView(GLOBAL_TREE_VIEW.ID);
+        panel.expandAllInView(USER_TREE.ID);
     });
     vscode.commands.registerCommand('task-cockpit.view-container.workspace-task-view.expand-all', function () {
         panel.expandAllInView(PROJECT_TREE_VIEW.ID);
