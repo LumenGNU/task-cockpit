@@ -2,8 +2,11 @@
 
 # UNRELEASED
 
-удалена настройка и функциональность useFolderIcon !!!!!!вернуть назад!!!!!
-bug с правильным получением списка задач когда файл User/profile/.../tasks.json имеет не сохраненные изменения в момент запуска любой задачи
+
+* есть bug с правильным получением списка задач когда файл User/profile/.../tasks.json имеет не сохраненные изменения в момент запуска любой задачи.
+  (по всей видимости это bug vscode -- ее список то же ломается )
+
+* часть ключей настроек и команд была переименована.
 
 ### Added
 
@@ -16,9 +19,6 @@ bug с правильным получением списка задач ког�
 - When folders are excluded, the panel header now shows a visibility counter (e.g. `3/5 folders`),
   replacing the summary previously shown in the workspace item tooltip
 - `excludeFolders` now takes effect in single-folder workspaces
-- **Breaking:** `taskCockpit.display.useGroupKind` renamed to `taskCockpit.display.groupByTaskGroup`
-- **Breaking:** `taskCockpit.validation.duplicateLabels` renamed to `taskCockpit.diagnostics.shadowedTasks`
-- **Breaking:** `taskCockpit.validation.dependencies` renamed to `taskCockpit.diagnostics.unreachableDependencies`
 - Various UI and UX improvements
 
 ### Removed
@@ -37,7 +37,7 @@ bug с правильным получением списка задач ког�
 - "Collapse All"/"Expand All" button in the Task Explorer panel (issue #6)
 - "Find Task" button — quick search and filtering in the task tree (list.find)
 
-## [1.1.0] - 2025-06-20
+## [1.1.0] - 2025-03-20
 
 ### Changes
 

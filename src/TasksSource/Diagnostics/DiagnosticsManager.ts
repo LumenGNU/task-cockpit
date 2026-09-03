@@ -211,7 +211,6 @@ class DiagnosticsManager implements Disposable {
     }
 
 
-
     #scheduleUpdate(): void {
 
         if (this.#phase === 'disposed') { return; }

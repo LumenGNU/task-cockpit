@@ -786,7 +786,7 @@ async function fetchEligibleTasksUntilStable(
 
     let isTimedOut = false;
     // Маркер, что состояние изменилось **пока идет** fetchTasks()
-    let taskEnvChanged = false;
+    let taskEnvChanged: boolean;
 
     // Общий таймаут на весь процесс запуска.
     // НЕ race между fetchTasks и таймаутом — никаких утверждений

@@ -1,7 +1,7 @@
 interface UriSchema {
-    scheme: 'task-cockpit',
-    authority: 'Node',
-    path: '',
+    scheme: 'task-cockpit';
+    authority: 'Node';
+    path: '';
     query?: string;
 }
 

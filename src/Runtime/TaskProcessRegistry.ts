@@ -2,14 +2,14 @@
 /** @internal */
 
 import {
-    EventEmitter,
+    EventEmitter
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 
 import type {
     Disposable,
     LogOutputChannel,
-    Event,
+    Event
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
@@ -135,7 +135,7 @@ class TaskProcessRegistry implements Disposable {
         requestId: RequestId,
         originKey: OriginKey,
         taskName: TaskName,
-        taskProcessId: TaskProcessId,
+        taskProcessId: TaskProcessId
     ): void {
 
         assert.ok(!this.#disposed, `[${this.constructor.name}#register]: use after dispose`);
@@ -146,7 +146,7 @@ class TaskProcessRegistry implements Disposable {
             requestId,
             // Процесс всегда стартует в состоянии running — регистрация мёртвого
             // процесса не предусмотрена
-            running: true,
+            running: true
         };
 
         this.#processStateById.set(taskProcessId, processState);
@@ -184,7 +184,7 @@ class TaskProcessRegistry implements Disposable {
      * @fires onDidChangeTaskProcesses `Map { originKey → Set { taskName } }` — задачи, затронутые изменением */
     markCompleted(
         requestId: RequestId,
-        taskProcessesIds: ReadonlySet<TaskProcessId>,
+        taskProcessesIds: ReadonlySet<TaskProcessId>
     ): void {
 
         assert.ok(!this.#disposed, `[${this.constructor.name}#markCompleted]: use after dispose`);
@@ -257,7 +257,7 @@ class TaskProcessRegistry implements Disposable {
     // итерацию, если снапшот старше всех процессов.
     reconcile(
         requestId: RequestId,
-        ongoingProcesses: ReadonlySet<TaskProcessId>,
+        ongoingProcesses: ReadonlySet<TaskProcessId>
     ): void {
         assert.ok(!this.#disposed, `[${this.constructor.name}#reconcile]: use after dispose`);
 

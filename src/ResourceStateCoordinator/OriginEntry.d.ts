@@ -18,8 +18,8 @@ declare namespace OriginEntry {
         originKey: OriginKey.User;
         definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
-        name: string,
-        taskSource: null,
+        name: string;
+        taskSource: null;
     }
 
 
@@ -27,7 +27,7 @@ declare namespace OriginEntry {
         originKey: OriginKey.Workspace;
         definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
-        name: string,
+        name: string;
         taskSource: TaskSource;
     }
 
@@ -36,8 +36,8 @@ declare namespace OriginEntry {
         originKey: OriginKey.Folder;
         definitionEntries: Map<TaskName, TaskDefinitionEntry>;
         hierarchyConfig: Config['Hierarchy'];
-        name: string,
-        taskSource: TaskSource,
+        name: string;
+        taskSource: TaskSource;
         isPrimary: boolean;
     }
 

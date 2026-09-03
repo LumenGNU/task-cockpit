@@ -107,9 +107,7 @@ class SnapshotCollector implements Disposable {
             this.#onDidCollectSnapshot
         ];
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#dependencies.windowSettings.onDidCompleteUpdate(this.#handleConfigurationChange, this, this.#disposables);
-
 
         this.#configuration = this.#dependencies.windowSettings.getConfiguration(SnapshotCollector.CONFIGURATION_SECTION);
     }

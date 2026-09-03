@@ -108,13 +108,10 @@ class TreeView implements Disposable {
             this.#treeDataProvider
         ];
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#treeView.onDidChangeSelection(this.#changeSelectionHandler, this, this.#disposables);
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#treeDataProvider.onDidRefreshTopElements(this.#updateTopElementsHandler, this, this.#disposables);
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#taskProcessRegistry.onDidChangeTaskProcesses(this.#changeTaskProcessesHandler, this, this.#disposables);
     }
 

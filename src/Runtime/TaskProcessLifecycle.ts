@@ -109,7 +109,7 @@ class TaskProcessLifecycle implements Disposable {
         this.#disposables = [
             this.#taskProcessRegistry,
             this.#processMonitor,
-            this.#snapshotCollector,
+            this.#snapshotCollector
         ];
 
         this.#resourceProps.windowSettings.onDidCompleteUpdate(this.#changeConfigurationHandler, this, this.#disposables);
@@ -117,7 +117,6 @@ class TaskProcessLifecycle implements Disposable {
         this.#terminalsConfiguration = this.#resourceProps.windowSettings.getConfiguration(TaskProcessLifecycle.CONFIGURATION_SECTION);
 
         // Задача породила процесс
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         tasks.onDidStartTaskProcess(this.#processStartedHandler, this, this.#disposables);
 
         // @todo возможно vscode.window.onDidEndTerminalShellExecution лучше? @reject
@@ -139,15 +138,12 @@ class TaskProcessLifecycle implements Disposable {
         // только один раз, для первой завершенной.
         // -----
         // Процесс(ы) задач(и) сдох(ли)
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#processMonitor.onTaskProcessesCompleted(this.#processCompletedHandler, this, this.#disposables);
 
         // любой терминал закрылся
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         window.onDidCloseTerminal(this.#closeTerminalHandler, this, this.#disposables);
 
         // Обновилось состояние терминалов (возможно протухшее)
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#snapshotCollector.onDidCollectSnapshot(this.#collectSnapshotHandler, this, this.#disposables);
 
     }
@@ -303,7 +299,7 @@ class TaskProcessLifecycle implements Disposable {
                 // начинаем следить за процессом
                 this.#processMonitor.addTaskProcessId(processId);
             }
-            catch (err) {
+            catch {
                 // @todo log resourceStateCoordinator уничтожен во время ожидания
             }
 

@@ -14,8 +14,11 @@ function _J(s: string | string[]): string {
 
 
 const KBD_OPEN = 'f7';
+const KBD_RUN = 'f11';
 
 const KEYBINDINGS = [
+
+    // ------------------------------------------------------------------
     {
         key: KBD_OPEN,
         command: USER_TREE.COMMAND.OPEN_USER_TASKS.ID,
@@ -42,9 +45,53 @@ const KEYBINDINGS = [
             `&& listHasSelectionOrFocus`,
             `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
         ])
+    },
+
+    // -----------------------------------------------------------------------------
+    {
+        key: KBD_RUN,
+        command: USER_TREE.COMMAND.TASK_RUN.ID,
+        when: _J([
+            `focusedView == ${USER_TREE.ID}`,
+            `&& listHasSelectionOrFocus`,
+            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
+            `&& viewItem =~ /:Running/`
+        ])
+    },
+    {
+        key: KBD_RUN,
+        command: PROJECT_TREE.COMMAND.TASK_RUN.ID,
+        when: _J([
+            `focusedView == ${PROJECT_TREE.ID}`,
+            `&& listHasSelectionOrFocus`,
+            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
+            `&& viewItem =~ /:Running/`
+        ])
+    },
+    {
+        key: KBD_RUN,
+        command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID,
+        when: _J([
+            `focusedView == ${USER_TREE.ID}`,
+            `&& listHasSelectionOrFocus`,
+            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
+            `&& !(viewItem =~ /:Running/)`
+        ])
+    },
+    {
+        key: KBD_RUN,
+        command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID,
+        when: _J([
+            `focusedView == ${PROJECT_TREE.ID}`,
+            `&& listHasSelectionOrFocus`,
+            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
+            `&& !(viewItem =~ /:Running/)`
+        ])
     }
 ];
 
-console.log(
-    JSON.stringify(KEYBINDINGS, null, 4) + '\n'
-);
+KEYBINDINGS.forEach((k) => {
+    console.log(
+        JSON.stringify(k, null, 4) + ','
+    );
+});

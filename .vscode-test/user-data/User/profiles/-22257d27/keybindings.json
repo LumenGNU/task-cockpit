@@ -3,5 +3,46 @@
     {
         "key": "f9",
         "command": "workbench.action.tasks.runTask"
-    }
+    },
+
+    //===========================
+
+
+    {
+        "key": "f7",
+        "command": "task-cockpit_user-tasks.open-user-tasks",
+        "when": "focusedView == task-cockpit_user-tasks && listHasSelectionOrFocus && task-cockpit_user-tasks.selectedNode"
+    },
+    {
+        "key": "f7",
+        "command": "task-cockpit_project-tasks.open-tasks-file",
+        "when": "focusedView == task-cockpit_project-tasks && listHasSelectionOrFocus && task-cockpit_project-tasks.selectedNode != RunnableNode"
+    },
+    {
+        "key": "f7",
+        "command": "task-cockpit_project-tasks.task-go-to-definition",
+        "when": "focusedView == task-cockpit_project-tasks && listHasSelectionOrFocus && task-cockpit_project-tasks.selectedNode == RunnableNode"
+    },
+    {
+        "key": "f11",
+        "command": "task-cockpit_user-tasks.task-run",
+        "when": "focusedView == task-cockpit_user-tasks && listHasSelectionOrFocus && task-cockpit_user-tasks.selectedNode == RunnableNode && viewItem =~ /:Running/"
+    },
+    {
+        "key": "f11",
+        "command": "task-cockpit_project-tasks.task-run",
+        "when": "focusedView == task-cockpit_project-tasks && listHasSelectionOrFocus && task-cockpit_project-tasks.selectedNode == RunnableNode && viewItem =~ /:Running/"
+    },
+    {
+        "key": "f11",
+        "command": "task-cockpit_user-tasks.task-run@inline",
+        "when": "focusedView == task-cockpit_user-tasks && listHasSelectionOrFocus && task-cockpit_user-tasks.selectedNode == RunnableNode && !(viewItem =~ /:Running/)"
+    },
+    {
+        "key": "f11",
+        "command": "task-cockpit_project-tasks.task-run@inline",
+        "when": "focusedView == task-cockpit_project-tasks && listHasSelectionOrFocus && task-cockpit_project-tasks.selectedNode == RunnableNode && !(viewItem =~ /:Running/)"
+    },
+
+
 ]

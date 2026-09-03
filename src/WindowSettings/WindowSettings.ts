@@ -103,7 +103,6 @@ class WindowSettings implements Disposable {
             this.#onDidCompleteUpdate
         ];
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         workspace.onDidChangeConfiguration(this.#onDidChangeConfigurationHandler, this, this.#disposables);
 
         this.#updateCache();

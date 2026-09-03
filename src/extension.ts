@@ -30,7 +30,7 @@ let logOutputChannel: LogOutputChannel;
 
 export async function activate(context: ExtensionContext): Promise<void> {
 
-    // eslint-disable-next-line  @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const extDisplayName = context.extension.packageJSON['displayName'] as string;
     logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
 
@@ -234,7 +234,7 @@ function registerCommands(
 
         commands.registerCommand(EXTENSION.COMMAND.OPEN_HELP_PAGE.ID, async () => {
 
-            // eslint-disable-next-line  @typescript-eslint/no-unsafe-member-access
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const version = context.extension.packageJSON['version'] as string;
             try {
                 await commands.executeCommand('vscode.open', Uri.from({

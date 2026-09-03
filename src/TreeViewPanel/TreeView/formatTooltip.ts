@@ -27,7 +27,7 @@ function formatTooltip(
 
     const labelRow =
         label
-            ? `<tr><td><b>${label}</b></td></tr>`
+            ? `<tr><td><b>${escapeHtml(label)}</b></td></tr>`
             : '';
 
     if (titleRow || labelRow) {

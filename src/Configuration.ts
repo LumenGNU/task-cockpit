@@ -79,7 +79,7 @@ type StringLiteralSpec = Configuration.StringLiteralSpec;
 
 type StringLiteralSpecDefinition = Omit<StringLiteralSpec, 'type'>;
 
-function StringLiteralSpec<T extends string>(specDefinition: StringLiteralSpecDefinition): StringLiteralSpec {
+function StringLiteralSpec(specDefinition: StringLiteralSpecDefinition): StringLiteralSpec {
     return {
         ...specDefinition,
         type: STRING_LITERAL_SPEC_TYPE
@@ -98,8 +98,6 @@ type Spec =
 
 
 // ---------------------------------------------------------------------------------------------
-
-
 
 
 function isAnyEntry(entry: unknown): entry is Record<string, unknown> {
@@ -439,7 +437,7 @@ function readRaw<T>(
 function collectSections<SchemaType extends object>(schema: ConfigSchema<SchemaType>): ReadonlyMap<keyof SchemaType, readonly string[]> {
 
     function collectConfigKeys(entry: unknown): string[] {
-        if (!isAnyEntry(entry)) return [];
+        if (!isAnyEntry(entry)) { return []; }
 
         if (isSpec(entry)) {
             return [entry.configKey];
@@ -486,8 +484,8 @@ declare namespace Configuration {
     }
 
     interface NumberSpec {
-        readonly type: typeof NUMBER_SPEC_TYPE,
-        readonly configKey: string,
+        readonly type: typeof NUMBER_SPEC_TYPE;
+        readonly configKey: string;
         /** Значение, возвращаемое когда настройка отсутствует или не является конечным числом. */
         readonly fallback: number;
         /** Включительная нижняя граница. Значения ниже неё обрезаются до `min`. */
@@ -497,8 +495,8 @@ declare namespace Configuration {
     }
 
     interface StringSpec {
-        readonly type: typeof STRING_SPEC_TYPE,
-        readonly configKey: string,
+        readonly type: typeof STRING_SPEC_TYPE;
+        readonly configKey: string;
         /** Значение, возвращаемое когда настройка отсутствует, не является строкой или не прошла `pattern`. */
         readonly fallback: string;
         /** Регулярное выражение для валидации. */
@@ -506,15 +504,15 @@ declare namespace Configuration {
     }
 
     interface StringSetSpec {
-        readonly type: typeof STRING_SET_SPEC_TYPE,
-        readonly configKey: string,
+        readonly type: typeof STRING_SET_SPEC_TYPE;
+        readonly configKey: string;
         /** Значение, возвращаемое когда настройка отсутствует или не является массивом. */
         readonly fallback: readonly string[];
     }
 
     interface StringLiteralSpec {
-        readonly type: typeof STRING_LITERAL_SPEC_TYPE,
-        readonly configKey: string,
+        readonly type: typeof STRING_LITERAL_SPEC_TYPE;
+        readonly configKey: string;
         readonly fallback: string;
         readonly values: readonly string[];  // для валидации в рантайме
     }

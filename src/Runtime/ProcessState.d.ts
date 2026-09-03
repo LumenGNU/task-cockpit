@@ -9,7 +9,7 @@ export interface ProcessState {
     running: boolean;
 
     /** Метка времени регистрации */
-    registerTimestamp: Timestamp,
+    registerTimestamp: Timestamp;
 
     /** Порядковый номер последнего события от системы,
      * результат которого отражён в текущем running.

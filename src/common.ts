@@ -37,7 +37,7 @@ export const UI = {
     SETTING            /**/: 'settings',
     SYNC_ANIMATE       /**/: 'sync~spin'
   },
-  DISPLAY_SEGMENT_SEPARATOR: '・',
+  DISPLAY_SEGMENT_SEPARATOR: '・'
 
 } as const;
 
@@ -56,7 +56,7 @@ export const EXTENSION = {
     // Перечитать все данные, будет спровоцирована перестройка всех *-task-view представлений
     FULL_REFRESH             /**/: { ID: `${PREFIX}.full-refresh`,             /**/ LABEL: 'Refresh Lists', /**/ ICON: UI.ICON.REFRESH },
     FULL_REFRESH__NAVIGATION /**/: { ID: `${PREFIX}.full-refresh@navigation`,  /**/ LABEL: 'Refresh Lists', /**/ ICON: UI.ICON.REFRESH },
-    FULL_REFRESH__SPINNER    /**/: { ID: `${PREFIX}._full-refresh@spinner`,    /**/ LABEL: 'Scanning...',  /**/ ICON: UI.ICON.SYNC_ANIMATE },
+    FULL_REFRESH__SPINNER    /**/: { ID: `${PREFIX}._full-refresh@spinner`,    /**/ LABEL: 'Scanning...',  /**/ ICON: UI.ICON.SYNC_ANIMATE }
   },
   WHEN: {
     IS_IDLE: `${PREFIX}.isIdle`,
@@ -113,7 +113,7 @@ const COMMON_ACTIONS = {
 
 export const CONTAINER = {
   ID: CONTAINER_ID,
-  NAME: DISPLAY_NAME,
+  NAME: DISPLAY_NAME
 } as const;
 
 
@@ -138,13 +138,13 @@ export const USER_TREE = {
     // Развернуть все элементы списка
     LIST_EXPAND_ALL            /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_EXPAND_ALL.CMD}`,       /**/ LABEL: COMMON_ACTIONS.LIST_EXPAND_ALL.LABEL,       /**/ ICON: COMMON_ACTIONS.LIST_EXPAND_ALL.ICON },
     // Свернуть все элементы списка
-    LIST_COLLAPSE_ALL          /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON },
+    LIST_COLLAPSE_ALL          /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON }
   },
   WHEN: {
     // true если в дереве есть элементы ("настоящие", не синтетические)
     HAS_ITEMS: `${USER_TREE_ID}.${WHEN_TAG.HAS_ITEMS}`,
     // тип выделенного элемента или undefined
-    SELECTED_NODE_TYPE: `${USER_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`,
+    SELECTED_NODE_TYPE: `${USER_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`
   }
 } as const;
 
@@ -174,13 +174,13 @@ export const PROJECT_TREE = {
     // Развернуть все элементы списка
     LIST_EXPAND_ALL            /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_EXPAND_ALL.CMD}`,       /**/ LABEL: COMMON_ACTIONS.LIST_EXPAND_ALL.LABEL,       /**/ ICON: COMMON_ACTIONS.LIST_EXPAND_ALL.ICON },
     // Свернуть все элементы списка
-    LIST_COLLAPSE_ALL          /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON },
+    LIST_COLLAPSE_ALL          /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.LIST_COLLAPSE_ALL.CMD}`,     /**/ LABEL: COMMON_ACTIONS.LIST_COLLAPSE_ALL.LABEL,     /**/ ICON: COMMON_ACTIONS.LIST_COLLAPSE_ALL.ICON }
   },
   WHEN: {
     // true если в дереве есть элементы ("настоящие", не синтетические)
     HAS_ITEMS: `${PROJECT_TREE_ID}.${WHEN_TAG.HAS_ITEMS}`,
     // тип выделенного элемента или undefined
-    SELECTED_NODE_TYPE: `${PROJECT_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`,
+    SELECTED_NODE_TYPE: `${PROJECT_TREE_ID}.${WHEN_TAG.SELECTED_NODE_TYPE}`
   }
 } as const;
 
@@ -192,7 +192,6 @@ export type SelectedNodeTag =
   | 'UnknownNode';
 
 
-
 export const CONFIG_SECTION = 'taskCockpit';
 
 export const SETTING = {
@@ -200,31 +199,31 @@ export const SETTING = {
     AVAILABLE_SYMBOL                /**/: `${CONFIG_SECTION}.decorator.availableSymbol`,
     BADGE_ORDER                     /**/: `${CONFIG_SECTION}.decorator.badgeOrder`,
     OVERFLOW_SYMBOL                 /**/: `${CONFIG_SECTION}.decorator.overflowSymbol`,
-    RUNNING_SYMBOL                  /**/: `${CONFIG_SECTION}.decorator.runningSymbol`,
+    RUNNING_SYMBOL                  /**/: `${CONFIG_SECTION}.decorator.runningSymbol`
   },
   DISPLAY: {
     DEFAULT_ICON_NAME               /**/: `${CONFIG_SECTION}.display.defaultIconName`,
     GROUP_BY_TASK_GROUP             /**/: `${CONFIG_SECTION}.display.groupByTaskGroup`,
     SEGMENT_SEPARATOR               /**/: `${CONFIG_SECTION}.display.segmentSeparator`,
     TINT_LABEL                      /**/: `${CONFIG_SECTION}.display.tintLabel`,
-    USE_FOLDER_ICON                 /**/: `${CONFIG_SECTION}.display.useFolderIcon`,
+    USE_FOLDER_ICON                 /**/: `${CONFIG_SECTION}.display.useFolderIcon`
   },
   FILTERING: {
     EXCLUDE_FOLDERS                 /**/: `${CONFIG_SECTION}.filtering.excludeFolders`,
     SHOW_HIDDEN                     /**/: `${CONFIG_SECTION}.filtering.showHidden`,
-    SHOW_GLOBAL_TASKS               /**/: `${CONFIG_SECTION}.filtering.showUserLevelTasks`,
+    SHOW_GLOBAL_TASKS               /**/: `${CONFIG_SECTION}.filtering.showUserLevelTasks`
   },
   PROCESS_MONITOR: {
     POLLING_ACCEL                   /**/: `${CONFIG_SECTION}.processMonitor.polling.acceleration`,
     POLLING_CAP                     /**/: `${CONFIG_SECTION}.processMonitor.polling.cap`,
-    POLLING_MIN                     /**/: `${CONFIG_SECTION}.processMonitor.polling.min`,
+    POLLING_MIN                     /**/: `${CONFIG_SECTION}.processMonitor.polling.min`
   },
   TERMINALS: {
-    TIMEOUT                         /**/: `${CONFIG_SECTION}.terminals.timeout`,
+    TIMEOUT                         /**/: `${CONFIG_SECTION}.terminals.timeout`
   },
   DIAGNOSTICS: {
     SHADOWED_TASKS                  /**/: `${CONFIG_SECTION}.diagnostics.shadowedTasks`,
-    UNREACHABLE_DEPENDENCIES        /**/: `${CONFIG_SECTION}.diagnostics.unreachableDependencies`,
+    UNREACHABLE_DEPENDENCIES        /**/: `${CONFIG_SECTION}.diagnostics.unreachableDependencies`
   }
 
 } as const;

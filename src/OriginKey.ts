@@ -63,7 +63,7 @@ const OriginKey = {
     USER: '\x00\x00$User' satisfies UserKey,
     WORKSPACE: '\x00\x00$Workspace' satisfies WorkspaceKey,
     resolveOriginName,
-    isOriginKey,
+    isOriginKey
 } as const;
 
 export default OriginKey;

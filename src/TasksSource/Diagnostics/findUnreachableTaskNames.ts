@@ -10,7 +10,7 @@ import type Immutable from '../../utils/Immutable';
 /** Информация о вхождении недостижимого имени задачи. */
 interface UnreachableTaskNameInfo {
     taskLabel: string;
-    position: { offset: number, length: number; };
+    position: { offset: number; length: number; };
     // - `true`: имя задачи затенено определением из другой области (cross-origin)
     // - `false`: конфликт только внутри текущей области (same-origin)
     isShadowedByOtherOrigin: boolean;
@@ -31,7 +31,7 @@ function findUnreachableTaskNames(
     shadowedTaskNames: Map<TaskName, boolean>
 ): Immutable<Array<UnreachableTaskNameInfo>> {
 
-    const positionsByTaskName = new Map<TaskName, Array<{ offset: number, length: number; }>>();
+    const positionsByTaskName = new Map<TaskName, Array<{ offset: number; length: number; }>>();
 
     for (const taskNode of taskNodes) {
 

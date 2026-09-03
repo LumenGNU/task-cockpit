@@ -8,7 +8,7 @@ import type TaskName from '../../TaskName';
 
 interface MissingDependencyOccurrence {
     taskLabel: string;
-    position: { offset: number, length: number; };
+    position: { offset: number; length: number; };
 }
 
 
@@ -21,7 +21,7 @@ interface MissingDependencyOccurrence {
  * */
 function findMissingDependencies(
     taskNodes: Array<JSONC.Node>,
-    availableTaskNames: Immutable<{ has(taskName: TaskName): boolean; }>,
+    availableTaskNames: Immutable<{ has(taskName: TaskName): boolean; }>
 ): Immutable<Array<MissingDependencyOccurrence>> {
 
     const missingDependencies: Array<MissingDependencyOccurrence> = [];
@@ -44,11 +44,13 @@ function findMissingDependencies(
             // Specifically, only command, args, and options support variable substitution.
             if (depNode.type !== 'string') { continue; }
 
+            const taskName = depNode.value as TaskName;
+
             // Имя доступно — зависимость может быть разрешена, пропускаем
-            if (availableTaskNames.has(depNode.value)) { continue; }
+            if (availableTaskNames.has(taskName)) { continue; }
 
             missingDependencies.push({
-                taskLabel: depNode.value || '«empty label»',
+                taskLabel: taskName || '«empty label»',
                 position: { offset: depNode.offset, length: depNode.length }
             });
         }
@@ -56,7 +58,6 @@ function findMissingDependencies(
 
     return missingDependencies;
 }
-
 
 
 export default findMissingDependencies;

@@ -53,7 +53,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
                 configKey: SETTING.PROCESS_MONITOR.POLLING_MIN,
                 max: 1_000,
                 fallback: 250,
-                min: 200,
+                min: 200
             }),
             /** Maximum polling interval in milliseconds.
              * Once reached, the interval is fixed at this value regardless of
@@ -63,7 +63,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
                 configKey: SETTING.PROCESS_MONITOR.POLLING_CAP,
                 max: 3_500,
                 fallback: 550,
-                min: 340,
+                min: 340
             }),
             /** Controls how quickly the polling interval grows toward \`cap\`
              * as the number of concurrent tasks increases.
@@ -73,7 +73,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
                 configKey: SETTING.PROCESS_MONITOR.POLLING_ACCEL,
                 max: 1.0,
                 fallback: 0.2,
-                min: 0.1,
+                min: 0.1
             })
         }
     },
@@ -90,7 +90,7 @@ const SCHEMA = Configuration.createSchema<WindowConfiguration>({
             configKey: SETTING.TERMINALS.TIMEOUT,
             max: 12_000,
             fallback: 1_300,
-            min: 500,
+            min: 500
         })
     },
 

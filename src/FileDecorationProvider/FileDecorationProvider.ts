@@ -91,7 +91,6 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
             this.#onDidChangeFileDecorations
         ];
 
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         this.#resourceProps.windowSettings.onDidCompleteUpdate(this.#handleConfigurationChange, this, this.#disposables);
 
         this.#configuration = this.#resourceProps.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);

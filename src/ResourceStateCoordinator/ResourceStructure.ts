@@ -11,7 +11,7 @@ import type Immutable from '../utils/Immutable';
 import type TaskSource from './TaskSource';
 
 interface UserOrigin {
-    name: 'User',
+    name: 'User';
     originKey: OriginKey.User;
     taskSource: null;
 }
@@ -27,7 +27,7 @@ interface FolderOrigin {
     name: string;
     originKey: OriginKey.Folder;
     taskSource: TaskSource;
-    uri: Uri,
+    uri: Uri;
 }
 
 interface ResourceStructure {

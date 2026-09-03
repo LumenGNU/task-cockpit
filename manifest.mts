@@ -848,6 +848,7 @@ const MANIFEST: {
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
+                    `&& viewItem =~ /:Runnable/`,
                     `&& !(viewItem =~ /:Running/)`, // не выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
@@ -859,6 +860,7 @@ const MANIFEST: {
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
+                    `&& viewItem =~ /:Runnable/`,
                     `&& !(viewItem =~ /:Running/)`, // не выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
@@ -871,6 +873,8 @@ const MANIFEST: {
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
+                    `&& viewItem =~ /:Runnable/`,
+                    `&& viewItem =~ /:Running/`, // выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
             },
@@ -881,6 +885,8 @@ const MANIFEST: {
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
+                    `&& viewItem =~ /:Runnable/`,
+                    `&& viewItem =~ /:Running/`, // выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
             },
