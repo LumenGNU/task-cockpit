@@ -794,38 +794,8 @@ const MANIFEST: {
                 // ..................................................................................................
             ]
         },
-        submenus: [],
-        "keybindings": [ // @fixme
-            {
-                key: '',
-                command: USER_TREE.COMMAND.OPEN_USER_TASKS.ID,
-                when: _J([
-                    `focusedView == ${USER_TREE.ID}`,
-                    `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE}`,
-                ])
-            },
-            {
-                key: '',
-                command: PROJECT_TREE.COMMAND.OPEN_TASKS_FILE.ID,
-                when: _J([
-                    `focusedView == ${PROJECT_TREE.ID}`,
-                    `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} != RunnableNode`
-                ])
-            },
-            {
-                key: '',
-                command: PROJECT_TREE.COMMAND.TASK_GO_TO_DEFINITION.ID,
-                when: _J([
-                    `focusedView == ${PROJECT_TREE.ID}`,
-                    `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
-                ])
-            },
-            // {
-            //     command: EXTENSION.COMMAND.,
-            //     key: 'f12',
-            //     when: `focusedView =~ /^${VIEW_CONTAINER_ID}/`
-            // }
-        ],
+        // submenus: [],
+        // "keybindings": [],
         commands: defineCommands([
 
             {
