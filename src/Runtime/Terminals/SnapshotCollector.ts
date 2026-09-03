@@ -125,7 +125,11 @@ class SnapshotCollector implements Disposable {
         // отмена очереди
         this.#pendingId = undefined;
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
     }
 

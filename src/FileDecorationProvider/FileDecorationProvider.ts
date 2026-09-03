@@ -107,7 +107,12 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         this.#disposed = true;
         this.#themeColorCache.clear();
         this.#disposables.forEach((d) => void d.dispose());
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
     }
 

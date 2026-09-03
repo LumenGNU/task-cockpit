@@ -21,7 +21,7 @@ import Services from './extension/Services';
 import showPickTerminal from './extension/showPickTerminal';
 
 import {
-    type ExtensionContext,
+    type ExtensionContext
 } from 'vscode';
 import type Immutable from './utils/Immutable';
 
@@ -30,6 +30,7 @@ let logOutputChannel: LogOutputChannel;
 
 export async function activate(context: ExtensionContext): Promise<void> {
 
+    // eslint-disable-next-line  @typescript-eslint/no-unsafe-member-access
     const extDisplayName = context.extension.packageJSON['displayName'] as string;
     logOutputChannel = window.createOutputChannel(extDisplayName, { log: true });
 
@@ -43,7 +44,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         registerCommands(context, services, logOutputChannel);
 
         // первое обновление — начало работы
-        services.resourceStateCoordinator!.forceFullRefresh();
+        await services.resourceStateCoordinator!.forceFullRefresh();
 
     }
     catch (err) {
@@ -79,7 +80,7 @@ function registerCommands(
                         window.showErrorMessage(String(err));
                     }
                 }
-                catch (err) {
+                catch {
                     // @todo
                 }
             }
@@ -108,13 +109,17 @@ function registerCommands(
             terminalRef?.deref()?.show();
 
         }
-        catch (err) {
+        catch {
             /* no-op */
         }
 
     }
 
     context.subscriptions.push(
+
+        commands.registerCommand(EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.ID, async () => {
+            await commands.executeCommand(EXTENSION.COMMAND.FULL_REFRESH.ID);
+        }),
 
         commands.registerCommand(EXTENSION.COMMAND.FULL_REFRESH.ID, async () => {
 
@@ -130,13 +135,15 @@ function registerCommands(
         commands.registerCommand(EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID, () => { }),
 
         commands.registerCommand(USER_TREE.COMMAND.LIST_FIND.ID, async () => {
+
             try {
                 await commands.executeCommand(`${USER_TREE.ID}.focus`);
                 await commands.executeCommand('list.find');
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
+
         }),
 
         commands.registerCommand(PROJECT_TREE.COMMAND.LIST_FIND.ID, async () => {
@@ -144,7 +151,7 @@ function registerCommands(
                 await commands.executeCommand(`${PROJECT_TREE.ID}.focus`);
                 await commands.executeCommand('list.find');
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -172,7 +179,7 @@ function registerCommands(
                     query: `@ext:papio-dev.${EXTENSION.ID} ${Object.values(SETTING.FILTERING).map((val) => `@id:${val}`).join(' ')}`
                 });
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -184,7 +191,7 @@ function registerCommands(
                     query: `@ext:papio-dev.${EXTENSION.ID} ${Object.values(SETTING.FILTERING).map((val) => `@id:${val}`).join(' ')}`
                 });
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -196,7 +203,7 @@ function registerCommands(
                     query: `@ext:papio-dev.${EXTENSION.ID} ${Object.values(SETTING.DISPLAY).map((val) => `@id:${val}`).join(' ')}`
                 });
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -208,7 +215,7 @@ function registerCommands(
                     query: `@ext:papio-dev.${EXTENSION.ID} ${Object.values(SETTING.DISPLAY).map((val) => `@id:${val}`).join(' ')}`
                 });
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -220,12 +227,14 @@ function registerCommands(
                     query: `@ext:papio-dev.${EXTENSION.ID} @id:${SETTING.FILTERING.EXCLUDE_FOLDERS}`
                 });
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
 
         commands.registerCommand(EXTENSION.COMMAND.OPEN_HELP_PAGE.ID, async () => {
+
+            // eslint-disable-next-line  @typescript-eslint/no-unsafe-member-access
             const version = context.extension.packageJSON['version'] as string;
             try {
                 await commands.executeCommand('vscode.open', Uri.from({
@@ -236,7 +245,7 @@ function registerCommands(
                     fragment: 'configuration'
                 }));
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -247,7 +256,7 @@ function registerCommands(
             try {
                 await commands.executeCommand('workbench.action.tasks.openUserTasks');
             }
-            catch (err) {
+            catch {
                 /* no-op */
             }
         }),
@@ -423,7 +432,7 @@ function registerCommands(
             if (!Element.isRunnable(element)) { return; }
 
             await navigateToTerminalHandler(element);
-        }),
+        })
 
     );
 

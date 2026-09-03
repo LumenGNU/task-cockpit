@@ -163,7 +163,11 @@ class TaskProcessLifecycle implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
 
     }

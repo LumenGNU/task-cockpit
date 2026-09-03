@@ -114,7 +114,11 @@ class TaskProcessMonitor implements Disposable {
 
         this.#taskProcessIds.clear();
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
     }
 

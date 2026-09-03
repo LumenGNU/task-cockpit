@@ -1,32 +1,35 @@
 import {
     commands,
     Disposable,
-    window,
-    type LogOutputChannel
+    window
 } from 'vscode';
-import WindowSettings from '../WindowSettings/WindowSettings';
+import AsyncQueue from '../utils/AsyncQueue';
+import DiagnosticsManager from '../TasksSource/Diagnostics/DiagnosticsManager';
+import FileDecorationProvider from '../FileDecorationProvider/FileDecorationProvider';
+import IdleTracker from './IdleTracker';
+import OriginNode from '../TreeViewPanel/OriginNode';
 import ResourceStateCoordinator from '../ResourceStateCoordinator/ResourceStateCoordinator';
 import TaskProcessLifecycle from '../Runtime/TaskProcessLifecycle';
-import FileDecorationProvider from '../FileDecorationProvider/FileDecorationProvider';
-import DiagnosticsManager from '../TasksSource/Diagnostics/DiagnosticsManager';
 import TreeView from '../TreeViewPanel/TreeView/TreeView';
+import WindowSettings from '../WindowSettings/WindowSettings';
 import {
     EXTENSION,
     PROJECT_TREE,
     USER_TREE
 } from '../common';
-import type LifecycleOmitted from '../utils/LifecycleOmitted';
+
+import {
+    type LogOutputChannel
+} from 'vscode';
 import type Immutable from '../utils/Immutable';
-import OriginNode from '../TreeViewPanel/OriginNode';
-import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
-import AsyncQueue from '../utils/AsyncQueue';
+import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type OriginEntriesSnapshot from '../ResourceStateCoordinator/OriginEntriesSnapshot';
-import IdleTracker from './IdleTracker';
+import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
 
 
 class Services {
 
-    // // тротлинг между onDidChange’сами
+    // (не)тротлинг между onDidChange’сами
     static readonly #DEBOUNCE_MS: number = 25;
 
     // ------------------------------------------------------------------
@@ -126,7 +129,16 @@ class Services {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        this.#logOutputChannel?.trace('services disposed');
+        void this.#asyncQueue.enqueue(async () => {
+            await commands.executeCommand('setContext', EXTENSION.WHEN.IS_IDLE, undefined);
+            await commands.executeCommand('setContext', EXTENSION.WHEN.ALL_FOLDERS_EXCLUDED, undefined);
+        });
+
+        try {
+            this.#logOutputChannel?.trace('services disposed');
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
     }
 

@@ -157,7 +157,11 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
 
     }
@@ -304,7 +308,10 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             // Stale-check. fullUpdate() мог вызваться во время await и заменить WeakMap —
             // если так, не кешируем: элемент уже не актуален.
             if (runnableElementToTreeItem !== this.#treeItemByRunnableElement) {
-                this.#logOutputChannel?.trace('Stale cache detected; cancelling getTreeItem.');
+                try {
+                    this.#logOutputChannel?.trace('Stale cache detected; cancelling getTreeItem.');
+                }
+                catch { /* no-op */ }
                 throw new CancellationError();
             }
 
@@ -489,7 +496,10 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             this.#taskProcessRegistry.disposed;
 
         if (dependenciesDisposed) {
-            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            try {
+                this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            }
+            catch { /* no-op */ }
             return true;
         }
 
@@ -501,9 +511,12 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * */
     #cancelIfInoperable(): void {
         if (this.isInoperable) {
-            this.#logOutputChannel?.trace(
-                `${this.constructor.name} or its dependencies are disposed; cancelling operation`
-            );
+            try {
+                this.#logOutputChannel?.trace(
+                    `${this.constructor.name} or its dependencies are disposed; cancelling operation`
+                );
+            }
+            catch { /* no-op */ }
             throw new CancellationError();
         }
     }
@@ -513,7 +526,10 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * @throws { CancellationError }
      * */
     #handleErrorAndCancel(message: string, error: unknown): never {
-        this.#logOutputChannel?.error(message, error);
+        try {
+            this.#logOutputChannel?.error(message, error);
+        }
+        catch { /* no-op */ }
         throw new CancellationError();
     }
 

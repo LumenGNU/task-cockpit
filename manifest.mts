@@ -502,8 +502,9 @@ const MANIFEST: {
 
         menus: {
             commandPalette: definePaletteMenus([
-                { command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID, when: 'false' },
                 { command: EXTENSION.COMMAND.FULL_REFRESH.ID, when: 'true' },
+                { command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.ID, when: 'false' },
                 { command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ID, when: 'false' },
                 { command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ID, when: 'false' },
                 { command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ID, when: 'false' },
@@ -547,7 +548,7 @@ const MANIFEST: {
                 },
 
                 { // обновить все.
-                    command: EXTENSION.COMMAND.FULL_REFRESH.ID,
+                    command: EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.ID,
                     when: _J([
                         `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
                         `&& ${EXTENSION.WHEN.IS_IDLE}`,
@@ -587,27 +588,36 @@ const MANIFEST: {
                 },
                 // =================================================================================================
                 //
+                // *** FULL_REFRESH ***
+                // --------------------------------------------------------------------------------------------------
+                {
+                    command: EXTENSION.COMMAND.FULL_REFRESH.ID,
+                    when: `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                    group: 'a1@1'
+                },
+                // =================================================================================================
+                //
                 // *** open_settings ***
                 // --------------------------------------------------------------------------------------------------
                 {
                     command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ID,
                     when: `view == ${USER_TREE.ID}`,
-                    group: 'a1@1'
+                    group: 'a2@1'
                 },
                 {
                     command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ID,
                     when: `view == ${PROJECT_TREE.ID}`,
-                    group: 'a1@1'
+                    group: 'a2@1'
                 },
                 {
                     command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.ID,
                     when: `view == ${USER_TREE.ID}`,
-                    group: 'a1@2'
+                    group: 'a2@2'
                 },
                 {
                     command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ID,
                     when: `view == ${PROJECT_TREE.ID}`,
-                    group: 'a1@2'
+                    group: 'a2@2'
                 },
                 // =================================================================================================
                 //
@@ -616,7 +626,7 @@ const MANIFEST: {
                 {
                     command: EXTENSION.COMMAND.OPEN_HELP_PAGE.ID,
                     when: `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
-                    group: 'a2@1'
+                    group: 'a3@1'
                 }
                 // =================================================================================================
             ],
@@ -821,15 +831,21 @@ const MANIFEST: {
             {
                 command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID,
                 icon: `$(${EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ICON})`,
-                title: 'EXTENSION.COMMAND.FULL_REFRESH.LABEL',
+                title: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: 'false'
             },
-
             {
                 command: EXTENSION.COMMAND.FULL_REFRESH.ID,
                 icon: `$(${EXTENSION.COMMAND.FULL_REFRESH.ICON})`,
                 title: EXTENSION.COMMAND.FULL_REFRESH.LABEL,
+                category: COMMAND_CATEGORY,
+                enablement: 'true'
+            },
+            {
+                command: EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.ID,
+                icon: `$(${EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.ICON})`,
+                title: EXTENSION.COMMAND.FULL_REFRESH__NAVIGATION.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`

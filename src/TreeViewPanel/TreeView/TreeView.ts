@@ -5,12 +5,11 @@ import {
     window
 } from 'vscode';
 import AsyncQueue from '../../utils/AsyncQueue';
-import ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
+import Element from './Element/Element';
 import TaskTreeDataProvider from './TaskTreeDataProvider';
 import {
     USER_TREE,
-    PROJECT_TREE,
-    SelectedNodeTag
+    PROJECT_TREE
 } from '../../common';
 
 import type {
@@ -20,14 +19,16 @@ import type {
     TreeViewSelectionChangeEvent,
     TreeView as VscTreeView
 } from 'vscode';
+import {
+    type SelectedNodeTag
+} from '../../common';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
 import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
-import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
+import type ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
 import type TaskName from '../../TaskName';
-import Element from './Element/Element';
-import * as assert from 'node:assert/strict';
+import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
 
 
 type WhenHasItems =
@@ -125,10 +126,17 @@ class TreeView implements Disposable {
         this.#disposables.forEach((d) => void d.dispose());
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, undefined)
+            async () => {
+                await commands.executeCommand('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, undefined);
+                await commands.executeCommand('setContext', `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType, undefined);
+            }
         );
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        try {
+            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
+        }
+        catch { /* no-op */ }
+
         this.#logOutputChannel = null;
     }
 
@@ -176,7 +184,6 @@ class TreeView implements Disposable {
                 `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType,
                 getNodeTag(selected) satisfies SelectedNodeTag | undefined
             ));
-
     }
 
     // #endregion

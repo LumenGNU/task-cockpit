@@ -33,7 +33,10 @@ function create(
             // Заменяем pending на цепочку, которая не падает при ошибке,
             // чтобы следующие операции могли стартовать.
             pending = next.catch((reason: unknown) => {
-                logOutputChannel?.error(String(reason));
+                try {
+                    logOutputChannel?.error(String(reason));
+                }
+                catch { /* no-op */ }
             });
             return next;
         },
