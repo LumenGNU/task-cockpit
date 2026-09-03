@@ -167,14 +167,14 @@ class DiagnosticsManager implements Disposable {
             this.#diagnosticCollection
         ];
 
-        this.#resourceProps.windowSettings.onDidChangeConfiguration((affectedKeys) => {
+        this.#resourceProps.windowSettings.onDidCompleteUpdate((affectedKeys) => {
             if (affectedKeys.has(DiagnosticsManager.CONFIGURATION_SECTION)) {
                 this.#validationConfig = this.#resourceProps.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
                 this.#scheduleUpdate();
             }
         }, this, this.#disposables);
 
-        this.#resourceProps.resourceStateCoordinator.onDidStateChange((affectedKeys) => {
+        this.#resourceProps.resourceStateCoordinator.onDidCompleteUpdate((affectedKeys) => {
             if (affectedKeys.has('TASKS')) {
                 this.#scheduleUpdate();
             }
@@ -206,6 +206,8 @@ class DiagnosticsManager implements Disposable {
         this.#logOutputChannel = null;
     }
 
+
+
     #scheduleUpdate(): void {
 
         if (this.#phase === 'disposed') { return; }
@@ -216,7 +218,7 @@ class DiagnosticsManager implements Disposable {
         }
 
         const debounceTimer = this.#debounceTimer = setTimeout(() => {
-            if (this.#isInoperable) { return; }
+            if (this.isInoperable) { return; }
             // @todo ????
             // В браузерах это гарантируется спецификацией: задача таймера
             // перед вызовом коллбэка проверяет, жив ли таймер в active
@@ -251,13 +253,13 @@ class DiagnosticsManager implements Disposable {
 
     async #collectDiagnostics(): Promise<void> {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
         assert.ok(this.#phase !== 'disposed');
         const capturedPhase = this.#phase = this.#updatePhaseIdGen.next();
 
         const originEntries = await this.#resourceProps.resourceStateCoordinator.getOriginEntries();
         if (capturedPhase !== this.#phase) { return; }
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         // @todo исключать "скрытые"?
         // User исключён, т.к. у него "нет" TaskSource
@@ -342,7 +344,7 @@ class DiagnosticsManager implements Disposable {
     })(0);
 
 
-    get #isInoperable(): boolean {
+    get isInoperable(): boolean {
 
         if (this.#phase === 'disposed') {
             return true;

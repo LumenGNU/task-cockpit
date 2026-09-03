@@ -74,15 +74,17 @@ type AffectedKeys = Set<ResourceConfigurationSchema.ConfigKey | 'TASKS'>;
  * */
 class ResourceStateCoordinator implements Disposable {
 
+    readonly #onDidScheduleUpdate: EventEmitter<void>;
+    readonly onDidScheduleUpdate: Event<void>;
 
-    readonly #onDidStateChange: EventEmitter<Immutable<AffectedKeys>>;
+    readonly #onDidCompleteUpdate: EventEmitter<Immutable<AffectedKeys>>;
 
     /** Срабатывает после завершения полного цикла обновления состояния,
      * вызванного изменениями в конфигурации, разделе задач (`tasks`) или
      * структуре рабочих областей.
      *
      * На момент срабатывания все публичные геттеры возвращают согласованный снимок. */
-    readonly onDidStateChange: Event<Immutable<AffectedKeys>>;
+    readonly onDidCompleteUpdate: Event<Immutable<AffectedKeys>>;
 
     // --------------------------------------------------------
 
@@ -109,7 +111,7 @@ class ResourceStateCoordinator implements Disposable {
     // --------------------------------------------------------
     #debounceTimer: NodeJS.Timeout | null;
     #pendingAffectedKeys: AffectedKeys | null;
-    static readonly #DEBOUNCE_DELAY: number = 100;
+    static readonly #DEBOUNCE_MS: number = 350;
     // --------------------------------------------------------
 
     /** Текущая фаза координатора.
@@ -149,15 +151,19 @@ class ResourceStateCoordinator implements Disposable {
 
         this.#logOutputChannel = logOutputChannel;
 
-        this.#onDidStateChange = new EventEmitter();
-        this.onDidStateChange = this.#onDidStateChange.event;
+        this.#onDidScheduleUpdate = new EventEmitter();
+        this.onDidScheduleUpdate = this.#onDidScheduleUpdate.event;
+
+        this.#onDidCompleteUpdate = new EventEmitter();
+        this.onDidCompleteUpdate = this.#onDidCompleteUpdate.event;
 
         this.#debounceTimer = null;
         this.#pendingAffectedKeys = null;
         this.#idleDeferred = null;
 
         this.#disposables = [
-            this.#onDidStateChange
+            this.#onDidScheduleUpdate,
+            this.#onDidCompleteUpdate
         ];
 
         // по всей видимости, единственный случай когда срабатывает самостоятельно,
@@ -214,7 +220,7 @@ class ResourceStateCoordinator implements Disposable {
      * Повторный вызов безопасен. */
     public dispose() {
 
-        if (this.isInoperable) { return; }
+        if (this.disposed) { return; }
 
         this.#phase = 'disposed';
 
@@ -242,7 +248,7 @@ class ResourceStateCoordinator implements Disposable {
 
     #changeWorkspaceFoldersHandler(_event: WorkspaceFoldersChangeEvent) {
 
-        if (this.isInoperable) { return; }
+        if (this.disposed) { return; }
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}] Workspace folders changed. Scheduling update (with task).`);
 
@@ -253,7 +259,7 @@ class ResourceStateCoordinator implements Disposable {
 
     #handleConfigurationChange(event: ConfigurationChangeEvent) {
 
-        if (this.isInoperable) { return; }
+        if (this.disposed) { return; }
 
         this.#logOutputChannel?.trace(`[${this.constructor.name}#handleConfigurationChange]: Configuration changed…`);
 
@@ -293,17 +299,6 @@ class ResourceStateCoordinator implements Disposable {
     // #endregion Handlers
 
 
-    /** Возвращает `true`, если координатор уничтожен и больше не должен использоваться.
-     *
-     * После вызова {@linkcode dispose} любые обращения к публичному API, кроме этого геттера,
-     * завершаются ошибкой.
-     *
-     * @returns {boolean} `true`, если текущая фаза координатора — `'disposed'`. */
-    public get disposed(): boolean {
-        return this.isInoperable;
-    }
-
-
     /** Получить ресурсную конфигурацию для заданной области-источника.
      *
      * @returns {@linkcode ResourceConfig} или `null`, если область-источник не существует
@@ -312,11 +307,11 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getResourceConfig(originKey: OriginKey): Promise<Immutable<ResourceConfig> | null> {
 
-        assert.ok(!this.isInoperable, `[${this.constructor.name}#getResourceConfig]: use after dispose`);
+        assert.ok(!this.disposed, `[${this.constructor.name}#getResourceConfig]: use after dispose`);
 
         await this.#waitForIdle();
 
-        if (this.isInoperable) { throw new Error(`[${this.constructor.name}#getResourceConfig]: was disposed while waiting`); }
+        if (this.disposed) { throw new Error(`[${this.constructor.name}#getResourceConfig]: was disposed while waiting`); }
 
         // если состояние согласовано то для существующей области-источника
         // есть результат (возможно пустой).
@@ -335,11 +330,11 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async resolveTaskOrigin(task: Immutable<Task>): Promise<Immutable<{ originKey: OriginKey; taskName: TaskName; }> | null> {
 
-        assert.ok(!this.isInoperable, `[${this.constructor.name}#resolveTaskOrigin]: use after dispose`);
+        assert.ok(!this.disposed, `[${this.constructor.name}#resolveTaskOrigin]: use after dispose`);
 
         await this.#waitForIdle();
 
-        if (this.isInoperable) { throw new Error(`[${this.constructor.name}#resolveTaskOrigin]: was disposed while waiting`); }
+        if (this.disposed) { throw new Error(`[${this.constructor.name}#resolveTaskOrigin]: was disposed while waiting`); }
 
         if (!EligibleTask.isEligibleTask(task)) { return null; }
 
@@ -378,11 +373,11 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getOriginEntries(): Promise<Immutable<OriginEntriesSnapshot>> {
 
-        assert.ok(!this.isInoperable, `[${this.constructor.name}#getOriginEntries]: use after dispose`);
+        assert.ok(!this.disposed, `[${this.constructor.name}#getOriginEntries]: use after dispose`);
 
         await this.#waitForIdle();
 
-        if (this.isInoperable) { throw new Error(`[${this.constructor.name}#getOriginEntries]: was disposed while waiting`); }
+        if (this.disposed) { throw new Error(`[${this.constructor.name}#getOriginEntries]: was disposed while waiting`); }
 
         return {
             User: {
@@ -424,11 +419,11 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed во время ожидания. */
     public async getTaskBundle(originKey: OriginKey, taskName: TaskName): Promise<Immutable<TaskBundle>> {
 
-        assert.ok(!this.isInoperable, `[${this.constructor.name}#getTaskBundle]: use after dispose`);
+        assert.ok(!this.disposed, `[${this.constructor.name}#getTaskBundle]: use after dispose`);
 
         await this.#waitForIdle();
 
-        if (this.isInoperable) { throw new Error(`[${this.constructor.name}#getTaskBundle]: was disposed while waiting`); }
+        if (this.disposed) { throw new Error(`[${this.constructor.name}#getTaskBundle]: was disposed while waiting`); }
 
         return {
             nodeConfig: this.#perOriginConfig.get(originKey)?.Node ?? null,
@@ -452,22 +447,22 @@ class ResourceStateCoordinator implements Disposable {
      */
     public async resolveTaskSource(originKey: OriginKey): Promise<Immutable<TaskSource> | null> {
 
-        assert.ok(!this.isInoperable, `[${this.constructor.name}#resolveTaskSource]: use after dispose`);
+        assert.ok(!this.disposed, `[${this.constructor.name}#resolveTaskSource]: use after dispose`);
 
         await this.#waitForIdle();
 
-        if (this.isInoperable) { throw new Error(`[${this.constructor.name}#resolveTaskSource]: was disposed while waiting`); }
+        if (this.disposed) { throw new Error(`[${this.constructor.name}#resolveTaskSource]: was disposed while waiting`); }
 
         if (originKey === OriginKey.USER) {
             return this.#resourceStructure.User.taskSource;
         }
 
         if (originKey === OriginKey.WORKSPACE) {
-            const taskSource = this.#resourceStructure.Workspace?.taskSource;
-            if (!taskSource) {
+            const workspaceOrigin = this.#resourceStructure.Workspace;
+            if (!workspaceOrigin) {
                 throw new Error(`Origin not found for key "${originKey}"`);
             }
-            return taskSource;
+            return workspaceOrigin.taskSource;
         }
 
         const folderOrigin = this.#resourceStructure.folders?.find((f) => f.uri.toString() === originKey);
@@ -504,7 +499,7 @@ class ResourceStateCoordinator implements Disposable {
      * @throws { Error } если координатор disposed на момент запроса.  */
     public forceFullRefresh(): Promise<void> {
 
-        if (this.isInoperable) {
+        if (this.disposed) {
             return Promise.reject(new Error(`[${this.constructor.name}#forceFullRefresh]: use after dispose`));
         }
 
@@ -513,6 +508,9 @@ class ResourceStateCoordinator implements Disposable {
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
             this.#debounceTimer = null;
+        }
+        else {
+            this.#onDidScheduleUpdate.fire();
         }
 
         this.#pendingAffectedKeys = null;
@@ -565,7 +563,7 @@ class ResourceStateCoordinator implements Disposable {
      * @param changes  Ключи ресурсов, затронутых текущим изменением. */
     #scheduleUpdate(changes: AffectedKeys): void {
 
-        if (this.isInoperable) { return; }
+        if (this.disposed) { return; }
 
         this.#pendingAffectedKeys ??= new Set();
         for (const key of changes) {
@@ -575,6 +573,9 @@ class ResourceStateCoordinator implements Disposable {
         // Перезапускаем таймер
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
+        }
+        else {
+            this.#onDidScheduleUpdate.fire();
         }
 
         this.#debounceTimer = setTimeout(() => {
@@ -619,7 +620,7 @@ class ResourceStateCoordinator implements Disposable {
                 // Переход в idle или disposed будет маскировкой а не "восстановлением".
                 // Чинить контракт того, что бросило. Всё остальное — самообман.
             });
-        }, ResourceStateCoordinator.#DEBOUNCE_DELAY);
+        }, ResourceStateCoordinator.#DEBOUNCE_MS);
 
     }
 
@@ -713,7 +714,7 @@ class ResourceStateCoordinator implements Disposable {
             this.#idleDeferred.resolve();
             this.#idleDeferred = null;
         }
-        this.#onDidStateChange.fire(capturedPhase.affectedKeys);
+        this.#onDidCompleteUpdate.fire(capturedPhase.affectedKeys);
     }
 
 
@@ -748,7 +749,7 @@ class ResourceStateCoordinator implements Disposable {
 
 
     // ----------------------------------------------
-    public get isInoperable(): boolean {
+    public get disposed(): boolean {
         return this.#phase === 'disposed';
     }
 

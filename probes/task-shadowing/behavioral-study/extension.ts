@@ -45,7 +45,7 @@ async function run(
     subscriptions.push({ dispose: () => { changeListener.dispose(); } });
 
     function subscribeChanges(): vscode.Disposable {
-        return coordinator.onDidStateChange(async (affectedKeys) => {
+        return coordinator.onDidCompleteUpdate(async (affectedKeys) => {
             changeCount++;
             log.appendLine(section(`CHANGE #${changeCount}  ${ts()}  keys: ${[...affectedKeys].join(', ')}`));
             await printState(coordinator, log);

@@ -170,7 +170,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * Уведомляет VS Code через `onDidChangeTreeData.fire()`. */
     public rebuild(originNodes: Immutable<Array<OriginNode>>): void {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         this.#treeItemByRunnableElement = new WeakMap();
         this.#runnableElementIndex = new Map();
@@ -190,7 +190,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * то элемент не зарегистрирован в индексе — вызов игнорируется. */
     public notifyRunnableChanged(originKey: OriginKey, taskName: TaskName): void {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         const runnableElement = this.#runnableElementIndex.get(originKey)?.get(taskName);
         if (!runnableElement) { return; }
@@ -342,17 +342,17 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
     getChildren(element?: Immutable<Element>): Immutable<Array<Element>> | null {
 
-        if (this.#isInoperable) { return null; }
+        if (this.isInoperable) { return null; }
 
         if (!element) { // сначала дерево заполняется "top-узлами"
 
             this.#onWillRefreshTopElements.fire();
-            if (this.#isInoperable) { return null; }
+            if (this.isInoperable) { return null; }
 
             const topElements = this.#rebuildTopElements();
 
             this.#onDidRefreshTopElements.fire();
-            if (this.#isInoperable) { return null; }
+            if (this.isInoperable) { return null; }
 
             return topElements;
         }
@@ -471,14 +471,14 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
     // да!
     public get topElements(): Immutable<Array<TopElement>> | null {
 
-        if (this.#isInoperable) { return null; }
+        if (this.isInoperable) { return null; }
 
         return this.#cachedTopElements;
     }
 
 
     // ---------------------------------------------------------------------------
-    get #isInoperable(): boolean {
+    get isInoperable(): boolean {
 
         if (this.#disposed) {
             return true;
@@ -500,7 +500,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * @throws { CancellationError }
      * */
     #cancelIfInoperable(): void {
-        if (this.#isInoperable) {
+        if (this.isInoperable) {
             this.#logOutputChannel?.trace(
                 `${this.constructor.name} or its dependencies are disposed; cancelling operation`
             );

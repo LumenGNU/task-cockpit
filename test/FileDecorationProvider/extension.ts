@@ -33,7 +33,7 @@ async function updateConfig(
 
     // Подписка ДО отправки обновлений — чтобы не пропустить событие
     const settled = new Promise<void>((resolve) => {
-        const disposable = windowSettings.onDidChangeConfiguration(async () => {
+        const disposable = windowSettings.onDidCompleteUpdate(async () => {
             if (isSatisfied()) {
                 disposable.dispose();
                 await new Promise<void>(resolve => setTimeout(resolve, 550));

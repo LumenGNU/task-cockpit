@@ -88,7 +88,7 @@ class TaskProcessMonitor implements Disposable {
         this.#dependencies = dependencies;
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#dependencies.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
+        this.#dependencies.windowSettings.onDidCompleteUpdate(this.#handleConfigurationChange, this, this.#disposables);
 
         this.#config = this.#normalizePollingConfig(this.#dependencies.windowSettings.getConfiguration(TaskProcessMonitor.CONFIGURATION_SECTION));
 

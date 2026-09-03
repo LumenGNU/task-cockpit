@@ -30,7 +30,7 @@ declare namespace WindowSettings {
     export type ConfigKey = keyof WindowConfiguration;
 
     /** Набор ключей конфигурации, затронутых событием изменения.
-     * Передаётся подписчикам события {@linkcode WindowSettings.onDidChangeConfiguration}. */
+     * Передаётся подписчикам события {@linkcode WindowSettings.onDidCompleteUpdate}. */
     export type AffectedKeys = Immutable<Set<ConfigKey>>;
 
     /** Полный снимок window-конфигурации. */
@@ -56,11 +56,14 @@ class WindowSettings implements Disposable {
      * построенная из схемы при загрузке модуля. */
     static readonly #SECTIONS_BY_KEY = Configuration.collectSections(SCHEMA);
 
-    readonly #onDidChangeConfiguration: EventEmitter<AffectedKeys>;
+    readonly #onDidScheduleUpdate: EventEmitter<void>;
+    readonly onDidScheduleUpdate: Event<void>;
+
+    readonly #onDidCompleteUpdate: EventEmitter<AffectedKeys>;
 
     /** Событие изменения window-конфигурации.
      * В аргументе — набор реально затронутых ключей (после debounce). */
-    readonly onDidChangeConfiguration: Event<AffectedKeys>;
+    readonly onDidCompleteUpdate: Event<AffectedKeys>;
 
     #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
 
@@ -86,14 +89,18 @@ class WindowSettings implements Disposable {
 
         this.#logOutputChannel = logOutputChannel;
 
-        this.#onDidChangeConfiguration = new EventEmitter();
-        this.onDidChangeConfiguration = this.#onDidChangeConfiguration.event;
+        this.#onDidScheduleUpdate = new EventEmitter();
+        this.onDidScheduleUpdate = this.#onDidScheduleUpdate.event;
+
+        this.#onDidCompleteUpdate = new EventEmitter();
+        this.onDidCompleteUpdate = this.#onDidCompleteUpdate.event;
 
         this.#pendingChanges = new Set();
         this.#debounceTimer = null;
 
         this.#disposables = [
-            this.#onDidChangeConfiguration
+            this.#onDidScheduleUpdate,
+            this.#onDidCompleteUpdate
         ];
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -204,6 +211,9 @@ class WindowSettings implements Disposable {
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
         }
+        else {
+            this.#onDidScheduleUpdate.fire();
+        }
 
         let debounceTimer: NodeJS.Timeout;
 
@@ -219,7 +229,7 @@ class WindowSettings implements Disposable {
             this.#logOutputChannel?.trace(`[${this.constructor.name}] Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
 
             this.#updateCache();
-            this.#onDidChangeConfiguration.fire(accumulated);
+            this.#onDidCompleteUpdate.fire(accumulated);
 
         }, WindowSettings.#DEBOUNCE_MS);
     }

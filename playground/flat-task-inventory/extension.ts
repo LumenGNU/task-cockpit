@@ -73,7 +73,7 @@ async function run(
 
     subscriptions.push(
         resourceStateCoordinator,
-        resourceStateCoordinator.onDidStateChange(() => { void render(); }),
+        resourceStateCoordinator.onDidCompleteUpdate(() => { void render(); }),
         runtime,
         runtime.taskProcessRegistry.onDidChangeTaskProcesses(() => { void render(); }),
         diagnosticsManager

@@ -92,7 +92,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         ];
 
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        this.#resourceProps.windowSettings.onDidChangeConfiguration(this.#handleConfigurationChange, this, this.#disposables);
+        this.#resourceProps.windowSettings.onDidCompleteUpdate(this.#handleConfigurationChange, this, this.#disposables);
 
         this.#configuration = this.#resourceProps.windowSettings.getConfiguration(FileDecorationProvider.CONFIGURATION_SECTION);
         // ---
@@ -102,14 +102,17 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
     /** Освобождает ресурсы провайдера. Повторный вызов безопасен. */
     public dispose() {
-        if (this.#disposed) {
-            return;
-        }
+        if (this.#disposed) { return; }
+
         this.#disposed = true;
         this.#themeColorCache.clear();
         this.#disposables.forEach((d) => void d.dispose());
         this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
         this.#logOutputChannel = null;
+    }
+
+    public get disposed() {
+        return this.#disposed;
     }
 
 

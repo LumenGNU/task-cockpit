@@ -10,7 +10,6 @@ import {
     COMMAND_CATEGORY,
     SETTING,
     USER_TREE,
-    UI,
     EXTENSION,
     CONTAINER,
     PROJECT_TREE
@@ -161,13 +160,11 @@ type DeepStringValues<T> = T extends object
 
 
 type _ExtensionCommand = (typeof EXTENSION)['COMMAND'][keyof (typeof EXTENSION)['COMMAND']]['ID'];
-type _ContainerCommand = (typeof CONTAINER)['COMMAND'][keyof (typeof CONTAINER)['COMMAND']]['ID'];
 type _UserTreeCommand = (typeof USER_TREE)['COMMAND'][keyof (typeof USER_TREE)['COMMAND']]['ID'];
 type _ProjectTreeCommand = (typeof PROJECT_TREE)['COMMAND'][keyof (typeof PROJECT_TREE)['COMMAND']]['ID'];
 
 type KnownCommand =
     | _ExtensionCommand
-    | _ContainerCommand
     | _UserTreeCommand
     | _ProjectTreeCommand
     ;
@@ -476,20 +473,16 @@ const MANIFEST: {
 
             // @todo context: tasksAvailable=false ?
 
-            // global-task-view (не умеет быть по настоящему пустым)
+
             // -------------------------------------------------------------------
             {
                 view: USER_TREE.ID,
-                contents: 'Scanning...',
-                when: 'workbenchState != empty'
+                contents: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.LABEL,
+                when: 'workbenchState != empty',
+                // (не умеет быть по настоящему пустым. allFoldersExcluded для него не имеет смысла)
             },
             // workspace-task-view
             // -------------------------------------------------------------------
-            {
-                view: PROJECT_TREE.ID,
-                contents: 'Scanning...',
-                when: `workbenchState != empty && !${CONTAINER.WHEN.ACTIVE}`
-            },
             {
                 view: PROJECT_TREE.ID,
                 contents: 'Open a folder or workspace to get started.',
@@ -497,16 +490,24 @@ const MANIFEST: {
             },
             {
                 view: PROJECT_TREE.ID,
+                contents: 'Scanning...',
+                when: `workbenchState != empty && !${EXTENSION.WHEN.ALL_FOLDERS_EXCLUDED}`
+            },
+            {
+                view: PROJECT_TREE.ID,
                 contents: `[All folders are excluded](command:${EXTENSION.COMMAND.OPEN_SETTINGS_EXCLUDE_FOLDERS.ID}).`,
-                when: `workbenchState != empty && ${CONTAINER.WHEN.ACTIVE}`
+                when: `workbenchState != empty && ${EXTENSION.WHEN.ALL_FOLDERS_EXCLUDED}`
             }
         ],
 
         menus: {
             commandPalette: definePaletteMenus([
-                { command: CONTAINER.COMMAND.FULL_REFRESH.ID, when: 'false' }, // @fixme
-                { command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS.ID, when: 'false' },
-                { command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.FULL_REFRESH.ID, when: 'true' },
+                { command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ID, when: 'false' },
+                { command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.ID, when: 'false' },
                 { command: EXTENSION.COMMAND.OPEN_HELP_PAGE.ID, when: 'true' },
                 { command: EXTENSION.COMMAND.OPEN_SETTINGS_EXCLUDE_FOLDERS.ID, when: 'false' },
                 { command: PROJECT_TREE.COMMAND.LIST_COLLAPSE_ALL.ID, when: 'false' },
@@ -544,11 +545,25 @@ const MANIFEST: {
                     when: `view == ${PROJECT_TREE.ID}`,
                     group: 'navigation@1'
                 },
+
                 { // обновить все.
-                    command: CONTAINER.COMMAND.FULL_REFRESH.ID,
-                    when: `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                    command: EXTENSION.COMMAND.FULL_REFRESH.ID,
+                    when: _J([
+                        `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                        `&& ${EXTENSION.WHEN.IS_IDLE}`,
+                    ]),
                     group: 'navigation@2'
                 },
+
+                {
+                    command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID,
+                    when: _J([
+                        `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                        `&& !${EXTENSION.WHEN.IS_IDLE}`,
+                    ]),
+                    group: 'navigation@2'
+                },
+
                 {
                     command: USER_TREE.COMMAND.LIST_EXPAND_ALL.ID,
                     when: `view == ${USER_TREE.ID}`,
@@ -575,13 +590,23 @@ const MANIFEST: {
                 // *** open_settings ***
                 // --------------------------------------------------------------------------------------------------
                 {
-                    command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS.ID,
-                    when: `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                    command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ID,
+                    when: `view == ${USER_TREE.ID}`,
                     group: 'a1@1'
                 },
                 {
-                    command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS.ID,
-                    when: `( view == ${USER_TREE.ID} || view == ${PROJECT_TREE.ID} )`,
+                    command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ID,
+                    when: `view == ${PROJECT_TREE.ID}`,
+                    group: 'a1@1'
+                },
+                {
+                    command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.ID,
+                    when: `view == ${USER_TREE.ID}`,
+                    group: 'a1@2'
+                },
+                {
+                    command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ID,
+                    when: `view == ${PROJECT_TREE.ID}`,
                     group: 'a1@2'
                 },
                 // =================================================================================================
@@ -791,14 +816,23 @@ const MANIFEST: {
             //     when: `focusedView =~ /^${VIEW_CONTAINER_ID}/`
             // }
         ],
-        commands: defineCommands([ // @fixme CONTAINER.WHEN.ACTIVE в деревья
+        commands: defineCommands([
+
             {
-                command: CONTAINER.COMMAND.FULL_REFRESH.ID, // // @fixme CONTAINER -> extension
-                icon: `$(${CONTAINER.COMMAND.FULL_REFRESH.ICON})`,
-                title: CONTAINER.COMMAND.FULL_REFRESH.LABEL,
+                command: EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ID,
+                icon: `$(${EXTENSION.COMMAND.FULL_REFRESH__SPINNER.ICON})`,
+                title: 'EXTENSION.COMMAND.FULL_REFRESH.LABEL',
+                category: COMMAND_CATEGORY,
+                enablement: 'false'
+            },
+
+            {
+                command: EXTENSION.COMMAND.FULL_REFRESH.ID,
+                icon: `$(${EXTENSION.COMMAND.FULL_REFRESH.ICON})`,
+                title: EXTENSION.COMMAND.FULL_REFRESH.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`
+                    `${EXTENSION.WHEN.IS_IDLE}`
                 ])
             },
             {
@@ -807,7 +841,7 @@ const MANIFEST: {
                 title: USER_TREE.COMMAND.LIST_FIND.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${USER_TREE.WHEN.HAS_ITEMS}`
                 ])
             },
@@ -817,7 +851,7 @@ const MANIFEST: {
                 title: PROJECT_TREE.COMMAND.LIST_FIND.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${PROJECT_TREE.WHEN.HAS_ITEMS}`
                 ])
             },
@@ -827,7 +861,7 @@ const MANIFEST: {
                 title: USER_TREE.COMMAND.TASK_RUN_INLINE.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`, // если не занят
+                    `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
                     `&& !(viewItem =~ /:Running/)`, // не выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
@@ -838,7 +872,7 @@ const MANIFEST: {
                 title: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`, // если не занят
+                    `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
                     `&& !(viewItem =~ /:Running/)`, // не выполняется
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
@@ -850,7 +884,7 @@ const MANIFEST: {
                 icon: `$(${USER_TREE.COMMAND.TASK_RUN.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`, // если не занят
+                    `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
             },
@@ -860,7 +894,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.TASK_RUN.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`, // если не занят
+                    `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
                     `&& !(viewItem =~ /:Broken/)` // не сломан
                 ])
             },
@@ -891,7 +925,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.OPEN_TASKS_FILE.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                 ])
             },
             {
@@ -901,7 +935,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.OPEN_TASKS_FILE.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`
+                    `${EXTENSION.WHEN.IS_IDLE}`
                 ])
             },
 
@@ -911,7 +945,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.TASK_GO_TO_DEFINITION.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`
+                    `${EXTENSION.WHEN.IS_IDLE}`
                 ])
             },
 
@@ -922,7 +956,7 @@ const MANIFEST: {
                 icon: `$(${USER_TREE.COMMAND.OPEN_USER_TASKS__BROKEN.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`
+                    `${EXTENSION.WHEN.IS_IDLE}`
                 ])
             },
             {
@@ -931,7 +965,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.TASK_GO_TO_DEFINITION__BROKEN.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`
+                    `${EXTENSION.WHEN.IS_IDLE}`
                 ])
             },
 
@@ -963,15 +997,27 @@ const MANIFEST: {
             },
             // -------------------------------------------------------------------------
             {
-                command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS.ID,
-                title: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS.LABEL,
-                icon: `$(${EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS.ICON})`,
+                command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ID,
+                title: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.LABEL,
+                icon: `$(${EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__USR.ICON})`,
                 category: COMMAND_CATEGORY
             },
             {
-                command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS.ID,
-                title: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS.LABEL,
-                icon: `$(${EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS.ICON})`,
+                command: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ID,
+                title: EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.LABEL,
+                icon: `$(${EXTENSION.COMMAND.OPEN_DISPLAY_SETTINGS__WS.ICON})`,
+                category: COMMAND_CATEGORY
+            },
+            {
+                command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.ID,
+                title: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.LABEL,
+                icon: `$(${EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__USR.ICON})`,
+                category: COMMAND_CATEGORY
+            },
+            {
+                command: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ID,
+                title: EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.LABEL,
+                icon: `$(${EXTENSION.COMMAND.OPEN_FILTERING_SETTINGS__WS.ICON})`,
                 category: COMMAND_CATEGORY
             },
 
@@ -982,7 +1028,7 @@ const MANIFEST: {
                 icon: `$(${USER_TREE.COMMAND.LIST_EXPAND_ALL.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${USER_TREE.WHEN.HAS_ITEMS}`
                 ])
             },
@@ -992,7 +1038,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.LIST_EXPAND_ALL.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${PROJECT_TREE.WHEN.HAS_ITEMS}`
                 ])
             },
@@ -1002,7 +1048,7 @@ const MANIFEST: {
                 icon: `$(${USER_TREE.COMMAND.LIST_COLLAPSE_ALL.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${USER_TREE.WHEN.HAS_ITEMS}`
                 ])
             },
@@ -1012,7 +1058,7 @@ const MANIFEST: {
                 icon: `$(${PROJECT_TREE.COMMAND.LIST_COLLAPSE_ALL.ICON})`,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
-                    `${CONTAINER.WHEN.ACTIVE}`,
+                    `${EXTENSION.WHEN.IS_IDLE}`,
                     `&& ${PROJECT_TREE.WHEN.HAS_ITEMS}`
                 ])
             },

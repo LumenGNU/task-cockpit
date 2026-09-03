@@ -347,7 +347,7 @@
             "label": "Debug-inspect|Build",
             "detail": "",
             "icon": {
-                "id": "gear"
+                "id": "package"
             },
             "dependsOn": [
                 "Debug-inspect|Build|Create/Clean `~out-debug/`",

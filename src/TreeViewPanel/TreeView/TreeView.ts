@@ -132,6 +132,7 @@ class TreeView implements Disposable {
         this.#logOutputChannel = null;
     }
 
+
     // #region Handlers
 
     // @todo внимательно проверить
@@ -181,7 +182,7 @@ class TreeView implements Disposable {
     // #endregion
 
     public rebuild(originTree: Immutable<Array<OriginNode>>, excludedScopesCount: number | null = null): void {
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         this.#excludedScopesCount = excludedScopesCount;
         this.#treeDataProvider.rebuild(originTree);
@@ -190,7 +191,7 @@ class TreeView implements Disposable {
 
     public expandAll() {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         const topElements = this.#treeDataProvider.topElements;
         if (!topElements || topElements.length < 1) {
@@ -213,7 +214,7 @@ class TreeView implements Disposable {
 
     public collapseAll() {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         // не документирована. проверено работает 1.86.2-1.131.0
         void commands.executeCommand(
@@ -230,7 +231,7 @@ class TreeView implements Disposable {
     }
 
 
-    get #isInoperable(): boolean {
+    get isInoperable(): boolean {
 
         if (this.#disposed) { return true; }
 

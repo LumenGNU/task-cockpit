@@ -34,7 +34,8 @@ export const UI = {
     RUN_ERRORS         /**/: 'run-errors',
     TERMINAL           /**/: 'terminal',
     ABORT              /**/: 'stop-circle',
-    SETTING            /**/: 'settings'
+    SETTING            /**/: 'settings',
+    SYNC_ANIMATE       /**/: 'sync~spin'
   },
   DISPLAY_SEGMENT_SEPARATOR: '・',
 
@@ -46,10 +47,19 @@ export const EXTENSION = {
   NAME: DISPLAY_NAME,
   COMMAND: {
     // Открыть README (github) для текущей версии
-    OPEN_HELP_PAGE                 /**/: { ID: `${PREFIX}.open-help-page`,                          /**/ LABEL: 'Open Documentation',  /**/ ICON: UI.ICON.HELP },
-    OPEN_DISPLAY_SETTINGS          /**/: { ID: `${PREFIX}.open-display-settings`,                   /**/ LABEL: 'Display Settings',    /**/ ICON: UI.ICON.SETTING },
-    OPEN_FILTERING_SETTINGS        /**/: { ID: `${PREFIX}.open-filtering-settings`,                 /**/ LABEL: 'Filtering Settings',  /**/ ICON: UI.ICON.LIST_FILTER },
-    OPEN_SETTINGS_EXCLUDE_FOLDERS  /**/: { ID: `${PREFIX}.open-filtering-settings@excludeFolders`,  /**/ LABEL: 'Filtering Settings — Exclude Folders',     /**/ ICON: UI.ICON.LIST_FILTER },
+    OPEN_HELP_PAGE                 /**/: { ID: `${PREFIX}.open-help-page`,                         /**/ LABEL: 'Open Documentation',                   /**/ ICON: UI.ICON.HELP },
+    OPEN_DISPLAY_SETTINGS__WS      /**/: { ID: `${PREFIX}.open-display-settings@workspace`,        /**/ LABEL: 'Display Settings',                     /**/ ICON: UI.ICON.SETTING },
+    OPEN_DISPLAY_SETTINGS__USR     /**/: { ID: `${PREFIX}.open-display-settings@global`,           /**/ LABEL: 'Display Settings (Global)',            /**/ ICON: UI.ICON.SETTING },
+    OPEN_FILTERING_SETTINGS__WS    /**/: { ID: `${PREFIX}.open-filtering-settings@workspace`,      /**/ LABEL: 'Filtering Settings',                   /**/ ICON: UI.ICON.LIST_FILTER },
+    OPEN_FILTERING_SETTINGS__USR   /**/: { ID: `${PREFIX}.open-filtering-settings@global`,         /**/ LABEL: 'Filtering Settings (Global)',          /**/ ICON: UI.ICON.LIST_FILTER },
+    OPEN_SETTINGS_EXCLUDE_FOLDERS  /**/: { ID: `${PREFIX}.open-filtering-settings@excludeFolders`, /**/ LABEL: 'Filtering Settings — Exclude Folders', /**/ ICON: UI.ICON.LIST_FILTER },
+    // Перечитать все данные, будет спровоцирована перестройка всех *-task-view представлений
+    FULL_REFRESH           /**/: { ID: `${PREFIX}.full-refresh`,          /**/ LABEL: 'Refresh List', /**/ ICON: UI.ICON.REFRESH },
+    FULL_REFRESH__SPINNER  /**/: { ID: `${PREFIX}._full-refresh@spinner`, /**/ LABEL: 'Scanning...',  /**/ ICON: UI.ICON.SYNC_ANIMATE },
+  },
+  WHEN: {
+    IS_IDLE: `${PREFIX}.isIdle`,
+    ALL_FOLDERS_EXCLUDED: `${PROJECT_TREE_ID}.allFoldersExcluded`
   }
 } as const;
 
@@ -103,13 +113,6 @@ const COMMON_ACTIONS = {
 export const CONTAINER = {
   ID: CONTAINER_ID,
   NAME: DISPLAY_NAME,
-  COMMAND: {
-    // Перечитать все данные, будет спровоцирована перестройка всех *-task-view представлений
-    FULL_REFRESH              /**/: { ID: `${CONTAINER_ID}.full-refresh`,           /**/ LABEL: 'Refresh List',  /**/ ICON: UI.ICON.REFRESH },
-  },
-  WHEN: {
-    ACTIVE: `${CONTAINER_ID}.active`,
-  }
 } as const;
 
 

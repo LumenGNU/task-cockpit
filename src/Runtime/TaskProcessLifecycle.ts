@@ -112,7 +112,7 @@ class TaskProcessLifecycle implements Disposable {
             this.#snapshotCollector,
         ];
 
-        this.#resourceProps.windowSettings.onDidChangeConfiguration(this.#changeConfigurationHandler, this, this.#disposables);
+        this.#resourceProps.windowSettings.onDidCompleteUpdate(this.#changeConfigurationHandler, this, this.#disposables);
 
         this.#terminalsConfiguration = this.#resourceProps.windowSettings.getConfiguration(TaskProcessLifecycle.CONFIGURATION_SECTION);
 
@@ -275,7 +275,7 @@ class TaskProcessLifecycle implements Disposable {
      * */
     async #processStartedHandler({ execution, processId }: TaskProcessStartEvent): Promise<void> {
 
-        if (this.#isInoperable) { return; }
+        if (this.isInoperable) { return; }
 
         // начинаем следить, если "подходящая"
         if (isValidPid(processId)) { // сразу отбрасываем сломанное
@@ -394,7 +394,7 @@ class TaskProcessLifecycle implements Disposable {
 
     // ---------------------------------------------------------------------------
 
-    get #isInoperable(): boolean {
+    get isInoperable(): boolean {
 
         if (this.#disposed) {
             return true;
