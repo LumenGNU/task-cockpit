@@ -7,10 +7,10 @@
             "command": "echo Hello"
         },
         {
-            "label": "AAAA",
+            "label": "<b>AAAA</b>",
             "detail": "<span style=\"color:red\">Your text here</span>\n\n\naaaa\n\n-----\n\npppp",
             "type": "shell",
-            "command": "echo AAAAAAAAAAAAAAAAAAAAAAAA"
+            "command": "sleep 66 ; echo AAAAAAAAAAAAAAAAAAAAAAAA"
         },
         {
             "label": "BBB77",

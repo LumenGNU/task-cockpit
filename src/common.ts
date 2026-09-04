@@ -73,13 +73,13 @@ const WHEN_TAG = {
 } as const;
 
 const COMMON_ACTIONS = {
-  RUN_TASK_INLINE: {
-    CMD   /**/: 'task-run@inline',
+  RUN_TASK: {
+    CMD   /**/: 'task-run',
     LABEL /**/: 'Run Task',
     ICON  /**/: UI.ICON.RUN
   },
-  RUN_TASK: {
-    CMD   /**/: 'task-run',
+  TASK_RUN_NEW_INSTANCE: {
+    CMD   /**/: 'task-run-new-instance',
     LABEL /**/: 'Run New Instance',
     ICON  /**/: UI.ICON.RUN
   },
@@ -94,7 +94,7 @@ const COMMON_ACTIONS = {
     ICON  /**/: UI.ICON.TERMINAL
   },
   LIST_OPEN_FIND: {
-    CMD   /**/: 'list-open-find',
+    CMD   /**/: 'list-find',
     LABEL /**/: 'Find in List',
     ICON  /**/: UI.ICON.SEARCH
   },
@@ -126,9 +126,9 @@ export const USER_TREE = {
     // Открыть файл с определением задачи (для "сломанной" задачи)
     OPEN_USER_TASKS__BROKEN     /**/: { ID: `${USER_TREE_ID}.open-user-tasks@run-error`, /**/ LABEL: 'No task matches this definition (Open User Tasks)',  /**/ ICON: UI.ICON.WARNING },
     // Выполнить задачу
-    TASK_RUN_INLINE                   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK_INLINE.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK_INLINE.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK_INLINE.ICON },
+    TASK_RUN_INLINE                   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
     // Запустить новый экземпляр задачи
-    TASK_RUN      /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,      /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,      /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    TASK_RUN_NEW_INSTANCE      /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.CMD}`,      /**/ LABEL: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.LABEL,      /**/ ICON: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.ICON },
     // Прервать все работающие экземпляры задачи
     TASK_ABORT_ALL_INSTANCES   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.ABORT_ALL_INSTANCES.CMD}`,   /**/ LABEL: COMMON_ACTIONS.ABORT_ALL_INSTANCES.LABEL,   /**/ ICON: COMMON_ACTIONS.ABORT_ALL_INSTANCES.ICON },
     // Перейти к терминалу задачи
@@ -162,9 +162,9 @@ export const PROJECT_TREE = {
 
     TASK_GO_TO_DEFINITION__BROKEN /**/: { ID: `${PROJECT_TREE_ID}.task-go-to-definition@run-error`,  /**/ LABEL: 'No task matches this definition (Open Task Definition)',  /**/ ICON: UI.ICON.WARNING },
     // Выполнить задачу
-    TASK_RUN_INLINE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK_INLINE.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK_INLINE.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK_INLINE.ICON },
+    TASK_RUN_INLINE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
     // Запустить новый экземпляр задачи
-    TASK_RUN                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,      /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,      /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    TASK_RUN_NEW_INSTANCE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.CMD}`,      /**/ LABEL: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.LABEL,      /**/ ICON: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.ICON },
     // Прервать все работающие экземпляры задачи
     TASK_ABORT_ALL_INSTANCES   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.ABORT_ALL_INSTANCES.CMD}`,   /**/ LABEL: COMMON_ACTIONS.ABORT_ALL_INSTANCES.LABEL,   /**/ ICON: COMMON_ACTIONS.ABORT_ALL_INSTANCES.ICON },
     // Перейти к терминалу задачи

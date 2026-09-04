@@ -176,11 +176,17 @@ class TreeView implements Disposable {
         const selected = event.selection.at(0);
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>(
-                'setContext',
-                `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType,
-                getNodeTag(selected) satisfies SelectedNodeTag | undefined
-            ));
+            async () => {
+                const nodeTag = getNodeTag(selected) satisfies SelectedNodeTag | undefined;
+                try {
+                    this.#logOutputChannel?.trace(`[${this.constructor.name}#${this.#viewId}#changeSelectionHandler] selectedNode = ${nodeTag}`);
+                } catch { }
+                await commands.executeCommand<void>(
+                    'setContext',
+                    `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType,
+                    nodeTag
+                );
+            });
     }
 
     // #endregion

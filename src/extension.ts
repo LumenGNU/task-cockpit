@@ -80,9 +80,7 @@ function registerCommands(
                         window.showErrorMessage(String(err));
                     }
                 }
-                catch {
-                    // @todo
-                }
+                catch { /* no-op */ }
             }
         );
     }
@@ -322,12 +320,7 @@ function registerCommands(
                 }
 
             }
-            catch (err) {
-                if (err instanceof assert.AssertionError) {
-                    window.showErrorMessage(String(err));
-                }
-                // остальные no-op
-            }
+            catch { /* no-op */ }
 
         }),
 
@@ -337,16 +330,16 @@ function registerCommands(
 
         // -------------
         commands.registerCommand(USER_TREE.COMMAND.TASK_RUN_INLINE.ID, async (element: Immutable<Element>) => {
-            await commands.executeCommand(USER_TREE.COMMAND.TASK_RUN.ID, element);
+            await commands.executeCommand(USER_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, element);
         }),
 
         // -------------
         commands.registerCommand(PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID, async (element: Immutable<Element.Runnable>) => {
-            await commands.executeCommand(PROJECT_TREE.COMMAND.TASK_RUN.ID, element);
+            await commands.executeCommand(PROJECT_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, element);
         }),
 
         // kbd-bind+sub-menu
-        commands.registerCommand(USER_TREE.COMMAND.TASK_RUN.ID, async (reason: Immutable<Element> | undefined) => {
+        commands.registerCommand(USER_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, async (reason: Immutable<Element> | undefined) => {
 
             const element =
                 reason
@@ -361,7 +354,7 @@ function registerCommands(
             await runTaskHandler(element);
         }),
 
-        commands.registerCommand(PROJECT_TREE.COMMAND.TASK_RUN.ID, async (reason: Immutable<Element> | undefined) => {
+        commands.registerCommand(PROJECT_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, async (reason: Immutable<Element> | undefined) => {
 
             const element =
                 reason
