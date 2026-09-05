@@ -1,0 +1,3285 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Dev Environment|Prepare",
+            "detail": "Check dependencies, install packages, create directories",
+            "icon": {
+                "id": "gear"
+            },
+            "dependsOn": [
+                "Dev Environment|Prepare|Check utilities",
+                "Dev Environment|Prepare|Create/Clean '~out/'",
+                "Dev Environment|Prepare|Create/Clean '~vsix/'",
+                "Dev Environment|Prepare|Install project dependencies"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "echo -e '\\e[32;1m[DONE] Environment ready\\e[0m\\n'",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Dev Environment|Prepare|Check utilities",
+            "detail": "Verify required CLI tools are installed",
+            "icon": {
+                "id": "tools"
+            },
+            "type": "shell",
+            "command": "dev-scripts/check-utilities.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "REQUIRED_CMDS": "git rsync jq gio inkscape npm"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Dev Environment|Prepare|Create/Clean '~out/'",
+            "detail": "Ensure build output directory exists and is empty",
+            "icon": {
+                "id": "folder-opened"
+            },
+            "type": "shell",
+            "command": "dev-scripts/create-empty-directory.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEST_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Dev Environment|Prepare|Create/Clean '~vsix/'",
+            "detail": "Ensure VSIX output directory exists and is empty",
+            "icon": {
+                "id": "folder-opened"
+            },
+            "type": "shell",
+            "command": "dev-scripts/create-empty-directory.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEST_DIR": "~vsix"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Dev Environment|Prepare|Install project dependencies",
+            "detail": "Run `npm install` for development",
+            "icon": {
+                "id": "save-all"
+            },
+            "type": "shell",
+            "command": "dev-scripts/install-project-dependencies.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEST_DIR": "."
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Dev Environment|Clean project",
+            "detail": "Remove generated and temporary files:  \n- Clean `~out/` directory\n- Clean `~vsix/` directory\n- Remove `~dist/` directory",
+            "icon": {
+                "id": "trash",
+                "color": "terminal.ansiMagenta"
+            },
+            "dependsOn": [
+                "Dev Environment|Prepare|Create/Clean '~out/'",
+                "Dev Environment|Prepare|Create/Clean '~vsix/'",
+                "Dev Environment|Clean project|Remove '~dist/'"
+            ],
+            "dependsOrder": "sequence",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Dev Environment|Clean project|Remove '~dist/'",
+            "detail": "Remove `./~dist` directory",
+            "icon": {
+                "id": "trash"
+            },
+            "type": "shell",
+            "command": "dev-scripts/remove-directory.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "DEST_DIR": "~dist"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false
+            },
+            "problemMatcher": []
+        },
+        // ===================================================================================================================
+        {
+            "label": "_kill-vscode-test-runner",
+            "hide": true,
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "if pids=$(pgrep -f \".vscode-test/.*/code\" 2> /dev/null) ; then",
+                "  kill $pids 2> /dev/null || true ; ",
+                "  for pid in $pids ; ",
+                "    do while kill -0 \"$pid\" 2> /dev/null ; do",
+                "      sleep 0.5 ; ",
+                "    done ; ",
+                "  done ; ",
+                "fi ; ",
+            ],
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
+        },
+        {
+            "label": "_command:workbench.view.debug",
+            "command": "${command:workbench.view.debug}",
+            "hide": true,
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
+        },
+        {
+            "label": "_command:workbench.panel.repl.view.focus",
+            "command": "${command:workbench.panel.repl.view.focus}",
+            "hide": true,
+            "presentation": {
+                "panel": "new",
+                "focus": false,
+                "close": true,
+            }
+        },
+        // {
+        //     "label": "_waiting-for-debugger",
+        //     "type": "shell",
+        //     "command": [
+        //         "set -euo pipefail ; ",
+        //         "echo 'Waiting for debugger...' ; ",
+        //         "timeout 30 bash -c 'until nc -z localhost 9229 2>/dev/null; do sleep 0.5; done' || { echo Timeout ; exit 1; } ;"
+        //     ]
+        // },
+        // ===================================================================================================================
+        {
+            "label": "Debug-inspect",
+            "dependsOn": [
+                "_command:workbench.view.debug",
+                "Debug-inspect|Build",
+                "Debug-inspect|Run (debug-clean)",
+                "_command:workbench.panel.repl.view.focus",
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Debug-inspect|Build|Create/Clean `~out-debug/`",
+            "detail": "",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
+                "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-debug"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug-inspect|Build|Transpile TypeScript to `./~out-debug`",
+            "detail": "",
+            "icon": {
+                "id": "target"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "TSCONFIG": "debug.tsconfig.json",
+                    "OUT_DIR": "~out-debug"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": {
+                "applyTo": "allDocuments",
+                "base": "$tsc"
+            }
+        },
+        {
+            "label": "Debug-inspect|Build|Copy icons to `./~out-debug`",
+            "detail": "Copy icons to distribution",
+            "icon": {
+                "id": "copy"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "./~out-debug",
+                    "FILES": "./icons/panel-icon.svg"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug-inspect|Build|Create package.json",
+            "detail": "Generate `package.json`",
+            "icon": {
+                "id": "json"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsx manifest.mts ; ",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-debug",
+                    "MAIN_JS": "extension.js",
+                    "ICONS_PATH": "",
+                    "MANIFEST_FILE": "./~out-debug/package.json"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                // "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug-inspect|Build",
+            "detail": "",
+            "icon": {
+                "id": "package"
+            },
+            "dependsOn": [
+                "Debug-inspect|Build|Create/Clean `~out-debug/`",
+                "Debug-inspect|Build|Transpile TypeScript to `./~out-debug`",
+                "Debug-inspect|Build|Copy icons to `./~out-debug`",
+                "Debug-inspect|Build|Create package.json"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "echo [Build Complete]",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {}
+            },
+            "group": {
+                "kind": "build"
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "instanceLimit": 1,
+                "instancePolicy": "warn"
+            }
+        },
+        // .............................................................................
+        {
+            "label": "Debug-inspect|Run (debug-clean)",
+            "icon": {
+                "id": "rocket"
+            },
+            "detail": "",
+            "group": "build",
+            "dependsOn": [
+                "_kill-vscode-test-runner",
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "setsid -f ./.vscode-test/interactive-runner.mjs && echo [Started Debug Extension] ; sleep 3",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "./~out-debug",
+                    "VSC_PROFILE": "extension-debug-clean",
+                    "VSC_OPEN": "./~fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace",
+                    "VSC_INSPECT": "inspect", // "inspect-brk",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
+                    // "VSC_VERSION": "1.131.0",
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Debug"
+            },
+            "problemMatcher": [],
+            "runOptions": {
+                "instanceLimit": 1,
+                "instancePolicy": "warn"
+            }
+        },
+        // ======================================================================================================================
+        {
+            "label": "Pack|Pack pre-release VSIX|Clear terminal",
+            "hide": true,
+            "type": "shell",
+            "command": "true",
+            "presentation": {
+                "panel": "shared",
+                "clear": true,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack pre-release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX",
+            "detail": "Create release VSIX package in `./~vsix`",
+            "icon": {
+                "id": "extensions",
+                "color": "terminal.ansiGreen"
+            },
+            "dependsOn": [
+                "Pack VSIX|Create/Clean `~out/`",
+                "Pack VSIX|Transpile TypeScript to `./~out`",
+                "Pack VSIX|Copy additional files to `./~out`",
+                "Pack VSIX|Copy icons to `./~out`",
+                "Pack VSIX|Export extension icon",
+                "Pack VSIX|Create package.json",
+                "Pack VSIX|Prepare README.md",
+                "Pack VSIX|Install production dependencies",
+                "Pack VSIX|Pack VSIX"
+            ],
+            "dependsOrder": "sequence",
+            "type": "shell",
+            "command": "echo '[All done]'",
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Create/Clean `~out/`",
+            "detail": "",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "[[ -d \"${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || { echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\" ; exit 1 ; }; ",
+                "find \"${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} + ; ",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Transpile TypeScript to `./~out`",
+            "detail": "",
+            "icon": {
+                "id": "target"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p \"${TSCONFIG}\" --outDir \"${OUT_DIR}\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "TSCONFIG": "release.tsconfig.json",
+                    "OUT_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": {
+                "applyTo": "allDocuments",
+                "base": "$tsc"
+            }
+        },
+        {
+            "label": "Pack VSIX|Copy additional files to `./~out`",
+            "detail": "Copy package-lock.json, LICENSE, etc.",
+            "icon": {
+                "id": "copy"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "./~out",
+                    "FILES": "./.vscodeignore:./CHANGELOG.md:./LICENSE.txt"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Copy icons to `./~out`",
+            "detail": "Copy icons to distribution",
+            "icon": {
+                "id": "copy"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "IFS=':' read -ra files <<< \"${FILES}\" ; ",
+                "mkdir -p \"${OUT_DIR}\" ; ",
+                "cp \"${files[@]}\" \"${OUT_DIR}/\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "./~out",
+                    "FILES": "./icons/panel-icon.svg"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Export extension icon",
+            "detail": "Export SVG icon to PNG",
+            "icon": {
+                "id": "file-media"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "inkscape --export-type=png --export-filename=\"${OUT_DIR}/icon.png\" \"${SRC_SVG}\" "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "SRC_SVG": "icons/icon.svg",
+                    "OUT_DIR": "~out",
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "runOptions": {
+                "instanceLimit": 1,
+                "instancePolicy": "warn"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Create package.json",
+            "detail": "Generate production `package.json` for VSIX",
+            "icon": {
+                "id": "json"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsx manifest.mts ; ",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out",
+                    "MAIN_JS": "extension.js",
+                    "ICONS_PATH": "",
+                    "MANIFEST_FILE": "./~out/package.json"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Prepare README.md",
+            "detail": "",
+            "icon": {
+                "id": "markdown"
+            },
+            "type": "shell",
+            "command": "dev-scripts/prepare-READMT.md.bash",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "SOURCE": "README.md",
+                    "DEST_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Install production dependencies",
+            "detail": "Install only production npm packages in ~dist/",
+            "icon": {
+                "id": "save-all"
+            },
+            "type": "shell",
+            "command": [
+                "set -euo pipefail ; ",
+                "cp \"package-lock.json\" \"${OUT_DIR}/\"; ",
+                "cd \"${OUT_DIR}\"; ",
+                "npm ci --omit=dev"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out"
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Pack VSIX|Pack VSIX",
+            "detail": "Final packaging of files into a vsix",
+            "icon": {
+                "id": "package"
+            },
+            "type": "shell",
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "cd \"${OUT_DIR}\" ; ",
+                "npx vsce package ; ",
+                "cd - ; ",
+                "cp \"${OUT_DIR}\"/task-cockpit-*.vsix \"${VSIX_DIR}/\" ; "
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out",
+                    "VSIX_DIR": "~vsix",
+                }
+            },
+            "presentation": {
+                "panel": "shared",
+                "clear": false,
+                "echo": false,
+                "showReuseMessage": false,
+                "group": "Pack release VSIX"
+            },
+            "problemMatcher": []
+        },
+        // ------------------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "playground|Clean/create '~out-sandbox/'",
+            "detail": "Ensure '~out-sandbox' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "mkdir -p \"./~out-sandbox\" && find \"./~out-sandbox\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
+            "problemMatcher": [],
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|open-task-definition",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/open-task-definition",
+                    "VSC_PROFILE": "playground-open-task-definition",
+                    "VSC_OPEN": "playground/open-task-definition/prj:playground/open-task-definition/prj/.vscode/tasks.json",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|flat-task-inventory|manual",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/manual",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|massive-parallel-deps",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/massive-parallel-deps",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|meta-composite-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/meta-composite-task",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|flat-task-inventory|single-folder-multi-instance-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox/",
+                    "EXT_SANDBOX": "playground/flat-task-inventory",
+                    "VSC_OPEN": "playground/flat-task-inventory/single-folder-multi-instance-task",
+                    "VSC_PROFILE": "playground-flat-task-inventory",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|my-command",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/my-command",
+                    "VSC_PROFILE": "playground-my-command",
+                    "VSC_OPEN": "playground/my-command/prj",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ..............................................................................................................................
+        {
+            "label": "playground|tree-panel|cycle-tasks+burst",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/cycle-tasks+burst/",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|full-monty",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "if pids=$(pgrep -f \".vscode-test/.*/code .*--extensionDevelopmentPath=${workspaceFolder}/${OUT_DIR}/${EXT_SANDBOX}\" 2> /dev/null); then",
+                "kill $pids 2> /dev/null || true;",
+                "for pid in $pids;",
+                "do",
+                "while kill -0 \"$pid\" 2> /dev/null; do",
+                "sleep 0.2;",
+                "done;",
+                "done;",
+                "fi;",
+                "[[ -d \"./${OUT_DIR}\" && \"$(basename \"${OUT_DIR}\")\" == ~* ]] || {",
+                "echo \"OUT_DIR='${OUT_DIR}' — not a directory or its name does not start with '~'\";",
+                "exit 1 ; }; ",
+                "find \"./${OUT_DIR}\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +;",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json && setsid -f ./.vscode-test/interactive-runner.mjs && sleep 3"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/full-monty/full-monty.code-workspace",
+                    // "VSC_VERSION": "1.131.0",
+                    "VSC_INSPECT": "inspect"
+                }
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|semi-manual",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    "VSC_OPEN": "playground/tree-panel/semi-manual/project.code-workspace:playground/tree-panel/semi-manual/folder1/project.code-workspace.jsonc:playground/tree-panel/semi-manual/folder1/.vscode/tasks.json:playground/tree-panel/semi-manual/folder2/.vscode/tasks.json",
+                    // "VSC_VERSION": "1.131.0"
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "playground|tree-panel|semi-manual-2",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "playground|Clean/create '~out-sandbox/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "set -euo pipefail ; ",
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-sandbox",
+                    "EXT_SANDBOX": "playground/tree-panel",
+                    "VSC_PROFILE": "playground-tree-panel",
+                    // "VSC_VERSION": "1.131.0"
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        // ------------------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "Probes|PreProbe|Clean/create '~out-probe/'",
+            "detail": "Ensure '~out-probe' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "mkdir -p \"./~out-probe\" && find \"./~out-probe\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
+            "problemMatcher": [],
+        },
+        {
+            "label": "Probes|FileDecorationProvider|URLSearchParams-benchmark",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/FileDecorationProvider/URLSearchParams-benchmark",
+                    // "VSC_OPEN": ""
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|FileDecorationProvider|badge-render-scenarios",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/FileDecorationProvider/badge-render-scenarios",
+                    // "VSC_OPEN": ""
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|Custom-task",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/Custom-task",
+                    "VSC_OPEN": "probes/Custom-task/probe/READMT.md"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|Runtime|behavioral-study|single-folder",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/Runtime/behavioral-study",
+                    "VSC_PROFILE": "probes-Runtime-behavioral-study-single-folder",
+                    "VSC_OPEN": "probes/Runtime/behavioral-study/single-folder",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|probe-probe",
+            "icon": {
+                "id": "debug-console",
+                "color": "terminal.ansiCyan"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/probe-probe",
+                    "VSC_PROFILE": "prob-probe",
+                    "VSC_VERSION": "1.111.0",
+                    "VSC_OPEN": "probes/probe-probe/prj"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s1",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s1/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s1",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s2",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s2/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s2",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s3",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s3/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s3",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s4",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s4/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s4",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s5",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s5/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s5",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s6",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s6/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s6",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|multi-root-conflicts-between-scopes-s7",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/multi-root-conflicts-between-scopes-s7/project.code-workspace:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-multi-root-conflicts-between-scopes-s7",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|single-folder-conflicts-between-user-level",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-between-user-level:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-single-folder-conflicts-between-user-level",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral research|single-folder-conflicts-within-single-scope",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/demonstration",
+                    "VSC_OPEN": "probes/task-shadowing/single-folder-conflicts-within-single-scope:probes/task-shadowing/demonstration/task-shadowing.md",
+                    "VSC_PROFILE": "probe-single-folder-conflicts-within-single-scope",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace Tasks:trace",
+                    // "VSC_VERSION": "1.110.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral-study|single-folder",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/behavioral-study",
+                    "VSC_OPEN": "probes/task-shadowing/behavioral-study/single-folder",
+                    "VSC_PROFILE": "probe-ResourceStateCoordinator-task-shadowing-behavior",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
+                    "VSC_VERSION": "1.111.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|task-shadowing|behavioral-study|multiroot-workspace",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/task-shadowing/behavioral-study",
+                    "VSC_OPEN": "probes/task-shadowing/behavioral-study/multiroot-workspace/workspace.code-workspace",
+                    "VSC_PROFILE": "probe-ResourceStateCoordinator-task-shadowing-behavior",
+                    "VSC_PARAM_LOG": "papio-dev.task-cockpit:trace",
+                    // "VSC_VERSION": "1.111.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-tree-mutation",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/vscode-tree-mutation",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-TreeDataProvider-collapseAll",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/vscode-TreeDataProvider-collapseAll",
+                    "VSC_OPEN": "probes/vscode-TreeDataProvider-collapseAll/prj",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        {
+            "label": "Probes|vscode-TreeDataProvider-reveal-behavior",
+            "icon": {
+                "id": "debug-console"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Probes|PreProbe|Clean/create '~out-probe/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${EXT_SANDBOX}/tsconfig.json &&",
+                "./.vscode-test/interactive-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-probe",
+                    "EXT_SANDBOX": "probes/vscode-TreeDataProvider-reveal-behavior",
+                    "VSC_OPEN": "probes/vscode-TreeDataProvider-reveal-behavior/prj",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                }
+            ]
+        },
+        //---------------------------------------------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "Test|PreTest|Clean/create '~out-test/'",
+            "detail": "Ensure '~out-test' directory exists and is empty",
+            "icon": {
+                "id": "new-folder"
+            },
+            "type": "shell",
+            "command": "mkdir -p \"./~out-test\" && find \"./~out-test\" -mindepth 1 -maxdepth 1 -exec gio trash -- {} +",
+            "problemMatcher": [],
+        },
+        {
+            "label": "Test|Configuration",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Configuration",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "test-Configuration",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|FileDecorationProvider",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/FileDecorationProvider",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "test-FileDecorationProvider",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|HierarchyModel",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/HierarchyModel",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "MOCHA_SLOW": "5_000"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime|ProcessRegistry",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/ProcessRegistry*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|Runtime|Terminals|getTerminalProcessId",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/Runtime",
+                    "TESTS": "*/**/getTerminalProcessId*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    "MOCHA_SLOW": "5_000",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|TasksSource|findTaskDefinitionRange",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/TasksSource",
+                    "TESTS": "*/**/findTaskDefinitionRange*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|TasksSource|openTaskDefinitionInEditor",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/TasksSource",
+                    "TESTS": "*/**/openTaskDefinitionInEditor*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                    // "VSC_VERSION": "1.131.0"
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        // -----------------------------------------------------------------------------------------------------------
+        {
+            "label": "Test|ResourceState|ResourceConfig|mapScopedConfig",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/ResourceState/ResourceConfig/mapScopedConfig",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "test-ResourceState.ResourceConfig.mapScopedConfig",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|ResourceState|ResourceStructure",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/ResourceState/ResourceStructure",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|ResourceState|TaskDefinition|mapTaskDefinitions",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/ResourceState/TaskDefinition/mapTaskDefinitions",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "test-ResourceState.TaskDefinition.mapTaskDefinitions",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        // -----------------------------------------------------------------------------------------------------------------------------------
+        // shadowing-behavior
+        {
+            "label": "Test|shadowing-behavior",
+            "icon": {
+                "id": "run-all"
+            },
+            "dependsOn": [
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c1",
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c2",
+                "Test|shadowing-behavior|multi-root-combined-shadowing-c3",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+                "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+                "Test|shadowing-behavior|single-folder-conflicts-between-user-level",
+                "Test|shadowing-behavior|single-folder-conflicts-within-single-scope"
+            ],
+            "dependsOrder": "sequence"
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c1",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c1/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c1",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c2",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c2/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c2",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-combined-shadowing-c3",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-combined-shadowing-c3/*",
+                    "VSC_PROFILE": "test-multi-root-combined-shadowing-c3",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s1",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s1/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s1",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s2",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s2/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s2",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s3",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s3/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s3",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s4",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s4/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s4",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s5",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s5/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s5",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s6",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s6/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s6",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|multi-root-conflicts-between-scopes-s7",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "multi-root-conflicts-between-scopes-s7/*",
+                    "VSC_PROFILE": "test-multi-root-conflicts-between-scopes-s7",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|single-folder-conflicts-between-user-level",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "single-folder-conflicts-between-user-level/*",
+                    "VSC_PROFILE": "test-single-folder-conflicts-between-user-level",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        {
+            "label": "Test|shadowing-behavior|single-folder-conflicts-within-single-scope",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/shadowing-behavior",
+                    "TESTS": "single-folder-conflicts-within-single-scope/*",
+                    "VSC_PROFILE": "test-single-folder-conflicts-within-single-scope",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                },
+            ]
+        },
+        // ------------------------------------------------------------------------------------------------------------------------------------
+        {
+            "label": "Test|units",
+            "icon": {
+                "id": "beaker"
+            },
+            "type": "shell",
+            "dependsOn": [
+                "Test|PreTest|Clean/create '~out-test/'"
+            ],
+            "dependsOrder": "sequence",
+            "command": [
+                "npx tsc -p ./${SUT_TEST}/tsconfig.json &&",
+                "./.vscode-test/test-runner.mjs"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "OUT_DIR": "~out-test",
+                    "SUT_EXT": "src",
+                    "SUT_TEST": "test/units",
+                    "TESTS": "*/*",
+                    "VSC_PROFILE": "Task Cockpit Test",
+                }
+            },
+            "problemMatcher": [
+                {
+                    "applyTo": "allDocuments",
+                    "base": "$tsc"
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at [^\\s]+ \\((.+):(\\d+):(\\d+)\\)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    }
+                },
+                {
+                    "applyTo": "allDocuments",
+                    "owner": "Test Failes",
+                    "source": "vscode-test",
+                    "severity": "error",
+                    "fileLocation": [
+                        "autoDetect",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": {
+                        "regexp": "^\\s*at (.+):(\\d+):(\\d+)",
+                        "message": 0,
+                        "file": 1,
+                        "line": 2,
+                        "column": 3
+                    },
+                }
+            ]
+        },
+        //---------------------------------------------------------------------------------------------------------------------------------------------------------
+        // {
+        //     "label": "action-run-task",
+        //     "type": "process",
+        //     "command": "${input:action-run-task}",
+        // }
+    ],
+    // ============================================================================================
+    // "inputs": [
+    //     {
+    //         "id": "action-run-task",
+    //         "type": "command",
+    //         "command": "workbench.action.tasks.runTask",
+    //         "args": "playground"
+    //     }
+    // ]
+}

@@ -1,0 +1,6 @@
+{
+    "taskCockpit.display.segmentSeparator": "-",
+
+    "taskCockpit.validation.duplicateLabels": true,
+    "taskCockpit.validation.missingDependencies": true,
+}

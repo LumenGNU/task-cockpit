@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "deploy",
+      "type": "shell",
+      "command": "echo deploy"
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "echo test"
+    },
+    {
+      "label": "e2e",
+      "type": "shell",
+      "command": "echo e2e",
+      "icon": {
+        "id": "telescope",
+        "color": "terminal.ansiBlue"
+      },
+      "group": "test",
+      "isBackground": false
+    }
+  ]
+}

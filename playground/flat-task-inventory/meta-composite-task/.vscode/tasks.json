@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Task-1",
+            "type": "shell",
+            "command": "echo t-1",
+            "problemMatcher": []
+        },
+        {
+            "label": "Task-2",
+            "type": "shell",
+            "command": "echo t-2",
+            "problemMatcher": []
+        },
+        {
+            "label": "Task-3",
+            "type": "shell",
+            "command": "echo t-3",
+            "problemMatcher": []
+        },
+        {
+            "label": "meta-composite-task",
+            "dependsOn": [
+                "Task-1",
+                "Task-2",
+                "Task-3",
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "my-task-1"
+            },
+            "type": "shell",
+            "command": "run-my-task-1",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "my-task-2"
+            },
+            "type": "shell",
+            "command": "run-my-task-2",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "icon": {
+                "id": "my-task-3"
+            },
+            "type": "shell",
+            "command": "run-my-task-3",
+            "problemMatcher": []
+        }
+    ]
+}

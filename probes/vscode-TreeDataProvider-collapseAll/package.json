@@ -1,0 +1,38 @@
+{
+  "name": "task-cockpit",
+  "publisher": "papio-dev",
+  "displayName": "Task Cockpit test extension",
+  "description": "Task Cockpit test extension",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "extension.js",
+"contributes": {
+  "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "task-cockpit_test-view-container",
+                    "title": "Task Cockpit",
+                    "icon": "$(debug-console)"
+                }
+            ]
+        },
+    "views": {
+        "task-cockpit_test-view-container": [
+            { "id": "sandbox_view", "icon": "$(debug)", "name": "Sandbox", "visibility": "visible" }
+        ]
+    },
+    "commands": [
+        { "command": "sandbox.expandAll",          "title": "Sandbox: Expand All" },
+        { "command": "sandbox.expandAllMidFlight", "title": "Sandbox: Expand All (mid-flight refresh)" },
+        { "command": "sandbox.collapseAll",        "title": "Sandbox: Collapse All" }
+    ]
+}
+}

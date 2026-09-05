@@ -1,0 +1,105 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // proto — task-as-group: "codegen" и задача, и группа
+        {
+            "label": "proto:codegen",
+            "icon": {
+                "id": "zap",
+                "color": "terminal.ansiYellow"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "proto:codegen:go",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "proto:codegen:ts",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "proto:codegen:python",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "proto:lint",
+            "icon": {
+                "id": "search"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // ci pipeline
+        {
+            "label": "ci:pipeline:validate",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "ci:pipeline:build-all",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "icon": {
+                "id": "package",
+                "color": "terminal.ansiGreen"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "ci:pipeline:notify",
+            "isBackground": true,
+            "icon": {
+                "id": "bell",
+                "color": "terminal.ansiBlue"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // docs
+        {
+            "label": "docs:generate",
+            "icon": {
+                "id": "notebook"
+            },
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // hidden task-as-group (задача скрыта, дети видимы)
+        {
+            "label": "internal:legacy",
+            "hide": true,
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "internal:legacy:compat-shim",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        },
+        {
+            "label": "internal:legacy:polyfill",
+            "command": "true",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}

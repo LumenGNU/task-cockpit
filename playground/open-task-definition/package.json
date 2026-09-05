@@ -1,0 +1,25 @@
+{
+  "name": "task-cockpit",
+  "publisher": "papio-dev",
+  "displayName": "Task Cockpit test extension",
+  "description": "Task Cockpit test extension",
+  "version": "0.0.0",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "extension.js",
+"contributes": {
+    "commands": [
+        {
+            "command": "sandbox.openTaskDefinition",
+            "title": "- SANDBOX - Открыть определение задачи"
+        }
+    ]
+}
+}

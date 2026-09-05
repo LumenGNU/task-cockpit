@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "type": "process",
+            "command": "${input:aaa}",
+            "options": {
+            },
+            "problemMatcher": []
+        }
+    ],
+
+    "inputs": [
+        {
+          "id": "pickTest",
+          "type": "command",
+          "command": "sandbox.my-command",
+          "args": {
+            "testFolder": "/out/tests"
+          }
+        },
+        {
+          "id": "aaa",
+          "type": "command",
+          "command": "workbench.action.tasks.runTask",
+          "args": "Pack"
+        }
+      ]
+}

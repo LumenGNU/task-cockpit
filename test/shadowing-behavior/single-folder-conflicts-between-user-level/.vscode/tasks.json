@@ -1,0 +1,11 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "My Task",
+            "command": "run-project-level-task",
+            "type": "shell",
+            "problemMatcher": []
+        }
+    ]
+}

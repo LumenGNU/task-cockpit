@@ -1,0 +1,24 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "User level task",
+            "type": "shell",
+            "command": "echo 'User level task'",
+            "problemMatcher": []
+        },
+        {
+            "label": "task with name X",
+            "type": "shell",
+            "command": "echo 'User level task X'",
+            "problemMatcher": []
+        },
+        {
+            "label": "(User) depends on X",
+            "dependsOn": "task with name X",
+            "problemMatcher": []
+        }
+    ]
+}

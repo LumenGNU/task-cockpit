@@ -1,0 +1,91 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+        "taskCockpit.display.segmentSeparator": "|",
+        "taskCockpit.display.old_key": "|",
+
+        "files.exclude": {
+            "**/node_modules/": true,
+            "**/~f-icon.*": true
+        },
+        "search.exclude": {
+            "**/~*.*": true,
+            "**/~*/*": true,
+            "**/node_modules/**": true
+        },
+        "files.watcherExclude": {
+            "**/~*.*": true,
+            "**/~*/**": true
+        },
+        "workbench.localHistory.exclude": {
+            "**/~*.*": true,
+            "**/~*/**": true
+        },
+        "js/ts.format.semicolons": "insert",
+        "js/ts.preferences.importModuleSpecifierEnding": "minimal",
+        "js/ts.preferences.quoteStyle": "single",
+        "js/ts.workspaceSymbols.scope": "currentProject",
+        "js/ts.hover.maximumLength": 2500,
+
+        "cSpell.useGitignore": false,
+        // --------------------------------------------------------
+
+        "symbols.hidesExplorerArrows": false,
+        "symbols.folders.associations": {
+            "/": "folder-purple"
+        },
+        "symbols.files.associations": {
+            "tsconfig.json": "tsconfig",
+            "test.unit.tsconfig.jsonc": "tsconfig",
+            "test.fixture.tsconfig.jsonc": "tsconfig",
+            "debug.tsconfig.jsonc": "tsconfig",
+            "tested-files.list": "csv"
+        },
+        "explorer.fileNesting.expand": false,
+        "explorer.autoReveal": "focusNoScroll",
+        "explorer.autoRevealExclude": {
+            "**/node_modules": true,
+            "**/.vscode-test": true,
+            "**/.vscode": true,
+        },
+        // --------------------------------------------------------
+// =========================================================================================================
+
+	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+
+	"[typescript]": {
+		"editor.colorDecorators": false
+	},
+	"[javascript]": {
+		"editor.colorDecorators": false
+	},
+
+	"files.trimTrailingWhitespace": true,
+	"files.autoSave": "afterDelay",
+	"files.autoSaveDelay": 660000,
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true,
+	"notelets.notesFolder": "dev-docs",
+	"notelets.showStatusBar": false,
+	"terminal.integrated.shellIntegration.enabled": false,
+	"taskCockpit.display.tintLabel": true,
+
+	"cSpell.ignoreRandomStrings": false,
+	"cSpell.language": "en,ru",
+	"markdown.styles": [
+		".vscode/markdown.css"
+	],
+	"markdown.validate.enabled": true,
+
+	"taskCockpit.display.defaultIconName": "target",
+	"files.associations": {
+		"CHANGELOG.md": "plaintext"
+	},
+	"codeium.enableCodeLens": "hide_x",
+	"cSpell.words": [
+		"снапшоте"
+	],
+
+
+	//=============================================================================
+
+}

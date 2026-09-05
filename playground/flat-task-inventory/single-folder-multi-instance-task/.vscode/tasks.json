@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "multi-instance-auto-close-task",
+            "command": "sleep 15",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "close": true,
+                "showReuseMessage": false,
+                "focus": false
+            },
+            "runOptions": {
+                "instanceLimit": 100
+            }
+        },
+        {
+            "label": "multi-instance-task",
+            "command": "sleep 15",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "close": false,
+                "showReuseMessage": false,
+                "focus": false
+            },
+            "runOptions": {
+                "instanceLimit": 100
+            }
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "21",
+            "type": "shell",
+            "command": "echo Hello",
+            "problemMatcher": []
+        },
+        {
+            "label": "222",
+            "type": "shell",
+            "command": "echo Hello",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "type": "shell",
+            "command": "echo Hello",
+            "problemMatcher": []
+        },
+        {
+            "label": "My Task",
+            "type": "shell",
+            "command": "echo Hello",
+            "problemMatcher": []
+        },
+        {
+            "label": "aaa",
+            "dependsOn": "echo",
+            "problemMatcher": []
+        },
+        {
+            "label": "aaa",
+            "dependsOn": "no-echo",
+            "problemMatcher": []
+        }
+    ]
+}

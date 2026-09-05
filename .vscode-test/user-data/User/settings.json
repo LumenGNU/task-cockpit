@@ -1,0 +1,14 @@
+{
+    "window.autoDetectColorScheme": false,
+    "window.customTitleBarVisibility": "auto",
+    "window.titleBarStyle": "custom",
+    "workbench.settings.applyToAllProfiles": [
+        "workbench.colorTheme",
+        "git.openRepositoryInParentFolders",
+        "workbench.secondarySideBar.defaultVisibility"
+    ],
+    // "workbench.colorTheme": "Default Light+",
+    "git.openRepositoryInParentFolders": "never",
+    "workbench.secondarySideBar.defaultVisibility": "hidden",
+    "workbench.colorTheme": "Visual Studio Light",
+}

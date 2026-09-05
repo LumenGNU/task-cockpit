@@ -1,0 +1,27 @@
+{
+    "folders": [
+        {
+            "path": "folder1"
+        },
+        {
+            "path": "folder2"
+        }
+    ],
+    "settings": {},
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "My Task",
+                "command": "echo 'workspace level My Task'",
+                "type": "shell",
+                "problemMatcher": []
+            },
+            {
+                "label": "DependsOn 'My Task' in Workspace",
+                "dependsOn": "My Task",
+                "problemMatcher": []
+            }
+        ]
+    }
+}

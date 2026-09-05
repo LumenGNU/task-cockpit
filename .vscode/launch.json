@@ -1,0 +1,61 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach: Extension Host (Debug)",
+            "port": 9229,
+            "restart": false,
+            "timeout": 3000,
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/~out-debug/**/*.js"
+            ],
+            "presentation": {
+                "hidden": false,
+                "group": "",
+                "order": 1
+            },
+            "skipFiles": [
+                "<node_internals>/**",
+                // .vscode-test/*/resources/app/out/bootstrap-fork.js -- этот нужен
+                "${workspaceFolder}/.vscode-test/**/app/extensions/**/*",
+                "${workspaceFolder}/.vscode-test/**/vs/**/*",
+                "${workspaceFolder}/node_modules/**/*"
+            ],
+            "preLaunchTask": "Debug-inspect"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach: Extension Host",
+            "port": 9229,
+            "restart": true,
+            "timeout": 120000,
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/~out-sandbox/**/*.js"
+            ],
+            "skipFiles": [
+                "<node_internals>/**",
+                // .vscode-test/*/resources/app/out/bootstrap-fork.js -- этот нужен
+                "${workspaceFolder}/.vscode-test/**/app/extensions/**/*",
+                "${workspaceFolder}/.vscode-test/**/vs/**/*",
+                "${workspaceFolder}/node_modules/**/*"
+            ],
+            "preLaunchTask": "${input:pickTask}"
+        }
+
+    ],
+    "inputs": [
+        {
+            "id": "pickTask",
+            "description": "",
+            "type": "pickString",
+            "options": [
+                "playground|tree-panel|full-monty"
+            ]
+        }
+    ]
+}

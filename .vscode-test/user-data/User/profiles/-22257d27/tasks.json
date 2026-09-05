@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "hhh:echo",
+            "type": "shell",
+            "command": "echo Hello"
+        },
+        {
+            "label": "<b>AAAA</b>",
+            "detail": "<span style=\"color:red\">Your text here</span>\n\n\naaaa\n\n-----\n\npppp",
+            "type": "shell",
+            "command": "sleep 66 ; echo AAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+            "label": "BBB77",
+
+        }
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Task In Folder1",
+            "command": "command-from-folder1",
+            "type": "shell",
+            "args": [],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": true,
+                "close": true
+            }
+        },
+        {
+            "label": "My Task",
+            "type": "shell",
+            "command": "command-from-folder1",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "clear": true,
+                "close": true
+            }
+        }
+    ]
+}
