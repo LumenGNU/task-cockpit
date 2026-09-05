@@ -13,7 +13,7 @@ import {
     EXTENSION,
     CONTAINER,
     PROJECT_TREE
-} from './src/common.js';
+} from './src/tokens.js';
 
 
 
@@ -520,7 +520,7 @@ const MANIFEST: {
                 { command: PROJECT_TREE.COMMAND.TASK_GO_TO_DEFINITION.ID, when: 'false' },
                 { command: PROJECT_TREE.COMMAND.TASK_NAVIGATE_TO_TERMINAL.ID, when: 'false' },
                 { command: PROJECT_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, when: 'false' },
-                { command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID, when: 'false' },
+                { command: PROJECT_TREE.COMMAND.TASK_RUN.ID, when: 'false' },
                 { command: USER_TREE.COMMAND.LIST_COLLAPSE_ALL.ID, when: 'false' },
                 { command: USER_TREE.COMMAND.LIST_EXPAND_ALL.ID, when: 'false' },
                 { command: USER_TREE.COMMAND.LIST_FIND.ID, when: 'false' },
@@ -529,7 +529,7 @@ const MANIFEST: {
                 { command: USER_TREE.COMMAND.TASK_ABORT_ALL_INSTANCES.ID, when: 'false' },
                 { command: USER_TREE.COMMAND.TASK_NAVIGATE_TO_TERMINAL.ID, when: 'false' },
                 { command: USER_TREE.COMMAND.TASK_RUN_NEW_INSTANCE.ID, when: 'false' },
-                { command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID, when: 'false' }
+                { command: USER_TREE.COMMAND.TASK_RUN.ID, when: 'false' }
 
             ]),
             'view/title': [
@@ -636,7 +636,7 @@ const MANIFEST: {
                 // --------------------------------------------------------------------------------------------------
                 // --- TASK_RUN ---
                 {
-                    command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID,
+                    command: USER_TREE.COMMAND.TASK_RUN.ID,
                     group: "inline@1",
                     when: _J([
                         `view == ${USER_TREE.ID}`,
@@ -646,7 +646,7 @@ const MANIFEST: {
                     ]),
                 },
                 {
-                    command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID,
+                    command: PROJECT_TREE.COMMAND.TASK_RUN.ID,
                     group: "inline@1",
                     when: _J([
                         `view == ${PROJECT_TREE.ID}`,
@@ -715,7 +715,7 @@ const MANIFEST: {
                     ]),
                 },
                 {
-                    command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID,
+                    command: USER_TREE.COMMAND.TASK_RUN.ID,
                     group: "a1@1",
                     when: _J([
                         `view == ${USER_TREE.ID}`,
@@ -724,7 +724,7 @@ const MANIFEST: {
                     ]),
                 },
                 {
-                    command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID,
+                    command: PROJECT_TREE.COMMAND.TASK_RUN.ID,
                     group: "a1@1",
                     when: _J([
                         `view == ${PROJECT_TREE.ID}`,
@@ -842,9 +842,9 @@ const MANIFEST: {
                 ])
             },
             {
-                command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID,
-                icon: `$(${USER_TREE.COMMAND.TASK_RUN_INLINE.ICON})`,
-                title: USER_TREE.COMMAND.TASK_RUN_INLINE.LABEL,
+                command: USER_TREE.COMMAND.TASK_RUN.ID,
+                icon: `$(${USER_TREE.COMMAND.TASK_RUN.ICON})`,
+                title: USER_TREE.COMMAND.TASK_RUN.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят
@@ -854,9 +854,9 @@ const MANIFEST: {
                 ])
             },
             {
-                command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID,
-                icon: `$(${PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ICON})`,
-                title: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.LABEL,
+                command: PROJECT_TREE.COMMAND.TASK_RUN.ID,
+                icon: `$(${PROJECT_TREE.COMMAND.TASK_RUN.ICON})`,
+                title: PROJECT_TREE.COMMAND.TASK_RUN.LABEL,
                 category: COMMAND_CATEGORY,
                 enablement: _J([
                     `${EXTENSION.WHEN.IS_IDLE}`, // если не занят

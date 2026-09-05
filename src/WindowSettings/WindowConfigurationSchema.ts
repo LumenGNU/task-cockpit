@@ -1,7 +1,7 @@
 /** @file WindowSettings/WindowConfigurationSchema.ts */
 /** @internal */
 
-import { SETTING } from '../common';
+import { SETTING } from '../tokens';
 import Configuration from '../Configuration';
 import WindowConfiguration from './Configuration';
 

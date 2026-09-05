@@ -31,7 +31,7 @@ function formatTooltip(
             : '';
 
     if (titleRow || labelRow) {
-        tooltipMd.appendMarkdown(`<table width="237px">${titleRow}${labelRow}</table>`);
+        tooltipMd.appendMarkdown(`<table width="237">${titleRow}${labelRow}</table>`);
     }
 
     tooltipMd.appendMarkdown(detail ? `\n\n${escapeHtml(detail)}` : '');

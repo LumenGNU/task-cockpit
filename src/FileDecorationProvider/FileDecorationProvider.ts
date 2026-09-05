@@ -3,7 +3,6 @@
 import {
     CancellationError,
     EventEmitter,
-    LogOutputChannel,
     ThemeColor
 } from 'vscode';
 import WindowSettings from '../WindowSettings/WindowSettings';
@@ -18,6 +17,7 @@ import {
     Uri
 } from 'vscode';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type UriQuery from './UriQuery';
 import type UriSchema from './UriSchema';
 
@@ -57,7 +57,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
 
     #disposed: boolean;
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     // ---------------
     readonly #themeColorCache: Map<string, ThemeColor>;
@@ -72,7 +72,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         resourceProps: Readonly<{
             windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
         this.#disposed = false;
 
@@ -107,12 +107,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         this.#themeColorCache.clear();
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
     public get disposed() {
@@ -157,7 +152,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         if (uri.scheme !== 'task-cockpit' satisfies UriSchema['scheme']
             || uri.authority !== 'Node' satisfies UriSchema['authority']) {
 
-            // this.#logOutputChannel?.trace(`[${this.constructor.name}#provideFileDecoration]: Uri "${uri.toString()}" not supported, skipping`);
+            // this.#logOutputChannel.trace(`[${this.constructor.name}#provideFileDecoration]: Uri "${uri.toString()}" not supported, skipping`);
             return undefined;
         }
 
@@ -167,14 +162,14 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         const running: UriQuery['running'] = query.get('running');
         const color: UriQuery['tintColor'] = query.get('tintColor');
 
-        // this.#logOutputChannel?.trace(`[${this.constructor.name}#provideFileDecoration]: "${uri.toString()}":`);
-        // this.#logOutputChannel?.trace(`    available = ${available}`);
-        // this.#logOutputChannel?.trace(`    running   = ${running}`);
-        // this.#logOutputChannel?.trace(`    color     = ${color}`);
+        // this.#logOutputChannel.trace(`[${this.constructor.name}#provideFileDecoration]: "${uri.toString()}":`);
+        // this.#logOutputChannel.trace(`    available = ${available}`);
+        // this.#logOutputChannel.trace(`    running   = ${running}`);
+        // this.#logOutputChannel.trace(`    color     = ${color}`);
 
         if ((!available && !running && !color) || (available === '0' && running === '0' && !color)) {
             // не нужен ни бейдж, ни цвет
-            // this.#logOutputChannel?.trace('    → undefined');
+            // this.#logOutputChannel.trace('    → undefined');
             return undefined;
         }
 
@@ -182,7 +177,7 @@ class FileDecorationProvider implements VscFileDecorationProvider, Disposable {
         // @fixme только если есть один должен быть и другой. обоих нет -- нормально
         // assert.ok(available !== null && running !== null, `Malformed URI: ${uri.toString()}`);
 
-        // this.#logOutputChannel?.trace('    → {FileDecoration}');
+        // this.#logOutputChannel.trace('    → {FileDecoration}');
         return {
             color: color ? this.#getOrCreateThemeColor(color) : undefined,
             badge: this.#buildBadge(available || '0', running || '0'),

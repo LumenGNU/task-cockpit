@@ -1,6 +1,6 @@
 /** @file TaskName.ts */
 
-import { UI } from './common';
+import { UI } from './tokens';
 import Splitter from './Splitter';
 
 declare const ___TaskName: unique symbol;

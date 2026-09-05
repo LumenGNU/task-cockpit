@@ -5,6 +5,7 @@ import {
     EventEmitter
 } from 'vscode';
 import * as assert from 'node:assert/strict';
+import Element from './Element/Element';
 import EmptyElement from './Element/EmptyElement';
 import IntermediateElement from './Element/IntermediateElement';
 import ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
@@ -17,23 +18,15 @@ import type {
     ProviderResult,
     TreeDataProvider,
     TreeItem,
-    LogOutputChannel,
     Disposable
 } from 'vscode';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
+import type LogOutputChannel from '../../extension/LogOutputChannel';
 import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
 import type TaskName from '../../TaskName';
 import type TaskProcessLifecycle from '../../Runtime/TaskProcessLifecycle';
-
-
-type Element =
-    | TopElement
-    | EmptyElement
-    | IntermediateElement
-    | RunnableElement
-    ;
 
 
 type ReadonlyTreeDataProvider<T> =
@@ -85,14 +78,14 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
     readonly #disposables: Disposable[];
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     public constructor(
         resourceProps: Readonly<{
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
         }>,
         taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#disposed = false;
@@ -144,25 +137,20 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#cachedTopElements = null;
         this.#originNodes = [];
 
-        try {
-            // @fixme  this.#onDidChangeTreeData WTF?
-            // Exception has occurred: Canceled: Canceled
-            //   at new f (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:140:45069)
-            //     at d.U (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:5557)
-            //     at Proxy.T.<computed>.O.charCodeAt.T.<computed> (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:3008)
-            //     at r.$ (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-
-            this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
-        }
-        catch { /* no-op */ }
+        // try {
+        //     // @fixme  this.#onDidChangeTreeData WTF?
+        //     // Exception has occurred: Canceled: Canceled
+        //     //   at new f (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:140:45069)
+        //     //     at d.U (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:5557)
+        //     //     at Proxy.T.<computed>.O.charCodeAt.T.<computed> (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-1.86.2/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:147:3008)
+        //     //     at r.$ (/home/lumen/Projects/Task Cockpit/.vscode-test/vscode-linux-x64-
+        //     this.#onDidChangeTreeData.fire(); // сигнал: перестрой дерево в "пустое" состояние
+        // }
+        // catch { /* no-op */ }
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
 
     }
 
@@ -202,6 +190,20 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#onDidChangeTreeData.fire(runnableElement);
     }
 
+
+    public getRunnableItemStatus(element: Immutable<RunnableElement>) {
+        const treeItem = this.#treeItemByRunnableElement.get(element);
+        if (!treeItem) {
+            return undefined;
+        }
+        return {
+            isRunning: treeItem.contextValue?.includes(':Running') ?? false,
+            isBroken: treeItem.contextValue?.includes(':Broken') ?? false,
+            hasTerminals: treeItem.contextValue?.includes(':Terminals') ?? false,
+        };
+    }
+
+
     /**
      * @throws { CancellationError }
      * */
@@ -210,26 +212,18 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
         this.#cancelIfInoperable();
 
         // Синтетические узлы
-        if ('kind' in element) {
-            switch (element.kind) {
+        if (Element.isSynthetic(element)) {
 
-                case 'TopNode': {
-                    return TopElement.createTreeItem(element);
-                }
+            if (Element.isTopElement(element)) {
+                return TopElement.createTreeItem(element);
+            }
 
-                case 'EmptyNode': {
-                    return EmptyElement.createTreeItem(element);
-                }
-
-                default: {
-                    const _: never = element;
-                    assert.fail('never give you up...');
-                }
-
+            if (Element.isEmptyElement(element)) {
+                return EmptyElement.createTreeItem(element);
             }
         }
 
-        if (element.data != null) {
+        if (Element.isRunnable(element)) {
             // runnable node -- узел несущий задачу
             return this.#getTreeItemForRunnableElement(element);
         }
@@ -275,8 +269,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             this.#runnableElementIndex.set(originKey, elementsByTask);
         }
 
-        // намеренно проверяю перед set, но не помню почему и зачем.
-        // защита от повторной регистрации при concurrent вызовах getTreeItem для одного (originKey, taskName)?
+        // один и тот же объект element для одного ключа в пределах одного цикла rebuild
         if (!elementsByTask.has(taskName)) {
             elementsByTask.set(taskName, element);
         }
@@ -305,13 +298,10 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
             this.#cancelIfInoperable();
 
-            // Stale-check. fullUpdate() мог вызваться во время await и заменить WeakMap —
+            // Stale-check. rebuild() мог вызваться во время await и заменить WeakMap —
             // если так, не кешируем: элемент уже не актуален.
             if (runnableElementToTreeItem !== this.#treeItemByRunnableElement) {
-                try {
-                    this.#logOutputChannel?.trace('Stale cache detected; cancelling getTreeItem.');
-                }
-                catch { /* no-op */ }
+                this.#logOutputChannel.trace('Stale cache detected; cancelling getTreeItem.');
                 throw new CancellationError();
             }
 
@@ -325,6 +315,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             return cachedTreeItem;
         }
         catch (err) {
+            if (err instanceof CancellationError) { throw err; }
             this.#handleErrorAndCancel('Failed; cancelling getTreeItem.', err);
         }
     }
@@ -342,6 +333,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             return IntermediateElement.createTreeItem(element, nodeConfig);
         }
         catch (err) {
+            if (err instanceof CancellationError) { throw err; }
             this.#handleErrorAndCancel('Failed; cancelling getTreeItem.', err);
         }
     }
@@ -364,32 +356,23 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             return topElements;
         }
 
-        if ('kind' in element) {
+        if (Element.isSynthetic(element)) {
 
-            switch (element.kind) {
-
-                case 'TopNode': {
-                    if (element.children.length > 0) {
-                        return element.children;
-                    }
-                    return [
-                        EmptyElement.create(
-                            element.branchKey,
+            if (Element.isTopElement(element)) {
+                if (element.children.length > 0) {
+                    return element.children;
+                }
+                return [
+                    EmptyElement.create(
+                        element.branchKey,
                             /*id*/ element.branchKey + '_empty_node', // безопасно поскольку всегда единственный в секции
-                            element.tasksSummary
-                        )
-                    ];
-                }
+                        element.tasksSummary
+                    )
+                ];
+            }
 
-                case 'EmptyNode': {
-                    assert.fail('EmptyNode is a leaf, getChildren should not be called');
-                    break;
-                }
-
-                default: {
-                    const _: never = element;
-                    assert.fail('never give you up...');
-                }
+            if (Element.isEmptyElement(element)) {
+                assert.fail('EmptyNode is a leaf, getChildren should not be called');
             }
         }
 
@@ -421,26 +404,19 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
 
         this.#cancelIfInoperable();
 
-        if ('kind' in element) {
+        if (Element.isSynthetic(element)) {
 
-            switch (element.kind) {
-
-                case 'TopNode': {
-                    return TopElement.resolveTreeItem(item, element, token);
-                }
-
-                case 'EmptyNode': {
-                    return EmptyElement.resolveTreeItem(item, element, token);
-                }
-
-                default: {
-                    const _: never = element;
-                    assert.fail('never give you up...');
-                }
+            if (Element.isTopElement(element)) {
+                return TopElement.resolveTreeItem(item, element, token);
             }
+
+            if (Element.isEmptyElement(element)) {
+                return EmptyElement.resolveTreeItem(item, element, token);
+            }
+
         }
 
-        if (element.data != null) {
+        if (Element.isRunnable(element)) {
 
             try {
                 const taskBundle = await this.#resourceProps.resourceStateCoordinator.getTaskBundle(element.branchKey, element.data.taskName);
@@ -475,7 +451,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * - провайдер (или одна из зависимостей) disposed
      * - после `fullUpdate()` VS Code ещё не запросил `getChildren(undefined)` */
     // @todo стоит сделать асинхронным и ждать onDidUpdateTopElements?
-    // да!
+    // да! -? 8(
     public get topElements(): Immutable<Array<TopElement>> | null {
 
         if (this.isInoperable) { return null; }
@@ -496,10 +472,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
             this.#taskProcessRegistry.disposed;
 
         if (dependenciesDisposed) {
-            try {
-                this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
-            }
-            catch { /* no-op */ }
+            this.#logOutputChannel.warn(`[${this.constructor.name}] External dependencies are disposed`);
             return true;
         }
 
@@ -511,12 +484,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * */
     #cancelIfInoperable(): void {
         if (this.isInoperable) {
-            try {
-                this.#logOutputChannel?.trace(
-                    `${this.constructor.name} or its dependencies are disposed; cancelling operation`
-                );
-            }
-            catch { /* no-op */ }
+            this.#logOutputChannel.trace(`${this.constructor.name} or its dependencies are disposed; cancelling operation`);
             throw new CancellationError();
         }
     }
@@ -526,10 +494,7 @@ class TaskTreeDataProvider implements ReadonlyTreeDataProvider<Immutable<Element
      * @throws { CancellationError }
      * */
     #handleErrorAndCancel(message: string, error: unknown): never {
-        try {
-            this.#logOutputChannel?.error(message, error);
-        }
-        catch { /* no-op */ }
+        this.#logOutputChannel.error(message, error);
         throw new CancellationError();
     }
 

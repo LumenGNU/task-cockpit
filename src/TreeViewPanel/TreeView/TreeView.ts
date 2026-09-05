@@ -10,20 +10,20 @@ import TaskTreeDataProvider from './TaskTreeDataProvider';
 import {
     USER_TREE,
     PROJECT_TREE
-} from '../../common';
+} from '../../tokens';
 
 import type {
     Disposable,
-    LogOutputChannel,
     TreeDataProvider,
     TreeViewSelectionChangeEvent,
     TreeView as VscTreeView
 } from 'vscode';
 import {
     type SelectedNodeTag
-} from '../../common';
+} from '../../tokens';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
+import type LogOutputChannel from '../../extension/LogOutputChannel';
 import type OriginKey from '../../OriginKey';
 import type OriginNode from '../OriginNode';
 import type ResourceStateCoordinator from '../../ResourceStateCoordinator/ResourceStateCoordinator';
@@ -43,6 +43,18 @@ type ViewId =
     | typeof USER_TREE.ID
     | typeof PROJECT_TREE.ID;
 
+type RunnableItemStatus = TreeView.RunnableItemStatus;
+
+declare namespace TreeView {
+
+    interface RunnableItemStatus {
+        isRunning: boolean;
+        isBroken: boolean;
+        hasTerminals: boolean;
+    }
+}
+
+
 class TreeView implements Disposable {
 
     readonly #treeDataProvider: TaskTreeDataProvider;
@@ -56,7 +68,7 @@ class TreeView implements Disposable {
     readonly #disposables: Disposable[];
 
     readonly #asyncQueue: AsyncQueue;
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #resourceProps: Readonly<{
         resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
@@ -72,7 +84,7 @@ class TreeView implements Disposable {
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
         }>,
         taskProcessRegistry: TaskProcessLifecycle.TaskProcessRegistryView,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#disposed = false;
@@ -83,7 +95,11 @@ class TreeView implements Disposable {
         this.#resourceProps = resourceProps;
         this.#taskProcessRegistry = taskProcessRegistry;
 
-        this.#treeDataProvider = new TaskTreeDataProvider(this.#resourceProps, this.#taskProcessRegistry, this.#logOutputChannel);
+        this.#treeDataProvider = new TaskTreeDataProvider(
+            this.#resourceProps,
+            this.#taskProcessRegistry,
+            this.#logOutputChannel
+        );
 
         this.#viewId = viewId;
 
@@ -129,12 +145,7 @@ class TreeView implements Disposable {
             }
         );
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 
@@ -152,7 +163,9 @@ class TreeView implements Disposable {
         }, 0);
 
         void this.#asyncQueue.enqueue(
-            () => commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, Boolean(itemsCount))
+            async () => {
+                await commands.executeCommand<void>('setContext', `${this.#viewId}.hasItems` satisfies WhenHasItems, Boolean(itemsCount));
+            }
         );
     }
 
@@ -178,9 +191,8 @@ class TreeView implements Disposable {
         void this.#asyncQueue.enqueue(
             async () => {
                 const nodeTag = getNodeTag(selected) satisfies SelectedNodeTag | undefined;
-                try {
-                    this.#logOutputChannel?.trace(`[${this.constructor.name}#${this.#viewId}#changeSelectionHandler] selectedNode = ${nodeTag}`);
-                } catch { }
+
+                this.#logOutputChannel.trace(`[${this.constructor.name}#${this.#viewId}#changeSelectionHandler] selectedNode = ${nodeTag}`);
                 await commands.executeCommand<void>(
                     'setContext',
                     `${this.#viewId}.selectedNode` satisfies WhenSelectedNodeType,
@@ -215,7 +227,7 @@ class TreeView implements Disposable {
                 select: false
             })
                 .then(undefined, (err) => {
-                    this.#logOutputChannel?.trace(`[${this.constructor.name}#expandAll] reveal skipped: ${err}.`);
+                    this.#logOutputChannel.trace(`[${this.constructor.name}#expandAll] reveal skipped: ${err}.`);
                 });
         }
 
@@ -231,7 +243,7 @@ class TreeView implements Disposable {
             `workbench.actions.treeView.${this.#viewId}.collapseAll` // @remark так вот почему в ID запрещена точка?
         )
             .then(undefined, (err) => {
-                this.#logOutputChannel?.trace(`[${this.constructor.name}#collapseAll] collapse skipped: ${err}.`);
+                this.#logOutputChannel.trace(`[${this.constructor.name}#collapseAll] collapse skipped: ${err}.`);
             });
     }
 
@@ -241,7 +253,12 @@ class TreeView implements Disposable {
     }
 
 
-    get isInoperable(): boolean {
+    public getRunnableItemStatus(element: Immutable<Element.Runnable>): Immutable<RunnableItemStatus> | undefined {
+        return this.#treeDataProvider.getRunnableItemStatus(element);
+    }
+
+
+    public get isInoperable(): boolean {
 
         if (this.#disposed) { return true; }
 
@@ -251,7 +268,7 @@ class TreeView implements Disposable {
 
         if (dependenciesDisposed) {
             // warn намеренно: сигнал о нарушении порядка dispose.
-            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            this.#logOutputChannel.warn(`[${this.constructor.name}] External dependencies are disposed`);
             return true;
         }
 

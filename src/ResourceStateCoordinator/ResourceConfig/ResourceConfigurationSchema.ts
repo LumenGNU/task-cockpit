@@ -1,6 +1,6 @@
 /** @file ResourceStateCoordinator/ResourceConfig/ResourceConfigurationSchema.ts */
 
-import { SETTING } from '../../common';
+import { SETTING } from '../../tokens';
 import Configuration from '../../Configuration';
 
 import type Config from './ResourceConfig';

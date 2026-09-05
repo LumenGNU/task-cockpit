@@ -1,7 +1,7 @@
 /** @file TreeViewPanel/OriginNode.ts */
 /** @internal */
 
-import { UI } from '../common';
+import { UI } from '../tokens';
 import HierarchyModel from '../HierarchyModel/HierarchyModel';
 import Splitter from '../Splitter';
 

@@ -88,7 +88,6 @@
 import {
     DiagnosticSeverity,
     languages,
-    LogOutputChannel,
     Range,
     workspace
 } from 'vscode';
@@ -107,9 +106,10 @@ import type {
 } from 'vscode';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
+import type LogOutputChannel from '../../extension/LogOutputChannel';
+import type OriginEntriesSnapshot from '../../ResourceStateCoordinator/OriginEntriesSnapshot';
 import type OriginEntry from '../../ResourceStateCoordinator/OriginEntry';
 import type TaskName from '../../TaskName';
-import type OriginEntriesSnapshot from '../../ResourceStateCoordinator/OriginEntriesSnapshot';
 
 
 declare const ___UpdatePhaseTag: unique symbol;
@@ -133,7 +133,7 @@ class DiagnosticsManager implements Disposable {
 
     readonly #diagnosticCollection: DiagnosticCollection;
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     #debounceTimer: NodeJS.Timeout | null;
 
@@ -153,7 +153,7 @@ class DiagnosticsManager implements Disposable {
             windowSettings: LifecycleOmitted<WindowSettings>;
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
         }>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#resourceProps = resourceProps;
@@ -186,7 +186,7 @@ class DiagnosticsManager implements Disposable {
         this.#validationConfig = this.#resourceProps.windowSettings.getConfiguration(DiagnosticsManager.CONFIGURATION_SECTION);
         this.#phase = this.#updatePhaseIdGen.next();
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] schedule first check`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}] schedule first check`);
         this.#scheduleUpdate();
     }
 
@@ -202,12 +202,7 @@ class DiagnosticsManager implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 
@@ -231,7 +226,7 @@ class DiagnosticsManager implements Disposable {
             if (debounceTimer !== this.#debounceTimer) { return; }
             this.#debounceTimer = null;
             void this.#collectDiagnostics().catch((err) => {
-                this.#logOutputChannel?.error(`[${this.constructor.name}#collectDiagnostics]`, err);
+                this.#logOutputChannel.error(`[${this.constructor.name}#collectDiagnostics]`, err);
             });
         }, DiagnosticsManager.#DEBOUNCE_DELAY_MS);
     }
@@ -273,8 +268,8 @@ class DiagnosticsManager implements Disposable {
 
         this.#deleteStaleDiagnostics(sourcedOriginEntries);
 
-        // this.#logOutputChannel?.trace(`[${this.constructor.name}] config:`, JSON.stringify(this.#validationConfig));
-        // this.#logOutputChannel?.trace(`[${this.constructor.name}] projectOrigins count: ${sourcedOriginEntries.length}`);
+        // this.#logOutputChannel.trace(`[${this.constructor.name}] config:`, JSON.stringify(this.#validationConfig));
+        // this.#logOutputChannel.trace(`[${this.constructor.name}] projectOrigins count: ${sourcedOriginEntries.length}`);
 
         const diagnosticsByUri = await Promise.all(sourcedOriginEntries.map(async (originEntry) => {
             const { uri, JSONPath } = originEntry.taskSource;
@@ -320,12 +315,12 @@ class DiagnosticsManager implements Disposable {
                     } satisfies Diagnostic;
                 });
 
-                this.#logOutputChannel?.trace(`[${this.constructor.name}] ${uri.toString()}: ${diagnostics.length} diagnostics`);
+                this.#logOutputChannel.trace(`[${this.constructor.name}] ${uri.toString()}: ${diagnostics.length} diagnostics`);
                 return { uri, diagnostics };
 
             }
             catch (err) {
-                this.#logOutputChannel?.warn(String(err));
+                this.#logOutputChannel.warn(String(err));
                 return { uri, diagnostics: [] };
             }
         }));
@@ -358,7 +353,7 @@ class DiagnosticsManager implements Disposable {
             this.#resourceProps.windowSettings.disposed;
 
         if (dependenciesDisposed) {
-            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            this.#logOutputChannel.warn(`[${this.constructor.name}] External dependencies are disposed`);
             return true;
         }
 

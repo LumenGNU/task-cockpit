@@ -6,8 +6,8 @@
             "request": "attach",
             "name": "Attach: Extension Host (Debug)",
             "port": 9229,
-            "restart": true,
-            "timeout": 120000,
+            "restart": false,
+            "timeout": 3000,
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/~out-debug/**/*.js"

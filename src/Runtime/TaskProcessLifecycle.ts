@@ -14,12 +14,12 @@ import WindowSettings from '../WindowSettings/WindowSettings';
 
 import type {
     Disposable,
-    LogOutputChannel,
     TaskProcessStartEvent,
     Terminal
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type OriginKey from '../OriginKey';
 import type RequestId from './RequestId';
 import type TaskName from '../TaskName';
@@ -74,7 +74,7 @@ class TaskProcessLifecycle implements Disposable {
 
     // #region Lifecycle
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #resourceProps: Readonly<{
         windowSettings: LifecycleOmitted<WindowSettings>;
@@ -95,7 +95,7 @@ class TaskProcessLifecycle implements Disposable {
             windowSettings: LifecycleOmitted<WindowSettings>;
             resourceStateCoordinator: LifecycleOmitted<ResourceStateCoordinator>;
         }>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#resourceProps = resourceProps;
@@ -159,12 +159,7 @@ class TaskProcessLifecycle implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
 
     }
 
@@ -405,7 +400,7 @@ class TaskProcessLifecycle implements Disposable {
             this.#resourceProps.windowSettings.disposed;
 
         if (dependenciesDisposed) {
-            this.#logOutputChannel?.warn(`[${this.constructor.name}] External dependencies are disposed`);
+            this.#logOutputChannel.warn(`[${this.constructor.name}] External dependencies are disposed`);
             return true;
         }
 

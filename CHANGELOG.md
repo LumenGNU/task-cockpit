@@ -1,33 +1,46 @@
 # Changelog
 
-# UNRELEASED
+## [1.2.0] - 2026-??-??
 
-
-* есть bug с правильным получением списка задач когда файл User/profile/.../tasks.json имеет не сохраненные изменения в момент запуска любой задачи.
-  (по всей видимости это bug vscode -- ее список то же ломается )
-
-* часть ключей настроек и команд была переименована.
+> ⚠️ This release contains breaking changes.
+> Several setting keys and command IDs have been renamed or removed —
+> check your `settings.json` and `keybindings.json` if you customized these.
 
 ### Added
-
-- **Global Tasks view** — new view showing user-scope tasks.
-- `excludeFolders` now accepts the workspace scope name (e.g. `"my-project (Workspace)"`)
-  to exclude workspace-level tasks from the tree
+- **Global Tasks view** — new panel showing user-scope tasks;
+  can be hidden via `taskCockpit.filtering.showUserLevelTasks`
+- `taskCockpit.filtering.excludeFolders` now accepts the workspace scope name
+  (e.g. `"my-project (Workspace)"`) to exclude workspace-level tasks from the tree
+- Warning indicator on tasks whose definition cannot be matched at runtime
 
 ### Changed
-
-- When folders are excluded, the panel header now shows a visibility counter (e.g. `3/5 folders`),
-  replacing the summary previously shown in the workspace item tooltip
-- `excludeFolders` now takes effect in single-folder workspaces
+- `taskCockpit.diagnostics.unreachableDependencies` is now enabled by default
+  (previously experimental and opt-in)
+- When folders are excluded, the panel header now shows a visibility counter
+  (e.g. `3/5 folders`), replacing the tooltip on the workspace item
+- `taskCockpit.filtering.excludeFolders` now takes effect in single-folder workspaces
 - Various UI and UX improvements
 
-### Removed
+### Renamed ⚠️
+- Setting `taskCockpit.display.useGroupKind` → `taskCockpit.display.groupByTaskGroup`
+- Settings namespace `taskCockpit.validation.*` → `taskCockpit.diagnostics.*`
+  - `validation.duplicateLabels` → `diagnostics.shadowedTasks`
+  - `validation.dependencies` → `diagnostics.unreachableDependencies`
+- Command IDs follow a new view-scoped naming convention; e.g.
+  `task-cockpit.view.refresh` → `task-cockpit.full-refresh`,
+  `task-cockpit.tasks-file.open-task` → `task-cockpit_project-tasks.task-go-to-definition`
 
-- `taskCockpit.filtering.excludeWorkspaceTasks` (deprecated since 1.1.0)
+### Removed
+- `taskCockpit.filtering.excludeWorkspaceTasks` — deprecated since 1.1.0;
+  use `taskCockpit.filtering.excludeFolders` instead
 
 ### Fixed
-
 - Cursor is now placed at the start of the task definition when jumping to it
+
+### Known Issues
+- Tasks list may show stale data when the user-scope `tasks.json` has unsaved
+  changes at the moment a task is launched — this appears to be a VS Code
+  limitation (VS Code's own task list exhibits the same behavior)
 
 
 ## [1.1.1] - 2026-06-15

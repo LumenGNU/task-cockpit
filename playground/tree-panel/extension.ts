@@ -10,7 +10,7 @@ import OriginKey from '../../src/OriginKey';
 import TaskName from '../../src/TaskName';
 import TreeViewPanel from '../../src/TreeViewPanel/TreeViewPanel';
 import FileDecorationProvider from '../../src/FileDecorationProvider/FileDecorationProvider';
-import { USER_TREE, PROJECT_TREE_VIEW } from '../../src/common';
+import { USER_TREE, PROJECT_TREE_VIEW } from '../../src/tokens';
 import TaskProcessLifecycle from '../../src/Runtime/TaskProcessLifecycle';
 
 

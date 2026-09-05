@@ -8,16 +8,16 @@ import * as assert from 'node:assert/strict';
 
 import type {
     Disposable,
-    LogOutputChannel,
     Event
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type OriginKey from '../OriginKey';
-import type TaskProcessId from './TaskProcessId';
 import type ProcessState from './ProcessState';
 import type RequestId from './RequestId';
 import type TaskName from '../TaskName';
+import type TaskProcessId from './TaskProcessId';
 import type Timestamp from './Timestamp';
 
 
@@ -67,7 +67,7 @@ class TaskProcessRegistry implements Disposable {
     // полезной нагрузки событий. Синхронизирован с двумя другими индексами.
     readonly #taskIdentifierById: Map<TaskProcessId, { readonly originKey: OriginKey; readonly taskName: TaskName; }>;
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #disposables: Disposable[];
     #disposed: boolean;
@@ -77,7 +77,7 @@ class TaskProcessRegistry implements Disposable {
      * @param logOutputChannel Канал для трассировки (необязателен).
      */
     constructor(
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#disposed = false;
@@ -106,12 +106,7 @@ class TaskProcessRegistry implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 

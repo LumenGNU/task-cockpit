@@ -16,15 +16,13 @@ import {
     EXTENSION,
     PROJECT_TREE,
     USER_TREE
-} from '../common';
+} from '../tokens';
 
-import {
-    type LogOutputChannel
-} from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
 import type OriginEntriesSnapshot from '../ResourceStateCoordinator/OriginEntriesSnapshot';
 import type OriginEntry from '../ResourceStateCoordinator/OriginEntry';
+import type LogOutputChannel from './LogOutputChannel';
 
 
 class Services {
@@ -42,7 +40,7 @@ class Services {
     readonly #windowSettings: WindowSettings;
     // ------------------------------------------------------------------
 
-    #logOutputChannel?: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     #disposed: boolean;
     #disposables: Disposable[];
@@ -60,7 +58,7 @@ class Services {
         resourceStateCoordinator: ResourceStateCoordinator,
         taskProcessLifecycle: TaskProcessLifecycle,
         windowSettings: WindowSettings,
-        logOutputChannel?: LifecycleOmitted<LogOutputChannel> | null
+        logOutputChannel: LogOutputChannel
     ) {
 
         this.#disposed = false;
@@ -134,18 +132,13 @@ class Services {
             await commands.executeCommand('setContext', EXTENSION.WHEN.ALL_FOLDERS_EXCLUDED, undefined);
         });
 
-        try {
-            this.#logOutputChannel?.trace('services disposed');
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace('services disposed');
     }
 
     /**
  * @throws { Error } Выбрасывает наверх ошибки {@linkcode ResourceStateCoordinator.create}
  * */
-    static async create(displayName: string, timeoutMs: number, logOutputChannel?: LogOutputChannel | null): Promise<Services> {
+    static async create(displayName: string, timeoutMs: number, logOutputChannel: LogOutputChannel): Promise<Services> {
 
         const windowSettings = new WindowSettings(logOutputChannel);
         const resourceStateCoordinator = await ResourceStateCoordinator.create(timeoutMs, logOutputChannel);
@@ -308,7 +301,7 @@ class Services {
         catch (err) {
             // координатор disposed или стал inoperable — no-op
             if (this.#resourceStateCoordinator.disposed) { return; }
-            this.#logOutputChannel?.error(String(err));
+            this.#logOutputChannel.error(String(err));
             // idleTracker навсегда останется в busy
         }
 

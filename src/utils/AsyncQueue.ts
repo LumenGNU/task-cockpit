@@ -1,9 +1,6 @@
 /** @file utils/AsyncQueue.ts */
 
-import {
-    LogOutputChannel
-} from 'vscode';
-
+import LogOutputChannel from '../extension/LogOutputChannel';
 import type LifecycleOmitted from './LifecycleOmitted';
 
 /** Простая последовательная очередь асинхронных операций.
@@ -15,7 +12,7 @@ import type LifecycleOmitted from './LifecycleOmitted';
  * Дополнительно можно дождаться завершения всех операций в очереди
  * с помощью метода `drain()`. */
 function create(
-    logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+    logOutputChannel: LifecycleOmitted<LogOutputChannel>
 ): AsyncQueue {
     /** Цепочка промисов, представляющая конец очереди. */
     let pending: Promise<void> = Promise.resolve();
@@ -33,10 +30,7 @@ function create(
             // Заменяем pending на цепочку, которая не падает при ошибке,
             // чтобы следующие операции могли стартовать.
             pending = next.catch((reason: unknown) => {
-                try {
-                    logOutputChannel?.error(String(reason));
-                }
-                catch { /* no-op */ }
+                logOutputChannel.error(String(reason));
             });
             return next;
         },

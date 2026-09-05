@@ -5,7 +5,7 @@ import {
     TreeItemCollapsibleState,
     Uri
 } from 'vscode';
-import { UI } from '../../../common';
+import { UI } from '../../../tokens';
 import formatTooltip from '../formatTooltip';
 
 import type {

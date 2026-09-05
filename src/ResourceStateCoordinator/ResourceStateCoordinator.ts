@@ -2,7 +2,6 @@
 
 import {
     EventEmitter,
-    LogOutputChannel,
     TaskScope,
     workspace
 } from 'vscode';
@@ -24,12 +23,13 @@ import type {
 import type EligibleTasksMap from './EligibleTask/EligibleTasksMap';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type OriginEntriesSnapshot from './OriginEntriesSnapshot';
 import type ResourceConfig from './ResourceConfig/ResourceConfig';
+import type TaskBundle from './TaskBundle';
 import type TaskDefinitionEntry from './TaskDefinition/TaskDefinitionEntry';
 import type TaskDefinitionMap from './TaskDefinition/TaskDefinitionMap';
 import type TaskName from '../TaskName';
-import type TaskBundle from './TaskBundle';
 import type TaskSource from './TaskSource';
 
 
@@ -140,13 +140,13 @@ class ResourceStateCoordinator implements Disposable {
 
     // инфраструктура
     // --------------------------------------------------------
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #disposables: Disposable[];
 
     private constructor(
         eligibleTasks: Immutable<Array<EligibleTask>>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#logOutputChannel = logOutputChannel;
@@ -200,7 +200,7 @@ class ResourceStateCoordinator implements Disposable {
      *  */
     static async create(
         deadlineMs: number,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ): Promise<ResourceStateCoordinator> {
 
         const initialEligibleTasks = await fetchEligibleTasksUntilStable(deadlineMs, logOutputChannel);
@@ -235,16 +235,9 @@ class ResourceStateCoordinator implements Disposable {
             this.#idleDeferred = null;
         }
 
-        this.#disposables.forEach(function (d) {
-            d.dispose();
-        });
+        this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 
@@ -254,7 +247,7 @@ class ResourceStateCoordinator implements Disposable {
 
         if (this.disposed) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] Workspace folders changed. Scheduling update (with task).`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}] Workspace folders changed. Scheduling update (with task).`);
 
         this.#scheduleUpdate(new Set(['TASKS']));
 
@@ -265,7 +258,7 @@ class ResourceStateCoordinator implements Disposable {
 
         if (this.disposed) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}#handleConfigurationChange]: Configuration changed…`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}#handleConfigurationChange]: Configuration changed…`);
 
         const changes: AffectedKeys =
             // @todo или просто "tasks"? в чем разница?
@@ -290,11 +283,11 @@ class ResourceStateCoordinator implements Disposable {
         }
 
         if (changes.size < 1) {
-            this.#logOutputChannel?.trace('  Change does not affect any resource settings or tasks. Ignoring.');
+            this.#logOutputChannel.trace('  Change does not affect any resource settings or tasks. Ignoring.');
             return;
         }
 
-        this.#logOutputChannel?.trace(`  Scheduling update with ${[...changes.keys()].map((k) => `"${k}"`).join(', ')}`);
+        this.#logOutputChannel.trace(`  Scheduling update with ${[...changes.keys()].map((k) => `"${k}"`).join(', ')}`);
 
         this.#scheduleUpdate(changes);
 
@@ -507,7 +500,7 @@ class ResourceStateCoordinator implements Disposable {
             return Promise.reject(new Error(`[${this.constructor.name}#forceFullRefresh]: use after dispose`));
         }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}#forceFullRefresh] ???????????????????????`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}#forceFullRefresh] force full refresh...`);
 
         if (this.#debounceTimer) {
             clearTimeout(this.#debounceTimer);
@@ -604,7 +597,7 @@ class ResourceStateCoordinator implements Disposable {
             // Запускаем новую работу
             void this.#performUpdate().catch((error) => {
 
-                this.#logOutputChannel?.error(`[${this.constructor.name}#performUpdate]: unexpected error`, error);
+                this.#logOutputChannel.error(`[${this.constructor.name}#performUpdate]: unexpected error`, error);
                 // @todo форс-переход? но куда? и с каким обоснованием?
                 // @reject это состояние недостижимо при соблюдении контрактов нижележащих функций,
                 // и если оно достигнуто — чинить нужно контракт, а не добавлять сюда recovery-логику.
@@ -648,7 +641,7 @@ class ResourceStateCoordinator implements Disposable {
 
         const capturedPhase = this.#phase;
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}#performUpdate]: Updating caches for ${[...capturedPhase.affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}#performUpdate]: Updating caches for ${[...capturedPhase.affectedKeys.keys()].map((k) => `"${k}"`).join(', ')}`);
 
         // for-debug-only
         // await new Promise<void>((r) => {
@@ -673,7 +666,7 @@ class ResourceStateCoordinator implements Disposable {
                 // нельзя, это ложная картина мира для пользователя.
                 // Раз VS Code не может доставить рантайм-задачи, а другого источника не
                 // существует — показываем пусто.
-                this.#logOutputChannel?.error(`[${this.constructor.name}#performUpdate]: Tasks.fetchTasks() threw unexpectedly — treating task list as empty.`, error);
+                this.#logOutputChannel.error(`[${this.constructor.name}#performUpdate]: Tasks.fetchTasks() threw unexpectedly — treating task list as empty.`, error);
                 // Сбой в VS Code API — расширение не может и *не должно* восстанавливать что-либо.
                 eligibleTasks = []; // не null, иначе updateCaches пропустит обновление taskDefinitions
             }
@@ -689,9 +682,7 @@ class ResourceStateCoordinator implements Disposable {
                 typeof this.#phase === 'string'
                     ? `phase changed to '${this.#phase}'`
                     : 'newer update cycle started';
-            this.#logOutputChannel?.trace(
-                `[${this.constructor.name}#performUpdate]: stale — ${reason}, discarding results`
-            );
+            this.#logOutputChannel.trace(`[${this.constructor.name}#performUpdate]: stale — ${reason}, discarding results`);
             return;
         }
         // -----
@@ -781,7 +772,7 @@ class ResourceStateCoordinator implements Disposable {
  * @throws { Error } Если система не стабилизировалась за `deadlineMs`. */
 async function fetchEligibleTasksUntilStable(
     deadlineMs: number,
-    logOutputChannel: LifecycleOmitted<LogOutputChannel> | null
+    logOutputChannel: LifecycleOmitted<LogOutputChannel>
 ): Promise<Immutable<Array<EligibleTask>>> {
 
     let isTimedOut = false;
@@ -833,7 +824,7 @@ async function fetchEligibleTasksUntilStable(
 
             // если не успели — уходим на следующий круг
 
-            logOutputChannel?.trace(
+            logOutputChannel.trace(
                 `[fetchEligibleTasksUntilStable]: task environment changed mid-request. ${isTimedOut ? 'Deadline expired, will throw.' : 'Retrying.'}`
             );
 

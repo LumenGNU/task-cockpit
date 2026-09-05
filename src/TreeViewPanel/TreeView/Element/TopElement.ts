@@ -14,7 +14,7 @@ import IntermediateElement from './IntermediateElement';
 import OriginKey from '../../../OriginKey';
 import Immutable from '../../../utils/Immutable';
 import type OriginNode from '../../OriginNode';
-import { UI } from '../../../common';
+import { UI } from '../../../tokens';
 
 
 interface TopElement {

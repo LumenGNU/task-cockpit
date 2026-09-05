@@ -1,4 +1,4 @@
-/** @file common.ts */
+/** @file tokens.ts */
 
 
 const PREFIX        /**/ = 'task-cockpit';
@@ -126,7 +126,7 @@ export const USER_TREE = {
     // Открыть файл с определением задачи (для "сломанной" задачи)
     OPEN_USER_TASKS__BROKEN     /**/: { ID: `${USER_TREE_ID}.open-user-tasks@run-error`, /**/ LABEL: 'No task matches this definition (Open User Tasks)',  /**/ ICON: UI.ICON.WARNING },
     // Выполнить задачу
-    TASK_RUN_INLINE                   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    TASK_RUN                   /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
     // Запустить новый экземпляр задачи
     TASK_RUN_NEW_INSTANCE      /**/: { ID: `${USER_TREE_ID}.${COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.CMD}`,      /**/ LABEL: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.LABEL,      /**/ ICON: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.ICON },
     // Прервать все работающие экземпляры задачи
@@ -162,7 +162,7 @@ export const PROJECT_TREE = {
 
     TASK_GO_TO_DEFINITION__BROKEN /**/: { ID: `${PROJECT_TREE_ID}.task-go-to-definition@run-error`,  /**/ LABEL: 'No task matches this definition (Open Task Definition)',  /**/ ICON: UI.ICON.WARNING },
     // Выполнить задачу
-    TASK_RUN_INLINE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
+    TASK_RUN                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.RUN_TASK.CMD}`,              /**/ LABEL: COMMON_ACTIONS.RUN_TASK.LABEL,              /**/ ICON: COMMON_ACTIONS.RUN_TASK.ICON },
     // Запустить новый экземпляр задачи
     TASK_RUN_NEW_INSTANCE                   /**/: { ID: `${PROJECT_TREE_ID}.${COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.CMD}`,      /**/ LABEL: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.LABEL,      /**/ ICON: COMMON_ACTIONS.TASK_RUN_NEW_INSTANCE.ICON },
     // Прервать все работающие экземпляры задачи
@@ -227,3 +227,14 @@ export const SETTING = {
   }
 
 } as const;
+
+
+type _ExtensionCommand = (typeof EXTENSION)['COMMAND'][keyof (typeof EXTENSION)['COMMAND']]['ID'];
+type _UserTreeCommand = (typeof USER_TREE)['COMMAND'][keyof (typeof USER_TREE)['COMMAND']]['ID'];
+type _ProjectTreeCommand = (typeof PROJECT_TREE)['COMMAND'][keyof (typeof PROJECT_TREE)['COMMAND']]['ID'];
+
+export type CommandKey =
+  | _ExtensionCommand
+  | _UserTreeCommand
+  | _ProjectTreeCommand
+  ;

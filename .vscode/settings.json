@@ -1,6 +1,7 @@
 // Place your settings in this file to overwrite default and user settings.
 {
         "taskCockpit.display.segmentSeparator": "|",
+        "taskCockpit.display.old_key": "|",
 
         "files.exclude": {
             "**/node_modules/": true,

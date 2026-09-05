@@ -2,8 +2,7 @@
 /** @internal */
 
 import {
-    EventEmitter,
-    LogOutputChannel
+    EventEmitter
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import WindowSettings from '../WindowSettings/WindowSettings';
@@ -15,6 +14,7 @@ import type {
     TaskProcessStartEvent
 } from 'vscode';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type TaskProcessId from './TaskProcessId';
 
 
@@ -58,7 +58,7 @@ class TaskProcessMonitor implements Disposable {
     #disposed: boolean;
     #disposables: Disposable[];
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #dependencies: Readonly<{
         windowSettings: LifecycleOmitted<WindowSettings>;
@@ -69,7 +69,7 @@ class TaskProcessMonitor implements Disposable {
         dependencies: Readonly<{
             windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#disposed = false;
@@ -113,12 +113,7 @@ class TaskProcessMonitor implements Disposable {
 
         this.#taskProcessIds.clear();
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 

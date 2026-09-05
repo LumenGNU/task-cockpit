@@ -10,5 +10,29 @@
 
 
 
+    // {
+    //     "key": "alt+f11",
+    //     "command": "task-cockpit_user-tasks.task-run-new-instance",
+    //     "when": "focusedView == task-cockpit_user-tasks && task-cockpit_user-tasks.selectedNode == RunnableNode"
+    // },
+
+
+    {
+        "key": "f11",
+        "command": "task-cockpit_project-tasks.task-run",
+        "when": "focusedView == task-cockpit_project-tasks && task-cockpit_project-tasks.selectedNode == RunnableNode"
+    },
+    {
+        "key": "alt+f11",
+        "command": "task-cockpit_project-tasks.task-run-new-instance",
+        "when": "focusedView == task-cockpit_project-tasks && task-cockpit_project-tasks.selectedNode == RunnableNode"
+    },
+
+    {
+        "key": "f12",
+        "command": "task-cockpit_project-tasks.task-abort-all-instances",
+        "when": "focusedView == task-cockpit_project-tasks && task-cockpit_project-tasks.selectedNode == RunnableNode"
+    },
+
 
 ]

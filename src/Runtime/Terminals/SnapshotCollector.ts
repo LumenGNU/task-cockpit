@@ -2,8 +2,7 @@
 /** @internal */
 
 import {
-    EventEmitter,
-    LogOutputChannel
+    EventEmitter
 } from 'vscode';
 import * as assert from 'node:assert/strict';
 import collectTerminalProcessIds from './collectTerminalProcessIds';
@@ -16,6 +15,7 @@ import type {
 } from 'vscode';
 import type Immutable from '../../utils/Immutable';
 import type LifecycleOmitted from '../../utils/LifecycleOmitted';
+import type LogOutputChannel from '../../extension/LogOutputChannel';
 import type RequestId from '../RequestId';
 import type TerminalProcessesSnapshot from './TerminalProcessesSnapshot';
 
@@ -83,13 +83,13 @@ class SnapshotCollector implements Disposable {
         windowSettings: LifecycleOmitted<WindowSettings>;
     }>;
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     constructor(
         dependencies: Readonly<{
             windowSettings: LifecycleOmitted<WindowSettings>;
         }>,
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         // подготовка очереди
@@ -123,12 +123,7 @@ class SnapshotCollector implements Disposable {
         // отмена очереди
         this.#pendingId = undefined;
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
 
@@ -179,7 +174,7 @@ class SnapshotCollector implements Disposable {
                 // Следующий enqueueRequest запустит новый цикл,
                 // но старый pending-запрос будет потерян (перезаписан новым),
                 // либо, если нового не будет, зависнет навсегда.
-                this.#logOutputChannel?.error(
+                this.#logOutputChannel.error(
                     `[${this.constructor.name}#enqueueRequest]: Unexpected error while collecting terminal process IDs for request ${requestId}`,
                     error
                 );

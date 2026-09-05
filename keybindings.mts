@@ -4,7 +4,7 @@ import {
     EXTENSION,
     USER_TREE,
     PROJECT_TREE
-} from './src/common.js';
+} from './src/tokens.js';
 
 
 function _J(s: string | string[]): string {
@@ -14,14 +14,14 @@ function _J(s: string | string[]): string {
 }
 
 
-const KBD_OPEN = '';
-const KBD_TASK_RUN = '';
-const KBD_TASK_ABORT_ALL_INSTANCES = '';
-const KBD_TASK_NAVIGATE_TO_TERMINAL = '';
-const KBD_LIST_FIND = '';
-const KBD_FULL_REFRESH = '';
-const KBD_LIST_EXPAND_ALL = '';
-const KBD_LIST_COLLAPSE_ALL = '';
+const KBD_OPEN = '<kbd-open>';
+const KBD_TASK_RUN = '<kbd-run>';
+const KBD_TASK_ABORT_ALL_INSTANCES = '<kbd-abort>';
+const KBD_TASK_NAVIGATE_TO_TERMINAL = '<kbd-terminals>';
+const KBD_LIST_FIND = '<kbd-find>';
+const KBD_FULL_REFRESH = '<kbd-refresh>';
+const KBD_LIST_EXPAND_ALL = '<kbd-expand>';
+const KBD_LIST_COLLAPSE_ALL = '<kbd-collapse>';
 
 
 const KEYBINDINGS = [
@@ -75,7 +75,7 @@ const KEYBINDINGS = [
     },
     {
         key: KBD_TASK_RUN,
-        command: USER_TREE.COMMAND.TASK_RUN_INLINE.ID,
+        command: USER_TREE.COMMAND.TASK_RUN.ID,
         when: _J([
             `focusedView == ${USER_TREE.ID}`,
             `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
@@ -84,7 +84,7 @@ const KEYBINDINGS = [
     },
     {
         key: KBD_TASK_RUN,
-        command: PROJECT_TREE.COMMAND.TASK_RUN_INLINE.ID,
+        command: PROJECT_TREE.COMMAND.TASK_RUN.ID,
         when: _J([
             `focusedView == ${PROJECT_TREE.ID}`,
             `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
@@ -99,8 +99,7 @@ const KEYBINDINGS = [
         command: USER_TREE.COMMAND.TASK_ABORT_ALL_INSTANCES.ID,
         when: _J([
             `focusedView == ${USER_TREE.ID}`,
-            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
-            `&& !(viewItem =~ /:Running/)`
+            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
         ])
     },
     {
@@ -108,8 +107,7 @@ const KEYBINDINGS = [
         command: PROJECT_TREE.COMMAND.TASK_ABORT_ALL_INSTANCES.ID,
         when: _J([
             `focusedView == ${PROJECT_TREE.ID}`,
-            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
-            `&& !(viewItem =~ /:Running/)`
+            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
         ])
     },
 
@@ -120,8 +118,7 @@ const KEYBINDINGS = [
         command: USER_TREE.COMMAND.TASK_NAVIGATE_TO_TERMINAL.ID,
         when: _J([
             `focusedView == ${USER_TREE.ID}`,
-            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
-            `&& !(viewItem =~ /:Terminals/)`
+            `&& ${USER_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
         ])
     },
     {
@@ -129,8 +126,7 @@ const KEYBINDINGS = [
         command: PROJECT_TREE.COMMAND.TASK_NAVIGATE_TO_TERMINAL.ID,
         when: _J([
             `focusedView == ${PROJECT_TREE.ID}`,
-            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`,
-            `&& !(viewItem =~ /:Terminals/)`
+            `&& ${PROJECT_TREE.WHEN.SELECTED_NODE_TYPE} == RunnableNode`
         ])
     },
 

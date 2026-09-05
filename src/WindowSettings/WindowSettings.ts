@@ -11,11 +11,11 @@ import SCHEMA from './WindowConfigurationSchema';
 import type {
     ConfigurationChangeEvent,
     Disposable,
-    Event,
-    LogOutputChannel
+    Event
 } from 'vscode';
 import type Immutable from '../utils/Immutable';
 import type LifecycleOmitted from '../utils/LifecycleOmitted';
+import type LogOutputChannel from '../extension/LogOutputChannel';
 import type WindowConfiguration from './Configuration';
 
 
@@ -65,7 +65,7 @@ class WindowSettings implements Disposable {
      * В аргументе — набор реально затронутых ключей (после debounce). */
     readonly onDidCompleteUpdate: Event<AffectedKeys>;
 
-    #logOutputChannel: LifecycleOmitted<LogOutputChannel> | null;
+    #logOutputChannel: LifecycleOmitted<LogOutputChannel>;
 
     readonly #disposables: Disposable[];
     #disposed: boolean;
@@ -82,7 +82,7 @@ class WindowSettings implements Disposable {
      * @param logOutputChannel Опциональный канал логирования.
      */
     constructor(
-        logOutputChannel: LifecycleOmitted<LogOutputChannel> | null = null
+        logOutputChannel: LifecycleOmitted<LogOutputChannel>
     ) {
 
         this.#disposed = false;
@@ -125,12 +125,7 @@ class WindowSettings implements Disposable {
 
         this.#disposables.forEach((d) => void d.dispose());
 
-        try {
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] disposed`);
-        }
-        catch { /* no-op */ }
-
-        this.#logOutputChannel = null;
+        this.#logOutputChannel.trace(`[${this.constructor.name}] disposed`);
     }
 
     /** `true`, если экземпляр уже был уничтожен через {@linkcode dispose}. */
@@ -144,7 +139,7 @@ class WindowSettings implements Disposable {
 
         if (this.#disposed) { return; }
 
-        this.#logOutputChannel?.trace(`[${this.constructor.name}] Configuration changed…`);
+        this.#logOutputChannel.trace(`[${this.constructor.name}] Configuration changed…`);
 
         const changes = new Set<ConfigKey>();
 
@@ -163,11 +158,11 @@ class WindowSettings implements Disposable {
         // Только если есть изменения в window-конфигурации
         // (то что внесено в схему)
         if (changes.size < 1) {
-            this.#logOutputChannel?.trace('  Change does not affect any window settings. Ignoring.');
+            this.#logOutputChannel.trace('  Change does not affect any window settings. Ignoring.');
             return;
         }
 
-        this.#logOutputChannel?.trace(`  Affected keys: ${[...changes].map((k) => `"${k}"`).join(', ')}. Accumulating.`);
+        this.#logOutputChannel.trace(`  Affected keys: ${[...changes].map((k) => `"${k}"`).join(', ')}. Accumulating.`);
 
         // каждое событие конфигурации аккумулирует ключи в #pendingChanges и перезапускает таймер.
         // Когда поток событий прерывается на ≥DEBOUNCE_MS, один fire уходит со всем накопленным Set.
@@ -229,7 +224,7 @@ class WindowSettings implements Disposable {
             const accumulated = new Set(this.#pendingChanges);
             this.#pendingChanges.clear();
 
-            this.#logOutputChannel?.trace(`[${this.constructor.name}] Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
+            this.#logOutputChannel.trace(`[${this.constructor.name}] Update and firing with accumulated keys: ${[...accumulated].map((k) => `"${k}"`).join(', ')}.`);
 
             this.#updateCache();
             this.#onDidCompleteUpdate.fire(accumulated);
