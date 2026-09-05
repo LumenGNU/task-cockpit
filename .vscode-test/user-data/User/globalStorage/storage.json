@@ -1855,10 +1855,6 @@
     },
     "windowsState": {
         "lastActiveWindow": {
-            "workspaceIdentifier": {
-                "id": "3754669d59e1637350be0d3c5aef8364",
-                "configURIPath": "file:///home/lumen/Projects/Task%20Cockpit/~fixtures/Multiroot-HappyPath/Multiroot-HappyPath.code-workspace"
-            },
             "uiState": {
                 "mode": 1,
                 "x": 448,
